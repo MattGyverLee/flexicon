@@ -610,9 +610,19 @@ class ConstChartRowOperations(BaseOperations):
         """
         if isinstance(row_or_hvo, int):
             obj = self.project.Object(row_or_hvo)
-            if not isinstance(obj, IConstChartRow):
-                raise FP_ParameterError("HVO does not refer to a chart row")
-            return obj
+            if getattr(obj, "ClassName", None) == "ConstChartRow":
+                try:
+                    return IConstChartRow(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IConstChartRow):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a chart row")
+        if getattr(row_or_hvo, "ClassName", None) == "ConstChartRow":
+            try:
+                return IConstChartRow(row_or_hvo)
+            except Exception:
+                pass
         return row_or_hvo
 
     def __ResolveChart(self, chart_or_hvo):
@@ -630,9 +640,19 @@ class ConstChartRowOperations(BaseOperations):
         """
         if isinstance(chart_or_hvo, int):
             obj = self.project.Object(chart_or_hvo)
-            if not isinstance(obj, IDsConstChart):
-                raise FP_ParameterError("HVO does not refer to a constituent chart")
-            return obj
+            if getattr(obj, "ClassName", None) == "DsConstChart":
+                try:
+                    return IDsConstChart(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IDsConstChart):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a constituent chart")
+        if getattr(chart_or_hvo, "ClassName", None) == "DsConstChart":
+            try:
+                return IDsConstChart(chart_or_hvo)
+            except Exception:
+                pass
         return chart_or_hvo
 
     def __WSHandle(self, ws):

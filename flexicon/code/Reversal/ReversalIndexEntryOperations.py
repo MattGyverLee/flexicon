@@ -611,9 +611,19 @@ class ReversalIndexEntryOperations(BaseOperations):
         """
         if isinstance(entry_or_hvo, int):
             obj = self.project.Object(entry_or_hvo)
-            if not isinstance(obj, IReversalIndexEntry):
-                raise FP_ParameterError("HVO does not refer to a reversal index entry")
-            return obj
+            if getattr(obj, "ClassName", None) == "ReversalIndexEntry":
+                try:
+                    return IReversalIndexEntry(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IReversalIndexEntry):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a reversal index entry")
+        if getattr(entry_or_hvo, "ClassName", None) == "ReversalIndexEntry":
+            try:
+                return IReversalIndexEntry(entry_or_hvo)
+            except Exception:
+                pass
         return entry_or_hvo
 
     def __GetIndexObject(self, index_or_hvo):
@@ -631,9 +641,19 @@ class ReversalIndexEntryOperations(BaseOperations):
         """
         if isinstance(index_or_hvo, int):
             obj = self.project.Object(index_or_hvo)
-            if not isinstance(obj, IReversalIndex):
-                raise FP_ParameterError("HVO does not refer to a reversal index")
-            return obj
+            if getattr(obj, "ClassName", None) == "ReversalIndex":
+                try:
+                    return IReversalIndex(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IReversalIndex):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a reversal index")
+        if getattr(index_or_hvo, "ClassName", None) == "ReversalIndex":
+            try:
+                return IReversalIndex(index_or_hvo)
+            except Exception:
+                pass
         return index_or_hvo
 
     def __GetEntryWS(self, entry):

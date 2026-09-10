@@ -1283,6 +1283,16 @@ class EtymologyOperations(BaseOperations):
         """
         Resolve HVO or object to ILexEntry.
 
+        Casts by ``ClassName`` BEFORE returning (issue #275, generalising
+        #269's fix). ``self.project.Object(hvo)`` returns a bare
+        ``ICmObject``; without this cast, ``isinstance(obj, ILexEntry)``
+        is False even for a genuine entry (pythonnet binds on the
+        method's declared static return type, not the runtime type), so
+        the HVO path rejected every real entry. The explicit
+        ``ILexEntry(obj)`` cast is a strict widening over the bare
+        ``isinstance`` check: it accepts everything the old guard did,
+        plus every genuine entry the old guard falsely rejected.
+
         Args:
             entry_or_hvo: Either an ILexEntry object or an HVO (int).
 
@@ -1294,14 +1304,32 @@ class EtymologyOperations(BaseOperations):
         """
         if isinstance(entry_or_hvo, int):
             obj = self.project.Object(entry_or_hvo)
-            if not isinstance(obj, ILexEntry):
-                raise FP_ParameterError("HVO does not refer to a lexical entry")
-            return obj
+            if getattr(obj, "ClassName", None) == "LexEntry":
+                try:
+                    return ILexEntry(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, ILexEntry):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a lexical entry")
+        if getattr(entry_or_hvo, "ClassName", None) == "LexEntry":
+            try:
+                return ILexEntry(entry_or_hvo)
+            except Exception:
+                pass
         return entry_or_hvo
 
     def __GetEtymologyObject(self, etymology_or_hvo):
         """
         Resolve HVO or object to ILexEtymology.
+
+        Casts by ``ClassName`` BEFORE returning (issue #275, generalising
+        #269's fix). Same mechanism as ``__GetEntryObject`` above: a bare
+        ``ICmObject`` from ``self.project.Object(hvo)`` fails
+        ``isinstance(obj, ILexEtymology)`` even for a genuine etymology,
+        so the HVO path rejected every real etymology. Strict widening:
+        accepts everything the old guard did, plus every genuine
+        etymology the old guard falsely rejected.
 
         Args:
             etymology_or_hvo: Either an ILexEtymology object or an HVO (int).
@@ -1314,9 +1342,19 @@ class EtymologyOperations(BaseOperations):
         """
         if isinstance(etymology_or_hvo, int):
             obj = self.project.Object(etymology_or_hvo)
-            if not isinstance(obj, ILexEtymology):
-                raise FP_ParameterError("HVO does not refer to an etymology")
-            return obj
+            if getattr(obj, "ClassName", None) == "LexEtymology":
+                try:
+                    return ILexEtymology(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, ILexEtymology):
+                return obj
+            raise FP_ParameterError("HVO does not refer to an etymology")
+        if getattr(etymology_or_hvo, "ClassName", None) == "LexEtymology":
+            try:
+                return ILexEtymology(etymology_or_hvo)
+            except Exception:
+                pass
         return etymology_or_hvo
 
     def __WSHandleAnalysis(self, ws):

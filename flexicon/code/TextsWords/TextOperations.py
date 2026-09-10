@@ -93,11 +93,25 @@ class TextOperations(BaseOperations):
         """
         self._ValidateParam(text_or_hvo, "text_or_hvo")
 
+        # Casts by ClassName BEFORE returning (issue #275, generalising
+        # #269's fix): self.project.Object() returns a bare ICmObject, so
+        # isinstance(obj, IText) is False even for a genuine text. Strict
+        # widening over the bare isinstance check.
         if isinstance(text_or_hvo, int):
             obj = self.project.Object(text_or_hvo)
-            if not isinstance(obj, IText):
-                raise FP_ParameterError(f"HVO {text_or_hvo} does not refer to a text object")
-            return obj
+            if getattr(obj, "ClassName", None) == "Text":
+                try:
+                    return IText(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IText):
+                return obj
+            raise FP_ParameterError(f"HVO {text_or_hvo} does not refer to a text object")
+        if getattr(text_or_hvo, "ClassName", None) == "Text":
+            try:
+                return IText(text_or_hvo)
+            except Exception:
+                pass
         return text_or_hvo
 
     # --- Core CRUD Operations ---

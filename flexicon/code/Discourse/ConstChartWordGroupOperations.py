@@ -504,9 +504,19 @@ class ConstChartWordGroupOperations(BaseOperations):
         """
         if isinstance(group_or_hvo, int):
             obj = self.project.Object(group_or_hvo)
-            if not isinstance(obj, IConstChartWordGroup):
-                raise FP_ParameterError("HVO does not refer to a word group")
-            return obj
+            if getattr(obj, "ClassName", None) == "ConstChartWordGroup":
+                try:
+                    return IConstChartWordGroup(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IConstChartWordGroup):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a word group")
+        if getattr(group_or_hvo, "ClassName", None) == "ConstChartWordGroup":
+            try:
+                return IConstChartWordGroup(group_or_hvo)
+            except Exception:
+                pass
         return group_or_hvo
 
     def __ResolveRow(self, row_or_hvo):
@@ -524,9 +534,19 @@ class ConstChartWordGroupOperations(BaseOperations):
         """
         if isinstance(row_or_hvo, int):
             obj = self.project.Object(row_or_hvo)
-            if not isinstance(obj, IConstChartRow):
-                raise FP_ParameterError("HVO does not refer to a chart row")
-            return obj
+            if getattr(obj, "ClassName", None) == "ConstChartRow":
+                try:
+                    return IConstChartRow(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IConstChartRow):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a chart row")
+        if getattr(row_or_hvo, "ClassName", None) == "ConstChartRow":
+            try:
+                return IConstChartRow(row_or_hvo)
+            except Exception:
+                pass
         return row_or_hvo
 
     # --- Reordering Support ---

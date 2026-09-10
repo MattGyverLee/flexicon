@@ -524,9 +524,19 @@ class ReversalIndexOperations(BaseOperations):
         """
         if isinstance(index_or_hvo, int):
             obj = self.project.Object(index_or_hvo)
-            if not isinstance(obj, IReversalIndex):
-                raise FP_ParameterError("HVO does not refer to a reversal index")
-            return obj
+            if getattr(obj, "ClassName", None) == "ReversalIndex":
+                try:
+                    return IReversalIndex(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IReversalIndex):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a reversal index")
+        if getattr(index_or_hvo, "ClassName", None) == "ReversalIndex":
+            try:
+                return IReversalIndex(index_or_hvo)
+            except Exception:
+                pass
         return index_or_hvo
 
     def __WSHandleAnalysis(self, wsHandle):

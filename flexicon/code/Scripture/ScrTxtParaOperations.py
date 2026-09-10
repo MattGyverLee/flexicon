@@ -476,9 +476,19 @@ class ScrTxtParaOperations(BaseOperations):
         """
         if isinstance(para_or_hvo, int):
             obj = self.project.Object(para_or_hvo)
-            if not isinstance(obj, IScrTxtPara):
-                raise FP_ParameterError("HVO does not refer to a Scripture paragraph")
-            return obj
+            if getattr(obj, "ClassName", None) == "ScrTxtPara":
+                try:
+                    return IScrTxtPara(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IScrTxtPara):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a Scripture paragraph")
+        if getattr(para_or_hvo, "ClassName", None) == "ScrTxtPara":
+            try:
+                return IScrTxtPara(para_or_hvo)
+            except Exception:
+                pass
         return para_or_hvo
 
     def __ResolveSection(self, section_or_hvo):

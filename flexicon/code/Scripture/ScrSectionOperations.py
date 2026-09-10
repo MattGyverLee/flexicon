@@ -487,9 +487,19 @@ class ScrSectionOperations(BaseOperations):
         """
         if isinstance(section_or_hvo, int):
             obj = self.project.Object(section_or_hvo)
-            if not isinstance(obj, IScrSection):
-                raise FP_ParameterError("HVO does not refer to a Scripture section")
-            return obj
+            if getattr(obj, "ClassName", None) == "ScrSection":
+                try:
+                    return IScrSection(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IScrSection):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a Scripture section")
+        if getattr(section_or_hvo, "ClassName", None) == "ScrSection":
+            try:
+                return IScrSection(section_or_hvo)
+            except Exception:
+                pass
         return section_or_hvo
 
     def __ResolveBook(self, book_or_hvo):

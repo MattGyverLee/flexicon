@@ -1102,6 +1102,12 @@ class VariantOperations(BaseOperations):
         """
         Resolve HVO or object to ILexEntry.
 
+        Casts by ``ClassName`` BEFORE returning (issue #275, generalising
+        #269's fix). ``self.project.Object(hvo)`` returns a bare
+        ``ICmObject``; without this cast, ``isinstance(obj, ILexEntry)``
+        is False even for a genuine entry, so the HVO path rejected every
+        real entry. Strict widening over the bare ``isinstance`` check.
+
         Args:
             entry_or_hvo: Either an ILexEntry object or an HVO (int).
 
@@ -1113,14 +1119,32 @@ class VariantOperations(BaseOperations):
         """
         if isinstance(entry_or_hvo, int):
             obj = self.project.Object(entry_or_hvo)
-            if not isinstance(obj, ILexEntry):
-                raise FP_ParameterError("HVO does not refer to a lexical entry")
-            return obj
+            if getattr(obj, "ClassName", None) == "LexEntry":
+                try:
+                    return ILexEntry(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, ILexEntry):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a lexical entry")
+        if getattr(entry_or_hvo, "ClassName", None) == "LexEntry":
+            try:
+                return ILexEntry(entry_or_hvo)
+            except Exception:
+                pass
         return entry_or_hvo
 
     def __GetVariantObject(self, variant_or_hvo):
         """
         Resolve HVO or object to ILexEntryRef.
+
+        Casts by ``ClassName`` BEFORE returning (issue #275, generalising
+        #269's fix). Both ``"LexEntryRef"`` and ``"VariantEntryRef"`` are
+        recognised (confirmed sibling ClassNames for this interface --
+        see ``FLExProject.LexiconDeleteObject``'s
+        ``class_name in ("LexEntryRef", "VariantEntryRef")`` dispatch).
+        Strict widening over the bare ``isinstance`` check, which failed
+        for every genuine variant reference reached via HVO.
 
         Args:
             variant_or_hvo: Either an ILexEntryRef object or an HVO (int).
@@ -1133,9 +1157,19 @@ class VariantOperations(BaseOperations):
         """
         if isinstance(variant_or_hvo, int):
             obj = self.project.Object(variant_or_hvo)
-            if not isinstance(obj, ILexEntryRef):
-                raise FP_ParameterError("HVO does not refer to a variant reference")
-            return obj
+            if getattr(obj, "ClassName", None) in ("LexEntryRef", "VariantEntryRef"):
+                try:
+                    return ILexEntryRef(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, ILexEntryRef):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a variant reference")
+        if getattr(variant_or_hvo, "ClassName", None) in ("LexEntryRef", "VariantEntryRef"):
+            try:
+                return ILexEntryRef(variant_or_hvo)
+            except Exception:
+                pass
         return variant_or_hvo
 
     def __WSHandle(self, wsHandle):

@@ -500,9 +500,19 @@ class ScrBookOperations(BaseOperations):
         """
         if isinstance(book_or_hvo, int):
             obj = self.project.Object(book_or_hvo)
-            if not isinstance(obj, IScrBook):
-                raise FP_ParameterError("HVO does not refer to a Scripture book")
-            return obj
+            if getattr(obj, "ClassName", None) == "ScrBook":
+                try:
+                    return IScrBook(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IScrBook):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a Scripture book")
+        if getattr(book_or_hvo, "ClassName", None) == "ScrBook":
+            try:
+                return IScrBook(book_or_hvo)
+            except Exception:
+                pass
         return book_or_hvo
 
     def __WSHandle(self, wsHandle):

@@ -401,9 +401,19 @@ class ScrDraftOperations(BaseOperations):
         """
         if isinstance(draft_or_hvo, int):
             obj = self.project.Object(draft_or_hvo)
-            if not isinstance(obj, IScrDraft):
-                raise FP_ParameterError("HVO does not refer to a Scripture draft")
-            return obj
+            if getattr(obj, "ClassName", None) == "ScrDraft":
+                try:
+                    return IScrDraft(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IScrDraft):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a Scripture draft")
+        if getattr(draft_or_hvo, "ClassName", None) == "ScrDraft":
+            try:
+                return IScrDraft(draft_or_hvo)
+            except Exception:
+                pass
         return draft_or_hvo
 
     def __GetScripture(self):

@@ -1324,9 +1324,19 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         """
         if isinstance(domain_or_hvo, int):
             obj = self.project.Object(domain_or_hvo)
-            if not isinstance(obj, ICmSemanticDomain):
-                raise FP_ParameterError("HVO does not refer to a semantic domain")
-            return obj
+            if getattr(obj, "ClassName", None) == "CmSemanticDomain":
+                try:
+                    return ICmSemanticDomain(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, ICmSemanticDomain):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a semantic domain")
+        if getattr(domain_or_hvo, "ClassName", None) == "CmSemanticDomain":
+            try:
+                return ICmSemanticDomain(domain_or_hvo)
+            except Exception:
+                pass
         return domain_or_hvo
 
     def __WSHandle(self, wsHandle):

@@ -258,13 +258,27 @@ class ConstChartMarkerOperations(BaseOperations):
     # --- Private Helpers -----------------------------------------------
 
     def __ResolveMarker(self, marker_or_hvo):
+        # Casts by ClassName BEFORE returning (issue #275, generalising
+        # #269's fix): self.project.Object() returns a bare ICmObject, so
+        # isinstance(obj, ICmPossibility) is False even for a genuine
+        # marker. Strict widening over the bare isinstance check.
         if isinstance(marker_or_hvo, int):
             obj = self.project.Object(marker_or_hvo)
-            if not isinstance(obj, ICmPossibility):
-                raise FP_ParameterError(
-                    "HVO does not refer to a CmPossibility marker"
-                )
-            return obj
+            if getattr(obj, "ClassName", None) == "CmPossibility":
+                try:
+                    return ICmPossibility(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, ICmPossibility):
+                return obj
+            raise FP_ParameterError(
+                "HVO does not refer to a CmPossibility marker"
+            )
+        if getattr(marker_or_hvo, "ClassName", None) == "CmPossibility":
+            try:
+                return ICmPossibility(marker_or_hvo)
+            except Exception:
+                pass
         return marker_or_hvo
 
     def __WSHandle(self, ws):

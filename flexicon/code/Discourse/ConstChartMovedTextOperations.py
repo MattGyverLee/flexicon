@@ -383,9 +383,19 @@ class ConstChartMovedTextOperations(BaseOperations):
         """
         if isinstance(marker_or_hvo, int):
             obj = self.project.Object(marker_or_hvo)
-            if not isinstance(obj, IConstChartMovedTextMarker):
-                raise FP_ParameterError("HVO does not refer to a moved text marker")
-            return obj
+            if getattr(obj, "ClassName", None) == "ConstChartMovedTextMarker":
+                try:
+                    return IConstChartMovedTextMarker(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IConstChartMovedTextMarker):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a moved text marker")
+        if getattr(marker_or_hvo, "ClassName", None) == "ConstChartMovedTextMarker":
+            try:
+                return IConstChartMovedTextMarker(marker_or_hvo)
+            except Exception:
+                pass
         return marker_or_hvo
 
     def __ResolveWordGroup(self, word_group_or_hvo):
@@ -403,9 +413,19 @@ class ConstChartMovedTextOperations(BaseOperations):
         """
         if isinstance(word_group_or_hvo, int):
             obj = self.project.Object(word_group_or_hvo)
-            if not isinstance(obj, IConstChartWordGroup):
-                raise FP_ParameterError("HVO does not refer to a word group")
-            return obj
+            if getattr(obj, "ClassName", None) == "ConstChartWordGroup":
+                try:
+                    return IConstChartWordGroup(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IConstChartWordGroup):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a word group")
+        if getattr(word_group_or_hvo, "ClassName", None) == "ConstChartWordGroup":
+            try:
+                return IConstChartWordGroup(word_group_or_hvo)
+            except Exception:
+                pass
         return word_group_or_hvo
 
     def __ResolveChart(self, chart_or_hvo):
@@ -423,9 +443,19 @@ class ConstChartMovedTextOperations(BaseOperations):
         """
         if isinstance(chart_or_hvo, int):
             obj = self.project.Object(chart_or_hvo)
-            if not isinstance(obj, IDsConstChart):
-                raise FP_ParameterError("HVO does not refer to a constituent chart")
-            return obj
+            if getattr(obj, "ClassName", None) == "DsConstChart":
+                try:
+                    return IDsConstChart(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IDsConstChart):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a constituent chart")
+        if getattr(chart_or_hvo, "ClassName", None) == "DsConstChart":
+            try:
+                return IDsConstChart(chart_or_hvo)
+            except Exception:
+                pass
         return chart_or_hvo
 
     # --- Reordering Support ---

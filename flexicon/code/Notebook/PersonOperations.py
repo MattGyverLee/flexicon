@@ -1565,9 +1565,19 @@ class PersonOperations(BaseOperations):
         """
         if isinstance(person_or_hvo, int):
             obj = self.project.Object(person_or_hvo)
-            if not isinstance(obj, ICmPerson):
-                raise FP_ParameterError("HVO does not refer to a person")
-            return obj
+            if getattr(obj, "ClassName", None) == "CmPerson":
+                try:
+                    return ICmPerson(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, ICmPerson):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a person")
+        if getattr(person_or_hvo, "ClassName", None) == "CmPerson":
+            try:
+                return ICmPerson(person_or_hvo)
+            except Exception:
+                pass
         return person_or_hvo
 
     def __WSHandle(self, wsHandle):

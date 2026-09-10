@@ -402,9 +402,19 @@ class ConstChartClauseMarkerOperations(BaseOperations):
         """
         if isinstance(marker_or_hvo, int):
             obj = self.project.Object(marker_or_hvo)
-            if not isinstance(obj, IConstChartClauseMarker):
-                raise FP_ParameterError("HVO does not refer to a clause marker")
-            return obj
+            if getattr(obj, "ClassName", None) == "ConstChartClauseMarker":
+                try:
+                    return IConstChartClauseMarker(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IConstChartClauseMarker):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a clause marker")
+        if getattr(marker_or_hvo, "ClassName", None) == "ConstChartClauseMarker":
+            try:
+                return IConstChartClauseMarker(marker_or_hvo)
+            except Exception:
+                pass
         return marker_or_hvo
 
     def __ResolveRow(self, row_or_hvo):
@@ -422,9 +432,19 @@ class ConstChartClauseMarkerOperations(BaseOperations):
         """
         if isinstance(row_or_hvo, int):
             obj = self.project.Object(row_or_hvo)
-            if not isinstance(obj, IConstChartRow):
-                raise FP_ParameterError("HVO does not refer to a chart row")
-            return obj
+            if getattr(obj, "ClassName", None) == "ConstChartRow":
+                try:
+                    return IConstChartRow(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IConstChartRow):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a chart row")
+        if getattr(row_or_hvo, "ClassName", None) == "ConstChartRow":
+            try:
+                return IConstChartRow(row_or_hvo)
+            except Exception:
+                pass
         return row_or_hvo
 
     # --- Reordering Support ---

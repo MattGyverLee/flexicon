@@ -89,9 +89,23 @@ class StratumOperations(BaseOperations):
         return morph_data.StrataOS
 
     def __ResolveObject(self, stratum_or_hvo):
+        # Casts by ClassName BEFORE returning (issue #275, generalising
+        # #269's fix): self.project.Object() returns a bare ICmObject, on
+        # which direct attribute access (stratum.Name / .Abbreviation /
+        # .Description, used by every accessor below) raises
+        # AttributeError -- pythonnet only surfaces the members of the
+        # method's declared static return type. Never raises on a miss,
+        # matching this resolver's original permissive contract.
         if isinstance(stratum_or_hvo, int):
-            return self.project.Object(stratum_or_hvo)
-        return stratum_or_hvo
+            obj = self.project.Object(stratum_or_hvo)
+        else:
+            obj = stratum_or_hvo
+        if getattr(obj, "ClassName", None) == "MoStratum":
+            try:
+                return IMoStratum(obj)
+            except Exception:
+                pass
+        return obj
 
     def __WSHandle(self, wsHandle):
         if wsHandle is None:

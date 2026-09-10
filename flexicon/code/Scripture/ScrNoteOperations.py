@@ -583,9 +583,19 @@ class ScrNoteOperations(BaseOperations):
         """
         if isinstance(note_or_hvo, int):
             obj = self.project.Object(note_or_hvo)
-            if not isinstance(obj, IScrScriptureNote):
-                raise FP_ParameterError("HVO does not refer to a Scripture note")
-            return obj
+            if getattr(obj, "ClassName", None) == "ScrScriptureNote":
+                try:
+                    return IScrScriptureNote(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IScrScriptureNote):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a Scripture note")
+        if getattr(note_or_hvo, "ClassName", None) == "ScrScriptureNote":
+            try:
+                return IScrScriptureNote(note_or_hvo)
+            except Exception:
+                pass
         return note_or_hvo
 
     def __ResolveBook(self, book_or_hvo):

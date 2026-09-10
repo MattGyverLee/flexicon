@@ -263,9 +263,19 @@ class ScrAnnotationsOperations(BaseOperations):
         """
         if isinstance(annotations_or_hvo, int):
             obj = self.project.Object(annotations_or_hvo)
-            if not isinstance(obj, IScrBookAnnotations):
-                raise FP_ParameterError("HVO does not refer to Scripture annotations")
-            return obj
+            if getattr(obj, "ClassName", None) == "ScrBookAnnotations":
+                try:
+                    return IScrBookAnnotations(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IScrBookAnnotations):
+                return obj
+            raise FP_ParameterError("HVO does not refer to Scripture annotations")
+        if getattr(annotations_or_hvo, "ClassName", None) == "ScrBookAnnotations":
+            try:
+                return IScrBookAnnotations(annotations_or_hvo)
+            except Exception:
+                pass
         return annotations_or_hvo
 
     def __ResolveBook(self, book_or_hvo):

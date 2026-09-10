@@ -195,21 +195,46 @@ class ConstChartCellTagOperations(BaseOperations):
     # --- Private Helpers -----------------------------------------------
 
     def __ResolveRow(self, row_or_hvo):
+        # Casts by ClassName BEFORE returning (issue #275, generalising
+        # #269's fix): self.project.Object() returns a bare ICmObject, so
+        # isinstance(obj, IConstChartRow) is False even for a genuine row.
+        # Strict widening over the bare isinstance check.
         if isinstance(row_or_hvo, int):
             obj = self.project.Object(row_or_hvo)
-            if not isinstance(obj, IConstChartRow):
-                raise FP_ParameterError(
-                    "HVO does not refer to an IConstChartRow"
-                )
-            return obj
+            if getattr(obj, "ClassName", None) == "ConstChartRow":
+                try:
+                    return IConstChartRow(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IConstChartRow):
+                return obj
+            raise FP_ParameterError(
+                "HVO does not refer to an IConstChartRow"
+            )
+        if getattr(row_or_hvo, "ClassName", None) == "ConstChartRow":
+            try:
+                return IConstChartRow(row_or_hvo)
+            except Exception:
+                pass
         return row_or_hvo
 
     def __ResolveTag(self, tag_or_hvo):
+        # Same mechanism as __ResolveRow above (issue #275).
         if isinstance(tag_or_hvo, int):
             obj = self.project.Object(tag_or_hvo)
-            if not isinstance(obj, IConstChartTag):
-                raise FP_ParameterError(
-                    "HVO does not refer to an IConstChartTag"
-                )
-            return obj
+            if getattr(obj, "ClassName", None) == "ConstChartTag":
+                try:
+                    return IConstChartTag(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IConstChartTag):
+                return obj
+            raise FP_ParameterError(
+                "HVO does not refer to an IConstChartTag"
+            )
+        if getattr(tag_or_hvo, "ClassName", None) == "ConstChartTag":
+            try:
+                return IConstChartTag(tag_or_hvo)
+            except Exception:
+                pass
         return tag_or_hvo

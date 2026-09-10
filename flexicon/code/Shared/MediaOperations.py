@@ -300,10 +300,20 @@ class MediaOperations(BaseOperations):
         # Resolve to media object
         if isinstance(media_or_hvo, int):
             media = self.project.Object(media_or_hvo)
-            if not isinstance(media, ICmFile):
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
+            elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
             media = media_or_hvo
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
 
         # Delete the object (this removes all references)
         # Note: LCModel handles cascading deletion of references
@@ -374,10 +384,20 @@ class MediaOperations(BaseOperations):
         # Resolve to media object
         if isinstance(item_or_hvo, int):
             source_media = self.project.Object(item_or_hvo)
-            if not isinstance(source_media, ICmFile):
+            if getattr(source_media, "ClassName", None) == "CmFile":
+                try:
+                    source_media = ICmFile(source_media)
+                except Exception:
+                    pass
+            elif not isinstance(source_media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
             source_media = item_or_hvo
+            if getattr(source_media, "ClassName", None) == "CmFile":
+                try:
+                    source_media = ICmFile(source_media)
+                except Exception:
+                    pass
 
         # Get source properties
         wsHandle = self.__WSHandle(None)
@@ -642,10 +662,20 @@ class MediaOperations(BaseOperations):
         # Resolve to media object
         if isinstance(media_or_hvo, int):
             media = self.project.Object(media_or_hvo)
-            if not isinstance(media, ICmFile):
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
+            elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
             media = media_or_hvo
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
 
         return media.InternalPath or ""
 
@@ -693,10 +723,20 @@ class MediaOperations(BaseOperations):
         # Resolve to media object
         if isinstance(media_or_hvo, int):
             media = self.project.Object(media_or_hvo)
-            if not isinstance(media, ICmFile):
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
+            elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
             media = media_or_hvo
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
 
         internal_path = media.InternalPath or ""
 
@@ -755,10 +795,20 @@ class MediaOperations(BaseOperations):
         # Resolve to media object
         if isinstance(media_or_hvo, int):
             media = self.project.Object(media_or_hvo)
-            if not isinstance(media, ICmFile):
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
+            elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
             media = media_or_hvo
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
 
         with self._TransactionCM("Set media internal path"):
             media.InternalPath = path.strip()
@@ -844,10 +894,20 @@ class MediaOperations(BaseOperations):
         # Resolve to media object
         if isinstance(media_or_hvo, int):
             media = self.project.Object(media_or_hvo)
-            if not isinstance(media, ICmFile):
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
+            elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
             media = media_or_hvo
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
 
         # Get current paths
         old_internal_path = self.GetInternalPath(media)
@@ -946,10 +1006,20 @@ class MediaOperations(BaseOperations):
         # Resolve to media object
         if isinstance(media_or_hvo, int):
             media = self.project.Object(media_or_hvo)
-            if not isinstance(media, ICmFile):
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
+            elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
             media = media_or_hvo
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
 
         wsHandle = self.__WSHandle(wsHandle)
 
@@ -1000,10 +1070,20 @@ class MediaOperations(BaseOperations):
         # Resolve to media object
         if isinstance(media_or_hvo, int):
             media = self.project.Object(media_or_hvo)
-            if not isinstance(media, ICmFile):
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
+            elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
             media = media_or_hvo
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
 
         wsHandle = self.__WSHandle(wsHandle)
 
@@ -1061,10 +1141,20 @@ class MediaOperations(BaseOperations):
         # Resolve to media object
         if isinstance(media_or_hvo, int):
             media = self.project.Object(media_or_hvo)
-            if not isinstance(media, ICmFile):
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
+            elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
             media = media_or_hvo
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
 
         internal_path = media.InternalPath or ""
         if not internal_path:
@@ -1238,10 +1328,20 @@ class MediaOperations(BaseOperations):
         # Resolve to media object
         if isinstance(media_or_hvo, int):
             media = self.project.Object(media_or_hvo)
-            if not isinstance(media, ICmFile):
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
+            elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
             media = media_or_hvo
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
 
         # Get all incoming references
         # ICmFile objects track their owners via the Owner property.
@@ -1491,10 +1591,20 @@ class MediaOperations(BaseOperations):
         # Resolve to media object
         if isinstance(media_or_hvo, int):
             media = self.project.Object(media_or_hvo)
-            if not isinstance(media, ICmFile):
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
+            elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
             media = media_or_hvo
+            if getattr(media, "ClassName", None) == "CmFile":
+                try:
+                    media = ICmFile(media)
+                except Exception:
+                    pass
 
         return media.Guid
 

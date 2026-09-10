@@ -1663,9 +1663,19 @@ class LocationOperations(BaseOperations):
         """
         if isinstance(location_or_hvo, int):
             obj = self.project.Object(location_or_hvo)
-            if not isinstance(obj, ICmLocation):
-                raise FP_ParameterError("HVO does not refer to a location")
-            return obj
+            if getattr(obj, "ClassName", None) == "CmLocation":
+                try:
+                    return ICmLocation(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, ICmLocation):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a location")
+        if getattr(location_or_hvo, "ClassName", None) == "CmLocation":
+            try:
+                return ICmLocation(location_or_hvo)
+            except Exception:
+                pass
         return location_or_hvo
 
     def __WSHandle(self, wsHandle):

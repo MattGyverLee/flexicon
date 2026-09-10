@@ -161,11 +161,25 @@ class WfiAnalysisOperations(BaseOperations):
         Raises:
             FP_ParameterError: If parameter doesn't refer to a wordform.
         """
+        # Casts by ClassName BEFORE returning (issue #275, generalising
+        # #269's fix): self.project.Object() returns a bare ICmObject, so
+        # isinstance(wf, IWfiWordform) is False even for a genuine
+        # wordform. Strict widening over the bare isinstance check.
         if isinstance(wordform_or_hvo, int):
             wf = self.project.Object(wordform_or_hvo)
-            if not isinstance(wf, IWfiWordform):
-                raise FP_ParameterError("HVO does not refer to a wordform")
-            return wf
+            if getattr(wf, "ClassName", None) == "WfiWordform":
+                try:
+                    return IWfiWordform(wf)
+                except Exception:
+                    pass
+            if isinstance(wf, IWfiWordform):
+                return wf
+            raise FP_ParameterError("HVO does not refer to a wordform")
+        if getattr(wordform_or_hvo, "ClassName", None) == "WfiWordform":
+            try:
+                return IWfiWordform(wordform_or_hvo)
+            except Exception:
+                pass
         return wordform_or_hvo
 
     def __GetAnalysisObject(self, analysis_or_hvo):
@@ -181,11 +195,25 @@ class WfiAnalysisOperations(BaseOperations):
         Raises:
             FP_ParameterError: If parameter doesn't refer to an analysis.
         """
+        # Casts by ClassName BEFORE returning (issue #275, generalising
+        # #269's fix): self.project.Object() returns a bare ICmObject, so
+        # isinstance(analysis, IWfiAnalysis) is False even for a genuine
+        # analysis. Strict widening over the bare isinstance check.
         if isinstance(analysis_or_hvo, int):
             analysis = self.project.Object(analysis_or_hvo)
-            if not isinstance(analysis, IWfiAnalysis):
-                raise FP_ParameterError("HVO does not refer to an analysis")
-            return analysis
+            if getattr(analysis, "ClassName", None) == "WfiAnalysis":
+                try:
+                    return IWfiAnalysis(analysis)
+                except Exception:
+                    pass
+            if isinstance(analysis, IWfiAnalysis):
+                return analysis
+            raise FP_ParameterError("HVO does not refer to an analysis")
+        if getattr(analysis_or_hvo, "ClassName", None) == "WfiAnalysis":
+            try:
+                return IWfiAnalysis(analysis_or_hvo)
+            except Exception:
+                pass
         return analysis_or_hvo
 
     def __ResolveOwningAnalysis(self, analysis_or_hvo):
