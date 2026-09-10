@@ -186,6 +186,26 @@ _ATTACHED_VIEW_UNDOABLE_REFUSAL = (
     "is the supported construct on an attached view."
 )
 
+# The host owns the rollback. Raised by AbortSession() on a view.
+#
+# Deliberately does NOT offer Transaction() as the remedy the way
+# _ATTACHED_VIEW_UNDOABLE_REFUSAL does. A view is always Phase 1, and in
+# Phase 1 Transaction() has no rollback at all (issue #236; see
+# Transaction()'s own docstring) -- so pointing a caller who asked to
+# DISCARD work at it would be a wrong answer in the shape of a helpful
+# one. There is no module-side discard on a view; say so.
+_ATTACHED_VIEW_ABORT_REFUSAL = (
+    "AbortSession() is not available on a project attached with "
+    "FromOpenProject(). The open unit of work belongs to the host "
+    "(FLExTools, or FieldWorks itself), which opened it over this cache "
+    "before your module was called; rolling it back here would discard "
+    "the host's own unsaved edits as well as yours, and would leave the "
+    "host holding an envelope it did not open. A module cannot discard "
+    "its writes on an attached view -- let the exception propagate out "
+    "of Main() and report it, and leave the keep-or-discard decision to "
+    "the host and its user."
+)
+
 
 # -----------------------------------------------------------
 
@@ -1289,12 +1309,28 @@ class FLExProject(object):
         the correct tool inside a block is to let the exception propagate,
         which rolls that block back by design.
 
+        Attached views refuse outright. On a project attached with
+        ``FromOpenProject()`` the open unit of work is the HOST's -- a view
+        is unconditionally ``_undoable = False``, so without a guard this
+        method would take the ``undoable=False`` branch below and
+        ``Rollback(0)`` the host's session-long envelope, discarding
+        unsaved edits the host made before the module was ever called and
+        then replacing that envelope with one this facade opened. Both are
+        the host's to own (Invariant B), so the call is refused before any
+        action-handler access.
+
         Returns:
             bool: True if a unit of work was open and was rolled back.
                 False if nothing was open (nothing to abort) -- calling
                 ``Rollback`` in that state would raise, so it is not called.
 
         Raises:
+            FP_RuntimeError: If this is a view obtained from
+                ``FromOpenProject()``. Raised before the write-enabled
+                check, for the same reason as in ``SaveChanges()``: the
+                refusal is about who owns the unit of work, and a
+                read-only diagnosis would imply that a write-enabled host
+                would make the call succeed, which it must not.
             FP_ReadOnlyError: If the project is not write-enabled.
             FP_TransactionError: If ``undoable=True`` and a unit of work is
                 open (see above), or if the underlying LCM ``Rollback(0)``
@@ -1331,6 +1367,9 @@ class FLExProject(object):
             UndoableOperation() - per-operation rollback, the finer-grained
                 and preferred mechanism once ``undoable=True`` is in use.
         """
+        if _IsAttachedView(self):
+            raise FP_RuntimeError(_ATTACHED_VIEW_ABORT_REFUSAL)
+
         if not self.writeEnabled:
             raise FP_ReadOnlyError()
 

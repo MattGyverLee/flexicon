@@ -76,6 +76,7 @@ class FP_ParameterError(FP_ProjectError): ...
 # across modules, so the stub has to carry them.
 _ATTACHED_VIEW_SAVE_REFUSAL: str
 _ATTACHED_VIEW_UNDOABLE_REFUSAL: str
+_ATTACHED_VIEW_ABORT_REFUSAL: str
 
 def _IsAttachedView(obj: Any) -> bool: ...
 

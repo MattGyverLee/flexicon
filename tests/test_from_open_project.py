@@ -31,6 +31,7 @@ import pytest
 
 from flexicon.code.FLExProject import (
     FLExProject,
+    _ATTACHED_VIEW_ABORT_REFUSAL,
     _ATTACHED_VIEW_SAVE_REFUSAL,
     _ATTACHED_VIEW_UNDOABLE_REFUSAL,
     _IsAttachedView,
@@ -69,10 +70,21 @@ class _SpyActionHandler:
     attached-view guard in SaveChanges must come BEFORE the issue-#243 depth
     guard -- otherwise the caller hears a transaction-depth story instead of
     the true one (research.md R3).
+
+    `Rollback` is a recording no-op rather than an omission: AbortSession()
+    on a view must never reach it, and "did not happen" is only assertable
+    if something was watching. Leaving it off the double would make the
+    guard's absence surface as an AttributeError -- which passes a
+    `pytest.raises` for the wrong reason and proves nothing about the
+    host's envelope.
     """
 
     def __init__(self, current_depth=0):
         self.CurrentDepth = current_depth
+        self.rollback_calls = []
+
+    def Rollback(self, depth):
+        self.rollback_calls.append(depth)
 
 
 class _SpyMainCacheAccessor:
@@ -387,7 +399,7 @@ class TestDonorValidation:
 # US2 -- lifecycle refusals on an attached view
 # ---------------------------------------------------------------------------
 #
-# All three guards below branch on `_IsAttachedView(self)`
+# All four guards below branch on `_IsAttachedView(self)`
 # (`hasattr(self, "_attached_donor")`) -- never on `writeEnabled` or
 # `_undoable` (contract section 4). T009-T012 land the guards themselves;
 # this file only proves what MUST be true once they do, and that the
@@ -549,6 +561,113 @@ class TestAttachedViewUndoableOperation:
         # The attached-view wording must NOT appear: it would advise
         # Transaction(), which cannot write on a read-only project either.
         assert _ATTACHED_VIEW_UNDOABLE_REFUSAL not in str(excinfo.value)
+
+
+class TestAttachedViewAbortSession:
+    """T2.2d -- AbortSession() on a view must refuse, and must not touch
+    the host's unit of work on the way to refusing.
+
+    This is the guard with the largest blast radius of the four. A view is
+    unconditionally `_undoable = False`, so an unguarded AbortSession()
+    does not merely misreport -- it takes the undoable=False branch and
+    calls `Rollback(0)` on the envelope the HOST opened, discarding
+    unsaved host edits made before the module was called, then calls
+    `BeginNonUndoableTask()` to install an envelope the host did not open
+    and does not know about. Both halves violate Invariant B.
+
+    Refusal, not the CloseProject()-style silent no-op: a no-op would let
+    a module believe it had discarded its writes while they sat in the
+    host's cache waiting to be saved by the host -- silent corruption in
+    place of a loud error. CloseProject() can be a no-op because a
+    defensive close changes nothing; AbortSession() is only ever called
+    deliberately.
+    """
+
+    @staticmethod
+    def _assert_is_the_attached_view_refusal(exc):
+        # Exact type, as in TestAttachedViewSaveChanges: FP_ReadOnlyError
+        # and FP_TransactionError (the undoable-mode refusal) are both
+        # FP_RuntimeError subclasses, so a bare raises(FP_RuntimeError)
+        # would be blind to either wrong outcome.
+        assert type(exc) is FP_RuntimeError
+        assert not isinstance(exc, (FP_ReadOnlyError, FP_TransactionError))
+        assert _ATTACHED_VIEW_ABORT_REFUSAL in str(exc)
+
+    def test_write_enabled_view_at_depth_one_refuses(self, donor):
+        # Depth 1 is the real flexlibs host state: the session-long
+        # envelope is open for the WHOLE session. This is the case that
+        # would actually roll the host back.
+        view = FLExProject.FromOpenProject(donor)
+
+        with pytest.raises(FP_RuntimeError) as excinfo:
+            view.AbortSession()
+
+        self._assert_is_the_attached_view_refusal(excinfo.value)
+
+    def test_does_not_roll_back_the_hosts_unit_of_work(self, view, donor):
+        handler = donor.project.ActionHandlerAccessor
+
+        with pytest.raises(FP_RuntimeError):
+            view.AbortSession()
+
+        assert handler.rollback_calls == []
+
+    def test_does_not_replace_the_hosts_envelope(self, view, donor):
+        with pytest.raises(FP_RuntimeError):
+            view.AbortSession()
+
+        assert donor.project.MainCacheAccessor.begin_calls == 0
+        assert donor.project.MainCacheAccessor.end_calls == 0
+
+    def test_leaves_the_hosts_depth_untouched(self, view, donor):
+        handler = donor.project.ActionHandlerAccessor
+        before = handler.CurrentDepth
+
+        with pytest.raises(FP_RuntimeError):
+            view.AbortSession()
+
+        assert handler.CurrentDepth == before == 1
+
+    def test_read_only_view_still_gets_the_attached_view_refusal(self):
+        # Not FP_ReadOnlyError. The refusal is about ownership of the unit
+        # of work, so a read-only diagnosis would imply that a
+        # write-enabled host makes this call succeed -- and it must not.
+        # (This is SaveChanges()'s ordering, not UndoableOperation()'s:
+        # there, read-only genuinely IS the actionable answer because the
+        # host opening write-enabled would make the call work.)
+        donor = _FakeDonor(write_enabled=False)
+        view = FLExProject.FromOpenProject(donor)
+
+        with pytest.raises(FP_RuntimeError) as excinfo:
+            view.AbortSession()
+
+        self._assert_is_the_attached_view_refusal(excinfo.value)
+
+    def test_depth_zero_view_refuses_rather_than_returning_false(self, donor):
+        # The owned path answers "nothing was open" with False. A view must
+        # not borrow that answer: on a view the depth belongs to the host
+        # and can change under the module, so False would read as "your
+        # abort was a no-op because nothing was open" rather than "this
+        # object may never abort anything".
+        donor.project.ActionHandlerAccessor.CurrentDepth = 0
+        view = FLExProject.FromOpenProject(donor)
+
+        with pytest.raises(FP_RuntimeError) as excinfo:
+            view.AbortSession()
+
+        self._assert_is_the_attached_view_refusal(excinfo.value)
+
+    def test_the_refusal_constant_does_not_promise_transaction_rollback(self):
+        # A view is always Phase 1, where Transaction() has NO rollback
+        # (issue #236). The UndoableOperation() refusal can point at
+        # Transaction() because it only needs a grouping construct; a
+        # caller who asked to DISCARD work would be misled by the same
+        # advice -- a wrong answer in the shape of a helpful one.
+        assert "Transaction()" not in _ATTACHED_VIEW_ABORT_REFUSAL
+
+    def test_the_refusal_constant_is_ascii(self):
+        # CLAUDE.md Windows console rule.
+        _ATTACHED_VIEW_ABORT_REFUSAL.encode("ascii")
 
 
 class TestOwnedProjectRegressionLocks:

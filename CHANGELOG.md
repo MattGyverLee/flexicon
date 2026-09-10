@@ -98,6 +98,7 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   | `Transaction()` | Supported |
   | `UndoableOperation()` | `FP_TransactionError` -- the host holds a session-long non-undoable envelope; use `Transaction()` |
   | `SaveChanges()` | `FP_RuntimeError` -- the host owns the save; just return |
+  | `AbortSession()` | `FP_RuntimeError` -- the host owns the unit of work; let the error propagate |
   | `CloseProject()` | Silent no-op: returns `None`, never raises |
 
   `CloseProject()` returns before reaching `EndNonUndoableTask`, `usm.Save()` or
@@ -114,6 +115,23 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `FP_ReadOnlyError` rather than being pointed at `Transaction()`, which would
   fail too. Pinned by
   `test_read_only_attached_view_reports_read_only_not_attached_view`.
+
+  `AbortSession()` is refused for the same ownership reason, and like
+  `SaveChanges()` the guard sits **before** the write-enabled check: a view is
+  unconditionally `_undoable = False`, so without it the call would take the
+  `undoable=False` branch and `Rollback(0)` the host's session-long envelope --
+  discarding unsaved edits the host made before the module was ever called, then
+  replacing that envelope with one the facade opened. Its message deliberately
+  does **not** offer `Transaction()` as the remedy the way the
+  `UndoableOperation()` refusal does: a view is always Phase 1, where
+  `Transaction()` has no rollback at all (#236), so pointing a caller who asked
+  to *discard* work at it would be a wrong answer in the shape of a helpful one.
+  There is no module-side discard on a view; the supported move is to let the
+  exception leave `Main()` and leave the keep-or-discard decision to the host.
+  Verified live against a real `IActionHandler`: the host's uncommitted edit and
+  its `CurrentDepth` are both untouched, the host stays writable, and the
+  owned-project rollback path on the same cache still discards and still reopens
+  -- see `specs/flexicon-project-bridge/evidence/live-abort-session-guard.md`.
 
   Verified live: a `Transaction()` write through an attached view reaches the
   `.fwdata` on the host's save, on both a scratch project and Sena 3, with no
