@@ -338,6 +338,12 @@
         "Initialize"
       ]
     },
+    "FwTextPropType": {
+      "properties": [
+        "ktptObjData"
+      ],
+      "methods": []
+    },
     "FwUtils": {
       "properties": [
         "InitializeIcu"
@@ -490,7 +496,8 @@
     "Sldr": {
       "properties": [
         "Cleanup",
-        "Initialize"
+        "Initialize",
+        "IsInitialized"
       ],
       "methods": [
         "Cleanup",
@@ -505,9 +512,13 @@
     },
     "TsStringUtils": {
       "properties": [
+        "MakePropsBldr",
+        "MakeStrBldr",
         "MakeString"
       ],
       "methods": [
+        "MakePropsBldr",
+        "MakeStrBldr",
         "MakeString"
       ]
     },
@@ -781,6 +792,7 @@
     "FwLcmUI",
     "FwObjDataTypes",
     "FwRegistryHelper",
+    "FwTextPropType",
     "FwUtils",
     "GenDate",
     "LcmCache",
@@ -831,6 +843,22 @@
         "SIL.LCModel.Core.Text": [
           "TsStringUtils",
           "TsStringUtils"
+        ],
+        "SIL.LCModel": [
+          "IFsClosedValue",
+          "IFsClosedValue",
+          "IFsClosedValueFactory",
+          "IFsClosedValueFactory",
+          "IFsComplexValue",
+          "IFsComplexValue",
+          "IFsComplexValueFactory",
+          "IFsComplexValueFactory",
+          "IFsFeatStruc",
+          "IFsFeatStruc",
+          "IFsFeatStrucFactory",
+          "IFsFeatStrucFactory",
+          "IFsFeatStrucFactory",
+          "IFsFeatStrucFactory"
         ],
         "SIL.LCModel.Core.KernelInterfaces": [
           "ITsString"
@@ -1013,7 +1041,8 @@
         "Sldr": {
           "properties": [
             "Cleanup",
-            "Initialize"
+            "Initialize",
+            "IsInitialized"
           ],
           "methods": [
             "Cleanup",
@@ -1111,6 +1140,7 @@
           "LcmFileLockedException",
           "LcmInvalidClassException",
           "LcmInvalidFieldException",
+          "LexEntryRefTags",
           "LexEntryTags",
           "LexExampleSentenceTags",
           "LexSenseTags",
@@ -1132,6 +1162,9 @@
         ],
         "SIL.LCModel.Core.KernelInterfaces": [
           "FwObjDataTypes",
+          "FwObjDataTypes",
+          "FwTextPropType",
+          "FwTextPropType",
           "ITsStrBldr",
           "ITsString"
         ],
@@ -1151,11 +1184,29 @@
         ]
       },
       "type_usage": {
+        "FwTextPropType": {
+          "properties": [
+            "ktptObjData"
+          ],
+          "methods": []
+        },
         "FwObjDataTypes": {
           "properties": [
             "kodtExternalPathName"
           ],
           "methods": []
+        },
+        "TsStringUtils": {
+          "properties": [
+            "MakePropsBldr",
+            "MakeStrBldr",
+            "MakeString"
+          ],
+          "methods": [
+            "MakePropsBldr",
+            "MakeStrBldr",
+            "MakeString"
+          ]
         },
         "ReversalIndexEntryTags": {
           "properties": [
@@ -1206,17 +1257,15 @@
           ],
           "methods": []
         },
-        "TsStringUtils": {
-          "properties": [
-            "MakeString"
-          ],
-          "methods": [
-            "MakeString"
-          ]
-        },
         "CellarPropertyTypeFilter": {
           "properties": [
             "All"
+          ],
+          "methods": []
+        },
+        "LexEntryRefTags": {
+          "properties": [
+            "krtComplexForm"
           ],
           "methods": []
         }
@@ -1342,6 +1391,9 @@
       "imports": {
         "SIL.LCModel": [
           "IFsClosedValue",
+          "IFsClosedValueFactory",
+          "IFsFeatStruc",
+          "IFsFeatStrucFactory",
           "IPhNCFeatures",
           "IPhNCFeaturesFactory",
           "IPhNCSegments",
@@ -1555,10 +1607,25 @@
     "code/lcm_casting.py": {
       "imports": {
         "SIL.LCModel": [
+          "ICmAnnotationDefn",
           "ICmAnthroItem",
+          "ICmLocation",
+          "ICmPerson",
           "ICmPossibility",
+          "ICmSemanticDomain",
+          "IConstChartClauseMarker",
+          "IConstChartMovedTextMarker",
+          "IConstChartRow",
+          "IConstChartTag",
+          "IConstChartWordGroup",
           "IDsConstChart",
+          "IFsClosedValue",
+          "IFsComplexFeature",
+          "IFsComplexValue",
+          "IFsFeatStruc",
+          "ILangProject",
           "ILexEntry",
+          "ILexEntryType",
           "ILexRefType",
           "ILexSense",
           "IMoAdhocProhibGr",
@@ -1571,11 +1638,16 @@
           "IMoInflAffMsa",
           "IMoInflAffixTemplate",
           "IMoMorphAdhocProhib",
+          "IMoMorphType",
           "IMoStemAllomorph",
           "IMoStemMsa",
           "IMoUnclassifiedAffixMsa",
+          "IPartOfSpeech",
           "IPhMetathesisRule",
           "IPhMetathesisRuleFactory",
+          "IPhNCFeatures",
+          "IPhNCSegments",
+          "IPhPhoneme",
           "IPhRegularRule",
           "IPhRegularRuleFactory",
           "IPhSegRuleRHS",
@@ -1607,9 +1679,12 @@
       "imports": {
         "SIL.LCModel": [
           "ILexEntry",
+          "IMoAffixAllomorph",
+          "IMoAffixAllomorph",
           "IMoAffixAllomorphFactory",
           "IMoAffixAllomorphFactory",
-          "IMoForm",
+          "IMoStemAllomorph",
+          "IMoStemAllomorph",
           "IMoStemAllomorphFactory",
           "IMoStemAllomorphFactory",
           "IPhEnvironment"
@@ -2923,9 +2998,9 @@
       "imports": {
         "SIL.LCModel": [
           "ILexSense",
+          "IMoForm",
           "IMoInflClass",
           "IMoMorphSynAnalysis",
-          "IMoMorphType",
           "IWfiAnalysis",
           "IWfiMorphBundle",
           "IWfiMorphBundleFactory"
@@ -2975,6 +3050,22 @@
           ]
         }
       }
+    },
+    "code/transaction.py": {
+      "imports": {
+        "SIL.LCModel.Infrastructure": [
+          "UndoableUnitOfWorkHelper"
+        ]
+      },
+      "type_usage": {}
+    },
+    "code/undoable_operation.py": {
+      "imports": {
+        "SIL.LCModel.Infrastructure": [
+          "UndoableUnitOfWorkHelper"
+        ]
+      },
+      "type_usage": {}
     },
     "_pending/pending_contract_seeds.py": {
       "imports": {
@@ -3034,13 +3125,13 @@
     }
   },
   "summary": {
-    "total_files_with_lcm_deps": 78,
-    "total_unique_imports": 257,
+    "total_files_with_lcm_deps": 80,
+    "total_unique_imports": 258,
     "total_modules": 14,
     "total_factories": 81,
     "total_repositories": 19,
     "total_interfaces": 104,
-    "total_classes": 53,
-    "total_type_usages_tracked": 34
+    "total_classes": 54,
+    "total_type_usages_tracked": 35
   }
 }
