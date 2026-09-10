@@ -152,6 +152,14 @@ from .code.Grammar.PhonologicalRuleOperations import (
     PhonologicalRuleOperations,
 )
 
+from .code.Grammar.PhonFeatureOperations import (
+    PhonFeatureOperations,
+)
+
+from .code.Grammar.StratumOperations import (
+    StratumOperations,
+)
+
 # Lexicon Operations
 from .code.Lexicon.LexEntryOperations import (
     LexEntryOperations,
@@ -187,6 +195,10 @@ from .code.Lexicon.EtymologyOperations import (
 
 from .code.Lexicon.AllomorphOperations import (
     AllomorphOperations,
+)
+
+from .code.Lexicon.MSAOperations import (
+    MSAOperations,
 )
 
 # TextsWords Operations
@@ -294,6 +306,10 @@ from .code.Lists.PossibilityListOperations import (
     PossibilityListOperations,
 )
 
+from .code.Lists.LocalizedListsOperations import (
+    LocalizedListsOperations,
+)
+
 # System Operations
 from .code.System.WritingSystemOperations import (
     WritingSystemOperations,
@@ -313,6 +329,50 @@ from .code.System.CheckOperations import (
 
 from .code.System.CustomFieldOperations import (
     CustomFieldOperations,
+)
+
+# Reversal Operations
+#
+# Reachable only via project.X accessors before now; exporting them here
+# closes issue #257's ImportError for `from flexicon import X` on these
+# classes (along with MSAOperations, PhonFeatureOperations,
+# StratumOperations, LocalizedListsOperations, and the ConstChart*
+# Operations classes below).
+from .code.Reversal.ReversalIndexOperations import (
+    ReversalIndexOperations,
+)
+
+from .code.Reversal.ReversalIndexEntryOperations import (
+    ReversalIndexEntryOperations,
+)
+
+# Discourse (constituent chart) Operations
+from .code.Discourse.ConstChartOperations import (
+    ConstChartOperations,
+)
+
+from .code.Discourse.ConstChartRowOperations import (
+    ConstChartRowOperations,
+)
+
+from .code.Discourse.ConstChartCellTagOperations import (
+    ConstChartCellTagOperations,
+)
+
+from .code.Discourse.ConstChartMarkerOperations import (
+    ConstChartMarkerOperations,
+)
+
+from .code.Discourse.ConstChartClauseMarkerOperations import (
+    ConstChartClauseMarkerOperations,
+)
+
+from .code.Discourse.ConstChartWordGroupOperations import (
+    ConstChartWordGroupOperations,
+)
+
+from .code.Discourse.ConstChartMovedTextOperations import (
+    ConstChartMovedTextOperations,
 )
 
 # Pythonic Wrapper - suffix-free property access
