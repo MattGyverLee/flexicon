@@ -889,6 +889,22 @@ symptom alone does not identify which. Check whether `Sldr.IsInitialized`
 is `False` at the time of the LDML read, and whether anything called
 `Sldr.Cleanup()` earlier in the process.
 
+### Corollary: there is exactly one `Sldr.Initialize()` call site (issue #264)
+
+`FLExInitialize()` (above) is the **only** place in the repo allowed to call
+`Sldr.Initialize(...)`. `tests/conftest.py` used to make a second, bare call
+ten lines before invoking `FLExInitialize()`, which made the offline
+suite's pass/fail count order-dependent: whichever module happened to
+initialize SLDR first decided the outcome for hundreds of tests, and the
+loser's raw call threw `System.InvalidOperationException` uncaught. The fix
+was to delete the second call, not to add a second guarded helper --
+`FLExInitialize()` already is that helper, and a duplicate would only be
+another seam to keep in sync with it.
+`tests/test_264_sldr_single_init_path.py` ratchets this statically (an AST
+walk, in the spirit of `tests/test_flexlibs2_alias_ratchet.py`, that fails
+if any executable `Sldr.Initialize(...)` call appears outside
+`flexicon/code/FLExInit.py`).
+
 ### See also
 
 - `docs/EXCEPTION_HANDLING.md` -- "Library Initialization and the SLDR

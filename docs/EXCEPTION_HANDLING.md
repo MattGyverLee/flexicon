@@ -677,6 +677,17 @@ See `docs/API_ISSUES_CATEGORIZED.md` "Category 12: Library-initialization /
 SLDR lifecycle traps (issue #249)" for the full member table, the
 anti-pattern list, and the #179/#249 comparison.
 
+### There is exactly one `Sldr.Initialize()` call site (issue #264)
+
+`FLExInitialize()` is the single, guarded owner of SLDR initialization
+repo-wide. A second, unguarded `Sldr.Initialize()` call anywhere else --
+`tests/conftest.py` had one -- makes the offline suite's pass/fail count
+order-dependent, because whichever call runs first wins and the other
+throws `System.InvalidOperationException`. Do not add a second init helper
+to "share" the guard; call `FLExInitialize()` instead. See
+`docs/API_ISSUES_CATEGORIZED.md`'s "Corollary" under Category 12, and the
+static ratchet in `tests/test_264_sldr_single_init_path.py`.
+
 ---
 
 ## Atomicity Under `undoable=False`: the Session Is the Unit

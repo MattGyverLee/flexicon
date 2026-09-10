@@ -19,12 +19,23 @@ import unittest
 import sys
 import os
 
+import pytest
+
 # Add parent directory to sys.path to allow importing flexicon
 _test_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.join(_test_dir, "..", "..", "..")
 sys.path.insert(0, _project_root)
 
 from flexicon import FLExProject, FLExInitialize, FLExCleanup
+
+# This module opens a REAL FLEx project ("Sena 3") in setUpModule() below
+# and performs live reordering operations against it. Without this marker
+# it runs during the offline `pytest -m "not requires_live_project"`
+# selector, which crashes FLExInitialize() with a Windows access violation
+# when no FieldWorks/registry environment is present (see CLAUDE.md's Live
+# LCM Verification section -- every test that opens a real .fwdata project
+# must carry this marker). issue #264.
+pytestmark = pytest.mark.requires_live_project
 
 
 # ============================================================================

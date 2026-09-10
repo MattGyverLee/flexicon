@@ -11,6 +11,36 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+### Fixed
+- **`tests/conftest.py` no longer makes a second, unguarded `Sldr.Initialize()`
+  call, which made the offline suite's pass/fail count order-dependent**
+  (#264). The session-scoped `initialize_flex_for_tests` fixture called
+  `Sldr.Initialize(True)` directly, ten lines before calling
+  `FLExInitialize()` -- which already performs the identical call behind
+  the `IsInitialized` guard added for #249. Whichever module initialized
+  SLDR first (conftest, or a `setUpModule()` elsewhere in the tree) decided
+  pass/fail for hundreds of tests: the loser's raw call threw
+  `System.InvalidOperationException: The SLDR has already been
+  initialized`, uncaught, failing the fixture and cascading an ERROR into
+  every dependent test. This was concretely observed as an ~1270-result
+  discrepancy between two runs of the identical offline command on the
+  identical commit. `tests/conftest.py` now leaves SLDR initialization
+  entirely to `FLExInitialize()`'s guarded path; nothing else in the test
+  tree may call `Sldr.Initialize` directly, and
+  `tests/test_264_sldr_single_init_path.py` ratchets that statically.
+
+  **Second, independent fix in the same issue:**
+  `flexicon/sync/tests/test_base_operations.py` opened a real,
+  write-enabled "Sena 3" project in `setUpModule()` without a
+  `requires_live_project` marker, so it ran unguarded during the offline
+  `-m "not requires_live_project"` selector -- the same asymmetry its
+  sibling `test_duplicate_operations.py` was already marked against. It
+  now carries `pytestmark = pytest.mark.requires_live_project`.
+
+  No new SLDR-init helper was added. `FLExInitialize()` is already the
+  single guarded init path; a second helper would only be one more seam to
+  keep in sync with it.
+
 ---
 
 ## [4.7.0] - 2026-09-09

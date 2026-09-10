@@ -218,6 +218,8 @@ _PY_PROSE_ALLOWED = {
     "scripts/crystallization_metric.py":
         "guard comment citing the rename as the failure it prevents",
     "scripts/live_coverage_metric.py": "same guard comment",
+    "tests/test_264_sldr_single_init_path.py":
+        "module docstring names this file as the ratchet pattern it models",
 }
 
 # What a *teaching* reference looks like: an import the reader would copy, an

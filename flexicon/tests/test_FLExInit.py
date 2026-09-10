@@ -5,7 +5,19 @@ Author: FlexTools Development Team
 """
 
 import unittest
+
+import pytest
+
 from flexicon import FLExInitialize, FLExCleanup
+
+# This module calls the real FLExInitialize()/FLExCleanup()/FLExInitialize()
+# sequence below, tearing down and rebuilding the session-wide SLDR
+# singleton owned by tests/conftest.py::initialize_flex_for_tests. Without
+# this marker it runs during the offline `pytest -m "not requires_live_project"`
+# selector and disturbs that singleton mid-run (see CLAUDE.md's Live LCM
+# Verification section -- every test that touches FLEx init/cleanup directly
+# must carry this marker). issue #264.
+pytestmark = pytest.mark.requires_live_project
 
 
 class TestFLExInit(unittest.TestCase):

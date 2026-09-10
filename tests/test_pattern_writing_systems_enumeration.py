@@ -26,6 +26,8 @@
 import re
 from pathlib import Path
 
+import pytest
+
 
 class TestWritingSystemsEnumerationPattern:
     """
@@ -102,6 +104,16 @@ class TestWritingSystemsEnumerationPattern:
         assert ops_files, "Expected self.project.WritingSystems.GetAll() in at least one Operations class"
 
 
+# This class uses the write-enabled `sena3_sandbox` fixture to open a REAL
+# FLEx project. Without this marker it runs during the offline
+# `pytest -m "not requires_live_project"` selector, which crashes
+# FLExInitialize()'s callers with a Windows access violation when no
+# FieldWorks/registry environment is present (see CLAUDE.md's Live LCM
+# Verification section -- every test that opens a real .fwdata project must
+# carry this marker). Class-scoped, not module-level: the rest of this file
+# (TestWritingSystemsEnumerationPattern above) is a pure static scanner with
+# no SIL.LCModel dependency and must stay unmarked. issue #264.
+@pytest.mark.requires_live_project
 class TestWritingSystemsLiveSmoke:
     """
     Live smoke test for WritingSystems enumeration fix (issue #216, part 2).
@@ -114,8 +126,6 @@ class TestWritingSystemsLiveSmoke:
         Operations class that exposes it. Verify no AttributeError on
         missing WritingSystems methods.
         """
-        import pytest
-
         flex_project = sena3_sandbox
 
         # List of (Operations class, method, object_source) tuples

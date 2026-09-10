@@ -112,7 +112,6 @@ def initialize_flex_for_tests():
         # Step 3: Initialize FLEx services
         print("[INFO] Initializing FLEx services...")
         from SIL.FieldWorks.Common.FwUtils import FwRegistryHelper, FwUtils
-        from SIL.WritingSystems import Sldr
 
         FwRegistryHelper.Initialize()
         # FwUtils.InitializeIcu() triggers a benign Win32 SEH during
@@ -132,7 +131,15 @@ def initialize_flex_for_tests():
         finally:
             if _faulthandler_was_enabled:
                 faulthandler.enable()
-        Sldr.Initialize(True)
+        # issue #264: do NOT call Sldr.Initialize() here. This used to be a
+        # bare, unguarded call, and since FLExInitialize() (ten lines below)
+        # already calls Sldr.Initialize(True) guarded by an IsInitialized
+        # probe (issue #249), the bare call here made the offline suite's
+        # pass/fail count order-dependent: whichever module initialized SLDR
+        # first decided the outcome for hundreds of tests, and the second
+        # unguarded call threw System.InvalidOperationException. SLDR init
+        # is now owned solely by FLExInitialize()'s guarded path -- nothing
+        # else in the test tree should call Sldr.Initialize directly.
         print("[OK] FLEx services initialized")
 
         # Step 4: Initialize FLEx using FLExInitialize()
