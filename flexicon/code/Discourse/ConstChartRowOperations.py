@@ -21,9 +21,6 @@ from SIL.LCModel import (
     IDsConstChart,
     IConstChartWordGroup,
 )
-from SIL.LCModel.Core.KernelInterfaces import ITsString
-from SIL.LCModel.Core.Text import TsStringUtils
-
 # Import flexlibs exceptions
 from ..FLExProject import (
     FP_ParameterError,
@@ -104,7 +101,11 @@ class ConstChartRowOperations(BaseOperations):
         Notes:
             - Row is appended to the end of the chart's row list
             - Label and notes are optional
-            - Label and notes use default analysis writing system
+            - ``IConstChartRow.Label`` and ``.Notes`` are bare
+              ITsString fields (Category 8: same-name field, different
+              LCM type), not IMultiString -- only one value is ever
+              stored per field, tagged with the analysis WS at create
+              time (issue #290)
             - Factory.Create() automatically adds row to repository
             - Row starts with no word groups - add using ConstChartWordGroups
 
@@ -126,15 +127,19 @@ class ConstChartRowOperations(BaseOperations):
             # Add to chart's rows collection
             chart.RowsOS.Add(new_row)
 
-            # Set label if provided
+            # Set label if provided. IConstChartRow.Label is a bare
+            # ITsString, not an IMultiString (Category 8: same-name
+            # field, different LCM type across object types) -- it has
+            # no set_String/get_String, confirmed by live reflection
+            # (issue #290). Assign via the house _MakeTsString adapter
+            # instead.
             if label:
-                mkstr = TsStringUtils.MakeString(label, wsHandle)
-                new_row.Label.set_String(wsHandle, mkstr)
+                new_row.Label = self._MakeTsString(label, wsHandle)
 
-            # Set notes if provided
+            # Set notes if provided. IConstChartRow.Notes is likewise a
+            # bare ITsString (issue #290).
             if notes:
-                mkstr = TsStringUtils.MakeString(notes, wsHandle)
-                new_row.Notes.set_String(wsHandle, mkstr)
+                new_row.Notes = self._MakeTsString(notes, wsHandle)
 
             return new_row
 
@@ -270,7 +275,11 @@ class ConstChartRowOperations(BaseOperations):
 
         Args:
             row_or_hvo: Either an IConstChartRow object or its HVO
-            ws: Optional writing system handle. Defaults to analysis WS.
+            ws: Currently ignored. ``IConstChartRow.Label`` is a bare
+                ITsString, not an IMultiString, so there is no per-WS
+                slot to select (issue #290). Retained only for
+                backward-compatible call signatures; see the API note
+                below.
 
         Returns:
             str: The row label (empty string if not set)
@@ -286,7 +295,19 @@ class ConstChartRowOperations(BaseOperations):
 
         Notes:
             - Returns empty string if label not set
-            - Uses default analysis writing system unless specified
+            - ``IConstChartRow.Label`` is a bare ITsString (Category 8:
+              same-name field, different LCM type), not an
+              IMultiString -- there is only ever one stored value, so
+              "default analysis writing system" does not apply to
+              reads the way it does for true multistring fields.
+
+        API note (issue #290):
+            The ``ws`` parameter predates the discovery that Label is
+            a bare ITsString. It is accepted for backward compatibility
+            but has no effect on what is read. Whether ``ws`` should be
+            removed, or repurposed to filter/assert against the WS tag
+            already carried by the stored run, is an open API question
+            for the domain expert -- not resolved in this fix.
 
         See Also:
             SetLabel, GetNotes
@@ -294,9 +315,8 @@ class ConstChartRowOperations(BaseOperations):
         self._ValidateParam(row_or_hvo, "row_or_hvo")
 
         row = self.__ResolveObject(row_or_hvo)
-        wsHandle = self.__WSHandle(ws)
 
-        return ITsString(row.Label.get_String(wsHandle)).Text or ""
+        return self._ReadTsString(row.Label)
 
     @OperationsMethod
     def SetLabel(self, row_or_hvo, text, ws=None):
@@ -306,7 +326,8 @@ class ConstChartRowOperations(BaseOperations):
         Args:
             row_or_hvo: Either an IConstChartRow object or its HVO
             text (str): The new label text
-            ws: Optional writing system handle. Defaults to analysis WS.
+            ws: Optional writing system handle used to tag the stored
+                ITsString run. Defaults to analysis WS.
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
@@ -320,8 +341,19 @@ class ConstChartRowOperations(BaseOperations):
 
         Notes:
             - Label can be empty to clear
-            - Uses default analysis writing system unless specified
+            - ``IConstChartRow.Label`` is a bare ITsString (Category 8:
+              same-name field, different LCM type), not an
+              IMultiString -- only one label value is ever stored.
+              ``ws`` tags the WS metadata on that single run; it does
+              **not** select a per-WS slot the way it would on a true
+              multistring setter (issue #290).
             - Changes are immediately persisted
+
+        API note (issue #290):
+            See the matching note on ``GetLabel`` -- whether ``ws``
+            should be renamed/removed now that this field is confirmed
+            single-valued is an open API question for the domain
+            expert, not resolved in this fix.
 
         See Also:
             GetLabel, SetNotes
@@ -335,8 +367,7 @@ class ConstChartRowOperations(BaseOperations):
         wsHandle = self.__WSHandle(ws)
 
         with self._TransactionCM(f"Set chart row label '{text}'"):
-            mkstr = TsStringUtils.MakeString(text, wsHandle)
-            row.Label.set_String(wsHandle, mkstr)
+            row.Label = self._MakeTsString(text, wsHandle)
 
     @OperationsMethod
     def GetNotes(self, row_or_hvo, ws=None):
@@ -345,7 +376,11 @@ class ConstChartRowOperations(BaseOperations):
 
         Args:
             row_or_hvo: Either an IConstChartRow object or its HVO
-            ws: Optional writing system handle. Defaults to analysis WS.
+            ws: Currently ignored. ``IConstChartRow.Notes`` is a bare
+                ITsString, not an IMultiString, so there is no per-WS
+                slot to select (issue #290). Retained only for
+                backward-compatible call signatures; see the API note
+                below.
 
         Returns:
             str: The row notes (empty string if not set)
@@ -361,8 +396,20 @@ class ConstChartRowOperations(BaseOperations):
 
         Notes:
             - Returns empty string if notes not set
-            - Uses default analysis writing system unless specified
+            - ``IConstChartRow.Notes`` is a bare ITsString (Category 8:
+              same-name field, different LCM type), not an
+              IMultiString -- there is only ever one stored value, so
+              "default analysis writing system" does not apply to
+              reads the way it does for true multistring fields.
             - Notes can contain detailed analysis information
+
+        API note (issue #290):
+            The ``ws`` parameter predates the discovery that Notes is
+            a bare ITsString. It is accepted for backward compatibility
+            but has no effect on what is read. Whether ``ws`` should be
+            removed, or repurposed to filter/assert against the WS tag
+            already carried by the stored run, is an open API question
+            for the domain expert -- not resolved in this fix.
 
         See Also:
             SetNotes, GetLabel
@@ -370,9 +417,8 @@ class ConstChartRowOperations(BaseOperations):
         self._ValidateParam(row_or_hvo, "row_or_hvo")
 
         row = self.__ResolveObject(row_or_hvo)
-        wsHandle = self.__WSHandle(ws)
 
-        return ITsString(row.Notes.get_String(wsHandle)).Text or ""
+        return self._ReadTsString(row.Notes)
 
     @OperationsMethod
     def SetNotes(self, row_or_hvo, text, ws=None):
@@ -382,7 +428,8 @@ class ConstChartRowOperations(BaseOperations):
         Args:
             row_or_hvo: Either an IConstChartRow object or its HVO
             text (str): The new notes text
-            ws: Optional writing system handle. Defaults to analysis WS.
+            ws: Optional writing system handle used to tag the stored
+                ITsString run. Defaults to analysis WS.
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
@@ -395,8 +442,19 @@ class ConstChartRowOperations(BaseOperations):
 
         Notes:
             - Notes can be empty to clear
-            - Uses default analysis writing system unless specified
+            - ``IConstChartRow.Notes`` is a bare ITsString (Category 8:
+              same-name field, different LCM type), not an
+              IMultiString -- only one notes value is ever stored.
+              ``ws`` tags the WS metadata on that single run; it does
+              **not** select a per-WS slot the way it would on a true
+              multistring setter (issue #290).
             - Notes are for analyst commentary and observations
+
+        API note (issue #290):
+            See the matching note on ``GetNotes`` -- whether ``ws``
+            should be renamed/removed now that this field is confirmed
+            single-valued is an open API question for the domain
+            expert, not resolved in this fix.
 
         See Also:
             GetNotes, SetLabel
@@ -410,8 +468,7 @@ class ConstChartRowOperations(BaseOperations):
         wsHandle = self.__WSHandle(ws)
 
         with self._TransactionCM("Set chart row notes"):
-            mkstr = TsStringUtils.MakeString(text, wsHandle)
-            row.Notes.set_String(wsHandle, mkstr)
+            row.Notes = self._MakeTsString(text, wsHandle)
 
     @OperationsMethod
     def GetWordGroups(self, row_or_hvo):
