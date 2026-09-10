@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Lexicon.MSAOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -58,7 +58,7 @@
 <span class="c1">#          - MoUnclassifiedAffixMsa (kUnclassified) -- catch-all affix</span>
 <span class="c1">#</span>
 <span class="c1">#          All four use the same idiom: build a SandboxGenericMSA with the</span>
-<span class="c1">#          MsaType + POS info, call the type-specific factory's</span>
+<span class="c1">#          MsaType + POS info, call the type-specific factory&#39;s</span>
 <span class="c1">#          Create(sense.Owner, sandbox) overload, then attach via</span>
 <span class="c1">#          sense.MorphoSyntaxAnalysisRA.</span>
 <span class="c1">#</span>
@@ -68,16 +68,16 @@
 <span class="c1">#   Copyright 2026</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="c1"># Import BaseOperations parent class</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span>
+<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">IMoStemMsa</span><span class="p">,</span>
     <span class="n">IMoStemMsaFactory</span><span class="p">,</span>
     <span class="n">IMoDerivAffMsa</span><span class="p">,</span>
@@ -93,12 +93,12 @@
     <span class="n">LexEntryTags</span><span class="p">,</span>
     <span class="n">MsaType</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.DomainServices</span><span class="w"> </span><span class="kn">import</span> <span class="n">SandboxGenericMSA</span>
+<span class="kn">from</span> <span class="nn">SIL.LCModel.DomainServices</span> <span class="kn">import</span> <span class="n">SandboxGenericMSA</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
+<span class="kn">import</span> <span class="nn">clr</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
     <span class="n">FP_ReadOnlyError</span><span class="p">,</span>
     <span class="n">FP_NullParameterError</span><span class="p">,</span>
@@ -110,62 +110,62 @@
 <span class="c1"># codebase for multi-value structured results (see</span>
 <span class="c1"># LocalizedListsOperations.ImportLocalizedListsResult).</span>
 
-<span class="n">RemovedMSA</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">"RemovedMSA"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"entry_hvo"</span><span class="p">,</span> <span class="s2">"msa_hvo"</span><span class="p">,</span> <span class="s2">"class_name"</span><span class="p">))</span>
-<span class="n">RemovedMSA</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">"""</span>
+<span class="n">RemovedMSA</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;RemovedMSA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;entry_hvo&quot;</span><span class="p">,</span> <span class="s2">&quot;msa_hvo&quot;</span><span class="p">,</span> <span class="s2">&quot;class_name&quot;</span><span class="p">))</span>
+<span class="n">RemovedMSA</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">One MSA removed by MSAOperations.RemoveOrphaned.</span>
 
 <span class="s2">Fields:</span>
 <span class="s2">    entry_hvo (int): Hvo of the owning ILexEntry the MSA was removed from.</span>
 <span class="s2">    msa_hvo (int): Hvo of the removed MSA.</span>
-<span class="s2">    class_name (str): ClassName of the removed MSA (e.g. "MoStemMsa").</span>
-<span class="s2">"""</span>
+<span class="s2">    class_name (str): ClassName of the removed MSA (e.g. &quot;MoStemMsa&quot;).</span>
+<span class="s2">&quot;&quot;&quot;</span>
 
 <span class="n">EntryOrphanBreakdown</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
-    <span class="s2">"EntryOrphanBreakdown"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"entry_hvo"</span><span class="p">,</span> <span class="s2">"removed_count"</span><span class="p">,</span> <span class="s2">"kept_count"</span><span class="p">)</span>
+    <span class="s2">&quot;EntryOrphanBreakdown&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;entry_hvo&quot;</span><span class="p">,</span> <span class="s2">&quot;removed_count&quot;</span><span class="p">,</span> <span class="s2">&quot;kept_count&quot;</span><span class="p">)</span>
 <span class="p">)</span>
-<span class="n">EntryOrphanBreakdown</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">"""</span>
+<span class="n">EntryOrphanBreakdown</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">Per-entry breakdown produced by MSAOperations.RemoveOrphaned.</span>
 
 <span class="s2">Fields:</span>
 <span class="s2">    entry_hvo (int): Hvo of the scanned ILexEntry.</span>
 <span class="s2">    removed_count (int): Number of orphaned MSAs removed from this</span>
-<span class="s2">        entry's MorphoSyntaxAnalysesOC.</span>
-<span class="s2">    kept_count (int): Number of MSAs in this entry's MorphoSyntaxAnalysesOC</span>
+<span class="s2">        entry&#39;s MorphoSyntaxAnalysesOC.</span>
+<span class="s2">    kept_count (int): Number of MSAs in this entry&#39;s MorphoSyntaxAnalysesOC</span>
 <span class="s2">        that were still referenced (by an entry-local sense or a</span>
 <span class="s2">        project-wide morph bundle) and therefore kept.</span>
-<span class="s2">"""</span>
+<span class="s2">&quot;&quot;&quot;</span>
 
 <span class="n">RemoveOrphanedResult</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
-    <span class="s2">"RemoveOrphanedResult"</span><span class="p">,</span>
-    <span class="p">(</span><span class="s2">"removed_count"</span><span class="p">,</span> <span class="s2">"kept_count"</span><span class="p">,</span> <span class="s2">"removed"</span><span class="p">,</span> <span class="s2">"by_entry"</span><span class="p">),</span>
+    <span class="s2">&quot;RemoveOrphanedResult&quot;</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">&quot;removed_count&quot;</span><span class="p">,</span> <span class="s2">&quot;kept_count&quot;</span><span class="p">,</span> <span class="s2">&quot;removed&quot;</span><span class="p">,</span> <span class="s2">&quot;by_entry&quot;</span><span class="p">),</span>
 <span class="p">)</span>
-<span class="n">RemoveOrphanedResult</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">"""</span>
+<span class="n">RemoveOrphanedResult</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">Structured result for MSAOperations.RemoveOrphaned.</span>
 
 <span class="s2">Fields:</span>
 <span class="s2">    removed_count (int): Total number of orphaned MSAs removed.</span>
 <span class="s2">    kept_count (int): Total number of MSAs examined that were still</span>
-<span class="s2">        referenced (by an entry-local sense's MorphoSyntaxAnalysisRA, or</span>
+<span class="s2">        referenced (by an entry-local sense&#39;s MorphoSyntaxAnalysisRA, or</span>
 <span class="s2">        project-wide by an IWfiMorphBundle.MsaRA) and therefore kept.</span>
 <span class="s2">    removed (list[RemovedMSA]): One entry per MSA actually removed.</span>
 <span class="s2">    by_entry (list[EntryOrphanBreakdown]): One entry per scanned</span>
 <span class="s2">        ILexEntry that owned at least one MSA, summarising removed/kept</span>
 <span class="s2">        counts for that entry. Entries with an empty</span>
 <span class="s2">        MorphoSyntaxAnalysesOC are omitted.</span>
-<span class="s2">"""</span>
+<span class="s2">&quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="MSAOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.MSAOperations.MSAOperations">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">MSAOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="k">class</span> <span class="nc">MSAOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creation + attach operations for morphosyntactic analyses (MSAs).</span>
 
-<span class="sd">    A LexSense's grammatical analysis lives in</span>
+<span class="sd">    A LexSense&#39;s grammatical analysis lives in</span>
 <span class="sd">    ``sense.MorphoSyntaxAnalysisRA``, which is a reference to an MSA owned</span>
 <span class="sd">    by ``sense.Entry.MorphoSyntaxAnalysesOC``. LCM offers four concrete</span>
 <span class="sd">    MSA subtypes that share IMoMorphSynAnalysis as base; each subtype has</span>
-<span class="sd">    its own factory whose 2-arg Create overload takes an owner (the sense's</span>
+<span class="sd">    its own factory whose 2-arg Create overload takes an owner (the sense&#39;s</span>
 <span class="sd">    entry) and a SandboxGenericMSA descriptor.</span>
 
 <span class="sd">    This wrapper hides the ServiceLocator + SandboxGenericMSA dance and</span>
@@ -177,54 +177,54 @@
 <span class="sd">        from flexicon import FLExProject</span>
 
 <span class="sd">        project = FLExProject()</span>
-<span class="sd">        project.OpenProject("my project", writeEnabled=True)</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
 
 <span class="sd">        entry = list(project.LexiconAllEntries())[0]</span>
 <span class="sd">        sense = entry.SensesOS[0]</span>
 
 <span class="sd">        # Stem MSA (most common case): assign POS to a lexical entry.</span>
-<span class="sd">        verb_pos = project.GramCat.Find("Verb")</span>
+<span class="sd">        verb_pos = project.POS.Find(&quot;Verb&quot;)</span>
 <span class="sd">        project.MSA.CreateStem(sense, verb_pos)</span>
 
 <span class="sd">        # Derivational affix: noun -&gt; verb</span>
-<span class="sd">        n_pos = project.GramCat.Find("Noun")</span>
-<span class="sd">        v_pos = project.GramCat.Find("Verb")</span>
+<span class="sd">        n_pos = project.POS.Find(&quot;Noun&quot;)</span>
+<span class="sd">        v_pos = project.POS.Find(&quot;Verb&quot;)</span>
 <span class="sd">        project.MSA.CreateDerivAff(sense, from_pos=n_pos, to_pos=v_pos)</span>
 
 <span class="sd">    See Also:</span>
 <span class="sd">        morphosyntax_analysis.MorphosyntaxAnalysis (reading)</span>
 <span class="sd">        msa_collection.MSACollection (iteration)</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">CreateStem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">CreateStem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create an IMoStemMsa, attach it to the sense.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            sense: An ILexSense (or HVO) to attach the MSA to.</span>
 <span class="sd">            pos: An IPartOfSpeech (or HVO) -- the grammatical category, or</span>
 <span class="sd">                None to leave PartOfSpeechRA unset. Passing None is valid and</span>
-<span class="sd">                means "grammatical category not specified" -- a very common</span>
+<span class="sd">                means &quot;grammatical category not specified&quot; -- a very common</span>
 <span class="sd">                state for stem entries in FLEx (the category cell is blank).</span>
 
 <span class="sd">                BEHAVIOR CHANGE (issue: null-category stems): previously a None</span>
 <span class="sd">                pos raised FP_NullParameterError, which made it impossible to</span>
 <span class="sd">                round-trip a legitimately category-less stem MSA. This mirrors</span>
-<span class="sd">                CreateDerivAff's to_pos=None "unset" precedent.</span>
+<span class="sd">                CreateDerivAff&#39;s to_pos=None &quot;unset&quot; precedent.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IMoStemMsa: The newly created and attached MSA.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError, FP_NullParameterError, FP_ParameterError.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">"sense"</span><span class="p">)</span>
-        <span class="c1"># pos intentionally not validated -- None is a legal "unset" value.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">&quot;sense&quot;</span><span class="p">)</span>
+        <span class="c1"># pos intentionally not validated -- None is a legal &quot;unset&quot; value.</span>
 
         <span class="n">sense_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSense</span><span class="p">(</span><span class="n">sense</span><span class="p">)</span>
         <span class="n">pos_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Resolve</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
@@ -239,8 +239,8 @@
         <span class="k">return</span> <span class="n">IMoStemMsa</span><span class="p">(</span><span class="n">new_msa</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">CreateDerivAff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">from_pos</span><span class="p">,</span> <span class="n">to_pos</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">CreateDerivAff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">from_pos</span><span class="p">,</span> <span class="n">to_pos</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create an IMoDerivAffMsa, attach it to the sense.</span>
 
 <span class="sd">        Args:</span>
@@ -248,22 +248,22 @@
 <span class="sd">            from_pos: An IPartOfSpeech the affix attaches to (input category).</span>
 <span class="sd">            to_pos: An IPartOfSpeech the affix produces (output category), or</span>
 <span class="sd">                None to leave ToPartOfSpeechRA unset. Passing None is valid</span>
-<span class="sd">                and means "output category not yet determined" -- the user can</span>
+<span class="sd">                and means &quot;output category not yet determined&quot; -- the user can</span>
 <span class="sd">                fill this in later via MSA.SetDerivAffMsaPos(sense, to_pos=X).</span>
 
 <span class="sd">                BEHAVIOR CHANGE (Cycle 4, issue #91): Previously the default</span>
 <span class="sd">                was to copy from_pos when to_pos was omitted, producing a</span>
-<span class="sd">                linguistically invalid "derivation that doesn't change</span>
-<span class="sd">                category". The default is now None (unset), which is the</span>
+<span class="sd">                linguistically invalid &quot;derivation that doesn&#39;t change</span>
+<span class="sd">                category&quot;. The default is now None (unset), which is the</span>
 <span class="sd">                correct state for an incompletely specified derivational affix.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IMoDerivAffMsa: The newly created and attached MSA.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">"sense"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">from_pos</span><span class="p">,</span> <span class="s2">"from_pos"</span><span class="p">)</span>
-        <span class="c1"># to_pos intentionally not validated -- None is a legal "unset" value.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">&quot;sense&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">from_pos</span><span class="p">,</span> <span class="s2">&quot;from_pos&quot;</span><span class="p">)</span>
+        <span class="c1"># to_pos intentionally not validated -- None is a legal &quot;unset&quot; value.</span>
 
         <span class="n">sense_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSense</span><span class="p">(</span><span class="n">sense</span><span class="p">)</span>
         <span class="n">from_pos_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Resolve</span><span class="p">(</span><span class="n">from_pos</span><span class="p">)</span>
@@ -278,30 +278,30 @@
             <span class="n">sense_obj</span><span class="p">,</span> <span class="n">sandbox</span><span class="p">,</span> <span class="n">IMoDerivAffMsaFactory</span>
         <span class="p">)</span>
         <span class="n">deriv</span> <span class="o">=</span> <span class="n">IMoDerivAffMsa</span><span class="p">(</span><span class="n">new_msa</span><span class="p">)</span>
-        <span class="c1"># Explicitly set ToPartOfSpeechRA after creation: SandboxGenericMSA's</span>
+        <span class="c1"># Explicitly set ToPartOfSpeechRA after creation: SandboxGenericMSA&#39;s</span>
         <span class="c1"># SecondaryPOS mapping may not reliably clear the field when None is</span>
         <span class="c1"># passed, so we set it directly to ensure the unset state is stored.</span>
         <span class="c1"># __CreateAndAttach has its own bracket which has already committed by</span>
         <span class="c1"># here, so this follow-up write needs a transaction of its own (D6).</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set derivational affix output category"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set derivational affix output category&quot;</span><span class="p">):</span>
             <span class="n">deriv</span><span class="o">.</span><span class="n">ToPartOfSpeechRA</span> <span class="o">=</span> <span class="n">to_pos_obj</span>
         <span class="k">return</span> <span class="n">deriv</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">CreateInflAff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">CreateInflAff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create an IMoInflAffMsa, attach it to the sense.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            sense: An ILexSense (or HVO) to attach the MSA to.</span>
 <span class="sd">            pos: An IPartOfSpeech -- the category this affix inflects, or None</span>
 <span class="sd">                to leave PartOfSpeechRA unset. Passing None is valid and means</span>
-<span class="sd">                "category not yet specified": an inflectional affix MSA may</span>
+<span class="sd">                &quot;category not yet specified&quot;: an inflectional affix MSA may</span>
 <span class="sd">                legitimately carry a blank category cell in FLEx. Mirrors</span>
-<span class="sd">                CreateStem's / CreateUnclassifiedAffix's pos=None support.</span>
+<span class="sd">                CreateStem&#39;s / CreateUnclassifiedAffix&#39;s pos=None support.</span>
 <span class="sd">            slots: Optional sequence of IMoInflAffixSlot objects. Slots</span>
-<span class="sd">                are added to the MSA's SlotsRC reference collection</span>
-<span class="sd">                after creation (Phase 2 ownership-ordering doesn't apply</span>
+<span class="sd">                are added to the MSA&#39;s SlotsRC reference collection</span>
+<span class="sd">                after creation (Phase 2 ownership-ordering doesn&#39;t apply</span>
 <span class="sd">                to reference collections).</span>
 
 <span class="sd">        Returns:</span>
@@ -313,15 +313,15 @@
 <span class="sd">            affix is valid for. If the language uses inflection classes</span>
 <span class="sd">            AND the target slot has class restrictions, HermitCrab will</span>
 <span class="sd">            reject analyses where the MSA is not wired into a slot</span>
-<span class="sd">            whose ``InflectionClassesRC`` matches the stem's class.</span>
-<span class="sd">            Populate ``slots`` here, then configure each slot's</span>
+<span class="sd">            whose ``InflectionClassesRC`` matches the stem&#39;s class.</span>
+<span class="sd">            Populate ``slots`` here, then configure each slot&#39;s</span>
 <span class="sd">            ``InflectionClassesRC`` separately. Languages without</span>
 <span class="sd">            inflection classes do not need slot-level class</span>
 <span class="sd">            restrictions.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">"sense"</span><span class="p">)</span>
-        <span class="c1"># pos intentionally not validated -- None is a legal "unset" value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">&quot;sense&quot;</span><span class="p">)</span>
+        <span class="c1"># pos intentionally not validated -- None is a legal &quot;unset&quot; value</span>
         <span class="c1"># (a category-less inflectional affix). Mirrors CreateUnclassifiedAffix.</span>
 
         <span class="n">sense_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSense</span><span class="p">(</span><span class="n">sense</span><span class="p">)</span>
@@ -331,7 +331,7 @@
         <span class="n">sandbox</span><span class="o">.</span><span class="n">MsaType</span> <span class="o">=</span> <span class="n">MsaType</span><span class="o">.</span><span class="n">kInfl</span>
         <span class="n">sandbox</span><span class="o">.</span><span class="n">MainPOS</span> <span class="o">=</span> <span class="n">pos_obj</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Create inflectional affix MSA"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create inflectional affix MSA&quot;</span><span class="p">):</span>
             <span class="n">new_msa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__CreateAndAttach</span><span class="p">(</span>
                 <span class="n">sense_obj</span><span class="p">,</span> <span class="n">sandbox</span><span class="p">,</span> <span class="n">IMoInflAffMsaFactory</span>
             <span class="p">)</span>
@@ -345,24 +345,24 @@
             <span class="k">return</span> <span class="n">new_msa</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">CreateUnclassifiedAffix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">CreateUnclassifiedAffix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create an IMoUnclassifiedAffixMsa, attach it to the sense.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            sense: An ILexSense (or HVO) to attach the MSA to.</span>
 <span class="sd">            pos: An IPartOfSpeech (or HVO) -- the grammatical category, or None</span>
 <span class="sd">                to leave PartOfSpeechRA unset. Passing None is valid and means</span>
-<span class="sd">                "category not specified" -- an unclassified affix legitimately</span>
-<span class="sd">                may carry no grammatical category (that is what "unclassified"</span>
-<span class="sd">                means). Mirrors CreateStem's / CreateDerivAff's pos=None support.</span>
+<span class="sd">                &quot;category not specified&quot; -- an unclassified affix legitimately</span>
+<span class="sd">                may carry no grammatical category (that is what &quot;unclassified&quot;</span>
+<span class="sd">                means). Mirrors CreateStem&#39;s / CreateDerivAff&#39;s pos=None support.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IMoUnclassifiedAffixMsa: The newly created and attached MSA.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">"sense"</span><span class="p">)</span>
-        <span class="c1"># pos intentionally not validated -- None is a legal "unset" value.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">&quot;sense&quot;</span><span class="p">)</span>
+        <span class="c1"># pos intentionally not validated -- None is a legal &quot;unset&quot; value.</span>
 
         <span class="n">sense_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSense</span><span class="p">(</span><span class="n">sense</span><span class="p">)</span>
         <span class="n">pos_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Resolve</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
@@ -377,53 +377,53 @@
         <span class="k">return</span> <span class="n">IMoUnclassifiedAffixMsa</span><span class="p">(</span><span class="n">new_msa</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">SetStemMsaPos</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">SetStemMsaPos</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Update the POS on an existing IMoStemMsa attached to a sense.</span>
 
-<span class="sd">        If the sense has no MSA, or if its MSA isn't a stem MSA, raises</span>
+<span class="sd">        If the sense has no MSA, or if its MSA isn&#39;t a stem MSA, raises</span>
 <span class="sd">        FP_ParameterError. For type conversion (e.g. stem -&gt; deriv-aff)</span>
 <span class="sd">        the caller should create a new MSA via CreateStem / CreateDerivAff;</span>
 <span class="sd">        in-place conversion across MSA types is intentionally not</span>
-<span class="sd">        supported by this wrapper because LCM doesn't expose a clean</span>
+<span class="sd">        supported by this wrapper because LCM doesn&#39;t expose a clean</span>
 <span class="sd">        idiom for it.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            sense: An ILexSense whose MSA should be updated.</span>
 <span class="sd">            pos: New IPartOfSpeech (or HVO) for the stem.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">"sense"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="s2">"pos"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">&quot;sense&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="s2">&quot;pos&quot;</span><span class="p">)</span>
 
         <span class="n">sense_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSense</span><span class="p">(</span><span class="n">sense</span><span class="p">)</span>
         <span class="n">existing</span> <span class="o">=</span> <span class="n">sense_obj</span><span class="o">.</span><span class="n">MorphoSyntaxAnalysisRA</span>
         <span class="k">if</span> <span class="n">existing</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="s2">"Sense has no MSA; use CreateStem to create one."</span>
+                <span class="s2">&quot;Sense has no MSA; use CreateStem to create one.&quot;</span>
             <span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">stem</span> <span class="o">=</span> <span class="n">IMoStemMsa</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="s2">"Sense's existing MSA is not a stem MSA. To change MSA "</span>
-                <span class="s2">"type, create a new MSA with the appropriate Create* method."</span>
+                <span class="s2">&quot;Sense&#39;s existing MSA is not a stem MSA. To change MSA &quot;</span>
+                <span class="s2">&quot;type, create a new MSA with the appropriate Create* method.&quot;</span>
             <span class="p">)</span>
 
         <span class="c1"># Resolution stays outside the bracket so an unresolvable POS raises</span>
         <span class="c1"># before a named undo entry is opened (D5).</span>
         <span class="n">pos_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Resolve</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set stem MSA POS"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set stem MSA POS&quot;</span><span class="p">):</span>
             <span class="n">stem</span><span class="o">.</span><span class="n">PartOfSpeechRA</span> <span class="o">=</span> <span class="n">pos_obj</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">SetDerivAffMsaPos</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">from_pos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">to_pos</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">SetDerivAffMsaPos</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">from_pos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">to_pos</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Update the from-POS and/or to-POS on an existing IMoDerivAffMsa</span>
 <span class="sd">        attached to a sense.</span>
 
-<span class="sd">        If the sense has no MSA, or if its MSA isn't a derivational-affix</span>
+<span class="sd">        If the sense has no MSA, or if its MSA isn&#39;t a derivational-affix</span>
 <span class="sd">        MSA, raises FP_ParameterError. At least one of from_pos or to_pos</span>
 <span class="sd">        must be supplied.</span>
 
@@ -433,31 +433,31 @@
 <span class="sd">                (FromPartOfSpeechRA). Pass None to leave unchanged.</span>
 <span class="sd">            to_pos: New IPartOfSpeech (or HVO) for the output category</span>
 <span class="sd">                (ToPartOfSpeechRA). Pass None to leave unchanged.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">"sense"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">&quot;sense&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">from_pos</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">to_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="s2">"At least one of from_pos or to_pos must be supplied."</span>
+                <span class="s2">&quot;At least one of from_pos or to_pos must be supplied.&quot;</span>
             <span class="p">)</span>
 
         <span class="n">sense_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSense</span><span class="p">(</span><span class="n">sense</span><span class="p">)</span>
         <span class="n">existing</span> <span class="o">=</span> <span class="n">sense_obj</span><span class="o">.</span><span class="n">MorphoSyntaxAnalysisRA</span>
         <span class="k">if</span> <span class="n">existing</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="s2">"Sense has no MSA; use CreateDerivAff to create one."</span>
+                <span class="s2">&quot;Sense has no MSA; use CreateDerivAff to create one.&quot;</span>
             <span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">deriv</span> <span class="o">=</span> <span class="n">IMoDerivAffMsa</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="s2">"Sense's existing MSA is not a derivational-affix MSA. To "</span>
-                <span class="s2">"change MSA type, create a new MSA with the appropriate "</span>
-                <span class="s2">"Create* method."</span>
+                <span class="s2">&quot;Sense&#39;s existing MSA is not a derivational-affix MSA. To &quot;</span>
+                <span class="s2">&quot;change MSA type, create a new MSA with the appropriate &quot;</span>
+                <span class="s2">&quot;Create* method.&quot;</span>
             <span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set derivational affix MSA POS"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set derivational affix MSA POS&quot;</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">from_pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">deriv</span><span class="o">.</span><span class="n">FromPartOfSpeechRA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Resolve</span><span class="p">(</span><span class="n">from_pos</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">to_pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -469,14 +469,14 @@
 
     <span class="c1"># Map ClassName -&gt; source kind tag for internal use.</span>
     <span class="n">_AFFIX_CLASS_TO_KIND</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">"MoInflAffMsa"</span><span class="p">:</span> <span class="s2">"infl"</span><span class="p">,</span>
-        <span class="s2">"MoDerivAffMsa"</span><span class="p">:</span> <span class="s2">"deriv"</span><span class="p">,</span>
-        <span class="s2">"MoUnclassifiedAffixMsa"</span><span class="p">:</span> <span class="s2">"unclassified"</span><span class="p">,</span>
+        <span class="s2">&quot;MoInflAffMsa&quot;</span><span class="p">:</span> <span class="s2">&quot;infl&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MoDerivAffMsa&quot;</span><span class="p">:</span> <span class="s2">&quot;deriv&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MoUnclassifiedAffixMsa&quot;</span><span class="p">:</span> <span class="s2">&quot;unclassified&quot;</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">ChangeAffixVariant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="n">target_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">ChangeAffixVariant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="n">target_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Convert an existing affix MSA to a different affix variant.</span>
 
 <span class="sd">        Creates a new MSA of the requested kind, copies the fields that</span>
@@ -489,7 +489,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            msa: An existing affix MSA (IMoInflAffMsa, IMoDerivAffMsa,</span>
 <span class="sd">                or IMoUnclassifiedAffixMsa).</span>
-<span class="sd">            target_kind: 'infl' | 'deriv' | 'unclassified'</span>
+<span class="sd">            target_kind: &#39;infl&#39; | &#39;deriv&#39; | &#39;unclassified&#39;</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The new MSA (same type as requested by target_kind), or</span>
@@ -514,45 +514,45 @@
 <span class="sd">              InflFeatsOA, FromPartOfSpeechRA, From/ToInflectionClassRA,</span>
 <span class="sd">              StratumRA, From/ToProdRestrictRC) are logged as warnings</span>
 <span class="sd">              only when they carry actual data on the source MSA.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="s2">"msa"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="s2">&quot;msa&quot;</span><span class="p">)</span>
 
-        <span class="n">_VALID_KINDS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"infl"</span><span class="p">,</span> <span class="s2">"deriv"</span><span class="p">,</span> <span class="s2">"unclassified"</span><span class="p">}</span>
+        <span class="n">_VALID_KINDS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;infl&quot;</span><span class="p">,</span> <span class="s2">&quot;deriv&quot;</span><span class="p">,</span> <span class="s2">&quot;unclassified&quot;</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">target_kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_VALID_KINDS</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"target_kind must be one of </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">_VALID_KINDS</span><span class="p">)</span><span class="si">}</span><span class="s2">; "</span>
-                <span class="sa">f</span><span class="s2">"got </span><span class="si">{</span><span class="n">target_kind</span><span class="si">!r}</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">&quot;target_kind must be one of </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">_VALID_KINDS</span><span class="p">)</span><span class="si">}</span><span class="s2">; &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">target_kind</span><span class="si">!r}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
         <span class="n">source_class</span> <span class="o">=</span> <span class="n">msa</span><span class="o">.</span><span class="n">ClassName</span>
         <span class="n">source_kind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_AFFIX_CLASS_TO_KIND</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">source_class</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">source_kind</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"msa must be an affix MSA (MoInflAffMsa, MoDerivAffMsa, "</span>
-                <span class="sa">f</span><span class="s2">"or MoUnclassifiedAffixMsa); got ClassName=</span><span class="si">{</span><span class="n">source_class</span><span class="si">!r}</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">&quot;msa must be an affix MSA (MoInflAffMsa, MoDerivAffMsa, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;or MoUnclassifiedAffixMsa); got ClassName=</span><span class="si">{</span><span class="n">source_class</span><span class="si">!r}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="n">target_kind</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="s2">"ChangeAffixVariant: source and target kinds are both </span><span class="si">%r</span><span class="s2">; "</span>
-                <span class="s2">"returning msa unchanged."</span><span class="p">,</span>
+                <span class="s2">&quot;ChangeAffixVariant: source and target kinds are both </span><span class="si">%r</span><span class="s2">; &quot;</span>
+                <span class="s2">&quot;returning msa unchanged.&quot;</span><span class="p">,</span>
                 <span class="n">target_kind</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">msa</span>
 
-        <span class="c1"># Resolve the owning entry via the MSA's Owner.</span>
+        <span class="c1"># Resolve the owning entry via the MSA&#39;s Owner.</span>
         <span class="n">entry</span> <span class="o">=</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">msa</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
 
-        <span class="c1"># Build a temporary sense proxy to satisfy __CreateAndAttach's</span>
+        <span class="c1"># Build a temporary sense proxy to satisfy __CreateAndAttach&#39;s</span>
         <span class="c1"># interface: we need a sense that owns the entry so the factory</span>
-        <span class="c1"># attaches the new MSA to the entry's MorphoSyntaxAnalysesOC.</span>
+        <span class="c1"># attaches the new MSA to the entry&#39;s MorphoSyntaxAnalysesOC.</span>
         <span class="c1"># We pick the first sense in the entry (they all share the same</span>
         <span class="c1"># owning entry; we will repoint senses manually after creation).</span>
         <span class="n">senses_in_entry</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">senses_in_entry</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="s2">"Owning entry has no senses; cannot attach a new MSA."</span>
+                <span class="s2">&quot;Owning entry has no senses; cannot attach a new MSA.&quot;</span>
             <span class="p">)</span>
         <span class="n">any_sense</span> <span class="o">=</span> <span class="n">senses_in_entry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
@@ -564,10 +564,10 @@
         <span class="c1">#   Deriv  -&gt; Unclass:     ToPartOfSpeechRA    -&gt; PartOfSpeechRA</span>
         <span class="c1">#   Unclass-&gt; Infl:        PartOfSpeechRA      -&gt; PartOfSpeechRA</span>
         <span class="c1">#   Unclass-&gt; Deriv:       PartOfSpeechRA      -&gt; ToPartOfSpeechRA</span>
-        <span class="k">if</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="s2">"infl"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="s2">&quot;infl&quot;</span><span class="p">:</span>
             <span class="n">concrete_src</span> <span class="o">=</span> <span class="n">IMoInflAffMsa</span><span class="p">(</span><span class="n">msa</span><span class="p">)</span>
             <span class="n">src_pos</span> <span class="o">=</span> <span class="n">concrete_src</span><span class="o">.</span><span class="n">PartOfSpeechRA</span>
-        <span class="k">elif</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="s2">"deriv"</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="s2">&quot;deriv&quot;</span><span class="p">:</span>
             <span class="n">concrete_src</span> <span class="o">=</span> <span class="n">IMoDerivAffMsa</span><span class="p">(</span><span class="n">msa</span><span class="p">)</span>
             <span class="n">src_pos</span> <span class="o">=</span> <span class="n">concrete_src</span><span class="o">.</span><span class="n">ToPartOfSpeechRA</span>
         <span class="k">else</span><span class="p">:</span>  <span class="c1"># unclassified</span>
@@ -576,48 +576,48 @@
 
         <span class="c1"># --- Warn about fields that will be lost (only if populated) ---</span>
         <span class="n">lost_fields</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">if</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="s2">"infl"</span> <span class="ow">and</span> <span class="n">target_kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"deriv"</span><span class="p">,</span> <span class="s2">"unclassified"</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="s2">&quot;infl&quot;</span> <span class="ow">and</span> <span class="n">target_kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;deriv&quot;</span><span class="p">,</span> <span class="s2">&quot;unclassified&quot;</span><span class="p">):</span>
             <span class="n">infl_src</span> <span class="o">=</span> <span class="n">concrete_src</span>
             <span class="k">if</span> <span class="n">infl_src</span><span class="o">.</span><span class="n">SlotsRC</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">infl_src</span><span class="o">.</span><span class="n">SlotsRC</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">lost_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"SlotsRC"</span><span class="p">)</span>
+                <span class="n">lost_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;SlotsRC&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">infl_src</span><span class="o">.</span><span class="n">InflFeatsOA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">lost_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"InflFeatsOA"</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="s2">"deriv"</span> <span class="ow">and</span> <span class="n">target_kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"infl"</span><span class="p">,</span> <span class="s2">"unclassified"</span><span class="p">):</span>
+                <span class="n">lost_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;InflFeatsOA&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="s2">&quot;deriv&quot;</span> <span class="ow">and</span> <span class="n">target_kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;infl&quot;</span><span class="p">,</span> <span class="s2">&quot;unclassified&quot;</span><span class="p">):</span>
             <span class="n">deriv_src</span> <span class="o">=</span> <span class="n">concrete_src</span>
             <span class="k">if</span> <span class="n">deriv_src</span><span class="o">.</span><span class="n">FromPartOfSpeechRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">lost_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"FromPartOfSpeechRA"</span><span class="p">)</span>
+                <span class="n">lost_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;FromPartOfSpeechRA&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="p">(</span>
-                <span class="nb">hasattr</span><span class="p">(</span><span class="n">deriv_src</span><span class="p">,</span> <span class="s2">"FromInflectionClassRA"</span><span class="p">)</span>
+                <span class="nb">hasattr</span><span class="p">(</span><span class="n">deriv_src</span><span class="p">,</span> <span class="s2">&quot;FromInflectionClassRA&quot;</span><span class="p">)</span>
                 <span class="ow">and</span> <span class="n">deriv_src</span><span class="o">.</span><span class="n">FromInflectionClassRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="p">):</span>
-                <span class="n">lost_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"FromInflectionClassRA"</span><span class="p">)</span>
+                <span class="n">lost_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;FromInflectionClassRA&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="p">(</span>
-                <span class="nb">hasattr</span><span class="p">(</span><span class="n">deriv_src</span><span class="p">,</span> <span class="s2">"ToInflectionClassRA"</span><span class="p">)</span>
+                <span class="nb">hasattr</span><span class="p">(</span><span class="n">deriv_src</span><span class="p">,</span> <span class="s2">&quot;ToInflectionClassRA&quot;</span><span class="p">)</span>
                 <span class="ow">and</span> <span class="n">deriv_src</span><span class="o">.</span><span class="n">ToInflectionClassRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="p">):</span>
-                <span class="n">lost_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"ToInflectionClassRA"</span><span class="p">)</span>
+                <span class="n">lost_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;ToInflectionClassRA&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="p">(</span>
-                <span class="nb">hasattr</span><span class="p">(</span><span class="n">deriv_src</span><span class="p">,</span> <span class="s2">"StratumRA"</span><span class="p">)</span>
+                <span class="nb">hasattr</span><span class="p">(</span><span class="n">deriv_src</span><span class="p">,</span> <span class="s2">&quot;StratumRA&quot;</span><span class="p">)</span>
                 <span class="ow">and</span> <span class="n">deriv_src</span><span class="o">.</span><span class="n">StratumRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="p">):</span>
-                <span class="n">lost_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"StratumRA"</span><span class="p">)</span>
+                <span class="n">lost_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;StratumRA&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">lost_fields</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">"ChangeAffixVariant: converting </span><span class="si">%r</span><span class="s2"> -&gt; </span><span class="si">%r</span><span class="s2"> on entry Hvo=</span><span class="si">%s</span><span class="s2">; "</span>
-                <span class="s2">"the following fields carry data but cannot transfer to the "</span>
-                <span class="s2">"new MSA variant and will be lost: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
+                <span class="s2">&quot;ChangeAffixVariant: converting </span><span class="si">%r</span><span class="s2"> -&gt; </span><span class="si">%r</span><span class="s2"> on entry Hvo=</span><span class="si">%s</span><span class="s2">; &quot;</span>
+                <span class="s2">&quot;the following fields carry data but cannot transfer to the &quot;</span>
+                <span class="s2">&quot;new MSA variant and will be lost: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
                 <span class="n">source_kind</span><span class="p">,</span>
                 <span class="n">target_kind</span><span class="p">,</span>
                 <span class="n">entry</span><span class="o">.</span><span class="n">Hvo</span><span class="p">,</span>
-                <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lost_fields</span><span class="p">),</span>
+                <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lost_fields</span><span class="p">),</span>
             <span class="p">)</span>
 
         <span class="c1"># --- Create the new MSA ---</span>
         <span class="c1"># We temporarily attach it to any_sense; we will repoint senses</span>
         <span class="c1"># explicitly below, so this initial attachment is fine.</span>
         <span class="n">sandbox</span> <span class="o">=</span> <span class="n">SandboxGenericMSA</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">target_kind</span> <span class="o">==</span> <span class="s2">"infl"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">target_kind</span> <span class="o">==</span> <span class="s2">&quot;infl&quot;</span><span class="p">:</span>
             <span class="n">sandbox</span><span class="o">.</span><span class="n">MsaType</span> <span class="o">=</span> <span class="n">MsaType</span><span class="o">.</span><span class="n">kInfl</span>
             <span class="n">sandbox</span><span class="o">.</span><span class="n">MainPOS</span> <span class="o">=</span> <span class="n">src_pos</span>
             <span class="n">raw_new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__CreateAndAttach</span><span class="p">(</span><span class="n">any_sense</span><span class="p">,</span> <span class="n">sandbox</span><span class="p">,</span> <span class="n">IMoInflAffMsaFactory</span><span class="p">)</span>
@@ -625,9 +625,9 @@
             <span class="c1"># Unclass-&gt;Infl: PartOfSpeechRA is already set via MainPOS.</span>
             <span class="c1"># No additional field copies needed.</span>
             <span class="c1"># Deriv-&gt;Infl: ToPartOfSpeechRA -&gt; PartOfSpeechRA (done via MainPOS).</span>
-        <span class="k">elif</span> <span class="n">target_kind</span> <span class="o">==</span> <span class="s2">"deriv"</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">target_kind</span> <span class="o">==</span> <span class="s2">&quot;deriv&quot;</span><span class="p">:</span>
             <span class="n">sandbox</span><span class="o">.</span><span class="n">MsaType</span> <span class="o">=</span> <span class="n">MsaType</span><span class="o">.</span><span class="n">kDeriv</span>
-            <span class="k">if</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="s2">"infl"</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="s2">&quot;infl&quot;</span><span class="p">:</span>
                 <span class="c1"># Infl-&gt;Deriv: PartOfSpeechRA -&gt; FromPartOfSpeechRA; ToPartOfSpeechRA is blank.</span>
                 <span class="n">sandbox</span><span class="o">.</span><span class="n">MainPOS</span> <span class="o">=</span> <span class="n">src_pos</span>
                 <span class="n">sandbox</span><span class="o">.</span><span class="n">SecondaryPOS</span> <span class="o">=</span> <span class="kc">None</span>
@@ -639,12 +639,12 @@
             <span class="n">new_msa</span> <span class="o">=</span> <span class="n">IMoDerivAffMsa</span><span class="p">(</span><span class="n">raw_new</span><span class="p">)</span>
             <span class="c1"># Patch the POS fields directly after creation since the</span>
             <span class="c1"># sandbox MainPOS/SecondaryPOS mapping may not be symmetric.</span>
-            <span class="c1"># __CreateAndAttach's own bracket has already committed, so this</span>
+            <span class="c1"># __CreateAndAttach&#39;s own bracket has already committed, so this</span>
             <span class="c1"># follow-up patch needs a transaction of its own (D6). The</span>
             <span class="c1"># source_kind dispatch stays INSIDE it: both branches mutate, so</span>
             <span class="c1"># there is no no-op path to protect (D5).</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set derivational affix POS fields"</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="s2">"infl"</span><span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set derivational affix POS fields&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">source_kind</span> <span class="o">==</span> <span class="s2">&quot;infl&quot;</span><span class="p">:</span>
                     <span class="n">new_msa</span><span class="o">.</span><span class="n">FromPartOfSpeechRA</span> <span class="o">=</span> <span class="n">src_pos</span>
                     <span class="n">new_msa</span><span class="o">.</span><span class="n">ToPartOfSpeechRA</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -664,13 +664,13 @@
         <span class="k">for</span> <span class="n">sense</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">sense</span><span class="o">.</span><span class="n">MorphoSyntaxAnalysisRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">sense</span><span class="o">.</span><span class="n">MorphoSyntaxAnalysisRA</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">msa</span><span class="o">.</span><span class="n">Hvo</span><span class="p">:</span>
-                    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Repoint sense to new MSA"</span><span class="p">):</span>
+                    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Repoint sense to new MSA&quot;</span><span class="p">):</span>
                         <span class="n">sense</span><span class="o">.</span><span class="n">MorphoSyntaxAnalysisRA</span> <span class="o">=</span> <span class="n">new_msa</span>
                     <span class="n">repointed</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="s2">"ChangeAffixVariant: repointed </span><span class="si">%d</span><span class="s2"> sense(s) from old MSA Hvo=</span><span class="si">%s</span><span class="s2"> "</span>
-            <span class="s2">"to new MSA Hvo=</span><span class="si">%s</span><span class="s2">."</span><span class="p">,</span>
+            <span class="s2">&quot;ChangeAffixVariant: repointed </span><span class="si">%d</span><span class="s2"> sense(s) from old MSA Hvo=</span><span class="si">%s</span><span class="s2"> &quot;</span>
+            <span class="s2">&quot;to new MSA Hvo=</span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span>
             <span class="n">repointed</span><span class="p">,</span>
             <span class="n">msa</span><span class="o">.</span><span class="n">Hvo</span><span class="p">,</span>
             <span class="n">new_msa</span><span class="o">.</span><span class="n">Hvo</span><span class="p">,</span>
@@ -685,29 +685,29 @@
         <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">still_referenced</span><span class="p">:</span>
             <span class="c1"># LCM may have already cascade-deleted the old MSA when</span>
-            <span class="c1"># __CreateAndAttach overwrote the anchor sense's</span>
+            <span class="c1"># __CreateAndAttach overwrote the anchor sense&#39;s</span>
             <span class="c1"># MorphoSyntaxAnalysisRA, since a sense ref alone keeps the</span>
             <span class="c1"># MSA alive (cf. LT-14740 in OverridesLing_Lex.cs:1500).</span>
-            <span class="c1"># Mirror LCM's own guard: only Remove() when still valid.</span>
+            <span class="c1"># Mirror LCM&#39;s own guard: only Remove() when still valid.</span>
             <span class="k">if</span> <span class="n">msa</span><span class="o">.</span><span class="n">IsValidObject</span><span class="p">:</span>
-                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Remove superseded MSA"</span><span class="p">):</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove superseded MSA&quot;</span><span class="p">):</span>
                     <span class="n">entry</span><span class="o">.</span><span class="n">MorphoSyntaxAnalysesOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">msa</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="s2">"ChangeAffixVariant: old MSA Hvo=</span><span class="si">%s</span><span class="s2"> removed from "</span>
-                    <span class="s2">"MorphoSyntaxAnalysesOC (no senses remaining)."</span><span class="p">,</span>
+                    <span class="s2">&quot;ChangeAffixVariant: old MSA Hvo=</span><span class="si">%s</span><span class="s2"> removed from &quot;</span>
+                    <span class="s2">&quot;MorphoSyntaxAnalysesOC (no senses remaining).&quot;</span><span class="p">,</span>
                     <span class="n">msa</span><span class="o">.</span><span class="n">Hvo</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="s2">"ChangeAffixVariant: old MSA was already cascade-"</span>
-                    <span class="s2">"deleted by LCM; no explicit Remove needed."</span>
+                    <span class="s2">&quot;ChangeAffixVariant: old MSA was already cascade-&quot;</span>
+                    <span class="s2">&quot;deleted by LCM; no explicit Remove needed.&quot;</span>
                 <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">"ChangeAffixVariant: old MSA Hvo=</span><span class="si">%s</span><span class="s2"> is still referenced by "</span>
-                <span class="s2">"one or more senses after repointing and has been left in "</span>
-                <span class="s2">"MorphoSyntaxAnalysesOC. Call RemoveOrphaned() afterwards "</span>
-                <span class="s2">"to clean up any MSA that is truly unreferenced (issue #206)."</span><span class="p">,</span>
+                <span class="s2">&quot;ChangeAffixVariant: old MSA Hvo=</span><span class="si">%s</span><span class="s2"> is still referenced by &quot;</span>
+                <span class="s2">&quot;one or more senses after repointing and has been left in &quot;</span>
+                <span class="s2">&quot;MorphoSyntaxAnalysesOC. Call RemoveOrphaned() afterwards &quot;</span>
+                <span class="s2">&quot;to clean up any MSA that is truly unreferenced (issue #206).&quot;</span><span class="p">,</span>
                 <span class="n">msa</span><span class="o">.</span><span class="n">Hvo</span><span class="p">,</span>
             <span class="p">)</span>
 
@@ -718,14 +718,14 @@
     <span class="c1"># ------------------------------------------------------------------</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveOrphaned</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">RemoveOrphaned</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove MSAs that are no longer referenced by any sense or morph</span>
 <span class="sd">        bundle.</span>
 
-<span class="sd">        SetPartOfSpeech and ChangeAffixVariant detach a sense's</span>
+<span class="sd">        SetPartOfSpeech and ChangeAffixVariant detach a sense&#39;s</span>
 <span class="sd">        MorphoSyntaxAnalysisRA from an old MSA when reassigning or</span>
-<span class="sd">        converting it, but the old MSA can remain in its owning entry's</span>
+<span class="sd">        converting it, but the old MSA can remain in its owning entry&#39;s</span>
 <span class="sd">        MorphoSyntaxAnalysesOC. That is safe to leave in place ONLY if</span>
 <span class="sd">        nothing else still points at it. This method performs the</span>
 <span class="sd">        project-wide safety check and removes any MSA that is truly</span>
@@ -738,7 +738,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            entry: An ILexEntry (or HVO) to limit the *scanned* MSAs to</span>
-<span class="sd">                (only that entry's MorphoSyntaxAnalysesOC is examined for</span>
+<span class="sd">                (only that entry&#39;s MorphoSyntaxAnalysesOC is examined for</span>
 <span class="sd">                removal candidates). Pass None (the default) to sweep</span>
 <span class="sd">                every entry in the project. In BOTH cases, the safety</span>
 <span class="sd">                check against morph bundles is performed project-wide --</span>
@@ -776,7 +776,7 @@
 <span class="sd">              against that set -- never an O(MSAs x bundles) nested scan.</span>
 <span class="sd">            - Guards ``IsValidObject`` before removal, mirroring the</span>
 <span class="sd">              cascade-delete guard already used by ChangeAffixVariant.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">entry</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -801,7 +801,7 @@
         <span class="n">kept_count</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Remove orphaned MSAs"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove orphaned MSAs&quot;</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">entry_obj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
                 <span class="c1"># Entry-local sense back-refs.</span>
                 <span class="n">sense_msa_hvos</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -846,18 +846,18 @@
                         <span class="n">progress</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">total</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                            <span class="s2">"RemoveOrphaned: progress callback raised; "</span>
-                            <span class="s2">"ignoring."</span><span class="p">,</span>
+                            <span class="s2">&quot;RemoveOrphaned: progress callback raised; &quot;</span>
+                            <span class="s2">&quot;ignoring.&quot;</span><span class="p">,</span>
                             <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                         <span class="p">)</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">"RemoveOrphaned: removed </span><span class="si">%d</span><span class="s2"> orphaned MSA(s), kept </span><span class="si">%d</span><span class="s2"> "</span>
-            <span class="s2">"still-referenced MSA(s) across </span><span class="si">%d</span><span class="s2"> entr</span><span class="si">%s</span><span class="s2">."</span><span class="p">,</span>
+            <span class="s2">&quot;RemoveOrphaned: removed </span><span class="si">%d</span><span class="s2"> orphaned MSA(s), kept </span><span class="si">%d</span><span class="s2"> &quot;</span>
+            <span class="s2">&quot;still-referenced MSA(s) across </span><span class="si">%d</span><span class="s2"> entr</span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span>
             <span class="n">removed_count</span><span class="p">,</span>
             <span class="n">kept_count</span><span class="p">,</span>
             <span class="n">total</span><span class="p">,</span>
-            <span class="s2">"y"</span> <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">"ies"</span><span class="p">,</span>
+            <span class="s2">&quot;y&quot;</span> <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;ies&quot;</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">RemoveOrphanedResult</span><span class="p">(</span><span class="n">removed_count</span><span class="p">,</span> <span class="n">kept_count</span><span class="p">,</span> <span class="n">removed</span><span class="p">,</span> <span class="n">by_entry</span><span class="p">)</span>
@@ -867,9 +867,9 @@
     <span class="c1"># Closes issue #251 (spec feature-structure-sync-gap, task T6):</span>
     <span class="c1"># MSAOperations previously had ZERO sync methods, so every MSA synced</span>
     <span class="c1"># across projects carried a correct ClassName/POS but a permanently</span>
-    <span class="c1"># null feature structure -- an MoStemMsa's MsFeaturesOA, an</span>
-    <span class="c1"># MoInflAffMsa's InflFeatsOA, or an MoDerivAffMsa's From/ToMsFeaturesOA</span>
-    <span class="c1"># (contract C1). Shape mirrors NaturalClassOperations'</span>
+    <span class="c1"># null feature structure -- an MoStemMsa&#39;s MsFeaturesOA, an</span>
+    <span class="c1"># MoInflAffMsa&#39;s InflFeatsOA, or an MoDerivAffMsa&#39;s From/ToMsFeaturesOA</span>
+    <span class="c1"># (contract C1). Shape mirrors NaturalClassOperations&#39;</span>
     <span class="c1"># GetSyncableProperties/ApplySyncableProperties (:1039/:1169), the</span>
     <span class="c1"># reference implementation for this whole feature family, but the</span>
     <span class="c1"># dispatch itself is unique to MSA: unlike a natural class (reached via</span>
@@ -883,10 +883,10 @@
     <span class="c1"># is not dead code.</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get dictionary of syncable properties for cross-project</span>
-<span class="sd">        synchronization of an MSA's feature structure(s).</span>
+<span class="sd">        synchronization of an MSA&#39;s feature structure(s).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            item: An IMoStemMsa / IMoInflAffMsa / IMoDerivAffMsa /</span>
@@ -905,7 +905,7 @@
 <span class="sd">              ``FromMsFeaturesGuid`` (``FromMsFeaturesOA``) AND</span>
 <span class="sd">              ``ToMsFeatures``/``ToMsFeaturesGuid`` (``ToMsFeaturesOA``) --</span>
 <span class="sd">              a derivational affix MSA has two independent feature-struct</span>
-<span class="sd">              slots (C1 ``slot="From"``/``"To"``), each captured</span>
+<span class="sd">              slots (C1 ``slot=&quot;From&quot;``/``&quot;To&quot;``), each captured</span>
 <span class="sd">              independently; either, both, or neither key-pair may be</span>
 <span class="sd">              present depending on which slots are actually populated.</span>
 <span class="sd">            - ``MoUnclassifiedAffixMsa``: always ``{}`` -- confirmed by the</span>
@@ -917,32 +917,32 @@
 <span class="sd">              the C1 table by design): always ``{}``. The resolver is</span>
 <span class="sd">              never consulted for an out-of-table ClassName either, so</span>
 <span class="sd">              this defensive fallback cannot raise -- mirrors</span>
-<span class="sd">              ``NaturalClassOperations.GetSyncableProperties``'s own</span>
+<span class="sd">              ``NaturalClassOperations.GetSyncableProperties``&#39;s own</span>
 <span class="sd">              unknown-``ClassName`` fallback.</span>
 
 <span class="sd">            An owning property that is present but genuinely empty (an</span>
 <span class="sd">            ``IFsFeatStruc`` with zero ``FeatureSpecsOC`` entries) still</span>
 <span class="sd">            emits BOTH its ``&lt;Name&gt;``/``&lt;Name&gt;Guid`` keys -- ``&lt;Name&gt;``</span>
-<span class="sd">            serialises to ``{"TypeGuid": ..., "specs": {}}``, never</span>
+<span class="sd">            serialises to ``{&quot;TypeGuid&quot;: ..., &quot;specs&quot;: {}}``, never</span>
 <span class="sd">            ``None`` (C4). A NULL owning property (e.g. ``MsFeaturesOA``</span>
 <span class="sd">            was never populated) omits both keys entirely -- gate on key</span>
-<span class="sd">            PRESENCE (C6), never on the value's truthiness.</span>
+<span class="sd">            PRESENCE (C6), never on the value&#39;s truthiness.</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Emits ONLY the four C1 MSA rows -- no plain scalar or</span>
 <span class="sd">              multistring MSA properties are captured here (POS</span>
-<span class="sd">              references are T7's territory via ``POSOperations``, not</span>
-<span class="sd">              this method's).</span>
+<span class="sd">              references are T7&#39;s territory via ``POSOperations``, not</span>
+<span class="sd">              this method&#39;s).</span>
 <span class="sd">            - Zero ``hasattr`` gates on any feature-struct property:</span>
 <span class="sd">              dispatch is entirely ``.ClassName``-driven, then delegates</span>
 <span class="sd">              to ``BaseOperations._ResolveFeatureStrucOwner`` (cast) and</span>
 <span class="sd">              ``_GetFeatureStruc`` (recursive C4 serialize).</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetMsaObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
         <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">class_name</span> <span class="o">=</span> <span class="n">msa</span><span class="o">.</span><span class="n">ClassName</span>
 
-        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"MoUnclassifiedAffixMsa"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoUnclassifiedAffixMsa&quot;</span><span class="p">:</span>
             <span class="c1"># R2 (lead ruling): MoUnclassifiedAffixMsa is EXCLUDED from</span>
             <span class="c1"># FEATURE_STRUC_OWNER_TABLE and the resolver raises on it BY</span>
             <span class="c1"># DESIGN -- but CreateUnclassifiedAffix (this very module)</span>
@@ -953,14 +953,14 @@
             <span class="c1"># carries no feature-struct property at all.</span>
             <span class="k">return</span> <span class="n">props</span>
 
-        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"MoStemMsa"</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"MsFeatures"</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"MoInflAffMsa"</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"InflFeats"</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"MoDerivAffMsa"</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="s2">"From"</span><span class="p">,</span> <span class="s2">"FromMsFeatures"</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="s2">"To"</span><span class="p">,</span> <span class="s2">"ToMsFeatures"</span><span class="p">)</span>
-        <span class="c1"># else: ClassName outside the C1 table's four in-scope MSA rows</span>
+        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoStemMsa&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;MsFeatures&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoInflAffMsa&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;InflFeats&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoDerivAffMsa&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="s2">&quot;From&quot;</span><span class="p">,</span> <span class="s2">&quot;FromMsFeatures&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="s2">&quot;To&quot;</span><span class="p">,</span> <span class="s2">&quot;ToMsFeatures&quot;</span><span class="p">)</span>
+        <span class="c1"># else: ClassName outside the C1 table&#39;s four in-scope MSA rows</span>
         <span class="c1"># (e.g. MoDerivStepMsa, excluded by C1 -- never created by this</span>
         <span class="c1"># module). No feature-struct keys captured; the resolver is never</span>
         <span class="c1"># called here, so this defensive fallback cannot raise.</span>
@@ -968,8 +968,8 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Apply syncable properties (from GetSyncableProperties) onto an MSA.</span>
 
 <span class="sd">        Handles the four C1 MSA feature-struct key-pairs</span>
@@ -995,7 +995,7 @@
 <span class="sd">            fill_gaps: Passed through to the base loop. Has no additional</span>
 <span class="sd">                effect on the feature-struct branches, which are always</span>
 <span class="sd">                purely additive/idempotent by GUID (mirrors</span>
-<span class="sd">                NaturalClassOperations' equivalent note).</span>
+<span class="sd">                NaturalClassOperations&#39; equivalent note).</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ParameterError: If ``item`` is None, ``props`` is not a</span>
@@ -1003,7 +1003,7 @@
 <span class="sd">                feature, value, or feature-structure-type GUID that does</span>
 <span class="sd">                not exist in the target project -- naming the unresolved</span>
 <span class="sd">                GUID and instructing the caller to sync the feature system</span>
-<span class="sd">                first. Silently dropping a spec would leave the target's</span>
+<span class="sd">                first. Silently dropping a spec would leave the target&#39;s</span>
 <span class="sd">                MSA feature structure incomplete with no visible error</span>
 <span class="sd">                (same bug class as the NaturalClassOperations/#222</span>
 <span class="sd">                lineage).</span>
@@ -1019,18 +1019,18 @@
 <span class="sd">              empty feature structure (``&lt;Name&gt;Guid`` set, ``&lt;Name&gt;``</span>
 <span class="sd">              absent/``{}``) is a real, empty-but-attached</span>
 <span class="sd">              ``IFsFeatStruc`` on the source and must still create/attach</span>
-<span class="sd">              an empty struct on the target, not be treated as "source has</span>
-<span class="sd">              none".</span>
+<span class="sd">              an empty struct on the target, not be treated as &quot;source has</span>
+<span class="sd">              none&quot;.</span>
 <span class="sd">            - ``MoUnclassifiedAffixMsa`` (R2) and any out-of-C1-table</span>
 <span class="sd">              ClassName: no feature-struct branch runs; only the base</span>
-<span class="sd">              loop's (here, empty) pass-through has any effect.</span>
-<span class="sd">        """</span>
+<span class="sd">              loop&#39;s (here, empty) pass-through has any effect.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"ApplySyncableProperties: item is None"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;ApplySyncableProperties: item is None&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"ApplySyncableProperties: props must be a dict, got "</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">props</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">&quot;ApplySyncableProperties: props must be a dict, got &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">props</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
         <span class="n">msa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetMsaObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
@@ -1045,38 +1045,38 @@
         <span class="p">}</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="n">base_props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"MoUnclassifiedAffixMsa"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoUnclassifiedAffixMsa&quot;</span><span class="p">:</span>
             <span class="c1"># R2: no feature-struct property on this ClassName; the</span>
             <span class="c1"># resolver is never consulted, so this cannot raise.</span>
             <span class="k">return</span>
 
-        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"MoStemMsa"</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"MsFeatures"</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"MoInflAffMsa"</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"InflFeats"</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"MoDerivAffMsa"</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="s2">"From"</span><span class="p">,</span> <span class="s2">"FromMsFeatures"</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="s2">"To"</span><span class="p">,</span> <span class="s2">"ToMsFeatures"</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span>
-        <span class="c1"># else: ClassName outside the C1 table's four in-scope MSA rows --</span>
+        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoStemMsa&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;MsFeatures&quot;</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoInflAffMsa&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;InflFeats&quot;</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoDerivAffMsa&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="s2">&quot;From&quot;</span><span class="p">,</span> <span class="s2">&quot;FromMsFeatures&quot;</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="s2">&quot;To&quot;</span><span class="p">,</span> <span class="s2">&quot;ToMsFeatures&quot;</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span>
+        <span class="c1"># else: ClassName outside the C1 table&#39;s four in-scope MSA rows --</span>
         <span class="c1"># nothing to apply; the resolver is never consulted here either.</span>
 
     <span class="c1"># ------------------------------------------------------------------</span>
     <span class="c1"># Internals</span>
     <span class="c1"># ------------------------------------------------------------------</span>
 
-    <span class="c1"># The eight props keys handled directly by ApplySyncableProperties'</span>
+    <span class="c1"># The eight props keys handled directly by ApplySyncableProperties&#39;</span>
     <span class="c1"># feature-struct branches -- must be excluded from the base-loop</span>
     <span class="c1"># pass-through (C6). Kept as one tuple so the pop-filter and any</span>
     <span class="c1"># future audit share a single source of truth.</span>
     <span class="n">__FEATURE_STRUC_KEYS</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s2">"MsFeatures"</span><span class="p">,</span> <span class="s2">"MsFeaturesGuid"</span><span class="p">,</span>
-        <span class="s2">"InflFeats"</span><span class="p">,</span> <span class="s2">"InflFeatsGuid"</span><span class="p">,</span>
-        <span class="s2">"FromMsFeatures"</span><span class="p">,</span> <span class="s2">"FromMsFeaturesGuid"</span><span class="p">,</span>
-        <span class="s2">"ToMsFeatures"</span><span class="p">,</span> <span class="s2">"ToMsFeaturesGuid"</span><span class="p">,</span>
+        <span class="s2">&quot;MsFeatures&quot;</span><span class="p">,</span> <span class="s2">&quot;MsFeaturesGuid&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;InflFeats&quot;</span><span class="p">,</span> <span class="s2">&quot;InflFeatsGuid&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;FromMsFeatures&quot;</span><span class="p">,</span> <span class="s2">&quot;FromMsFeaturesGuid&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ToMsFeatures&quot;</span><span class="p">,</span> <span class="s2">&quot;ToMsFeaturesGuid&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Capture one C1 feature-struct row into ``props``, in place.</span>
 
 <span class="sd">        Args:</span>
@@ -1085,10 +1085,10 @@
 <span class="sd">            msa: The MSA object (any ClassName already confirmed by the</span>
 <span class="sd">                caller to have a row in FEATURE_STRUC_OWNER_TABLE for</span>
 <span class="sd">                this ``slot``).</span>
-<span class="sd">            slot: ``None`` | ``"From"`` | ``"To"`` -- passed straight</span>
+<span class="sd">            slot: ``None`` | ``&quot;From&quot;`` | ``&quot;To&quot;`` -- passed straight</span>
 <span class="sd">                through to ``_ResolveFeatureStrucOwner`` (C1).</span>
-<span class="sd">            key: The props key stem (e.g. ``"MsFeatures"``) -- the C1</span>
-<span class="sd">                table's props-key column. ``f"{key}Guid"`` is the sibling</span>
+<span class="sd">            key: The props key stem (e.g. ``&quot;MsFeatures&quot;``) -- the C1</span>
+<span class="sd">                table&#39;s props-key column. ``f&quot;{key}Guid&quot;`` is the sibling</span>
 <span class="sd">                GUID key.</span>
 
 <span class="sd">        Notes:</span>
@@ -1100,15 +1100,15 @@
 <span class="sd">              ``_GetFeatureStruc`` never returns ``None`` for a non-None</span>
 <span class="sd">              struct -- C4). A null owning property emits neither key,</span>
 <span class="sd">              which is the PRESENCE gate C6 requires on the apply side.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">concrete_owner</span><span class="p">,</span> <span class="n">prop_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveFeatureStrucOwner</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="n">slot</span><span class="p">)</span>
         <span class="n">struct</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">concrete_owner</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">struct</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">props</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetFeatureStruc</span><span class="p">(</span><span class="n">struct</span><span class="p">)</span>
-            <span class="n">props</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">Guid"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+            <span class="n">props</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">Guid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">props</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msa</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">props</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Apply one C1 feature-struct row from ``props`` onto ``msa``, if</span>
 <span class="sd">        present.</span>
 
@@ -1116,9 +1116,9 @@
 <span class="sd">            msa: The MSA object (any ClassName already confirmed by the</span>
 <span class="sd">                caller to have a row in FEATURE_STRUC_OWNER_TABLE for</span>
 <span class="sd">                this ``slot``).</span>
-<span class="sd">            slot: ``None`` | ``"From"`` | ``"To"`` -- passed straight</span>
+<span class="sd">            slot: ``None`` | ``&quot;From&quot;`` | ``&quot;To&quot;`` -- passed straight</span>
 <span class="sd">                through to ``_ResolveFeatureStrucOwner`` (C1).</span>
-<span class="sd">            key: The props key stem (e.g. ``"MsFeatures"``).</span>
+<span class="sd">            key: The props key stem (e.g. ``&quot;MsFeatures&quot;``).</span>
 <span class="sd">            props: The ORIGINAL (unfiltered) props dict passed to</span>
 <span class="sd">                ``ApplySyncableProperties`` -- read-only here.</span>
 
@@ -1127,15 +1127,15 @@
 <span class="sd">              ``if key in props or guid_key in props`` -- a present-but-</span>
 <span class="sd">              empty source struct carries ``&lt;Name&gt;Guid`` with ``&lt;Name&gt;``</span>
 <span class="sd">              absent (or ``{}``), and must still create/attach an empty</span>
-<span class="sd">              target struct, not be skipped as "source has none".</span>
-<span class="sd">            - ``on_unresolved="raise"`` unconditionally (C7): an</span>
+<span class="sd">              target struct, not be skipped as &quot;source has none&quot;.</span>
+<span class="sd">            - ``on_unresolved=&quot;raise&quot;`` unconditionally (C7): an</span>
 <span class="sd">              unresolvable feature/value/type GUID must never be</span>
 <span class="sd">              silently dropped for an MSA sync -- a rule referencing an</span>
 <span class="sd">              incomplete MSA would otherwise fail to match anything with</span>
 <span class="sd">              no visible error (same policy as</span>
 <span class="sd">              ``NaturalClassOperations.ApplySyncableProperties``).</span>
-<span class="sd">        """</span>
-        <span class="n">guid_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">Guid"</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">guid_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">Guid&quot;</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">props</span> <span class="ow">or</span> <span class="n">guid_key</span> <span class="ow">in</span> <span class="n">props</span><span class="p">:</span>
             <span class="n">concrete_owner</span><span class="p">,</span> <span class="n">prop_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveFeatureStrucOwner</span><span class="p">(</span>
                 <span class="n">msa</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="n">slot</span>
@@ -1147,12 +1147,12 @@
                 <span class="n">prop_name</span><span class="p">,</span>
                 <span class="n">spec</span><span class="p">,</span>
                 <span class="n">struct_guid</span><span class="o">=</span><span class="n">struct_guid</span><span class="p">,</span>
-                <span class="n">on_unresolved</span><span class="o">=</span><span class="s2">"raise"</span><span class="p">,</span>
-                <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"MSA (</span><span class="si">{</span><span class="n">msa</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span>
+                <span class="n">on_unresolved</span><span class="o">=</span><span class="s2">&quot;raise&quot;</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;MSA (</span><span class="si">{</span><span class="n">msa</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
             <span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__GetMsaObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msa_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">__GetMsaObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msa_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper to resolve an MSA parameter to a concrete LCM</span>
 <span class="sd">        object, accepting an object, HVO (int), or GUID (str).</span>
 
@@ -1172,13 +1172,13 @@
 
 <span class="sd">        CORRECTION (2026-09-08, cycle 2 of spec</span>
 <span class="sd">        260-environment-resolver-cast, task T5): this docstring previously</span>
-<span class="sd">        claimed ``Grammar/NaturalClassOperations.py``'s</span>
-<span class="sd">        ``__GetNaturalClassObject``/``__GetPhonemeObject`` were "sibling C2</span>
-<span class="sd">        fix sites" implying they already cast the way this resolver does.</span>
+<span class="sd">        claimed ``Grammar/NaturalClassOperations.py``&#39;s</span>
+<span class="sd">        ``__GetNaturalClassObject``/``__GetPhonemeObject`` were &quot;sibling C2</span>
+<span class="sd">        fix sites&quot; implying they already cast the way this resolver does.</span>
 <span class="sd">        They do NOT -- both are plain ``isinstance(x, int)`` HVO/object</span>
 <span class="sd">        resolvers with no ``ClassName`` cast at all (confirmed by reading</span>
 <span class="sd">        ``Grammar/NaturalClassOperations.py`` directly). That was a false</span>
-<span class="sd">        "already fixed" marker; do not rely on it. Those two resolvers are</span>
+<span class="sd">        &quot;already fixed&quot; marker; do not rely on it. Those two resolvers are</span>
 <span class="sd">        part of the Class-A caller-usage re-triage tracked in</span>
 <span class="sd">        ``specs/260-environment-resolver-cast/STATUS.md`` and have not been</span>
 <span class="sd">        fixed as of this correction.</span>
@@ -1194,84 +1194,84 @@
 <span class="sd">            unchanged -- ``.ClassName`` stays readable either way, and the</span>
 <span class="sd">            dispatching callers above treat an unrecognised ClassName as</span>
 <span class="sd">            a no-op, never a cast attempt.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msa_or_hvo</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">msa_or_hvo</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">msa_or_hvo</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">msa_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="n">msa_or_hvo</span><span class="o">.</span><span class="n">_obj</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="n">msa_or_hvo</span>
 
-        <span class="n">class_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">cast_iface</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">"MoStemMsa"</span><span class="p">:</span> <span class="n">IMoStemMsa</span><span class="p">,</span>
-            <span class="s2">"MoInflAffMsa"</span><span class="p">:</span> <span class="n">IMoInflAffMsa</span><span class="p">,</span>
-            <span class="s2">"MoDerivAffMsa"</span><span class="p">:</span> <span class="n">IMoDerivAffMsa</span><span class="p">,</span>
-            <span class="s2">"MoUnclassifiedAffixMsa"</span><span class="p">:</span> <span class="n">IMoUnclassifiedAffixMsa</span><span class="p">,</span>
+            <span class="s2">&quot;MoStemMsa&quot;</span><span class="p">:</span> <span class="n">IMoStemMsa</span><span class="p">,</span>
+            <span class="s2">&quot;MoInflAffMsa&quot;</span><span class="p">:</span> <span class="n">IMoInflAffMsa</span><span class="p">,</span>
+            <span class="s2">&quot;MoDerivAffMsa&quot;</span><span class="p">:</span> <span class="n">IMoDerivAffMsa</span><span class="p">,</span>
+            <span class="s2">&quot;MoUnclassifiedAffixMsa&quot;</span><span class="p">:</span> <span class="n">IMoUnclassifiedAffixMsa</span><span class="p">,</span>
         <span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">cast_iface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">cast_iface</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">obj</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__CreateAndAttach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">sandbox</span><span class="p">,</span> <span class="n">factory_interface</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">__CreateAndAttach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">sandbox</span><span class="p">,</span> <span class="n">factory_interface</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Common MSA-creation flow: resolve service, create with sandbox</span>
 <span class="sd">        descriptor, attach to sense.</span>
 
-<span class="sd">        Uses clr.GetClrType(factory_interface) because pythonnet's</span>
+<span class="sd">        Uses clr.GetClrType(factory_interface) because pythonnet&#39;s</span>
 <span class="sd">        ServiceLocator.GetService overload needs the System.Type form of</span>
 <span class="sd">        the interface rather than the raw interface object.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
             <span class="n">clr</span><span class="o">.</span><span class="n">GetClrType</span><span class="p">(</span><span class="n">factory_interface</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">factory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">factory_interface</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> service is unavailable."</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">factory_interface</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> service is unavailable.&quot;</span>
             <span class="p">)</span>
 
-        <span class="c1"># Factory.Create(owner, sandbox) -- the owner is the sense's</span>
-        <span class="c1"># ENTRY, not the sense's direct Owner. For a subsense,</span>
+        <span class="c1"># Factory.Create(owner, sandbox) -- the owner is the sense&#39;s</span>
+        <span class="c1"># ENTRY, not the sense&#39;s direct Owner. For a subsense,</span>
         <span class="c1"># sense.Owner is the parent sense, not the entry; LCM expects</span>
         <span class="c1"># the enclosing ILexEntry, so walk up the ownership chain via</span>
         <span class="c1"># OwnerOfClass(LexEntryTags.kClassId). Same idiom that</span>
         <span class="c1"># LexSenseOperations.SetPartOfSpeech uses to resolve the owning</span>
         <span class="c1"># entry. (issue #129)</span>
         <span class="n">entry</span> <span class="o">=</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">sense</span><span class="o">.</span><span class="n">OwnerOfClass</span><span class="p">(</span><span class="n">LexEntryTags</span><span class="o">.</span><span class="n">kClassId</span><span class="p">))</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Create and attach MSA"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create and attach MSA&quot;</span><span class="p">):</span>
             <span class="n">new_msa</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">sandbox</span><span class="p">)</span>
             <span class="n">sense</span><span class="o">.</span><span class="n">MorphoSyntaxAnalysisRA</span> <span class="o">=</span> <span class="n">new_msa</span>
             <span class="k">return</span> <span class="n">new_msa</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveSense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Resolve a sense parameter, accepting either an object or HVO."""</span>
+    <span class="k">def</span> <span class="nf">__ResolveSense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve a sense parameter, accepting either an object or HVO.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">ILexSense</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
         <span class="c1"># Pass through; assume the caller gave us a usable sense object</span>
-        <span class="c1"># or wrapper. Wrappers' _obj is unwrapped lazily by LCM via the</span>
+        <span class="c1"># or wrapper. Wrappers&#39; _obj is unwrapped lazily by LCM via the</span>
         <span class="c1"># operations they pass through to.</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">sense_or_hvo</span><span class="o">.</span><span class="n">_obj</span>
         <span class="k">return</span> <span class="n">sense_or_hvo</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__Resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Generic resolve -- HVO -&gt; object, wrapper -&gt; unwrapped."""</span>
+    <span class="k">def</span> <span class="nf">__Resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generic resolve -- HVO -&gt; object, wrapper -&gt; unwrapped.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">obj_or_hvo</span><span class="o">.</span><span class="n">_obj</span>
         <span class="k">return</span> <span class="n">obj_or_hvo</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Resolve an entry parameter, accepting either an object or HVO."""</span>
+    <span class="k">def</span> <span class="nf">__ResolveEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve an entry parameter, accepting either an object or HVO.&quot;&quot;&quot;</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Resolve</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="s2">"entry must be an ILexEntry (or its HVO); "</span>
-                <span class="sa">f</span><span class="s2">"got </span><span class="si">{</span><span class="n">obj</span><span class="si">!r}</span><span class="s2">"</span>
+                <span class="s2">&quot;entry must be an ILexEntry (or its HVO); &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">obj</span><span class="si">!r}</span><span class="s2">&quot;</span>
             <span class="p">)</span></div>
 
 </pre></div>
@@ -1280,7 +1280,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1296,7 +1296,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1311,8 +1311,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
     </div>
   </body>
 </html>

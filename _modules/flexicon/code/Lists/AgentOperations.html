@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Lists.AgentOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -56,27 +56,27 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">ICmAgent</span><span class="p">,</span>
     <span class="n">ICmAgentFactory</span><span class="p">,</span>
     <span class="n">ICmPerson</span><span class="p">,</span>
     <span class="n">ICmAgentEvaluation</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">import</span> <span class="nn">System</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="n">FP_ParameterError</span><span class="p">,</span> <span class="n">FP_NullParameterError</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">OperationsMethod</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.possibility_item_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PossibilityItemOperations</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="n">FP_ParameterError</span><span class="p">,</span> <span class="n">FP_NullParameterError</span>
+<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">OperationsMethod</span>
+<span class="kn">from</span> <span class="nn">.possibility_item_base</span> <span class="kn">import</span> <span class="n">PossibilityItemOperations</span>
+<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span>
 
 
 <div class="viewcode-block" id="AgentOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lists.html#flexicon.code.Lists.AgentOperations.AgentOperations">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">AgentOperations</span><span class="p">(</span><span class="n">PossibilityItemOperations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="k">class</span> <span class="nc">AgentOperations</span><span class="p">(</span><span class="n">PossibilityItemOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Agent operations for managing human analysts and automated parsers.</span>
 
 <span class="sd">    Agents represent either human analysts or automated parsers that perform</span>
@@ -107,35 +107,35 @@
 <span class="sd">    - FindByType() - Find by agent type</span>
 <span class="sd">    - GetHumanAgents() / GetParserAgents() - Get all of type</span>
 <span class="sd">    - GetDateCreated() / GetDateModified() - Get timestamps</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize AgentOperations with a FLExProject instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: The FLExProject instance to operate on.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_item_class_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Get the item class name for error messages."""</span>
-        <span class="k">return</span> <span class="s2">"Agent"</span>
+    <span class="k">def</span> <span class="nf">_get_item_class_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the item class name for error messages.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;Agent&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_list_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Get the agents list container."""</span>
+    <span class="k">def</span> <span class="nf">_get_list_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the agents list container.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnalyzingAgentsOC</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Iterate over all agents in the project's AnalyzingAgentsOC.</span>
+    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Iterate over all agents in the project&#39;s AnalyzingAgentsOC.</span>
 
 <span class="sd">        Overrides the PossibilityItemOperations.GetAll inherited</span>
 <span class="sd">        default, which assumes the list-object has PossibilitiesOS.</span>
 <span class="sd">        LangProject.AnalyzingAgentsOC is a plain LcmOwningCollection</span>
 <span class="sd">        of ICmAgent, not a CmPossibilityList, so PossibilitiesOS</span>
-<span class="sd">        doesn't exist on it -- AttributeError every call. Iterate the</span>
+<span class="sd">        doesn&#39;t exist on it -- AttributeError every call. Iterate the</span>
 <span class="sd">        collection directly.</span>
 
 <span class="sd">        Returns:</span>
@@ -150,15 +150,15 @@
 <span class="sd">                   if project.Agents.IsHuman(a)]</span>
 
 <span class="sd">              or call GetHumanAgents() directly.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">agents_oc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_list_object</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">agents_oc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[]</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">agents_oc</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new agent in AnalyzingAgentsOC.</span>
 
 <span class="sd">        Overrides PossibilityItemOperations.Create, which calls</span>
@@ -172,7 +172,7 @@
 <span class="sd">            guid (optional): GUID to assign to the new agent, as a</span>
 <span class="sd">                ``System.Guid`` or string. Use this when REPRODUCING an</span>
 <span class="sd">                agent from another project so it keeps its original</span>
-<span class="sd">                identity -- useful with the ``flexlibs2/sync/`` engine</span>
+<span class="sd">                identity -- useful with the ``flexicon/sync/`` engine</span>
 <span class="sd">                for preserving which agent evaluated an analysis across</span>
 <span class="sd">                a transfer or merge. None (the default) mints a fresh</span>
 <span class="sd">                GUID. Note that the 3 bootstrap agents</span>
@@ -198,24 +198,24 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Duplicate, Find, Delete</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Agent name cannot be empty"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Agent name cannot be empty&quot;</span><span class="p">)</span>
 
         <span class="n">agents_oc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_list_object</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">agents_oc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"AnalyzingAgentsOC not found in project"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;AnalyzingAgentsOC not found in project&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
 
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmAgentFactory</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Create agent </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">"</span><span class="p">):</span>
-            <span class="n">new_agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CreateWithGuid</span><span class="p">(</span><span class="n">factory</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="s2">"ICmAgent"</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create agent </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="n">new_agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CreateWithGuid</span><span class="p">(</span><span class="n">factory</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="s2">&quot;ICmAgent&quot;</span><span class="p">)</span>
 
             <span class="c1"># Add to collection before setting properties</span>
             <span class="n">agents_oc</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_agent</span><span class="p">)</span>
@@ -226,8 +226,8 @@
             <span class="k">return</span> <span class="n">new_agent</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete an agent from AnalyzingAgentsOC.</span>
 
 <span class="sd">        Overrides PossibilityItemOperations.Delete, which calls</span>
@@ -240,20 +240,20 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
 <span class="sd">            FP_NullParameterError: If agent_or_hvo is None.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">"agent_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">&quot;agent_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">)</span>
 
         <span class="n">agents_oc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_list_object</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">agents_oc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">agent</span> <span class="ow">in</span> <span class="n">agents_oc</span><span class="p">:</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete agent"</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete agent&quot;</span><span class="p">):</span>
                 <span class="n">agents_oc</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">agent</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate an agent, creating a new copy with a new GUID.</span>
 
 <span class="sd">        Overrides PossibilityItemOperations.Duplicate, which calls</span>
@@ -273,19 +273,19 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
 <span class="sd">            FP_NullParameterError: If agent_or_hvo is None.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">"agent_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">&quot;agent_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">)</span>
 
         <span class="n">agents_oc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_list_object</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">agents_oc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"AnalyzingAgentsOC not found in project"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;AnalyzingAgentsOC not found in project&quot;</span><span class="p">)</span>
 
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmAgentFactory</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Duplicate agent"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate agent&quot;</span><span class="p">):</span>
             <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
             <span class="n">agents_oc</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
@@ -299,8 +299,8 @@
             <span class="k">return</span> <span class="n">duplicate</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find an agent by name (case-insensitive).</span>
 
 <span class="sd">        Searches AnalyzingAgentsOC directly (via GetAll).</span>
@@ -316,8 +316,8 @@
 <span class="sd">              accumulated from parser upgrades. If you want only human</span>
 <span class="sd">              agents, filter the result with IsHuman() or use</span>
 <span class="sd">              GetHumanAgents() instead.</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -335,8 +335,8 @@
     <span class="c1"># --- Version and Type Management ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetVersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetVersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the version string of an agent.</span>
 
 <span class="sd">        Args:</span>
@@ -346,51 +346,51 @@
 <span class="sd">                is no per-writing-system alternative to select.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: The agent's version string (empty string if not set)</span>
+<span class="sd">            str: The agent&#39;s version string (empty string if not set)</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If agent_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; parser = project.Agents.Find("MyParser")</span>
+<span class="sd">            &gt;&gt;&gt; parser = project.Agents.Find(&quot;MyParser&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; version = project.Agents.GetVersion(parser)</span>
-<span class="sd">            &gt;&gt;&gt; print(f"Version: {version}")</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Version: {version}&quot;)</span>
 <span class="sd">            Version: 1.0.0</span>
 
-<span class="sd">            &gt;&gt;&gt; # Human agents typically don't have versions</span>
-<span class="sd">            &gt;&gt;&gt; human = project.Agents.Find("John Smith")</span>
+<span class="sd">            &gt;&gt;&gt; # Human agents typically don&#39;t have versions</span>
+<span class="sd">            &gt;&gt;&gt; human = project.Agents.Find(&quot;John Smith&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; version = project.Agents.GetVersion(human)</span>
 <span class="sd">            &gt;&gt;&gt; print(version)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns empty string if version not set</span>
 <span class="sd">            - Typically used for parser agents</span>
-<span class="sd">            - Human agents usually don't have version numbers</span>
-<span class="sd">            - Can use any version format (e.g., "1.0", "2.1.3", "v3-beta")</span>
+<span class="sd">            - Human agents usually don&#39;t have version numbers</span>
+<span class="sd">            - Can use any version format (e.g., &quot;1.0&quot;, &quot;2.1.3&quot;, &quot;v3-beta&quot;)</span>
 <span class="sd">            - ICmAgent.Version is a plain Unicode property in the LCM model</span>
 <span class="sd">              (unlike ICmAgent.Name, which is MultiUnicode). pythonnet</span>
 <span class="sd">              surfaces it as a Python str, so it must NOT be read through</span>
 <span class="sd">              get_String()/ITsString -- doing so raised</span>
-<span class="sd">              ``AttributeError: 'str' object has no attribute 'get_String'``</span>
+<span class="sd">              ``AttributeError: &#39;str&#39; object has no attribute &#39;get_String&#39;``</span>
 <span class="sd">              on every call.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetVersion, CreateParserAgent</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">"agent_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">&quot;agent_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">agent</span><span class="o">.</span><span class="n">Version</span> <span class="ow">or</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="n">agent</span><span class="o">.</span><span class="n">Version</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">SetVersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">SetVersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the version string of an agent.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            agent_or_hvo: Either an ICmAgent object or its HVO</span>
-<span class="sd">            version (str): The version string (e.g., "1.0.0")</span>
+<span class="sd">            version (str): The version string (e.g., &quot;1.0.0&quot;)</span>
 <span class="sd">            wsHandle: Ignored. Accepted for backwards compatibility only --</span>
 <span class="sd">                ICmAgent.Version is a monolingual Unicode property, so there</span>
 <span class="sd">                is no per-writing-system alternative to set.</span>
@@ -400,21 +400,21 @@
 <span class="sd">            FP_NullParameterError: If agent_or_hvo or version is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; parser = project.Agents.Find("MyParser")</span>
-<span class="sd">            &gt;&gt;&gt; project.Agents.SetVersion(parser, "1.0.1")</span>
+<span class="sd">            &gt;&gt;&gt; parser = project.Agents.Find(&quot;MyParser&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Agents.SetVersion(parser, &quot;1.0.1&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; print(project.Agents.GetVersion(parser))</span>
 <span class="sd">            1.0.1</span>
 
 <span class="sd">            &gt;&gt;&gt; # Update to new version</span>
-<span class="sd">            &gt;&gt;&gt; project.Agents.SetVersion(parser, "2.0.0")</span>
+<span class="sd">            &gt;&gt;&gt; project.Agents.SetVersion(parser, &quot;2.0.0&quot;)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Clear version</span>
-<span class="sd">            &gt;&gt;&gt; project.Agents.SetVersion(parser, "")</span>
+<span class="sd">            &gt;&gt;&gt; project.Agents.SetVersion(parser, &quot;&quot;)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Typically used for parser agents</span>
 <span class="sd">            - Can be empty string to clear</span>
-<span class="sd">            - Use semantic versioning (e.g., "1.0.0") recommended</span>
+<span class="sd">            - Use semantic versioning (e.g., &quot;1.0.0&quot;) recommended</span>
 <span class="sd">            - Update when parser algorithm changes</span>
 <span class="sd">            - ICmAgent.Version is a plain Unicode property in the LCM model</span>
 <span class="sd">              (unlike ICmAgent.Name, which is MultiUnicode). It is assigned</span>
@@ -422,22 +422,22 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetVersion, CreateParserAgent</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">"agent_or_hvo"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="s2">"version"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">&quot;agent_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="s2">&quot;version&quot;</span><span class="p">)</span>
 
         <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set agent version"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set agent version&quot;</span><span class="p">):</span>
             <span class="n">agent</span><span class="o">.</span><span class="n">Version</span> <span class="o">=</span> <span class="n">version</span>
 
     <span class="c1"># --- Agent Type Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">IsHuman</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">IsHuman</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if an agent is a human analyst.</span>
 
 <span class="sd">        Args:</span>
@@ -455,10 +455,10 @@
 <span class="sd">            ...     if project.Agents.IsHuman(agent):</span>
 <span class="sd">            ...         person = project.Agents.GetHuman(agent)</span>
 <span class="sd">            ...         email = project.Person.GetEmail(person)</span>
-<span class="sd">            ...         print(f"Human: {name} ({email})")</span>
+<span class="sd">            ...         print(f&quot;Human: {name} ({email})&quot;)</span>
 <span class="sd">            ...     else:</span>
 <span class="sd">            ...         version = project.Agents.GetVersion(agent)</span>
-<span class="sd">            ...         print(f"Parser: {name} v{version}")</span>
+<span class="sd">            ...         print(f&quot;Parser: {name} v{version}&quot;)</span>
 <span class="sd">            Human: John Smith (john.smith@example.com)</span>
 <span class="sd">            Parser: MyParser v1.0.0</span>
 
@@ -469,8 +469,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            IsParser, GetHuman, SetHuman, CreateHumanAgent</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">"agent_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">&quot;agent_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">)</span>
 
@@ -478,13 +478,13 @@
         <span class="c1"># valid agent -- so the previous `agent.Human is not None`</span>
         <span class="c1"># check returned True for every agent (parsers included),</span>
         <span class="c1"># silently merging the two types and causing</span>
-        <span class="c1"># WfiAnalyses.SetApprovalStatus to pick parsers as "human" by</span>
+        <span class="c1"># WfiAnalyses.SetApprovalStatus to pick parsers as &quot;human&quot; by</span>
         <span class="c1"># mistake. (surfaced while writing the #38 regression test)</span>
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">Human</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">IsParser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">IsParser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if an agent is a parser (automated analyzer).</span>
 
 <span class="sd">        Args:</span>
@@ -497,16 +497,16 @@
 <span class="sd">            FP_NullParameterError: If agent_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; parser = project.Agents.Find("MyParser")</span>
+<span class="sd">            &gt;&gt;&gt; parser = project.Agents.Find(&quot;MyParser&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; if project.Agents.IsParser(parser):</span>
 <span class="sd">            ...     version = project.Agents.GetVersion(parser)</span>
-<span class="sd">            ...     print(f"Parser version: {version}")</span>
+<span class="sd">            ...     print(f&quot;Parser version: {version}&quot;)</span>
 <span class="sd">            Parser version: 1.0.0</span>
 
 <span class="sd">            &gt;&gt;&gt; # Filter only parsers</span>
 <span class="sd">            &gt;&gt;&gt; parsers = [a for a in project.Agents.GetAll()</span>
 <span class="sd">            ...            if project.Agents.IsParser(a)]</span>
-<span class="sd">            &gt;&gt;&gt; print(f"Found {len(parsers)} parsers")</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(parsers)} parsers&quot;)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns True if agent.Human is None</span>
@@ -515,8 +515,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            IsHuman, CreateParserAgent, GetVersion</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">"agent_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">&quot;agent_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">)</span>
 
@@ -526,8 +526,8 @@
     <span class="c1"># --- Human (Person) Link ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetHuman</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetHuman</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the linked person for a human agent.</span>
 
 <span class="sd">        Args:</span>
@@ -540,16 +540,16 @@
 <span class="sd">            FP_NullParameterError: If agent_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Find("John Smith")</span>
+<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Find(&quot;John Smith&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; if project.Agents.IsHuman(agent):</span>
 <span class="sd">            ...     person = project.Agents.GetHuman(agent)</span>
 <span class="sd">            ...     name = project.Person.GetName(person)</span>
 <span class="sd">            ...     email = project.Person.GetEmail(person)</span>
-<span class="sd">            ...     print(f"{name}: {email}")</span>
+<span class="sd">            ...     print(f&quot;{name}: {email}&quot;)</span>
 <span class="sd">            John Smith: john.smith@example.com</span>
 
 <span class="sd">            &gt;&gt;&gt; # Parser agents return None</span>
-<span class="sd">            &gt;&gt;&gt; parser = project.Agents.Find("MyParser")</span>
+<span class="sd">            &gt;&gt;&gt; parser = project.Agents.Find(&quot;MyParser&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; person = project.Agents.GetHuman(parser)</span>
 <span class="sd">            &gt;&gt;&gt; print(person)</span>
 <span class="sd">            None</span>
@@ -561,16 +561,16 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetHuman, IsHuman, CreateHumanAgent</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">"agent_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">&quot;agent_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">agent</span><span class="o">.</span><span class="n">Human</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">SetHuman</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">SetHuman</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the linked person for an agent (making it a human agent).</span>
 
 <span class="sd">        Args:</span>
@@ -584,8 +584,8 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Convert parser to human agent</span>
-<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Find("MyAgent")</span>
-<span class="sd">            &gt;&gt;&gt; person = project.Person.Find("John Smith")</span>
+<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Find(&quot;MyAgent&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; person = project.Person.Find(&quot;John Smith&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; project.Agents.SetHuman(agent, person)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Unlink person (convert to parser)</span>
@@ -599,10 +599,10 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetHuman, CreateHumanAgent, IsHuman</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">"agent_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">&quot;agent_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">)</span>
 
@@ -616,16 +616,16 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">person_obj</span> <span class="o">=</span> <span class="n">ICmPerson</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">InvalidCastException</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"person must be a valid ICmPerson object: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;person must be a valid ICmPerson object: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set agent human analyst"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set agent human analyst&quot;</span><span class="p">):</span>
             <span class="n">agent</span><span class="o">.</span><span class="n">Human</span> <span class="o">=</span> <span class="n">person_obj</span>
 
     <span class="c1"># --- Evaluations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetEvaluations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetEvaluations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all evaluations created by an agent.</span>
 
 <span class="sd">        Args:</span>
@@ -638,15 +638,15 @@
 <span class="sd">            FP_NullParameterError: If agent_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Find("MyParser")</span>
+<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Find(&quot;MyParser&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; evaluations = project.Agents.GetEvaluations(agent)</span>
-<span class="sd">            &gt;&gt;&gt; print(f"Parser created {len(evaluations)} evaluations")</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Parser created {len(evaluations)} evaluations&quot;)</span>
 <span class="sd">            Parser created 145 evaluations</span>
 
 <span class="sd">            &gt;&gt;&gt; # Examine evaluations</span>
 <span class="sd">            &gt;&gt;&gt; for eval in evaluations[:5]:</span>
 <span class="sd">            ...     # Access evaluation properties</span>
-<span class="sd">            ...     print(f"Evaluation: {eval.Guid}")</span>
+<span class="sd">            ...     print(f&quot;Evaluation: {eval.Guid}&quot;)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns empty list if no evaluations</span>
@@ -656,8 +656,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetEvaluationCount</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">"agent_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">&quot;agent_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">)</span>
 
@@ -675,8 +675,8 @@
         <span class="k">return</span> <span class="n">evaluations</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetEvaluationCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetEvaluationCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the number of evaluations created by an agent.</span>
 
 <span class="sd">        Args:</span>
@@ -689,17 +689,17 @@
 <span class="sd">            FP_NullParameterError: If agent_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Find("MyParser")</span>
+<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Find(&quot;MyParser&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; count = project.Agents.GetEvaluationCount(agent)</span>
-<span class="sd">            &gt;&gt;&gt; print(f"Parser has {count} evaluations")</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Parser has {count} evaluations&quot;)</span>
 <span class="sd">            Parser has 145 evaluations</span>
 
 <span class="sd">            &gt;&gt;&gt; # Compare human vs parser evaluations</span>
 <span class="sd">            &gt;&gt;&gt; for agent in project.Agents.GetAll():</span>
 <span class="sd">            ...     name = project.Agents.GetName(agent)</span>
 <span class="sd">            ...     count = project.Agents.GetEvaluationCount(agent)</span>
-<span class="sd">            ...     agent_type = "Human" if project.Agents.IsHuman(agent) else "Parser"</span>
-<span class="sd">            ...     print(f"{name} ({agent_type}): {count} evaluations")</span>
+<span class="sd">            ...     agent_type = &quot;Human&quot; if project.Agents.IsHuman(agent) else &quot;Parser&quot;</span>
+<span class="sd">            ...     print(f&quot;{name} ({agent_type}): {count} evaluations&quot;)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - More efficient than len(GetEvaluations())</span>
@@ -708,16 +708,16 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetEvaluations</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">"agent_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">&quot;agent_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GetEvaluations</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">))</span>
 
     <span class="c1"># --- Query Methods ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">FindByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_human</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">FindByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_human</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find all agents of a specific type (human or parser).</span>
 
 <span class="sd">        Args:</span>
@@ -733,14 +733,14 @@
 <span class="sd">            ...     name = project.Agents.GetName(agent)</span>
 <span class="sd">            ...     person = project.Agents.GetHuman(agent)</span>
 <span class="sd">            ...     email = project.Person.GetEmail(person)</span>
-<span class="sd">            ...     print(f"{name}: {email}")</span>
+<span class="sd">            ...     print(f&quot;{name}: {email}&quot;)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Get all parsers</span>
 <span class="sd">            &gt;&gt;&gt; parsers = project.Agents.FindByType(False)</span>
 <span class="sd">            &gt;&gt;&gt; for parser in parsers:</span>
 <span class="sd">            ...     name = project.Agents.GetName(parser)</span>
 <span class="sd">            ...     version = project.Agents.GetVersion(parser)</span>
-<span class="sd">            ...     print(f"{name} v{version}")</span>
+<span class="sd">            ...     print(f&quot;{name} v{version}&quot;)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns list, not iterator</span>
@@ -750,7 +750,7 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetHumanAgents, GetParserAgents, IsHuman, IsParser</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">agents</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">is_human</span><span class="p">:</span>
@@ -762,8 +762,8 @@
         <span class="k">return</span> <span class="n">agents</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetHumanAgents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetHumanAgents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all human agents in the project.</span>
 
 <span class="sd">        Returns:</span>
@@ -771,14 +771,14 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; humans = project.Agents.GetHumanAgents()</span>
-<span class="sd">            &gt;&gt;&gt; print(f"Found {len(humans)} human agents")</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(humans)} human agents&quot;)</span>
 <span class="sd">            Found 3 human agents</span>
 
 <span class="sd">            &gt;&gt;&gt; for agent in humans:</span>
 <span class="sd">            ...     name = project.Agents.GetName(agent)</span>
 <span class="sd">            ...     person = project.Agents.GetHuman(agent)</span>
 <span class="sd">            ...     email = project.Person.GetEmail(person)</span>
-<span class="sd">            ...     print(f"Analyst: {name} ({email})")</span>
+<span class="sd">            ...     print(f&quot;Analyst: {name} ({email})&quot;)</span>
 <span class="sd">            Analyst: John Smith (john.smith@example.com)</span>
 <span class="sd">            Analyst: Maria Garcia (maria.garcia@example.com)</span>
 <span class="sd">            Analyst: Ahmed Hassan (ahmed.hassan@example.com)</span>
@@ -791,12 +791,12 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetParserAgents, FindByType, IsHuman</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindByType</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetParserAgents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetParserAgents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all parser agents in the project.</span>
 
 <span class="sd">        Returns:</span>
@@ -804,14 +804,14 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; parsers = project.Agents.GetParserAgents()</span>
-<span class="sd">            &gt;&gt;&gt; print(f"Found {len(parsers)} parsers")</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(parsers)} parsers&quot;)</span>
 <span class="sd">            Found 2 parsers</span>
 
 <span class="sd">            &gt;&gt;&gt; for parser in parsers:</span>
 <span class="sd">            ...     name = project.Agents.GetName(parser)</span>
 <span class="sd">            ...     version = project.Agents.GetVersion(parser)</span>
 <span class="sd">            ...     count = project.Agents.GetEvaluationCount(parser)</span>
-<span class="sd">            ...     print(f"{name} v{version}: {count} evaluations")</span>
+<span class="sd">            ...     print(f&quot;{name} v{version}: {count} evaluations&quot;)</span>
 <span class="sd">            MyParser v1.0.0: 145 evaluations</span>
 <span class="sd">            AutoAnalyzer v2.1.3: 89 evaluations</span>
 
@@ -823,14 +823,14 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetHumanAgents, FindByType, IsParser</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindByType</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="c1"># --- Metadata ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the creation date of an agent record.</span>
 
 <span class="sd">        Args:</span>
@@ -843,15 +843,15 @@
 <span class="sd">            FP_NullParameterError: If agent_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Find("MyParser")</span>
+<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Find(&quot;MyParser&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; created = project.Agents.GetDateCreated(agent)</span>
-<span class="sd">            &gt;&gt;&gt; print(f"Created: {created}")</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Created: {created}&quot;)</span>
 <span class="sd">            Created: 2025-01-15 14:30:22</span>
 
 <span class="sd">            &gt;&gt;&gt; # Find oldest agent</span>
 <span class="sd">            &gt;&gt;&gt; agents = list(project.Agents.GetAll())</span>
 <span class="sd">            &gt;&gt;&gt; oldest = min(agents, key=lambda a: project.Agents.GetDateCreated(a))</span>
-<span class="sd">            &gt;&gt;&gt; print(f"Oldest: {project.Agents.GetName(oldest)}")</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Oldest: {project.Agents.GetName(oldest)}&quot;)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns System.DateTime object (not Python datetime)</span>
@@ -861,16 +861,16 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetDateModified</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">"agent_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">&quot;agent_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">agent</span><span class="o">.</span><span class="n">DateCreated</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the last modification date of an agent record.</span>
 
 <span class="sd">        Args:</span>
@@ -883,9 +883,9 @@
 <span class="sd">            FP_NullParameterError: If agent_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Find("MyParser")</span>
+<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Find(&quot;MyParser&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; modified = project.Agents.GetDateModified(agent)</span>
-<span class="sd">            &gt;&gt;&gt; print(f"Last modified: {modified}")</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Last modified: {modified}&quot;)</span>
 <span class="sd">            Last modified: 2025-01-20 09:15:43</span>
 
 <span class="sd">            &gt;&gt;&gt; # Find recently modified agents</span>
@@ -894,7 +894,7 @@
 <span class="sd">            &gt;&gt;&gt; for agent in project.Agents.GetAll():</span>
 <span class="sd">            ...     modified = project.Agents.GetDateModified(agent)</span>
 <span class="sd">            ...     name = project.Agents.GetName(agent)</span>
-<span class="sd">            ...     print(f"{name}: {modified}")</span>
+<span class="sd">            ...     print(f&quot;{name}: {modified}&quot;)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns System.DateTime object (not Python datetime)</span>
@@ -904,8 +904,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetDateCreated</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">"agent_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">,</span> <span class="s2">&quot;agent_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">agent_or_hvo</span><span class="p">)</span>
 
@@ -917,7 +917,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -933,7 +933,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -948,8 +948,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
     </div>
   </body>
 </html>

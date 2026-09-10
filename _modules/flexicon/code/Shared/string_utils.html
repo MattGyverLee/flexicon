@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Shared.string_utils &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -45,24 +45,24 @@
 <span class="c1">#</span>
 <span class="c1">#   flexicon.code.Shared.string_utils</span>
 <span class="c1">#</span>
-<span class="c1">#   String utility functions for FlexLibs2.</span>
+<span class="c1">#   String utility functions for Flexicon.</span>
 <span class="c1">#</span>
-<span class="c1">#   FLEx/LCM uses '***' as a placeholder when multilingual string fields</span>
+<span class="c1">#   FLEx/LCM uses &#39;***&#39; as a placeholder when multilingual string fields</span>
 <span class="c1">#   have no value set. This module provides utilities to normalize these</span>
 <span class="c1">#   values to empty strings, matching the behavior of FlexLibs stable.</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">unicodedata</span>
+<span class="kn">import</span> <span class="nn">unicodedata</span>
 
-<span class="c1"># FLEx's null marker for empty multilingual string fields</span>
-<span class="n">FLEX_NULL_MARKER</span> <span class="o">=</span> <span class="s2">"***"</span>
+<span class="c1"># FLEx&#39;s null marker for empty multilingual string fields</span>
+<span class="n">FLEX_NULL_MARKER</span> <span class="o">=</span> <span class="s2">&quot;***&quot;</span>
 
 
 <div class="viewcode-block" id="normalize_text">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.string_utils.normalize_text">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">normalize_text</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Normalize a text value from LCM, converting FLEx's null marker to empty string.</span>
+<span class="k">def</span> <span class="nf">normalize_text</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Normalize a text value from LCM, converting FLEx&#39;s null marker to empty string.</span>
 
 <span class="sd">    FLEx/LCM uses ``***`` as a placeholder when multilingual string fields</span>
 <span class="sd">    (IMultiString, IMultiUnicode) have no value set. This function normalizes</span>
@@ -72,31 +72,31 @@
 <span class="sd">        text: A string value from an LCM text field, or None</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        The original text if it has content, or "" if None/empty/``***``</span>
+<span class="sd">        The original text if it has content, or &quot;&quot; if None/empty/``***``</span>
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; from flexicon.code.Shared.string_utils import normalize_text</span>
-<span class="sd">        &gt;&gt;&gt; normalize_text("***")</span>
-<span class="sd">        ''</span>
+<span class="sd">        &gt;&gt;&gt; normalize_text(&quot;***&quot;)</span>
+<span class="sd">        &#39;&#39;</span>
 <span class="sd">        &gt;&gt;&gt; normalize_text(None)</span>
-<span class="sd">        ''</span>
-<span class="sd">        &gt;&gt;&gt; normalize_text("hello")</span>
-<span class="sd">        'hello'</span>
-<span class="sd">        &gt;&gt;&gt; normalize_text("")</span>
-<span class="sd">        ''</span>
-<span class="sd">    """</span>
+<span class="sd">        &#39;&#39;</span>
+<span class="sd">        &gt;&gt;&gt; normalize_text(&quot;hello&quot;)</span>
+<span class="sd">        &#39;hello&#39;</span>
+<span class="sd">        &gt;&gt;&gt; normalize_text(&quot;&quot;)</span>
+<span class="sd">        &#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">text</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
     <span class="k">if</span> <span class="n">text</span> <span class="o">==</span> <span class="n">FLEX_NULL_MARKER</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
     <span class="k">return</span> <span class="n">text</span></div>
 
 
 
 <div class="viewcode-block" id="normalize_match_key">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.string_utils.normalize_match_key">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">normalize_match_key</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="k">def</span> <span class="nf">normalize_match_key</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Produce a key suitable for matching a Python-side string against an</span>
 <span class="sd">    FLEx-stored multilingual string value.</span>
 
@@ -106,7 +106,7 @@
 <span class="sd">    Find/Exists comparison.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        text: Input string (may be None, '', or ``***``).</span>
+<span class="sd">        text: Input string (may be None, &#39;&#39;, or ``***``).</span>
 <span class="sd">        casefold: If True (default), apply str.casefold() after NFD</span>
 <span class="sd">                  normalization. Pass False for case-sensitive Find methods.</span>
 <span class="sd">                  Use casefold (not lower) for correct handling of Turkish</span>
@@ -116,16 +116,16 @@
 <span class="sd">        Normalized string. Empty string for None/empty/``***`` inputs.</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; needle = normalize_match_key("oo", casefold=False)</span>
+<span class="sd">        &gt;&gt;&gt; needle = normalize_match_key(&quot;oo&quot;, casefold=False)</span>
 <span class="sd">        &gt;&gt;&gt; haystack = normalize_match_key(ITsString(p.Name.get_String(ws)).Text,</span>
 <span class="sd">        ...                                casefold=False)</span>
 <span class="sd">        &gt;&gt;&gt; needle == haystack  # True even when Python NFC differs from LCM NFD</span>
 <span class="sd">        True</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">text</span> <span class="o">=</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">""</span>
-    <span class="n">text</span> <span class="o">=</span> <span class="n">unicodedata</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">"NFD"</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">unicodedata</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">&quot;NFD&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">casefold</span><span class="p">:</span>
         <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">text</span></div>
@@ -134,15 +134,15 @@
 
 <div class="viewcode-block" id="normalize_ws_handle">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.string_utils.normalize_ws_handle">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">normalize_ws_handle</span><span class="p">(</span><span class="n">ws</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="k">def</span> <span class="nf">normalize_ws_handle</span><span class="p">(</span><span class="n">ws</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Normalize a writing-system argument to an integer handle.</span>
 
 <span class="sd">    LCM methods such as ``ITsMultiString.get_String`` require a plain</span>
 <span class="sd">    ``int`` handle.  Users naturally obtain writing-system objects from</span>
 <span class="sd">    ``project.WritingSystems`` (``CoreWritingSystemDefinition``) or pass</span>
 <span class="sd">    an int they already have.  This helper smooths over both cases so</span>
-<span class="sd">    wrappers don't expose a confusing pythonnet ``TypeError`` when the</span>
+<span class="sd">    wrappers don&#39;t expose a confusing pythonnet ``TypeError`` when the</span>
 <span class="sd">    caller passes an object instead of a raw handle.</span>
 
 <span class="sd">    Args:</span>
@@ -166,25 +166,25 @@
 <span class="sd">        &gt;&gt;&gt; # CoreWritingSystemDefinition object with .Handle == 1</span>
 <span class="sd">        &gt;&gt;&gt; normalize_ws_handle(ws_def)</span>
 <span class="sd">        1</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">ws</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">ws</span>
-    <span class="n">handle</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">"Handle"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">handle</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">&quot;Handle&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">handle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">"Unsupported writing-system argument type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. "</span>
-        <span class="s2">"Pass an int handle or a CoreWritingSystemDefinition object."</span>
+        <span class="sa">f</span><span class="s2">&quot;Unsupported writing-system argument type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. &quot;</span>
+        <span class="s2">&quot;Pass an int handle or a CoreWritingSystemDefinition object.&quot;</span>
     <span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="is_empty_text">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.string_utils.is_empty_text">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">is_empty_text</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="k">def</span> <span class="nf">is_empty_text</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Check if a text value from LCM is empty (None, empty string, or ``***``).</span>
 
 <span class="sd">    Args:</span>
@@ -195,15 +195,15 @@
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; from flexicon.code.Shared.string_utils import is_empty_text</span>
-<span class="sd">        &gt;&gt;&gt; is_empty_text("***")</span>
+<span class="sd">        &gt;&gt;&gt; is_empty_text(&quot;***&quot;)</span>
 <span class="sd">        True</span>
 <span class="sd">        &gt;&gt;&gt; is_empty_text(None)</span>
 <span class="sd">        True</span>
-<span class="sd">        &gt;&gt;&gt; is_empty_text("")</span>
+<span class="sd">        &gt;&gt;&gt; is_empty_text(&quot;&quot;)</span>
 <span class="sd">        True</span>
-<span class="sd">        &gt;&gt;&gt; is_empty_text("hello")</span>
+<span class="sd">        &gt;&gt;&gt; is_empty_text(&quot;hello&quot;)</span>
 <span class="sd">        False</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">text</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span> <span class="ow">or</span> <span class="n">text</span> <span class="o">==</span> <span class="n">FLEX_NULL_MARKER</span><span class="p">:</span>
@@ -214,8 +214,8 @@
 
 <div class="viewcode-block" id="best_analysis_text">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.string_utils.best_analysis_text">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">best_analysis_text</span><span class="p">(</span><span class="n">multi_obj</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="k">def</span> <span class="nf">best_analysis_text</span><span class="p">(</span><span class="n">multi_obj</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the best analysis alternative text from an IMultiString/IMultiUnicode,</span>
 <span class="sd">    normalized to empty string if unset.</span>
 
@@ -225,14 +225,14 @@
 <span class="sd">        multi_obj: An IMultiString or IMultiUnicode object, or None</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        The text content, or "" if None/empty/``***``</span>
+<span class="sd">        The text content, or &quot;&quot; if None/empty/``***``</span>
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; text = best_analysis_text(sense.Definition)</span>
 <span class="sd">        &gt;&gt;&gt; text = best_analysis_text(pos.Name)</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">multi_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
     <span class="n">text</span> <span class="o">=</span> <span class="n">multi_obj</span><span class="o">.</span><span class="n">BestAnalysisAlternative</span><span class="o">.</span><span class="n">Text</span>
     <span class="k">return</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span></div>
 
@@ -240,8 +240,8 @@
 
 <div class="viewcode-block" id="best_vernacular_text">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.string_utils.best_vernacular_text">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">best_vernacular_text</span><span class="p">(</span><span class="n">multi_obj</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="k">def</span> <span class="nf">best_vernacular_text</span><span class="p">(</span><span class="n">multi_obj</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the best vernacular alternative text from an IMultiString/IMultiUnicode,</span>
 <span class="sd">    normalized to empty string if unset.</span>
 
@@ -251,13 +251,13 @@
 <span class="sd">        multi_obj: An IMultiString or IMultiUnicode object, or None</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        The text content, or "" if None/empty/``***``</span>
+<span class="sd">        The text content, or &quot;&quot; if None/empty/``***``</span>
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; text = best_vernacular_text(entry.LexemeFormOA.Form)</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">multi_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
     <span class="n">text</span> <span class="o">=</span> <span class="n">multi_obj</span><span class="o">.</span><span class="n">BestVernacularAlternative</span><span class="o">.</span><span class="n">Text</span>
     <span class="k">return</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span></div>
 
@@ -265,8 +265,8 @@
 
 <div class="viewcode-block" id="best_text">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.string_utils.best_text">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">best_text</span><span class="p">(</span><span class="n">multi_obj</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="k">def</span> <span class="nf">best_text</span><span class="p">(</span><span class="n">multi_obj</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the best analysis-or-vernacular alternative text from an IMultiString/IMultiUnicode,</span>
 <span class="sd">    normalized to empty string if unset.</span>
 
@@ -277,13 +277,13 @@
 <span class="sd">        multi_obj: An IMultiString or IMultiUnicode object, or None</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        The text content, or "" if None/empty/``***``</span>
+<span class="sd">        The text content, or &quot;&quot; if None/empty/``***``</span>
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; text = best_text(sense.Gloss)</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">multi_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
     <span class="n">text</span> <span class="o">=</span> <span class="n">multi_obj</span><span class="o">.</span><span class="n">BestAnalysisVernacularAlternative</span><span class="o">.</span><span class="n">Text</span>
     <span class="k">return</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span></div>
 
@@ -291,10 +291,10 @@
 
 <div class="viewcode-block" id="best_multistring_alternative">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.string_utils.best_multistring_alternative">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">best_multistring_alternative</span><span class="p">(</span><span class="n">mua</span><span class="p">,</span> <span class="n">default_anal_ws</span><span class="p">,</span> <span class="n">default_vern_ws</span><span class="p">,</span>
+<span class="k">def</span> <span class="nf">best_multistring_alternative</span><span class="p">(</span><span class="n">mua</span><span class="p">,</span> <span class="n">default_anal_ws</span><span class="p">,</span> <span class="n">default_vern_ws</span><span class="p">,</span>
                                   <span class="n">fallback_anal_ws_handles</span><span class="o">=</span><span class="p">(),</span>
                                   <span class="n">fallback_vern_ws_handles</span><span class="o">=</span><span class="p">()):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the best-available alternative from a bare ``ITsMultiString`` as an</span>
 <span class="sd">    ``ITsString``, without relying on ``BestAnalysisVernacularAlternative``.</span>
 
@@ -303,8 +303,8 @@
 <span class="sd">    ``BestAnalysisAlternative`` / ``BestVernacularAlternative`` /</span>
 <span class="sd">    ``BestAnalysisVernacularAlternative`` accessors -- only</span>
 <span class="sd">    ``get_String(wsHandle)``, ``StringCount``, and</span>
-<span class="sd">    ``GetStringFromIndex(i, out ws)``. This helper reimplements the "best</span>
-<span class="sd">    alternative" priority walk directly on top of ``get_String`` so callers</span>
+<span class="sd">    ``GetStringFromIndex(i, out ws)``. This helper reimplements the &quot;best</span>
+<span class="sd">    alternative&quot; priority walk directly on top of ``get_String`` so callers</span>
 <span class="sd">    that only hold an ``ITsMultiString`` (e.g. custom field values obtained</span>
 <span class="sd">    via ``get_MultiStringProp``) can still get a sensible fallback string.</span>
 
@@ -336,17 +336,17 @@
 <span class="sd">        ...     anal_handles, vern_handles)</span>
 <span class="sd">        &gt;&gt;&gt; if best is None:</span>
 <span class="sd">        ...     best = ITsString(mua.get_String(project.DefaultAnalWs))</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">mua</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_hit</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_hit</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">ws_handle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="n">candidate</span> <span class="o">=</span> <span class="n">mua</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">candidate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
-        <span class="n">text</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s2">"Text"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s2">&quot;Text&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span> <span class="ow">or</span> <span class="n">text</span> <span class="o">==</span> <span class="n">FLEX_NULL_MARKER</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">candidate</span>
@@ -377,7 +377,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -393,7 +393,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -408,8 +408,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
     </div>
   </body>
 </html>
