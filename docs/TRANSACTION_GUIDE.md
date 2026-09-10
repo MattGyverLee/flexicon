@@ -104,6 +104,57 @@ with project.Transaction("operation"):  # <-- Mark set here
 - If the project was opened with `writeEnabled=False`, transactions silently skip marking
 - Write operations will fail at the individual operation level with `FP_ReadOnlyError`
 
+### 5. Special Case: Attached View (`FromOpenProject()`)
+
+An object obtained from `FLExProject.FromOpenProject(donor)` is a **view over a
+cache someone else owns** -- typically the project FlexTools already opened and
+handed to your `Main()`. Views are **Phase 1 unconditionally**, whatever mode the
+host is in:
+
+| Construct | On an attached view |
+|---|---|
+| `Transaction()` | **Supported.** Use this. |
+| `UndoableOperation()` | **Refused** -- `FP_TransactionError` |
+| `SaveChanges()` | **Refused** -- `FP_RuntimeError`; the host owns the save |
+| `CloseProject()` | **Silent no-op** -- returns `None`, never raises |
+
+`_undoable` is `False` on a view regardless of the donor's mode, because the host
+holds a single session-long non-undoable task for the whole session. There is no
+unit of work for a view to open, so `UndoableOperation()` cannot be honoured and
+says so.
+
+**You do not save; the host does.** A module writing through a view should simply
+return when it is done. FlexTools persists the change when it closes the project.
+This is verified, not assumed: a `Transaction()` write through an attached view
+reaches the `.fwdata` on the host's save, on both a scratch project and Sena 3
+(`evidence/t3_2_persistence_gate_scratch_2026-09-09.txt`,
+`evidence/t3_2_persistence_gate_sena3_2026-09-09.txt`). No explicit
+`MainCacheAccessor` flush is needed.
+
+```python
+from flexicon import FLExProject
+
+def Main(project, report, modifyAllowed):
+    fx = FLExProject.FromOpenProject(project)
+
+    if modifyAllowed:
+        with fx.Transaction("retag entries"):
+            for entry in fx.LexEntry.GetAll():
+                ...
+
+    # No SaveChanges(), no CloseProject(). Just return.
+```
+
+Note the ordering asymmetry between the two refusals, which is deliberate:
+
+- `SaveChanges()` checks for an attached view **before** the write-enabled check,
+  so even a write-enabled view hears "the host owns the save" rather than a
+  transaction-depth or read-only message that would blame the wrong thing.
+- `UndoableOperation()` checks write-enabledness **first**, so a *read-only* view
+  correctly hears `FP_ReadOnlyError`. A read-only view cannot write by any route,
+  and pointing such a caller at `Transaction()` would be a wrong answer wearing
+  the shape of a helpful one.
+
 ---
 
 ## Exception Handling
@@ -218,6 +269,11 @@ use `CloseProject()` to persist under that mode instead.
   `CurrentDepth` is 0 -- after a `Transaction()`/`UndoableOperation()`
   block has exited, or via `CloseProject()` under `undoable=False`.
 - **Read-only projects**: raises `FP_ReadOnlyError` if project is not write-enabled
+- **Attached views**: raises `FP_RuntimeError` before either check above -- see
+  "Special Case: Attached View". A view must not save; the host does. And unlike
+  an owned project, the standing advice to "use `CloseProject()` instead" does
+  **not** apply: on a view `CloseProject()` is a deliberate no-op, so following
+  that advice would produce a green run that wrote nothing.
 - **Session remains open**: the project stays open and usable after `SaveChanges()`
 
 ---
@@ -355,12 +411,34 @@ with project.Transaction("import batch") as txn:
 **Returns:** None
 
 **Raises:**
+- `FP_RuntimeError` - if called on an attached view (`FromOpenProject()`); checked
+  first, because the host owns the save
 - `FP_ReadOnlyError` - if project is not write-enabled
 
 **Example:**
 ```python
 project.SaveChanges()  # Persist pending changes
 ```
+
+### FLExProject.FromOpenProject(donor)
+
+Classmethod. Returns a full flexicon facade over a cache the host already opened.
+
+**Parameters:**
+- `donor`: whatever the host handed `Main()` -- a flexlibs `FLExProject`, or a
+  flexicon one. Duck-typed; never `isinstance`-checked against flexlibs.
+
+**Returns:**
+- The donor itself, unchanged, if it is already a flexicon `FLExProject`
+- Otherwise an attached view: `_undoable` is `False`, `writeEnabled` is borrowed
+  from the donor verbatim, and the donor is never mutated
+
+**Raises:**
+- `FP_ParameterError` - if the donor lacks `project` or `writeEnabled`, naming
+  every missing attribute and the donor's module
+
+Opens nothing and closes nothing. See "Special Case: Attached View" for which
+lifecycle calls a view refuses.
 
 ---
 
@@ -369,5 +447,7 @@ project.SaveChanges()  # Persist pending changes
 - `docs/internal/RESEARCH_NEEDED.md` - Details on Phase 2 research and API verification
 - `flexicon.code.transaction._FLExTransaction` - Internal context manager class
 - `FLExProject.OpenProject()` - How to open projects with write access
-- `FP_ReadOnlyError`, `FP_TransactionError` - Exceptions
+- `FLExProject.FromOpenProject()` - Attaching to a cache the host already opened
+- `docs/MIGRATION_GUIDE.md` - The portable module shape for FlexTools modules
+- `FP_ReadOnlyError`, `FP_TransactionError`, `FP_RuntimeError` - Exceptions
 

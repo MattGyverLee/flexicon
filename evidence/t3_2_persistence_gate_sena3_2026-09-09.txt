@@ -1,0 +1,103 @@
+================================================================================
+CP3 / T3.2 -- THE PERSISTENCE GATE, SECOND PASS (Sena 3)
+spec: FlexToolsMCP/specs/flexicon-project-bridge  (task T015)
+date: 2026-09-09
+result: PASS  -- and Sena 3 was restored byte-for-byte afterwards
+================================================================================
+
+SPEC 5.2 asks for the gate to be run on a scratch project first, then on Sena 3.
+The scratch pass is recorded in t3_2_persistence_gate_scratch_2026-09-09.txt;
+this is the Sena 3 pass. Method, driver, modules and environment are identical to
+that run -- see it for the full description of why this is genuine FlexTools
+(ModuleManager.RunModules, the GUI's own code path) rather than an imitation.
+
+  project   "Sena 3"  (the real one, not a copy)
+  target    entry 0006f482-a078-4cef-9c5a-8bd35b53cf72  headword "cibubu"
+            sense 07086e7d-dfcc-4f4e-b0d6-0be7a7943f97
+  sentinel  "T32-GATE-20260909-A"
+  original  "gaguez"
+
+--------------------------------------------------------------------------------
+STEP 0 -- insurance, before touching a project that is not disposable
+--------------------------------------------------------------------------------
+  cp "C:\ProgramData\SIL\FieldWorks\Projects\Sena 3\Sena 3.fwdata" \
+     <scratchpad>/Sena3.pre-T015.fwdata
+
+  55954858 bytes.
+  Pre-state confirmed clean: sentinel count 0, "gaguez" count 1.
+
+--------------------------------------------------------------------------------
+STEP 1 -- GATE A, the write  (modifyAllowed=True; process then exits)
+--------------------------------------------------------------------------------
+  INFO: [INFO] donor module    : flexlibs.code.FLExProject
+  INFO: [INFO] donor writeEnabled: True
+  INFO: [INFO] donor _undoable  : '<unset>'
+  INFO: [INFO] view is donor    : False        <-- ATTACH branch
+  INFO: [INFO] view attached    : True
+  INFO: [INFO] view _undoable   : False        <-- Phase 1, unconditionally
+  INFO: [INFO] view writeEnabled: True
+  INFO: [INFO] GLOSS_BEFORE='gaguez'
+  INFO: [INFO] GLOSS_AFTER_IN_MEMORY='T32-GATE-20260909-A'
+  INFO: [INFO] In-memory write OK, and no save was requested from the module --
+               the host owns it.
+  INFO: Processing completed. Errors: 0; Warnings: 0
+
+--------------------------------------------------------------------------------
+STEP 2 -- GATE B, the read-back  (a NEW process: the reopen)
+--------------------------------------------------------------------------------
+  INFO: [INFO] view attached: True
+  INFO: [INFO] GLOSS_NOW='T32-GATE-20260909-A'
+  INFO: [INFO] T3.2 RESULT=PASS -- the write through the attached view survived
+               the host save and the reopen.
+
+--------------------------------------------------------------------------------
+STEP 3 -- the file on disk
+--------------------------------------------------------------------------------
+  Sena 3.fwdata   55954871 bytes   (was 55954858)
+  delta +13, again exactly len("T32-GATE-20260909-A") - len("gaguez") = 19 - 6
+  grep -c "T32-GATE-20260909-A"  ->  1
+  grep -c "gaguez"               ->  0
+
+  Identical byte arithmetic to the scratch pass. The result reproduces.
+
+--------------------------------------------------------------------------------
+STEP 4 -- GATE C, restore  (Sena 3 must not be left modified)
+--------------------------------------------------------------------------------
+  INFO: [INFO] GLOSS_BEFORE='T32-GATE-20260909-A'
+  INFO: [INFO] GLOSS_AFTER_IN_MEMORY='gaguez'
+  INFO: [INFO] RESTORE OK -- the host save on close will persist it.
+
+  After close:
+    Sena 3.fwdata   55954858 bytes   (back to the original size)
+    grep -c "T32-GATE-20260909-A"  ->  0
+    grep -c "gaguez"               ->  1
+
+    cmp "Sena 3.fwdata" <scratchpad>/Sena3.pre-T015.fwdata
+      -> IDENTICAL, byte for byte.
+
+  Sena 3 is exactly as it was before T015 began. Not merely "the gloss is back":
+  the whole 55,954,858-byte file matches the pre-run backup bit for bit.
+
+--------------------------------------------------------------------------------
+VERDICT
+--------------------------------------------------------------------------------
+T3.2 PASS on Sena 3, reproducing the scratch-project result exactly.
+
+An unplanned bonus from the restore step: writing the sentinel and writing the
+original value back produced a file byte-identical to the starting state. The
+attached-view write path is therefore not only durable but cleanly reversible
+and deterministic -- it introduces no incidental churn (no stray timestamps,
+no reordering, no residue) into the .fwdata beyond the field actually changed.
+
+Combined with the scratch pass, the gate is settled on two projects and does not
+block. CP1 may ship. US4 (docs) and US5 (template pre-flight) are unblocked.
+
+--------------------------------------------------------------------------------
+STATE LEFT BEHIND
+--------------------------------------------------------------------------------
+  Sena 3                  pristine (verified byte-identical)
+  Sena3 Bridge Scratch    still carries the sentinel; disposable, delete when done
+  Modules\BridgeGate\     three gate modules left installed in
+                          D:\Apps\FlexTools\FlexTools\Modules\BridgeGate
+                          (A write / B verify / C restore) -- remove if you do
+                          not want them in the FlexTools module list

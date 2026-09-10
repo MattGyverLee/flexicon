@@ -82,7 +82,16 @@ class TestRefreshFromDisk:
         # method (~5.3k chars as of T8b) with headroom for future growth;
         # the assertion's intent -- both methods resolve the same accessor
         # -- is unchanged, only the window assumption was wrong.
-        save_body = source[save_idx : save_idx + 6000]
+        #
+        # Widened again from 6000 (flexicon-project-bridge T012): the
+        # attached-view refusal added a guard block and its docstring +
+        # Raises entry, leaving only 44 characters of headroom under 6000.
+        # That is the third time this window has been the thing that was
+        # wrong rather than the code, so the lesson is now explicit: this
+        # is a "both methods resolve the same accessor" assertion, NOT a
+        # docstring length budget. Never shorten prose in FLExProject.py to
+        # fit this number -- widen the number. 9000 restores real headroom.
+        save_body = source[save_idx : save_idx + 9000]
         assert "self.ObjectRepository(IUndoStackManager)" in refresh_body
         assert "self.ObjectRepository(IUndoStackManager)" in save_body
         assert "usm.Refresh()" in refresh_body

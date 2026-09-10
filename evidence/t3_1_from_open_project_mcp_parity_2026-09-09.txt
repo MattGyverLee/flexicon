@@ -1,0 +1,208 @@
+================================================================================
+CP3 / T3.1 -- FromOpenProject parity under the MCP
+spec: FlexToolsMCP/specs/flexicon-project-bridge  (task T013)
+date: 2026-09-09
+result: PASS
+================================================================================
+
+CLAIM UNDER TEST (spec.md:213-214)
+  "Under the MCP, a module using the 3d shape produces results identical to the
+   same module using project.LexEntry directly."
+
+ENVIRONMENT
+  FlexToolsMCP server     2.9.1  (pid 47544)
+  flexicon (pyflexicon)   4.6.0, EDITABLE install ->
+                          D:\Github\_Projects\_LEX\flexicon
+                          git branch: flexicon-project-bridge
+                          FLExProject.FromOpenProject present: True
+  flexlibs_stable         1.2.8
+  liblcm                  11.0.0
+  FieldWorks 9            C:\Program Files\SIL\FieldWorks 9
+  python                  3.12.7
+  project                 Sena 3   (1462 entries)
+  mode                    read-only (write_enabled=False) -- no mutation, no
+                          human write authorization needed or used
+
+  NOTE: the MCP was confirmed to be running the branch build, not released
+  4.6.0 -- "pip show pyflexicon" reports "Editable project location:
+  D:\Github\_Projects\_LEX\flexicon", and every probe below reports
+  donor_module=flexicon.code.FLExProject.
+
+  CAVEAT: the shipped API index is flexicon_api_v4.6.0.json, generated from
+  released 4.6.0, so flextools_get_object_api(object_type='FLExProject') does
+  not yet list FromOpenProject. Index-only staleness; the runtime has the
+  method. A "python -m flextoolsmcp.refresh" is due once the branch releases.
+
+--------------------------------------------------------------------------------
+FINGERPRINT DEFINITION
+--------------------------------------------------------------------------------
+For every entry returned by LexEntry.GetAll(), one tab-joined row:
+
+    GUID <TAB> GetHeadword <TAB> GetLexemeForm <TAB> pipe-joined GetGloss(s)
+    for s in GetAllSenses(entry)
+
+Rows sorted (GUID-leading, so the order is cache-load independent), joined with
+newlines, SHA-256 over UTF-8. GUID is used rather than hvo because an hvo is
+valid only within a single run_module call (issue #103).
+
+--------------------------------------------------------------------------------
+PROBE A -- SPEC 3d shape          op-195549979-001
+--------------------------------------------------------------------------------
+    fx = FLExProject.FromOpenProject(project)
+    lex, sen = fx.LexEntry, fx.Senses
+
+  SHAPE=3d
+  IDENTITY fx_is_project=True
+  IDENTITY fx_project_is_project_project=True
+  IDENTITY has_attached_donor=False
+  IDENTITY undoable=False
+  IDENTITY writeEnabled=False
+  IDENTITY donor_module=flexicon.code.FLExProject
+  ENTRY_COUNT=1462
+  ROW_CHARS=87325
+  DIGEST=8a88d78da1b61d357bd33dcfe579fc52be53d801a2ad53790b5a61862879c961
+
+  Under the MCP the injected "project" is ALREADY a flexicon FLExProject, so
+  the 3d shape takes the idempotence short-circuit (contract 2.1): the donor is
+  returned unchanged, _attached_donor is NOT set on it, and its _undoable mode
+  is untouched. That is the correct behaviour here, and it is exactly why probe
+  C below exists -- A alone does not exercise the attach path.
+
+--------------------------------------------------------------------------------
+PROBE B -- control, no bridge      op-195604396-002
+--------------------------------------------------------------------------------
+    lex, sen = project.LexEntry, project.Senses
+
+  SHAPE=control
+  IDENTITY donor_module=flexicon.code.FLExProject
+  ENTRY_COUNT=1462
+  ROW_CHARS=87325
+  DIGEST=8a88d78da1b61d357bd33dcfe579fc52be53d801a2ad53790b5a61862879c961
+
+  A == B, byte for byte.
+
+--------------------------------------------------------------------------------
+PROBE C -- the ATTACH branch, over the LIVE cache   op-195635927-003
+--------------------------------------------------------------------------------
+FlexTools hands Main() a flexlibs FLExProject, which takes the attach branch --
+a path probe A cannot reach under the MCP. Probe C stands in a flexlibs-SHAPED
+donor (a plain object carrying project / lp / lexDB / writeEnabled borrowed from
+the live session) so the borrowed facade is exercised against a real LcmCache
+rather than a fake. Both fingerprints are computed inside ONE cache load, so the
+comparison carries no cross-run noise.
+
+  SHAPE=attach
+  ATTACH is_new_object=True
+  ATTACH isinstance_FLExProject=True
+  ATTACH view_project_is_donor_project=True
+  ATTACH view_lp_is_donor_lp=True
+  ATTACH view_lexDB_is_donor_lexDB=True
+  ATTACH attached_donor_is_donor=True
+  ATTACH undoable=False
+  ATTACH writeEnabled=False
+  ATTACH donor_unmutated=True
+
+  GUARD close_returned=None
+  GUARD cache_alive_after_close=True
+  GUARD save_refused=True type=FP_RuntimeError
+  GUARD save_names_bridge=True
+  GUARD save_avoids_CloseProject_advice=True
+  GUARD uow_refused=True type=FP_ReadOnlyError
+  GUARD uow_names_bridge=False
+  GUARD uow_avoids_undoable_false_msg=True
+
+  ENTRY_COUNT=1462
+  ROW_CHARS=87325
+  DIGEST=8a88d78da1b61d357bd33dcfe579fc52be53d801a2ad53790b5a61862879c961
+  CONTROL_ENTRY_COUNT=1462
+  CONTROL_DIGEST=8a88d78da1b61d357bd33dcfe579fc52be53d801a2ad53790b5a61862879c961
+  PARITY same_count=True same_digest=True
+
+--------------------------------------------------------------------------------
+ON uow_refused=FP_ReadOnlyError (looks like a T010 miss; it is not)
+--------------------------------------------------------------------------------
+T010 requires UndoableOperation() on an attached view to raise
+FP_TransactionError naming FromOpenProject. Probe C saw FP_ReadOnlyError with no
+mention of the bridge, because this session is read-only and
+_FLExUndoableOperation.__enter__ checks writeEnabled BEFORE the attached-view
+branch.
+
+That ordering is deliberate and documented in place
+(flexicon/code/undoable_operation.py:86-107), and pinned by the named test
+test_read_only_attached_view_reports_read_only_not_attached_view. The asymmetry
+against SaveChanges (T011, where the attached-view check goes FIRST) is the
+point: SaveChanges must refuse even a write-enabled view because the host owns
+the save, whereas a read-only view cannot write by any route, and pointing such
+a caller at Transaction() would be a wrong answer in the shape of a helpful one.
+
+The write-enabled attached view -- where T010's message IS the right answer --
+is covered by the CP2 unit suite, run alongside this probe:
+
+    python -m pytest tests/test_from_open_project.py -q
+    39 passed in 1.23s
+
+--------------------------------------------------------------------------------
+VERDICT
+--------------------------------------------------------------------------------
+T3.1 PASS. All three digests identical
+(8a88d78da1b61d357bd33dcfe579fc52be53d801a2ad53790b5a61862879c961), across
+1462 entries / 87325 fingerprint characters:
+
+    3d shape (idempotent)  ==  control  ==  attached view (attach branch)
+
+The bridge is read-transparent: a module written in the SPEC 3d shape returns
+byte-identical results to one using project.LexEntry directly, and does so
+whether FromOpenProject short-circuits (MCP) or genuinely attaches (FlexTools).
+The US2 lifecycle guards also hold against a live cache: CloseProject() is a
+silent no-op that leaves the host's cache alive, and SaveChanges() refuses while
+naming the bridge and without repeating the CloseProject() advice (R7).
+
+SCOPE -- what this does NOT settle: T3.2, the write-persistence gate. Nothing
+here was written to disk. T014/T015 still owe the live SetGloss-through-a-view
+evidence, and T016 still owes the ship/no-ship decision.
+
+================================================================================
+ADDENDUM -- the attach branch against a GENUINE flexlibs donor
+================================================================================
+Added the same day, while staging T014. Probe C above stood in a flexlibs-SHAPED
+donor because the MCP never produces a real one. The FlexTools headless runner
+does: flextoolslib/misc/RunModule.py opens the project with the STABLE flexlibs
+FLExProject and hands it to Main(), which is exactly the FlexTools GUI's shape.
+It runs read-only (OpenProject without writeEnabled; FTModuleClass.Run defaults
+modifyAllowed=False), so this is a safe read-only observation, not the T3.2 write.
+
+  command:
+    python FlexTools/scripts/TestAModule.py \
+           FlexTools/Modules/BridgeGate/T32_Gate_A_Write.py \
+           "Sena3 Bridge Scratch"
+
+  flexlibs 1.2.8 / flexicon 4.6.0 (editable, branch flexicon-project-bridge)
+  FieldWorks 9.3.10.1448
+
+  [INFO] donor module    : flexlibs.code.FLExProject     <-- the real thing
+  [INFO] donor writeEnabled: False
+  [INFO] donor _undoable  : '<unset>'                    <-- flexlibs has no such attr
+  [INFO] view is donor    : False                        <-- ATTACH branch, not idempotence
+  [INFO] view attached    : True
+  [INFO] view _undoable   : False
+  [INFO] view writeEnabled: False
+  [INFO] GLOSS_BEFORE='gaguez'
+  [WARN] modifyAllowed is False -- nothing was written.
+
+This closes the one gap in probe C: FromOpenProject takes the attach branch on a
+genuine flexlibs donor, borrows its live cache, reports _undoable=False, and
+serves reads through the full flexicon facade -- under the actual host, not a
+simulation. The donor carries no _undoable attribute at all, which is precisely
+why Invariant A discriminates on _attached_donor rather than on _undoable.
+
+INCIDENTAL DEFECT FOUND AND FIXED (in the gate module, not in flexicon)
+  The first draft of the gate module resolved its target with
+  fx.Object(TARGET_SENSE_GUID). That returns the object at its base ICmObject
+  type, and reading the gloss off it died with
+
+      'ICmObject' object has no attribute 'Gloss'
+
+  Senses reached via LexEntry.GetAllSenses() come back correctly typed, so the
+  module now walks from the owning entry and needs no pythonnet cast. Worth
+  noting for US4's docs: the portable module shape should navigate, not resolve
+  a bare GUID, unless the caller is prepared to cast.

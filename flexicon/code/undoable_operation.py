@@ -83,6 +83,23 @@ class _FLExUndoableOperation:
         new ``UndoableUnitOfWorkHelper`` (which begins the undo task).
         If the project is not in undoable mode, raises FP_TransactionError.
         """
+        # NOTE ON ORDER: this read-only check deliberately stays AHEAD of the
+        # attached-view branch below, which is the opposite of SaveChanges().
+        # The asymmetry is intended, not an oversight:
+        #
+        #   * SaveChanges() must refuse even a WRITE-ENABLED view, and the
+        #     reason is that the host owns the save -- not read-onlyness. So a
+        #     read-only diagnosis there would misdescribe the refusal, and the
+        #     attached-view check goes first.
+        #   * Here, a read-only view cannot write by ANY route. "Project is not
+        #     write-enabled" is the true, actionable answer (the host must open
+        #     it write-enabled). The attached-view message points the caller at
+        #     Transaction(), which on a read-only project fails as well -- a
+        #     wrong answer in the shape of a helpful one.
+        #
+        # test_read_only_attached_view_reports_read_only_not_attached_view
+        # pins this, so reordering is a deliberate act that breaks a named
+        # test rather than a silent change of behaviour.
         if not self._project.writeEnabled:
             # Lazy import to prevent circular dependency: FLExProject imports undoable_operation at module level
             from .FLExProject import FP_ReadOnlyError
@@ -91,7 +108,14 @@ class _FLExUndoableOperation:
 
         if not self._project._undoable:
             # Lazy import to prevent circular dependency: FLExProject imports undoable_operation at module level
-            from .FLExProject import FP_TransactionError
+            from .FLExProject import (
+                FP_TransactionError,
+                _ATTACHED_VIEW_UNDOABLE_REFUSAL,
+                _IsAttachedView,
+            )
+
+            if _IsAttachedView(self._project):
+                raise FP_TransactionError(_ATTACHED_VIEW_UNDOABLE_REFUSAL)
 
             raise FP_TransactionError(
                 "Project must be opened with undoable=True to use UndoableOperation. "

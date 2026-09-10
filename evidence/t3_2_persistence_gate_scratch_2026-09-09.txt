@@ -1,0 +1,187 @@
+================================================================================
+CP3 / T3.2 -- THE PERSISTENCE GATE (scratch project)
+spec: FlexToolsMCP/specs/flexicon-project-bridge  (task T014)
+date: 2026-09-09
+result: PASS  -- CP1 is clear to ship on this evidence
+================================================================================
+
+THE QUESTION (spec.md:215-221)
+  "With FLEx holding the project, does a Phase 1 Transaction inside the flexlibs
+   non-undoable task actually commit on the host save, or does it need an
+   explicit MainCacheAccessor flush? Run a SetGloss through an attached view
+   under real FlexTools, close FlexTools, reopen, assert the value persisted.
+   If it does not persist, this spec is wrong that _undoable = False alone is
+   sufficient, and CP3 must block CP1 from shipping."
+
+ANSWER
+  It persists. No explicit flush is needed. The spec's claim that
+  _undoable = False alone is sufficient HOLDS.
+
+--------------------------------------------------------------------------------
+WHY THIS IS "REAL FLEXTOOLS" AND NOT AN IMITATION
+--------------------------------------------------------------------------------
+The gate was driven from the CLI through FlexTools' OWN code path -- the same one
+the GUI's Run button uses. A thin driver calls:
+
+    flextoolslib.code.FTModules.ModuleManager()
+        .LoadAll()
+        .RunModules(projectName, [moduleName], reporter, modifyAllowed=True)
+
+RunModules() is the GUI's entry point. Internally
+(C:\Python313\Lib\site-packages\flextoolslib\code\FTModules.py):
+
+  * __openProject()  -> FLExProject.OpenProject(name, writeEnabled=modifyAllowed)
+                        using the STABLE flexlibs class, exactly as the GUI does
+  * per module       -> FlexToolsModuleClass.Run(project, reporter, modifyAllowed)
+  * __closeProject() -> FLExProject.CloseProject()
+                        docstring: "Save any changes and release the LCM Cache."
+
+That CloseProject() is the host save under test. Gate A ran in ONE process which
+then exited (FLExCleanup); Gate B ran in a SEPARATE, LATER process. That is
+"run under FlexTools / close FlexTools / reopen FlexTools" faithfully, with a
+real process boundary rather than a re-read of a warm cache.
+
+  driver : scratchpad/ft_cli.py
+  cwd    : D:\Apps\FlexTools\FlexTools   (where flextools.ini lives; FTConfig
+           derives MODULES_PATH from it)
+  modules: D:\Apps\FlexTools\FlexTools\Modules\BridgeGate\
+             T32_Gate_A_Write.py    (FTM_ModifiesDB: True)
+             T32_Gate_B_Verify.py   (FTM_ModifiesDB: False)
+
+--------------------------------------------------------------------------------
+ENVIRONMENT
+--------------------------------------------------------------------------------
+  FlexTools app        D:\Apps\FlexTools\FlexTools  (the INSTALLED one, not the
+                       dev checkout)
+  python               3.13.12  (C:\Python313\python.exe -- the `py` launcher
+                       default, which is what FlexTools runs)
+  flextoolslib         2026.2.26b0
+  flexlibs (stable)    1.2.8
+  pyflexicon           EDITABLE -> D:\Github\_Projects\_LEX\flexicon
+                       branch flexicon-project-bridge
+                       flexicon.version      = 4.6.0
+                       importlib.metadata    = 4.1.1   (!! see CP4 note below)
+                       FLExProject.FromOpenProject present: True
+  FieldWorks           9.3.10.1448 (64 bit)
+  project              "Sena3 Bridge Scratch" -- a disposable copy of Sena 3,
+                       created for this gate
+
+  TARGET
+    entry  0006f482-a078-4cef-9c5a-8bd35b53cf72   headword "cibubu"
+    sense  07086e7d-dfcc-4f4e-b0d6-0be7a7943f97   its first sense
+    before "gaguez"
+    after  "T32-GATE-20260909-A"
+
+--------------------------------------------------------------------------------
+STEP 0 -- read-only dry run (proves the wiring before anything is written)
+--------------------------------------------------------------------------------
+  MODIFY  : False
+  INFO: [INFO] donor module    : flexlibs.code.FLExProject
+  INFO: [INFO] donor writeEnabled: False
+  INFO: [INFO] donor _undoable  : '<unset>'
+  INFO: [INFO] view is donor    : False
+  INFO: [INFO] view attached    : True
+  INFO: [INFO] view _undoable   : False
+  INFO: [INFO] GLOSS_BEFORE='gaguez'
+  WARN: [WARN] modifyAllowed is False -- nothing was written.
+
+--------------------------------------------------------------------------------
+STEP 1 -- GATE A, the write  (modifyAllowed=True; process then exits)
+--------------------------------------------------------------------------------
+  MODIFY  : True
+  INFO: Opening project 'Sena3 Bridge Scratch'...
+  INFO: Running 'T3.2 Gate A -- write through an attached view' (version 1.0)...
+  INFO: [INFO] donor module    : flexlibs.code.FLExProject
+  INFO: [INFO] donor writeEnabled: True
+  INFO: [INFO] donor _undoable  : '<unset>'
+  INFO: [INFO] view is donor    : False        <-- ATTACH branch, real donor
+  INFO: [INFO] view attached    : True
+  INFO: [INFO] view _undoable   : False        <-- Phase 1, unconditionally
+  INFO: [INFO] view writeEnabled: True         <-- borrowed verbatim from donor
+  INFO: [INFO] GLOSS_BEFORE='gaguez'
+  INFO: [INFO] GLOSS_AFTER_IN_MEMORY='T32-GATE-20260909-A'
+  INFO: [INFO] In-memory write OK, and no save was requested from the module --
+               the host owns it.
+  INFO: Processing completed. Errors: 0; Warnings: 0
+
+  The module wrote inside `with fx.Transaction("T3.2 persistence gate"):` and
+  called NO save of its own. On an attached view SaveChanges() is refused by
+  design; the host's CloseProject() is the only save in play. That is the whole
+  point of the gate.
+
+--------------------------------------------------------------------------------
+STEP 2 -- GATE B, the read-back  (a NEW process: the reopen)
+--------------------------------------------------------------------------------
+  MODIFY  : False
+  INFO: Opening project 'Sena3 Bridge Scratch'...
+  INFO: Running 'T3.2 Gate B -- verify' (version 1.0)...
+  INFO: [INFO] view attached: True
+  INFO: [INFO] GLOSS_NOW='T32-GATE-20260909-A'
+  INFO: [INFO] expected sentinel='T32-GATE-20260909-A'
+  INFO: [INFO] original value   ='gaguez'
+  INFO: [INFO] T3.2 RESULT=PASS -- the write through the attached view survived
+               the host save and the reopen.
+
+--------------------------------------------------------------------------------
+STEP 3 -- two INDEPENDENT corroborations (different stacks, same conclusion)
+--------------------------------------------------------------------------------
+(a) The raw file on disk -- no library involved at all:
+
+      file  : C:\ProgramData\SIL\FieldWorks\Projects\Sena3 Bridge Scratch\
+              Sena3 Bridge Scratch.fwdata
+      mtime : 2026-09-09 20:16
+      size  : 55954871 bytes   (was 55954858 before the write)
+      delta : +13 bytes, exactly len("T32-GATE-20260909-A") - len("gaguez")
+              = 19 - 6 = 13
+
+      grep -c "T32-GATE-20260909-A"  ->  1
+      grep -c "gaguez"               ->  0
+
+    The sentinel is physically in the .fwdata and the old value is gone. This is
+    disk persistence, not a cache artifact.
+
+(b) The FlexToolsMCP stack -- a different process, a different host, flexicon
+    rather than flexlibs as the opener (op-201705234-005):
+
+      HEADWORD=cibubu
+      GLOSS_NOW='T32-GATE-20260909-A'
+      MATCHES_SENTINEL=True
+
+--------------------------------------------------------------------------------
+VERDICT
+--------------------------------------------------------------------------------
+T3.2 PASS.
+
+A Phase 1 Transaction executed through a FromOpenProject attached view, inside
+the host's session-long non-undoable task, DOES commit when the host saves on
+close. It reaches the .fwdata file. No explicit MainCacheAccessor flush is
+required, and contracts/from-open-project.md section 2.2 needs no flush step.
+
+The gate does not block. CP1 may ship, and US4 (docs) and US5 (template
+pre-flight) are unblocked.
+
+--------------------------------------------------------------------------------
+INCIDENTAL FINDING FOR CP4 / T024 -- the version sources disagree, on this very
+machine
+--------------------------------------------------------------------------------
+Under the Python that FlexTools actually runs (3.13):
+
+    flexicon.version                        -> "4.6.0"    (the live source)
+    importlib.metadata.version("pyflexicon") -> "4.1.1"   (stale dist metadata
+                                                           from the editable
+                                                           install)
+
+Two "versions" of the same package, differing by five minor releases, both true
+in their own terms. This is direct field evidence for T024's design decision that
+the pre-flight must be a CAPABILITY PROBE
+(hasattr(FLExProject, "FromOpenProject")) and never a version comparison: a
+hardcoded floor compared against either of these strings would give the wrong
+answer here today. The version string is fit only for the human-readable half of
+the message, which is exactly what the contract specifies.
+
+--------------------------------------------------------------------------------
+STATE LEFT BEHIND
+--------------------------------------------------------------------------------
+"Sena3 Bridge Scratch" still carries the sentinel gloss. It is a disposable copy
+created for this gate; delete the folder when the campaign is done. To reset it
+instead, put "gaguez" back on sense 07086e7d-dfcc-4f4e-b0d6-0be7a7943f97.
