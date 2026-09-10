@@ -16,7 +16,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Import BaseOperations parent class
-from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
+from ..BaseOperations import (
+    BaseOperations,
+    OperationsMethod,
+    wrap_enumerable,
+    _resolve_ws_handle,
+)
 
 # Import FLEx LCM types
 from SIL.LCModel import (
@@ -491,6 +496,13 @@ class ExampleOperations(BaseOperations):
                         ws.Id: ws.Handle
                         for ws in self.project.WritingSystems.GetAll()
                     }
+                    # Lazily-built normalized WS-id side-index, memoized
+                    # across every alt resolved within this one apply call
+                    # (spec 250 C-D4-4: build at most once per apply call).
+                    # Mirrors BaseOperations._apply_props_loop's
+                    # ``_ws_resolve_cache`` and #266's
+                    # ``__ApplyBasicIPASymbol`` cache.
+                    _ws_resolve_cache = {}
 
                     # Build a GUID->object map for the translation type possibility list.
                     # Translation types live in LangProject.TranslationTagsOA.
@@ -534,6 +546,67 @@ class ExampleOperations(BaseOperations):
                             )
                             continue
 
+                        # Resolve every alt's target writing system BEFORE
+                        # creating/attaching the ICmTranslation (issue #267).
+                        # _resolve_ws_handle can raise FP_ParameterError on
+                        # an ambiguous normalized spelling (C-D4-3 step 2b);
+                        # doing this resolution up front means that raise
+                        # happens before ICmTranslationFactory.Create /
+                        # TranslationsOC.Add, so no zero-alt ICmTranslation
+                        # is ever left owned by the example -- the operation
+                        # stays total by construction rather than relying on
+                        # the enclosing transaction to roll back a partially
+                        # built object.
+                        trans_text_dict = trans_dict.get("Translation", {})
+                        resolved_alts = []
+                        for src_ws_id, text in trans_text_dict.items():
+                            if not text:
+                                continue
+                            tgt_ws_id = src_ws_id
+                            if ws_map:
+                                tgt_ws_id = ws_map.get(src_ws_id, tgt_ws_id)
+                            tgt_handle = _resolve_ws_handle(
+                                target_ws_by_id, tgt_ws_id,
+                                _index_cache=_ws_resolve_cache
+                            )
+                            if tgt_handle is None:
+                                # Target genuinely lacks this WS (absent
+                                # under both exact and normalized matching
+                                # -- an ambiguous spelling already raised
+                                # above via _resolve_ws_handle). NOT an
+                                # error: source and target projects
+                                # legitimately differ in writing-system
+                                # coverage (Defect 3, deliberately
+                                # unchanged -- see #266's identical
+                                # treatment). The drop is no longer
+                                # silent, mirroring BaseOperations
+                                # ._apply_props_loop's own Defect 3 fix:
+                                # unconditionally logged, not gated behind
+                                # a strict= kwarg whose False default
+                                # would preserve the silent behaviour
+                                # (CLAUDE.md "Don't Add a Flag for
+                                # Behaviour That Should Be
+                                # Unconditional"). The example (not the
+                                # translation) is named because at this
+                                # point the ICmTranslation has not been
+                                # created yet -- resolution happens before
+                                # creation/attachment (see above).
+                                _log.warning(
+                                    "ApplySyncableProperties: dropping "
+                                    "ICmTranslation.Translation alt for "
+                                    "writing system %r (resolved target id "
+                                    "%r) on %s Hvo=%s -- target project has "
+                                    "no such writing system, active or in "
+                                    "its LDML store. Call "
+                                    "WritingSystemOperations.Ensure(tgt_ws_id, "
+                                    "...) first to activate or create it if "
+                                    "this text should be kept.",
+                                    src_ws_id, tgt_ws_id,
+                                    type(item).__name__, getattr(item, "Hvo", "?"),
+                                )
+                                continue
+                            resolved_alts.append((tgt_handle, text))
+
                         # Create a new ICmTranslation owned by this example.
                         new_trans = self.project.project.ServiceLocator.GetService(
                             ICmTranslationFactory
@@ -541,16 +614,7 @@ class ExampleOperations(BaseOperations):
                         item.TranslationsOC.Add(new_trans)
 
                         # Set Translation IMultiString per writing system.
-                        trans_text_dict = trans_dict.get("Translation", {})
-                        for src_ws_id, text in trans_text_dict.items():
-                            if not text:
-                                continue
-                            tgt_ws_id = (
-                                ws_map.get(src_ws_id, src_ws_id) if ws_map else src_ws_id
-                            )
-                            tgt_handle = target_ws_by_id.get(tgt_ws_id)
-                            if tgt_handle is None:
-                                continue
+                        for tgt_handle, text in resolved_alts:
                             new_trans.Translation.set_String(
                                 tgt_handle,
                                 TsStringUtils.MakeString(text, tgt_handle)

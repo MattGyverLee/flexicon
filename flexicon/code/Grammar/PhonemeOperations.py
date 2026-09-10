@@ -12,7 +12,12 @@
 #
 
 # Import BaseOperations parent class
-from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
+from ..BaseOperations import (
+    BaseOperations,
+    OperationsMethod,
+    wrap_enumerable,
+    _resolve_ws_handle,
+)
 
 # Import FLEx LCM types
 from SIL.LCModel import (
@@ -1435,17 +1440,64 @@ class PhonemeOperations(BaseOperations):
         """
         Apply a ``{ws_id: text}`` BasicIPASymbol dict via SetBasicIPASymbol,
         which tolerates both the multistring and scalar LCM shapes.
+
+        Writing-system id resolution routes through the shared
+        ``_resolve_ws_handle`` helper (spec 250 Defect 4 / issue #266):
+        an exact-case ``Id`` match is tried first, then a case/separator
+        normalized fallback (e.g. ``ETU`` vs ``etu``, ``en_US`` vs
+        ``en-US``), with an ambiguous normalized match raising
+        ``FP_ParameterError`` rather than guessing (C-D4-3 step 2b) --
+        this is a new failure mode for ``SetBasicIPASymbol`` where the
+        lookup previously only ever degraded silently. A target writing
+        system genuinely absent under both exact and normalized matching
+        is still skipped rather than raised on -- source and target
+        projects legitimately differ in writing-system coverage -- but
+        the skip is no longer silent: it is logged, matching
+        ``_apply_props_loop``'s miss-case warning (spec 250 Defect 3).
         """
+        import logging
+
         phoneme = self.__GetPhonemeObject(item)
         target_ws_by_id = {
             ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()
         }
+        # Lazily-built normalized WS-id side-index, memoized across every
+        # alt resolved within this one apply call (spec 250 C-D4-4: build
+        # at most once per apply call, never eagerly). Mirrors
+        # BaseOperations._apply_props_loop's ``_ws_resolve_cache``.
+        _ws_resolve_cache = {}
         for src_ws_id, text in ws_values.items():
             if not text:
                 continue
-            tgt_ws_id = ws_map.get(src_ws_id, src_ws_id) if ws_map else src_ws_id
-            tgt_handle = target_ws_by_id.get(tgt_ws_id)
+            tgt_ws_id = src_ws_id
+            if ws_map:
+                tgt_ws_id = ws_map.get(src_ws_id, tgt_ws_id)
+            tgt_handle = _resolve_ws_handle(
+                target_ws_by_id, tgt_ws_id, _index_cache=_ws_resolve_cache
+            )
             if tgt_handle is None:
+                # Target genuinely lacks this WS (absent under both exact
+                # and normalized matching -- an ambiguous spelling already
+                # raised above via _resolve_ws_handle). Not an error: a
+                # partial-overlap sync is ordinary. But the drop is no
+                # longer silent (spec 250 Defect 3), and it is logged
+                # unconditionally rather than behind a strict= kwarg whose
+                # False default would preserve the silent behaviour
+                # (CLAUDE.md "Don't Add a Flag for Behaviour That Should Be
+                # Unconditional"). Kept in step with the identical warning
+                # in BaseOperations._apply_props_loop, so one sync of one
+                # phoneme cannot report two different outcomes for
+                # BasicIPASymbol vs Name/Description.
+                logging.getLogger("flexicon").warning(
+                    "__ApplyBasicIPASymbol: dropping BasicIPASymbol alt for "
+                    "writing system %r (resolved target id %r) on %s Hvo=%s "
+                    "-- target project has no such writing system, active "
+                    "or in its LDML store. Call "
+                    "WritingSystemOperations.Ensure(tgt_ws_id, ...) first to "
+                    "activate or create it if this text should be kept.",
+                    src_ws_id, tgt_ws_id,
+                    type(phoneme).__name__, getattr(phoneme, "Hvo", "?"),
+                )
                 continue
             if fill_gaps and self.GetBasicIPASymbol(phoneme, tgt_handle).strip():
                 continue

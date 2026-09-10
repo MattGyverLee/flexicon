@@ -10,18 +10,25 @@
 #
 #   Scope reminder (spec 250, fence 1.2 / C-D4-2): the fix under test here
 #   is LOOKUP-ONLY, inside _apply_props_loop / the new module-level
-#   _resolve_ws_handle helper. It reaches exactly ONE of the three
-#   resolution sites enumerated in the spec:
+#   _resolve_ws_handle helper. It originally reached exactly ONE of the
+#   three resolution sites enumerated in the spec; site 2 was closed
+#   separately by issue #266 (one-line C-D4-7 substitution) and site 3
+#   was closed separately by issue #267 (pre-resolve-before-attach
+#   restructure, not a one-line substitution -- see that fix's own
+#   comment in ExampleOperations.ApplySyncableProperties):
 #
 #     1. BaseOperations.py _apply_props_loop            -- REACHED (this fix)
-#     2. Grammar/PhonemeOperations.py __ApplyBasicIPASymbol -- NOT reached
+#     2. Grammar/PhonemeOperations.py __ApplyBasicIPASymbol -- CLOSED (#266)
 #     3. Lexicon/ExampleOperations.py ApplySyncableProperties's
-#        TranslationsOC loop                             -- NOT reached
+#        TranslationsOC loop                             -- CLOSED (#267)
 #
-#   This file does not touch, import, or exercise sites 2/3 -- they are out
-#   of scope by ruling (spec section 1.2/1.3), not by oversight. See
+#   This file does not touch, import, or exercise sites 2/3 directly --
+#   their own coverage lives in test_issue266_phoneme_ws_resolution.py and
+#   test_issue267_translations_ws_resolution.py respectively. See
 #   specs/250-writingsystem-activation/evidence/live-D4-T3.md for the
-#   coverage-boundary statement required by acceptance criterion 8.
+#   original coverage-boundary statement required by acceptance
+#   criterion 8, evidence/live-266-basicipasymbol.md for #266's live
+#   evidence, and evidence/live-267-translations.md for #267's.
 #
 #   All tests in this file call _apply_props_loop / _resolve_ws_handle
 #   directly with fabricated dicts and fake item objects -- no SIL.LCModel
@@ -383,8 +390,6 @@ _RESOLUTION_SIGNATURES = (
 _EXPECTED_RESOLUTION_SITE_FILES = frozenset(
     {
         "BaseOperations.py",
-        "Grammar/PhonemeOperations.py",
-        "Lexicon/ExampleOperations.py",
     }
 )
 
