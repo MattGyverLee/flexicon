@@ -11,6 +11,32 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+---
+
+## [4.7.0] - 2026-09-09
+
+> **Contains two behavioural breaking changes, both in `GramCat` (#276) --
+> read the **Changed (Breaking)** section before upgrading.** Neither is
+> an API-signature break: `project.GramCat` now addresses the Part of
+> Speech list it always claimed to address, instead of the
+> feature-structure type list it actually walked, and
+> `GramCatOperations.Create()` refuses rather than writing a stray
+> `IFsFeatStrucType` into the feature system. Versioned as a minor bump
+> per the precedent set by 4.4.0 and 4.6.0; `v5.0.0` stays reserved for
+> the `flexlibs2` alias removal.
+>
+> The headline addition is **`FLExProject.FromOpenProject(donor)`**, which
+> makes one module source work unchanged under both FlexTools and the
+> FlexToolsMCP runner by attaching the full flexicon facade to a cache the
+> host already opened. It is the first time
+> `from flexicon import FLExProject` is load-bearing: the template's
+> long-standing advice to import from flexicon could not previously do
+> what it claimed, because importing a *class* has no effect on the
+> *instance* FlexTools constructs and passes in.
+>
+> Offline suite at this cut: **1795 passed / 716 deselected**,
+> superseding the 1732/695 recorded for 4.6.0.
+
 ### Changed (Breaking)
 
 - **`project.GramCat` now addresses the Part of Speech list, not the
@@ -182,6 +208,67 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   spell it `project.POS.Find("Verb")`; the one remaining `project.GramCat.Find`
   example sits inside the deprecated property's own docstring, where it
   documents the equivalence.
+
+- **`EnvironmentOperations` reordering now works at all** (#277).
+  `_GetSequence` read `parent.EnvironmentsOA.PossibilitiesOS`, but `IPhPhonData`
+  owns `EnvironmentsOS` directly -- there is no `EnvironmentsOA` on the type and
+  no intervening possibility list to hop through. Every `BaseOperations`
+  reordering method (`Sort`, `MoveUp`, `MoveDown`, `MoveToIndex`) therefore
+  raised `AttributeError` for environments. The wrong form was copied from
+  `InflectionFeatureOperations._GetSequence`'s `FeaturesOA.PossibilitiesOS`,
+  which is correct for *that* parent type and never for this one -- the
+  same-name/different-type hazard catalogued as Category 8 in
+  `docs/API_ISSUES_CATEGORIZED.md`.
+
+- **`OverlayOperations.GetPossItems` no longer returns `[]` for every overlay**
+  (#277). It guarded on `hasattr(overlay, "SubPossibilitiesOS")`, but
+  `ICmOverlay`'s property surface is exactly `Name`, `PossItemsRC`,
+  `PossListRA`, so the guard was always `False` and the method returned an empty
+  list unconditionally, silently. It now reads `PossItemsRC`, a reference
+  collection. Live-verified on Sena 3: the one pre-existing overlay returned
+  `[]` on the old code and all 859 `PossItemsRC` items on the fix.
+
+- **`flexicon.APIHelpFile` now points at a file that exists** (#240). It named
+  `docs\flexiconAPI\flexicon.html`, which was never generated -- an earlier
+  repair moved it off the pre-rename `flexlibs2.html` but landed on a second
+  dead path, so the documented entry point stayed broken. It is now
+  `docs\flexiconAPI\index.html`, the Sphinx root, confirmed present in a built
+  wheel via `MANIFEST.in`'s `graft flexicon/docs`.
+
+- **The Sphinx documentation build no longer aborts the process.**
+  `HeadlessLcmUI` subclasses an LCM interface *and* sets `__namespace__`, so
+  pythonnet emits a real derived .NET type whose IL emitter never calls
+  `MethodBuilder.DefineParameter`; autodoc reading `__signature__` then passed a
+  null parameter name to `inspect.Parameter()`, and because the raise happened
+  inside the native `tp_getattro` slot it escaped as an unhandled CLR exception
+  and killed the build -- exit 127, no traceback, no warning.
+  `docs/sphinx/conf.py` now skips members whose type lives in pythonnet's `CLR`
+  pseudo-module (`Equals`, `GetHashCode`, `GetType`, `ToString`,
+  `MemberwiseClone`, `Finalize`); `HeadlessLcmUI` and all 15 of its real
+  `ILcmUI` members still render. Pinned by `tests/test_sphinx_conf_clr_skip.py`.
+  **The documentation site is still not published**: `publish-docs.yml` targets
+  a `[self-hosted, windows, fieldworks]` pool with zero runners registered. A
+  new `preflight` job now fails that run in seconds with an actionable message
+  instead of queueing for GitHub's 24-hour limit. See `docs/RELEASING.md`.
+
+- **A cascade-delete test no longer swallows its own assertion** (#291).
+  `test_delete_analysis_with_morph_bundle_cascades` wrapped its `assert` in
+  `try / except Exception: pass`; `AssertionError` is a subclass of `Exception`,
+  so a `WfiMorphBundle` surviving deletion of its owning analysis -- the one
+  claim the test exists to prove -- was caught and discarded, and the test
+  reported green with cascade delete broken. A pattern audit of `tests/` found
+  one genuine sibling (`test_pattern_writing_systems_enumeration.py:147`, whose
+  handler turned a failing assert into a SKIP), fixed here too; the other eight
+  hits re-raise via `pytest.fail` and are benign.
+
+- **The internal metrics scans report real numbers again** (#240).
+  `crystallization_metric.py` and `live_coverage_metric.py` both scanned
+  `flexlibs2/code`, gone since the rename; `Path.rglob()` on a missing directory
+  yields nothing without raising, so both silently reported zero Operations
+  classes and every metric they produced had been empty for months. Both now
+  scan `flexicon/code` and raise rather than degrade quietly.
+  `TOTAL_CLASSES_EXPECTED`, a hardcoded denominator that skewed the
+  crystallization score as classes were added, is derived from the scan instead.
 
 ---
 

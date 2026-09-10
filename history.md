@@ -10,6 +10,64 @@ None
 
 ## History
 
+### 2026-09-09 - v4.7.0 release cut: the FlexTools/MCP bridge, and the GramCat correction
+
+Cuts v4.7.0 from `main` at the merge of `flexicon-project-bridge`. Bumps
+`flexicon/__init__.py` to 4.7.0, promotes `[Unreleased]` to
+`[4.7.0] - 2026-09-09`, and adds `RELEASE_NOTES_v4.7.0.md`.
+
+**The headline is `FLExProject.FromOpenProject(donor)`.** A FlexTools
+module and an MCP-run module previously needed different source: FlexTools
+constructs a *flexlibs* `FLExProject` and passes the instance in, so the
+template's advice to `from flexicon import FLExProject` bound a name
+nothing used and `project.LexEntry` still resolved against flexlibs.
+Scripts touching only the ~40 functions the two wrappers share appeared to
+work, which is what made the gap hard to see. `FromOpenProject()` attaches
+the full flexicon facade to the cache the host already opened -- opening
+nothing, closing nothing, never mutating the donor -- and returns an MCP
+donor unchanged, so `FromOpenProject(x) is x` there.
+
+The subtle half of that feature is the **lifecycle refusals**. An attached
+view must not be able to destroy the host's project or report a save it
+did not make, so `SaveChanges()`, `UndoableOperation()` and now
+`AbortSession()` refuse, and `CloseProject()` is a silent no-op. The
+`AbortSession()` guard, added during the release cut, closed the last and
+worst of these: a view is unconditionally `_undoable = False`, so the call
+took the `undoable=False` branch and `Rollback(0)`'d the *host's*
+session-long envelope -- discarding unsaved edits made before the module
+ever ran -- then installed a replacement envelope the host did not open,
+and reported success. Live-verified on a Target sandbox rather than the
+real Target, since the defect under test destroys data by definition.
+
+**The GramCat correction (#276)** is the release's breaking change.
+`GramCatOperations` walked `MsFeatureSystemOA.TypesOC`, whose elements are
+`IFsFeatStrucType` -- structural templates for feature structures, never
+grammatical categories. The domain ruling was that a list-level
+grammatical category simply *is* a Part of Speech, so the fix was
+subtraction: 796 lines down to 159, `GramCatOperations` reduced to a
+deprecated `POSOperations` subclass, one capability (`GetParent`)
+backfilled onto POS, and `Create()` kept only to raise an explanatory
+error instead of writing another stray into the feature system.
+
+**#277 is the same hazard in a different place** -- Category 8, same-name
+fields with different LCM types across object types. Two getters read
+property names absent from their target types and failed silently:
+environments reordering raised `AttributeError` for every call, and
+`OverlayOperations.GetPossItems` returned `[]` for every overlay, always.
+
+**Docs infrastructure moved but did not arrive.** The Sphinx build crash
+is fixed -- a pythonnet-emitted `HeadlessLcmUI` type whose null parameter
+name escaped autodoc as an unhandled CLR exception and killed the process
+at exit 127 -- and `publish-docs.yml` now fails in seconds instead of
+queueing 24 hours. But the site still does not publish: the workflow
+targets a `[self-hosted, windows, fieldworks]` pool with zero runners
+registered, and that remains an open infrastructure decision. The API
+documentation site should still be treated as manually maintained and
+stale.
+
+**Offline suite at this cut:** 1795 passed / 716 deselected, up from
+1732/695 at 4.6.0.
+
 ### 2026-09-08 - v4.6.0 release cut: six behavioural repairs, and the 4.5.x line finally ships
 
 Cuts v4.6.0 from `main` at `cb1d355`. Bumps `flexicon/__init__.py` to 4.6.0,
