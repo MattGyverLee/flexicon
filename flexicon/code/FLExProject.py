@@ -413,7 +413,7 @@ class FLExProject(object):
             # Nothing to do here; BeginUndoTask called per-operation by UndoableOperation
 
     @classmethod
-    def FromOpenProject(cls, donor):
+    def FromOpenProject(cls, donor) -> "FLExProject":
         """
         Attach a flexicon facade to a project someone else already opened.
 
@@ -448,6 +448,10 @@ class FLExProject(object):
           ``UndoableOperation()`` is refused.
         * **Owns nothing.** ``CloseProject()`` on the returned view is a
           no-op and ``SaveChanges()`` is refused. The host saves.
+
+        Returns:
+            FLExProject: A view over the donor's cache, or the donor itself
+                when it is already a flexicon FLExProject.
 
         Raises:
             FP_ParameterError: the donor is missing the cache or
