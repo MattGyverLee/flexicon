@@ -25,9 +25,11 @@ also exists. The two steps are separate on purpose -- see section 5.
 
 > ### PARTIALLY REPAIRED after v4.6.0: the docs half needs a runner
 >
-> `publish-docs.yml` has never successfully published. It failed twice
-> over, and both failures were silent from the release's point of view --
-> PyPI still gets the package, so the release *looks* complete.
+> `publish-docs.yml` has never successfully published. It has failed three
+> separate ways, and every one of them was silent from the release's point
+> of view -- PyPI still gets the package, so the release *looks* complete.
+> Defect 3 is the one to read first: for the whole of the v4.7.0 cut the
+> workflow file was invalid, so no trigger in it fired at all.
 >
 > 1. **No runner. STILL OPEN -- needs an infrastructure decision.** The
 >    build job declares `runs-on: [self-hosted, windows, fieldworks]`, and
@@ -51,12 +53,17 @@ also exists. The two steps are separate on purpose -- see section 5.
 >    import-time bypass so the docs can build without FLEx, accepting
 >    that autodoc then renders mocked rather than real LCM signatures.
 >
->    Meanwhile the workflow no longer hangs. A `preflight` job on
->    `ubuntu-latest` now runs first and fails in **seconds** with an
->    actionable message when no matching runner is online, instead of
->    burning 24 hours and reporting nothing. It is deliberately
->    fail-open: if the runner registry cannot be read (the job needs
->    `administration: read`), it warns and lets the build queue.
+>    A `preflight` job on `ubuntu-latest` is meant to run first and fail
+>    fast when no matching runner is online. **Do not believe the claim
+>    this box used to make that it does so.** Between `fe556d3`
+>    (2026-09-08) and the v4.7.0 cut it never ran even once, and neither
+>    did anything else in the file -- see defect 3 below. Today it is
+>    reachable again but *inert by default*: reading the runner registry
+>    needs admin rights `GITHUB_TOKEN` cannot hold, so unless a
+>    `RUNNER_REGISTRY_TOKEN` secret (a PAT with `administration:read`) is
+>    configured, the step fail-opens with a warning and the build queues
+>    for the full 24 hours exactly as before. **Assume a docs run still
+>    burns 24 hours until a runner is registered.**
 >
 > 2. **The Sphinx build itself crashed. FIXED.** `sphinx-build
 >    docs/sphinx flexicon/docs/flexiconAPI` died with an unhandled .NET
@@ -98,10 +105,56 @@ also exists. The two steps are separate on purpose -- see section 5.
 >    nits in `FLExProject.OpenProject`, `MSAOperations`, and
 >    `string_utils`; they do not fail the build.
 >
+> 3. **The workflow file was invalid, so NOTHING in it ran. FIXED.**
+>    Ironic and worth remembering: the commit that added the fail-fast
+>    preflight (`fe556d3`) is the commit that broke the workflow entirely.
+>    It declared
+>
+>    ```yaml
+>    permissions:
+>      administration: read
+>    ```
+>
+>    on the preflight job. `administration` is **not** a valid GitHub
+>    Actions permissions scope (the valid set is `actions`, `attestations`,
+>    `checks`, `contents`, `deployments`, `discussions`, `id-token`,
+>    `issues`, `models`, `packages`, `pages`, `pull-requests`,
+>    `repository-projects`, `security-events`, `statuses`), and a single
+>    invalid key invalidates the **whole file** -- which un-registers every
+>    trigger it declares, `release: published` included.
+>
+>    **How to recognise this class of failure**, because GitHub reports no
+>    parse error anywhere obvious and simply stops honouring the file:
+>
+>    - `gh api repos/<owner>/<repo>/actions/workflows` returns the
+>      workflow's **path** in the `name` field instead of its declared
+>      `name:`. This is the fastest reliable check -- compare against the
+>      other workflows, which show real names.
+>    - Every push spawns a `failure` run **containing zero jobs**
+>      (`gh api .../actions/runs/<id>/jobs` -> empty), on a workflow that
+>      declares no `push` trigger at all.
+>    - The events you *do* declare fire nothing. Here, run history shows
+>      `release / cancelled` up to 2026-09-08T21:46Z, then only
+>      `push / failure` from 22:16Z onward -- the first push after
+>      `fe556d3`.
+>
+>    Consequence for the v4.7.0 cut: `gh release create` started **no docs
+>    run whatsoever**. Section 5's note that step 5 "will drive the docs
+>    build the moment a runner is registered" was false for that window.
+>
+>    **Before trusting any workflow edit, confirm the file still parses**
+>    by checking that its `name` comes back from the API rather than its
+>    path. `python -c "import yaml; yaml.safe_load(...)"` is *not*
+>    sufficient -- this file parsed fine as YAML throughout; it was the
+>    Actions schema it violated. `actionlint` catches invalid permission
+>    scopes and is the right local gate.
+>
 > Until the runner exists, treat the documentation site as **manually
-> maintained and currently stale**. A green release still does not mean
-> the API docs were refreshed -- but a *failed* docs run will now say why
-> within a minute.
+> maintained and currently stale**. A green release does not mean the API
+> docs were refreshed, and -- until a `RUNNER_REGISTRY_TOKEN` secret is
+> configured -- a docs run will still queue for 24 hours rather than
+> reporting why. **Check the docs run explicitly after every cut**; do not
+> infer it from a green PyPI publish.
 
 PyPI upload uses **Trusted Publishing** (OIDC): `publish.yml` requests an
 `id-token` and authenticates as the repo. There is no stored PyPI token
@@ -276,10 +329,20 @@ previous version's API documentation against a shipped package.
 
 **Today step 5 creates the Release but does not actually refresh the
 docs** -- the Sphinx build is fixed, but no self-hosted runner exists to
-run it on, so the `preflight` job fails the run immediately. See the
-PARTIALLY REPAIRED box in section 1. Create the Release anyway: it is the
-durable record of the version, carries the release notes, and will drive
-the docs build the moment a runner is registered.
+run it on. Create the Release anyway: it is the durable record of the
+version, carries the release notes, and will drive the docs build once a
+runner is registered.
+
+After step 5, **verify a docs run actually started**:
+
+```bash
+gh run list --workflow=publish-docs.yml --limit 3
+```
+
+Expect a row whose event is `release`. If the newest rows are `push`
+failures, or there is no new row at all, the workflow file is invalid and
+nothing ran -- that is exactly what happened for v4.7.0. See defect 3 in
+the section 1 box for how to confirm and fix it.
 
 `gh release create` with a *new* tag would fire both events at once. Push
 the tag separately anyway: it keeps the PyPI publish and the docs publish

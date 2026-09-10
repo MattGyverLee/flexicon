@@ -58,12 +58,39 @@ environments reordering raised `AttributeError` for every call, and
 **Docs infrastructure moved but did not arrive.** The Sphinx build crash
 is fixed -- a pythonnet-emitted `HeadlessLcmUI` type whose null parameter
 name escaped autodoc as an unhandled CLR exception and killed the process
-at exit 127 -- and `publish-docs.yml` now fails in seconds instead of
-queueing 24 hours. But the site still does not publish: the workflow
-targets a `[self-hosted, windows, fieldworks]` pool with zero runners
-registered, and that remains an open infrastructure decision. The API
-documentation site should still be treated as manually maintained and
-stale.
+at exit 127. But the site still does not publish: the workflow targets a
+`[self-hosted, windows, fieldworks]` pool with zero runners registered,
+and that remains an open infrastructure decision. The API documentation
+site should still be treated as manually maintained and stale.
+
+**The preflight that was supposed to stop the 24-hour hangs had itself
+killed the workflow.** This entry first claimed `publish-docs.yml` "now
+fails in seconds instead of queueing 24 hours", repeating `fe556d3`'s
+commit message and `docs/RELEASING.md` without checking. Verifying the
+docs half of the v4.7.0 cut showed the opposite: `fe556d3` declared
+`permissions: administration: read` on the preflight job, `administration`
+is not a valid Actions permissions scope, and one invalid key makes GitHub
+reject the *entire file* -- which un-registers every trigger it declares.
+
+The failure mode is genuinely hard to see, which is why it survived a
+release. GitHub does not report a parse error anywhere obvious; it just
+stops honouring the file. The tells are indirect: the Actions API returns
+the workflow's *path* where its `name:` should be, each push spawns a
+synthetic "failure" run containing zero jobs, and release events fire
+nothing at all. Run history dates it precisely -- `release / cancelled`
+entries up to 2026-09-08T21:46Z, then nothing but `push / failure` from
+22:16Z, the first push after `fe556d3`. So creating the v4.7.0 Release
+started no docs build whatsoever, and the three "cancelled at 24h" runs
+the preflight was written to prevent were the last times the workflow ran
+at all.
+
+Removing the invalid block restores parsing. The probe cannot work as
+originally conceived, though: listing self-hosted runners needs admin
+rights `GITHUB_TOKEN` cannot be granted at any scope, so it now reads the
+registry only when a `RUNNER_REGISTRY_TOKEN` PAT secret is present and
+otherwise fail-opens. The 24-hour queue is back until a runner is
+registered. `CHANGELOG.md` and `RELEASE_NOTES_v4.7.0.md` carry the same
+correction; the published package is unaffected.
 
 **Offline suite at this cut:** 1795 passed / 716 deselected, up from
 1732/695 at 4.6.0.

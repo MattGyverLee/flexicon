@@ -42,19 +42,29 @@ jobs:
     name: Check the FieldWorks runner pool is online
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # Listing self-hosted runners needs administration:read. This replaces the
-    # workflow-level contents:write for this job, which does not check out.
-    permissions:
-      administration: read
-
+    # NOTE: do NOT add `permissions: administration: read` here. `administration`
+    # is not a valid GitHub Actions permissions scope, and declaring it makes the
+    # WHOLE FILE unparseable -- which silently un-registers every trigger below,
+    # including `release: published`. That is not hypothetical: it shipped in
+    # fe556d3 and killed this workflow outright between 2026-09-08 and
+    # 2026-09-10. The symptom is subtle -- the Actions API reports the workflow's
+    # name as its own path instead of the `name:` above, and each push produces a
+    # jobless synthetic "failure" run, while release events fire nothing at all.
+    #
+    # Listing self-hosted runners genuinely needs admin rights, which GITHUB_TOKEN
+    # cannot be granted at any scope. So the probe below reads the registry only
+    # when RUNNER_REGISTRY_TOKEN -- a PAT carrying administration:read -- is
+    # configured as a repository secret. Without it the API call 403s and the
+    # step fail-opens (see the warning branch), leaving the build to queue as it
+    # did before the preflight existed.
     steps:
       - name: Require an online [self-hosted, windows, fieldworks] runner
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RUNNER_REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
           if ! runners=$(gh api "repos/$REPO/actions/runners?per_page=100" 2>/dev/null); then
-            echo "::warning::Could not read the runner registry (administration:read may be unavailable). Skipping the preflight; the build job will queue as normal."
+            echo "::warning::Could not read the runner registry -- set the RUNNER_REGISTRY_TOKEN secret to a PAT with administration:read to enable this check. Skipping the preflight; the build job will queue as normal."
             exit 0
           fi
 

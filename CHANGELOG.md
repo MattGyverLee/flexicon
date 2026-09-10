@@ -247,9 +247,27 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `MemberwiseClone`, `Finalize`); `HeadlessLcmUI` and all 15 of its real
   `ILcmUI` members still render. Pinned by `tests/test_sphinx_conf_clr_skip.py`.
   **The documentation site is still not published**: `publish-docs.yml` targets
-  a `[self-hosted, windows, fieldworks]` pool with zero runners registered. A
-  new `preflight` job now fails that run in seconds with an actionable message
-  instead of queueing for GitHub's 24-hour limit. See `docs/RELEASING.md`.
+  a `[self-hosted, windows, fieldworks]` pool with zero runners registered. See
+  `docs/RELEASING.md`.
+
+  **Correction, made after 4.7.0 was tagged.** This entry, `history.md` and
+  `RELEASE_NOTES_v4.7.0.md` originally each stated that a new `preflight` job
+  "fails in seconds instead of queueing for GitHub's 24-hour limit". That was
+  untrue, and was inherited unverified from `docs/RELEASING.md` and the commit
+  message of `fe556d3`. The preflight has **never executed**. `fe556d3` declared
+  `permissions: administration: read` on that job, and `administration` is not a
+  valid GitHub Actions permissions scope, so the entire workflow file became
+  unparseable -- which un-registered every trigger in it, `release: published`
+  included. From `fe556d3` (2026-09-08) until the repair, the workflow produced
+  only jobless synthetic "failure" runs on push, fired nothing on a release, and
+  reported its own path where the Actions API should show its `name:`. Creating
+  the v4.7.0 GitHub Release therefore started no docs run at all. The invalid
+  block is now removed and the file parses again. Listing self-hosted runners
+  genuinely requires admin rights that `GITHUB_TOKEN` cannot hold, so the probe
+  now reads the registry only when a `RUNNER_REGISTRY_TOKEN` secret is
+  configured; without it the step fail-opens and the build queues as it did
+  before the preflight existed. **The 24-hour queue is therefore back until a
+  runner is registered** -- the fail-fast behaviour was never real.
 
 - **A cascade-delete test no longer swallows its own assertion** (#291).
   `test_delete_analysis_with_morph_bundle_cascades` wrapped its `assert` in

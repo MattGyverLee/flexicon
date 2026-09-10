@@ -161,8 +161,7 @@ built wheel.
 The Sphinx build crash is **fixed** -- a pythonnet-emitted `HeadlessLcmUI`
 type reflected with a null parameter name, which escaped autodoc as an
 unhandled CLR exception and killed the process at exit 127, with no
-traceback and no warning. `publish-docs.yml` also now fails in seconds
-instead of queueing for GitHub's 24-hour limit.
+traceback and no warning.
 
 **But the site still does not publish.** The workflow targets a
 `[self-hosted, windows, fieldworks]` runner pool with zero runners
@@ -170,6 +169,29 @@ registered, and FieldWorks is genuinely required to import the package.
 That is an open infrastructure decision -- see `docs/RELEASING.md`
 section 1. Treat the published API documentation as manually maintained
 and currently stale.
+
+> ### Correction, made after this release was tagged
+>
+> This section originally claimed that `publish-docs.yml` "now fails in
+> seconds instead of queueing for GitHub's 24-hour limit". **That was
+> untrue**, and was inherited unverified from `docs/RELEASING.md` and the
+> commit message of `fe556d3`. The `preflight` job it refers to has never
+> executed.
+>
+> `fe556d3` declared `permissions: administration: read` on that job.
+> `administration` is not a valid GitHub Actions permissions scope, so the
+> whole workflow file became unparseable -- which silently un-registered
+> every trigger in it, `release: published` included. From 2026-09-08 until
+> the repair the workflow produced only jobless synthetic "failure" runs on
+> push and fired nothing on a release, so **creating this release started no
+> docs run at all**.
+>
+> The invalid block is now removed and the file parses again. Listing
+> self-hosted runners genuinely needs admin rights `GITHUB_TOKEN` cannot
+> hold, so the probe now runs only when a `RUNNER_REGISTRY_TOKEN` secret is
+> configured; otherwise it fail-opens and the build queues as before. The
+> 24-hour queue is back until a runner is registered -- the fail-fast
+> behaviour was never real. Nothing here affects the published package.
 
 ---
 
