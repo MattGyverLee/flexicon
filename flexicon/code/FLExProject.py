@@ -118,6 +118,96 @@ def OpenProjectInFW(projectName):
 
 
 # -----------------------------------------------------------
+#
+# Attached views -- FLExProject.FromOpenProject()
+#
+# A FLExProject can be reached two ways: it can OWN a project it opened
+# itself (OpenProject), or it can be an ATTACHED VIEW over a cache some
+# other host already opened (FromOpenProject). The two differ in exactly
+# one observable: an attached view carries `_attached_donor`.
+#
+# The constants below are the shared, ASCII-only refusal texts for the
+# lifecycle paths a view must not take. They live at module scope so
+# undoable_operation.py can reach them through the same lazy
+# import-inside-the-method it already uses for the exception classes.
+#
+# On the laziness: the two modules import each other, but both directions
+# are already lazy -- this module reaches undoable_operation only inside
+# UndoableOperation() (see below), and undoable_operation reaches this one
+# only inside __enter__. Keeping the reverse import lazy preserves that
+# symmetry and leaves either module safe to import first. (The comments in
+# undoable_operation.py assert a module-level import here that does not
+# exist; they are pre-existing and left alone rather than widening this
+# feature's diff.)
+
+
+def _IsAttachedView(obj):
+    """
+    Is `obj` a FLExProject attached to a cache someone else opened?
+
+    Invariant A (specs/flexicon-project-bridge/data-model.md section 1):
+    `_attached_donor` is present iff the instance is an attached view, and
+    every lifecycle guard branches on THIS -- never on `writeEnabled` and
+    never on `_undoable`. Those two cannot carry the distinction: a
+    read-only owned project and a read-only view agree on `writeEnabled`,
+    and an owned project opened with `undoable=False` agrees with every
+    view on `_undoable`.
+    """
+
+    return hasattr(obj, "_attached_donor")
+
+
+# The host owns the save. Raised by SaveChanges() on a view.
+#
+# Deliberately does NOT repeat the standing "Use CloseProject() instead"
+# advice that the owned-project path gives: on a view CloseProject() is a
+# silent no-op, so a caller who followed it would get a run that reports
+# success and writes nothing -- the exact failure class this seam exists
+# to end (research.md R7).
+_ATTACHED_VIEW_SAVE_REFUSAL = (
+    "SaveChanges() is not available on a project attached with "
+    "FromOpenProject(). This object is a view over a cache the host "
+    "(FLExTools, or FieldWorks itself) opened and still owns, and the "
+    "host saves it on its own schedule. Make your changes inside "
+    "Transaction() and simply return from Main() -- do not save, and do "
+    "not close."
+)
+
+# Phase 2 is unavailable on a view. Used by undoable_operation.py.
+#
+# The owned-project wording ("opened with undoable=False") is actively
+# misleading here: nobody called OpenProject, and no argument the module
+# could pass would change the answer (research.md R2).
+_ATTACHED_VIEW_UNDOABLE_REFUSAL = (
+    "UndoableOperation() is not available on a project attached with "
+    "FromOpenProject(). The host opened a session-long non-undoable task "
+    "over this cache, and starting an undoable unit of work inside it "
+    "would nest the wrong kind of task. Use Transaction() instead, which "
+    "is the supported construct on an attached view."
+)
+
+# The host owns the rollback. Raised by AbortSession() on a view.
+#
+# Deliberately does NOT offer Transaction() as the remedy the way
+# _ATTACHED_VIEW_UNDOABLE_REFUSAL does. A view is always Phase 1, and in
+# Phase 1 Transaction() has no rollback at all (issue #236; see
+# Transaction()'s own docstring) -- so pointing a caller who asked to
+# DISCARD work at it would be a wrong answer in the shape of a helpful
+# one. There is no module-side discard on a view; say so.
+_ATTACHED_VIEW_ABORT_REFUSAL = (
+    "AbortSession() is not available on a project attached with "
+    "FromOpenProject(). The open unit of work belongs to the host "
+    "(FLExTools, or FieldWorks itself), which opened it over this cache "
+    "before your module was called; rolling it back here would discard "
+    "the host's own unsaved edits as well as yours, and would leave the "
+    "host holding an envelope it did not open. A module cannot discard "
+    "its writes on an attached view -- let the exception propagate out "
+    "of Main() and report it, and leave the keep-or-discard decision to "
+    "the host and its user."
+)
+
+
+# -----------------------------------------------------------
 
 
 class FLExProject(object):
@@ -322,6 +412,149 @@ class FLExProject(object):
             logging.getLogger(__name__).debug("OpenProject: undoable mode enabled")
             # Nothing to do here; BeginUndoTask called per-operation by UndoableOperation
 
+    @classmethod
+    def FromOpenProject(cls, donor):
+        """
+        Attach a flexicon facade to a project someone else already opened.
+
+        `donor` is whatever the host handed `Main()`: under real FLExTools a
+        **flexlibs** ``FLExProject`` (flextoolslib/code/FTModules.py:75), under
+        the FLExTools MCP a **flexicon** one. Returns an object exposing the
+        full flexicon facade over the donor's cache.
+
+        **Never opens a project, and never closes one.** Reopening a project
+        the host is holding raises ``FP_FileLockedError``, which is the trap
+        any "just make your own flexicon project" advice walks into.
+
+        The portable module shape -- identical under both hosts::
+
+            from flexicon import FLExProject
+
+            def Main(project, report, modifyAllowed):
+                fx = FLExProject.FromOpenProject(project)
+                lex, variants = fx.LexEntry, fx.Variants
+
+        Importing the class is not enough on its own: it does not change the
+        instance ``Main()`` is handed. This classmethod is what makes that
+        import load-bearing.
+
+        Notes:
+
+        * **Idempotent.** A donor that is already a flexicon ``FLExProject``
+          is returned unchanged, by identity -- it owns its project, and a
+          module written against this seam must stay correct under the MCP.
+        * **Phase 1 only.** The view is always ``_undoable = False``; the host
+          owns the transaction envelope. Use ``Transaction()``;
+          ``UndoableOperation()`` is refused.
+        * **Owns nothing.** ``CloseProject()`` on the returned view is a
+          no-op and ``SaveChanges()`` is refused. The host saves.
+
+        Raises:
+            FP_ParameterError: the donor is missing the cache or
+                ``writeEnabled``. The message names every absent attribute
+                and the donor's module.
+        """
+
+        # Idempotence FIRST, before validation -- a flexicon donor is already
+        # exactly what the caller asked for, and re-attaching would silently
+        # downgrade an MCP session from Phase 2 to Phase 1 while leaving two
+        # objects believing they own one cache.
+        if isinstance(donor, cls):
+            return donor
+
+        cls._ValidateDonor(donor)
+
+        # Allocate WITHOUT calling __init__: this class deliberately has none
+        # (all state is born in OpenProject), and adding one now would be a
+        # breaking change for every caller that constructs FLExProject() with
+        # no arguments -- the documented construction.
+        view = cls.__new__(cls)
+
+        view.project = donor.project
+
+        # Prefer the donor's own handles so the view points at the very
+        # objects the host is using; fall back to deriving them from the
+        # cache so a thinner donor still works.
+        lp = getattr(donor, "lp", None)
+        view.lp = lp if lp is not None else donor.project.LangProject
+
+        lexDB = getattr(donor, "lexDB", None)
+        view.lexDB = lexDB if lexDB is not None else view.lp.LexDbOA
+
+        # Verbatim, including False. A view never upgrades its permissions.
+        view.writeEnabled = donor.writeEnabled
+
+        # Unconditionally Phase 1, regardless of the donor's own mode (a
+        # flexlibs donor has no mode at all -- it has no _undoable). When the
+        # host is write-enabled it holds a session-long BeginNonUndoableTask()
+        # envelope, and an undoable unit of work inside that is the wrong kind
+        # of nesting.
+        view._undoable = False
+
+        # The mode discriminator every lifecycle guard branches on.
+        view._attached_donor = donor
+
+        logging.getLogger(__name__).debug(
+            "FromOpenProject: attached a view to a cache owned by %s "
+            "(writeEnabled=%s)",
+            type(donor).__module__,
+            view.writeEnabled,
+        )
+
+        return view
+
+    @classmethod
+    def _ValidateDonor(cls, donor):
+        """
+        Refuse a donor we cannot build a view over, AT the seam.
+
+        The failure this replaces is an ``AttributeError`` fifty frames deep
+        inside an operation -- unreadable to the non-programmer this package
+        exists for (SPEC 3c). Collecting *every* missing attribute into one
+        message beats failing on whichever happens to be checked first: a
+        donor that is wrong is usually wrong in more than one way, and one
+        round-trip per missing attribute is a bad way to learn that.
+
+        Only `project` and `writeEnabled` are required. `lp` and `lexDB` are
+        derived from the cache when the donor does not carry them, so their
+        absence is not an error.
+
+        Raises:
+            FP_ParameterError: naming every absent attribute and the donor's
+                module.
+        """
+
+        missing = []
+
+        # None counts as absent: a donor carrying project=None is no more
+        # usable than one with no `project` at all, and installing that None
+        # would just move the AttributeError deeper.
+        if getattr(donor, "project", None) is None:
+            missing.append("project")
+
+        # Presence only -- the VALUE is borrowed verbatim, and False is a
+        # perfectly good answer (a read-only host).
+        if not hasattr(donor, "writeEnabled"):
+            missing.append("writeEnabled")
+
+        if not missing:
+            return
+
+        # type(donor).__module__ rather than the class name: BOTH candidate
+        # donor classes are named "FLExProject" (flexlibs.code.FLExProject vs
+        # flexicon.code.FLExProject), so the name discriminates nothing and
+        # the module is the only honest answer to "what did I actually get?".
+        raise FP_ParameterError(
+            "FromOpenProject() cannot attach to this object: it is missing "
+            "{missing}. Pass the project your module was handed as Main()'s "
+            "first argument. (Received an object of type {name} from module "
+            "{module}.)".format(
+                missing=", ".join(missing),
+                name=type(donor).__name__,
+                module=type(donor).__module__,
+            )
+        )
+
     def CloseProject(self):
         """
         Save any pending changes and dispose of the LCM object.
@@ -353,7 +586,19 @@ class FLExProject(object):
         ``Dispose()``/``del self.project`` run in a ``finally`` (spec.md
         C15) so the live LCM handle is never leaked, including when the
         ERROR branch below is taken or when ``usm.Save()`` itself raises.
+
+        Attached-view no-op: on a project attached with
+        ``FromOpenProject()``, this method does nothing and returns
+        ``None`` -- the host owns the cache, and a defensive close in an
+        otherwise-correct module must not fail (SPEC 3b).
         """
+        if _IsAttachedView(self):
+            logging.getLogger(__name__).debug(
+                "CloseProject: no-op on a project attached with "
+                "FromOpenProject(); the host owns this cache and its "
+                "lifecycle."
+            )
+            return None
         if hasattr(self, "project"):
             try:
                 if self.writeEnabled:
@@ -815,7 +1060,7 @@ class FLExProject(object):
         ever attempted, so the refusal itself discards nothing.
 
         Note:
-            Only valid for write-enabled projects.
+            Only valid for write-enabled, owned projects.
             Does NOT call EndNonUndoableTask() - the session stays open.
             Under ``undoable=False``, the session-long envelope opened by
             ``OpenProject()`` holds ``CurrentDepth`` at 1 for the entire
@@ -826,7 +1071,23 @@ class FLExProject(object):
             ``UndoableOperation()``/``Transaction()`` block has exited
             (``CurrentDepth`` back to 0), never from inside one.
 
+            That ``CloseProject()`` advice applies to OWNED projects only
+            -- ones this instance opened via ``OpenProject()``. On a view
+            obtained from ``FromOpenProject()`` it is actively wrong:
+            ``CloseProject()`` is a no-op there, so following it would
+            produce a run that reports success and saves nothing.
+
+            On an attached view the host (FLExTools, or FieldWorks itself)
+            opened the cache and saves it on its own schedule. Make the
+            changes inside ``Transaction()`` and simply return from
+            ``Main()``; there is nothing for the module to save or close.
+
         Raises:
+            FP_RuntimeError: If this is a view obtained from
+                ``FromOpenProject()``. Raised before the write-enabled and
+                depth checks below, so the caller hears that the host owns
+                the save rather than a read-only or transaction-depth
+                diagnosis that would misdescribe the situation.
             FP_ReadOnlyError: If project is not write-enabled.
             FP_TransactionError: If ``CurrentDepth > 0`` -- a unit of work
                 is currently open, in either mode. ``usm.Save()`` is never
@@ -852,6 +1113,9 @@ class FLExProject(object):
             # ends that envelope first, then saves.
             project.CloseProject()
         """
+        if _IsAttachedView(self):
+            raise FP_RuntimeError(_ATTACHED_VIEW_SAVE_REFUSAL)
+
         if not self.writeEnabled:
             raise FP_ReadOnlyError()
 
@@ -1045,12 +1309,28 @@ class FLExProject(object):
         the correct tool inside a block is to let the exception propagate,
         which rolls that block back by design.
 
+        Attached views refuse outright. On a project attached with
+        ``FromOpenProject()`` the open unit of work is the HOST's -- a view
+        is unconditionally ``_undoable = False``, so without a guard this
+        method would take the ``undoable=False`` branch below and
+        ``Rollback(0)`` the host's session-long envelope, discarding
+        unsaved edits the host made before the module was ever called and
+        then replacing that envelope with one this facade opened. Both are
+        the host's to own (Invariant B), so the call is refused before any
+        action-handler access.
+
         Returns:
             bool: True if a unit of work was open and was rolled back.
                 False if nothing was open (nothing to abort) -- calling
                 ``Rollback`` in that state would raise, so it is not called.
 
         Raises:
+            FP_RuntimeError: If this is a view obtained from
+                ``FromOpenProject()``. Raised before the write-enabled
+                check, for the same reason as in ``SaveChanges()``: the
+                refusal is about who owns the unit of work, and a
+                read-only diagnosis would imply that a write-enabled host
+                would make the call succeed, which it must not.
             FP_ReadOnlyError: If the project is not write-enabled.
             FP_TransactionError: If ``undoable=True`` and a unit of work is
                 open (see above), or if the underlying LCM ``Rollback(0)``
@@ -1087,6 +1367,9 @@ class FLExProject(object):
             UndoableOperation() - per-operation rollback, the finer-grained
                 and preferred mechanism once ``undoable=True`` is in use.
         """
+        if _IsAttachedView(self):
+            raise FP_RuntimeError(_ATTACHED_VIEW_ABORT_REFUSAL)
+
         if not self.writeEnabled:
             raise FP_ReadOnlyError()
 

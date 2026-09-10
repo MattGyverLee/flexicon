@@ -53,11 +53,113 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Added
 
+- **`FLExProject.FromOpenProject(donor)`** -- a classmethod returning the full
+  flexicon facade over a cache the host **already opened**, so one module source
+  works unchanged under both FlexTools and the FlexToolsMCP runner:
+
+  ```python
+  from flexicon import FLExProject
+
+  def Main(project, report, modifyAllowed):
+      fx = FLExProject.FromOpenProject(project)
+      lex, variants = fx.LexEntry, fx.Variants
+  ```
+
+  Under FlexTools the donor is a *flexlibs* `FLExProject` (the shallow stable
+  wrapper), and the call attaches a flexicon view to its live cache. Under the
+  MCP the donor is already a flexicon `FLExProject`, so the call returns it
+  unchanged -- `FromOpenProject(x) is x`, with the donor's `_undoable` mode and
+  cached operations left untouched and `_attached_donor` **not** set on it.
+  Opens nothing, closes nothing, and never mutates the donor.
+
+  This makes `from flexicon import FLExProject` load-bearing for the first
+  time. The template's long-standing advice to import from flexicon explicitly
+  could not do what it claimed: importing a *class* has no effect on the
+  *instance* FlexTools constructed and passed in, so the import bound a name
+  nothing used, and `project.LexEntry` still resolved against flexlibs. Scripts
+  touching only the ~40 functions the wrappers share appeared to work; the rest
+  failed in ways that looked like missing APIs rather than a wrong object. See
+  `docs/MIGRATION_GUIDE.md`, "the portable module shape".
+
+  Attaching borrows `project`, `lp`, `lexDB` and `writeEnabled` (verbatim,
+  including `False`), sets `_undoable = False` unconditionally, and records
+  `_attached_donor`. A donor lacking `project` or `writeEnabled` raises
+  `FP_ParameterError` naming **every** absent attribute plus the donor's
+  module -- the module being the discriminator, since both candidate classes are
+  named `FLExProject` -- instead of an `AttributeError` deep inside an
+  operation. No new export: `FLExProject` was already exported and the
+  classmethod rides along.
+
+- **Lifecycle refusals on an attached view** -- a view cannot destroy the host's
+  project, nor report a save it did not make:
+
+  | Call | On an attached view |
+  |---|---|
+  | `Transaction()` | Supported |
+  | `UndoableOperation()` | `FP_TransactionError` -- the host holds a session-long non-undoable envelope; use `Transaction()` |
+  | `SaveChanges()` | `FP_RuntimeError` -- the host owns the save; just return |
+  | `AbortSession()` | `FP_RuntimeError` -- the host owns the unit of work; let the error propagate |
+  | `CloseProject()` | Silent no-op: returns `None`, never raises |
+
+  `CloseProject()` returns before reaching `EndNonUndoableTask`, `usm.Save()` or
+  `self.project.Dispose()`, and does not raise, because a defensive close in an
+  otherwise-correct module is not an error. `SaveChanges()` is guarded **before**
+  the write-enabled check and before the issue-#243 transaction-depth guard, so a
+  write-enabled donor hears "the host owns the save" rather than a depth message,
+  and a read-only donor does not slip into `FP_ReadOnlyError`; its message also
+  deliberately omits the usual "use `CloseProject()` instead" advice, which on a
+  view is a silent no-op and would yield a green run that wrote nothing.
+
+  `UndoableOperation()` is the deliberate exception to that ordering: it checks
+  write-enabledness first, so a *read-only* view correctly reports
+  `FP_ReadOnlyError` rather than being pointed at `Transaction()`, which would
+  fail too. Pinned by
+  `test_read_only_attached_view_reports_read_only_not_attached_view`.
+
+  `AbortSession()` is refused for the same ownership reason, and like
+  `SaveChanges()` the guard sits **before** the write-enabled check: a view is
+  unconditionally `_undoable = False`, so without it the call would take the
+  `undoable=False` branch and `Rollback(0)` the host's session-long envelope --
+  discarding unsaved edits the host made before the module was ever called, then
+  replacing that envelope with one the facade opened. Its message deliberately
+  does **not** offer `Transaction()` as the remedy the way the
+  `UndoableOperation()` refusal does: a view is always Phase 1, where
+  `Transaction()` has no rollback at all (#236), so pointing a caller who asked
+  to *discard* work at it would be a wrong answer in the shape of a helpful one.
+  There is no module-side discard on a view; the supported move is to let the
+  exception leave `Main()` and leave the keep-or-discard decision to the host.
+  Verified live against a real `IActionHandler`: the host's uncommitted edit and
+  its `CurrentDepth` are both untouched, the host stays writable, and the
+  owned-project rollback path on the same cache still discards and still reopens
+  -- see `specs/flexicon-project-bridge/evidence/live-abort-session-guard.md`.
+
+  Verified live: a `Transaction()` write through an attached view reaches the
+  `.fwdata` on the host's save, on both a scratch project and Sena 3, with no
+  explicit `MainCacheAccessor` flush -- see
+  `evidence/t3_2_persistence_gate_scratch_2026-09-09.txt` and
+  `evidence/t3_2_persistence_gate_sena3_2026-09-09.txt`. Read results through a
+  view are byte-identical to the same reads made directly
+  (`evidence/t3_1_from_open_project_mcp_parity_2026-09-09.txt`).
+
 - **`POSOperations.GetParent(pos_or_hvo)`** (#276) -- returns the owning
   `IPartOfSpeech` for a subcategory, or `None` for a top-level category (whose
   owner is the `PartsOfSpeechOA` list, not a possibility). Backfilled so that
   the hierarchy capability `GramCatOperations` advertised survives the
   delegation; it is the inverse of `AddSubcategory`.
+
+### Changed
+
+- **`UndoableOperation()`'s refusal message now tells the truth on an attached
+  view.** On a view the old wording -- "Project must be opened with
+  `undoable=True` […] Current project was opened with `undoable=False`" -- blamed
+  an argument nobody passed: the module never opened the project at all, the
+  host did. Views now get a message naming `FromOpenProject()`, stating that the
+  host holds a session-long non-undoable envelope, and pointing at
+  `Transaction()` as the supported construct. The exception type is unchanged
+  (`FP_TransactionError`), and owned projects keep the existing wording.
+- **`SaveChanges()`'s docstring** now scopes its "use `CloseProject()` instead"
+  note to *owned* projects, and documents the attached-view refusal beside it, so
+  the docstring can no longer be read as advice a view should follow.
 
 ### Deprecated
 

@@ -68,6 +68,18 @@ class FP_ReadOnlyError(FP_ProjectError): ...
 class FP_NullParameterError(FP_ProjectError): ...
 class FP_ParameterError(FP_ProjectError): ...
 
+# Attached-view surface (FromOpenProject). Declared at module scope because a
+# .pyi shadows the runtime module for type checkers: without these, the lazy
+# `from .FLExProject import _IsAttachedView, _ATTACHED_VIEW_UNDOABLE_REFUSAL`
+# in undoable_operation.py reads as an unknown import symbol even though it
+# resolves correctly at runtime. Private by name, but genuinely imported
+# across modules, so the stub has to carry them.
+_ATTACHED_VIEW_SAVE_REFUSAL: str
+_ATTACHED_VIEW_UNDOABLE_REFUSAL: str
+_ATTACHED_VIEW_ABORT_REFUSAL: str
+
+def _IsAttachedView(obj: Any) -> bool: ...
+
 class FLExProject:
     WriteEnabled: bool
     ProjectName: str
@@ -77,6 +89,10 @@ class FLExProject:
     project: Any  # Direct access to FdoCache
     lp: Any  # Direct access to LangProject (LcmCache.LanguageProject)
     lexDB: Any  # Direct access to LexDb (LangProject.LexDbOA)
+
+    # Present ONLY on a view built by FromOpenProject(); absent on a project
+    # this object opened itself. Every lifecycle guard branches on it.
+    _attached_donor: Any
 
     # Grammar operations
     @property
@@ -185,6 +201,13 @@ class FLExProject:
     # Lifecycle methods
     def OpenProject(self, projectName: str, writeEnabled: bool = False) -> None: ...
     def CloseProject(self, save: bool = True) -> None: ...
+
+    # Attach a facade to a project the HOST already opened. `donor` is
+    # duck-typed -- under real FLExTools it is a flexlibs FLExProject, which
+    # this package does not import and must not require -- so it is typed Any
+    # rather than narrowed to a class that may not be installed.
+    @classmethod
+    def FromOpenProject(cls, donor: Any) -> "FLExProject": ...
 
     # Utility methods
     def GetFieldID(self, className: str, fieldName: str) -> Optional[int]: ...

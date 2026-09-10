@@ -473,3 +473,151 @@ resolving, to a deprecated wrapper over the POS list, until it is removed at
 v5.0.0. Expect one `DeprecationWarning` per project in the meantime.
 
 ---
+
+## New: the portable module shape for FlexTools modules
+
+### What Changed
+
+`FLExProject.FromOpenProject(donor)` is new. It returns the full flexicon facade
+over a cache **someone else already opened** -- normally the project FlexTools
+handed your `Main()`.
+
+```python
+from flexicon import FLExProject
+
+def Main(project, report, modifyAllowed):
+    fx = FLExProject.FromOpenProject(project)   # identical under FlexTools and the MCP
+    lex, variants = fx.LexEntry, fx.Variants
+```
+
+This is the shape to write from now on. It opens nothing, closes nothing, and
+behaves the same in both hosts:
+
+- **Under FlexTools**, `project` is a *flexlibs* `FLExProject` -- the shallow
+  stable wrapper, ~40 functions. `FromOpenProject` attaches a flexicon view to
+  its live cache and you get the deep API.
+- **Under the FlexToolsMCP runner**, `project` is *already* a flexicon
+  `FLExProject`, so `FromOpenProject` returns it unchanged
+  (`FromOpenProject(x) is x`). Adding the line costs nothing and changes nothing.
+
+One module source, both hosts, no branching.
+
+### Why This Changed -- and why `from flexicon import FLExProject` alone was never enough
+
+Our template has told people for years to import from flexicon explicitly, with
+the warning that otherwise "your code will silently use the wrong (stable)
+version". Half of that was right and half of it was never true.
+
+**Right:** the two libraries genuinely differ, and getting the shallow one when
+you wanted the deep one is a real and confusing failure.
+
+**Never true:** importing a *class* has no effect on the *instance* someone else
+constructed and handed you. FlexTools builds `project` from `flexlibs` before
+your module is even imported. After
+
+```python
+from flexicon import FLExProject      # binds a name in your module
+```
+
+the parameter `project` is still the flexlibs object it always was, and
+`project.LexEntry` still resolves against flexlibs. The import was a dead line.
+It bound a name nothing used -- which is why the old advice appeared to work:
+scripts that only touched the ~40 functions both wrappers share behaved
+identically, and the ones that reached further failed in ways that looked like
+missing APIs rather than like a wrong object.
+
+`FromOpenProject()` is what that import was always trying to be. It makes the
+imported class load-bearing: you use it to *convert* the instance you were given,
+rather than hoping the import changed it.
+
+### Migration: rewrite the first line of `Main()`
+
+**Before -- works under the MCP, silently shallow under FlexTools:**
+```python
+from flexicon import FLExProject, LexEntryOperations   # the second name is unused
+
+def Main(project, report, modifyAllowed):
+    for entry in project.LexEntry.GetAll():            # flexlibs under FlexTools
+        ...
+```
+
+**After -- portable:**
+```python
+from flexicon import FLExProject
+
+def Main(project, report, modifyAllowed):
+    fx = FLExProject.FromOpenProject(project)
+    for entry in fx.LexEntry.GetAll():                 # flexicon in both hosts
+        ...
+```
+
+Then use `fx` everywhere you used `project`. To find modules still needing it:
+
+```bash
+rg --type py -l 'def Main\(project' | xargs rg -l -v 'FromOpenProject'
+```
+
+### What a view will and will not do
+
+An attached view is a view over a cache it does not own, so the lifecycle calls
+that would end the host's session are refused rather than obeyed:
+
+| Call | On an attached view |
+|---|---|
+| `Transaction()` | Supported -- use it |
+| `UndoableOperation()` | `FP_TransactionError`; the host holds a session-long non-undoable envelope |
+| `SaveChanges()` | `FP_RuntimeError`; the host owns the save |
+| `CloseProject()` | Silent no-op -- returns `None`, never raises |
+
+**The host saves, not your module.** Just return when you are done; FlexTools
+persists on close. Verified live on two projects -- see
+`docs/TRANSACTION_GUIDE.md`, "Special Case: Attached View".
+
+A donor missing `project` or `writeEnabled` raises `FP_ParameterError` naming
+every absent attribute and the donor's module, instead of an `AttributeError`
+fifty frames deep inside an operation.
+
+### Resolving objects: navigate, do not resolve a bare GUID
+
+Unrelated to the bridge, but it bites first-time users of the shape above.
+`project.Object(guid)` returns the object at its **base** `ICmObject` type:
+
+```python
+sense = fx.Object("07086e7d-...")
+fx.Senses.GetGloss(sense)
+# AttributeError: 'ICmObject' object has no attribute 'Gloss'
+```
+
+Objects reached by navigation come back correctly typed, so prefer that and skip
+the cast entirely:
+
+```python
+sense = fx.LexEntry.GetAllSenses(entry)[0]
+fx.Senses.GetGloss(sense)                    # fine
+```
+
+### What If I Can't Migrate Yet?
+
+Nothing breaks. `FromOpenProject()` is purely additive -- existing modules keep
+working exactly as before, including the ones with the dead import. You only need
+the new line when you want the deep API under FlexTools.
+
+Two environment failures are worth knowing about, because neither reads as one:
+
+- `pyflexicon` **not installed** -> `ImportError` at module import, before
+  `Main()` runs. FlexTools shows a load traceback naming a package.
+- `pyflexicon` installed but **predating this release** -> imports cleanly, then
+  dies on the first line of `Main()` with
+  `AttributeError: type object 'FLExProject' has no attribute 'FromOpenProject'`.
+
+Both mean the module is fine and the environment is not. `pip install -U
+pyflexicon` in the Python that FlexTools runs -- which is not necessarily the one
+on your `PATH`. Note also that `importlib.metadata.version("pyflexicon")` can
+disagree with `flexicon.version` on editable installs, so trust the capability,
+not the number:
+
+```python
+hasattr(FLExProject, "FromOpenProject")   # the only reliable probe
+```
+
+---
