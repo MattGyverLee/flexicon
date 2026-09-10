@@ -1742,7 +1742,7 @@ class FLExProject(object):
             >>> if verb:
             ...     project.WfiAnalyses.SetCategory(analysis, verb)
             >>> # Mark as human-approved
-            >>> project.WfiAnalyses.Approve(analysis)
+            >>> project.WfiAnalyses.ApproveAnalysis(analysis)
             >>> # Get morph bundles
             >>> bundles = project.WfiAnalyses.GetMorphBundles(analysis)
         """
@@ -1765,14 +1765,13 @@ class FLExProject(object):
             >>> project.OpenProject("MyProject", writeEnabled=True)
             >>> text = list(project.Texts.GetAll())[0]
             >>> para = list(text.ContentsOA.ParagraphsOS)[0]
-            >>> # Get translations
-            >>> trans = project.Paragraphs.GetTranslations(para)
-            >>> # Set translation
-            >>> project.Paragraphs.SetTranslation(para, "In the beginning...", "en")
-            >>> # Add note
-            >>> note = project.Paragraphs.AddNote(para, "Check translation")
-            >>> # Get style
-            >>> style = project.Paragraphs.GetStyleName(para)
+            >>> # Get text content
+            >>> text_content = project.Paragraphs.GetText(para)
+            >>> # Set text content
+            >>> project.Paragraphs.SetText(para, "In the beginning...")
+            >>> # Get segments
+            >>> segments = project.Paragraphs.GetSegments(para)
+            >>> print(f"{len(segments)} segments")
         """
         if "_paragraph_ops" not in self.__dict__:
             from .TextsWords.ParagraphOperations import ParagraphOperations
@@ -1903,7 +1902,7 @@ class FLExProject(object):
             >>> project = FLExProject()
             >>> project.OpenProject("MyProject", writeEnabled=True)
             >>> # Get all allomorphs for an entry
-            >>> entry = project.LexiconGetFirstEntry()
+            >>> entry = project.LexiconGetEntry(0)
             >>> for allo in project.Allomorphs.GetAll(entry):
             ...     form = project.Allomorphs.GetForm(allo)
             ...     print(f"Allomorph: {form}")
@@ -1952,12 +1951,12 @@ class FLExProject(object):
             >>> project = FLExProject()
             >>> project.OpenProject("MyProject", writeEnabled=True)
             >>> # Get all inflection classes
-            >>> for ic in project.InflectionFeatures.GetAllClasses():
-            ...     name = project.InflectionFeatures.GetClassName(ic)
+            >>> for ic in project.InflectionFeatures.InflectionClassGetAll():
+            ...     name = project.InflectionFeatures.InflectionClassGetName(ic)
             ...     print(f"Inflection class: {name}")
             >>> # Get all features
-            >>> for feat in project.InflectionFeatures.GetAllFeatures():
-            ...     name = project.InflectionFeatures.GetFeatureName(feat)
+            >>> for feat in project.InflectionFeatures.FeatureGetAll():
+            ...     name = feat.Name.BestAnalysisAlternative.Text
             ...     print(f"Feature: {name}")
         """
         if "_inflectionfeature_ops" not in self.__dict__:
@@ -2650,8 +2649,9 @@ class FLExProject(object):
             >>> # Get analysis and create gloss
             >>> analysis = project.WfiAnalyses.Create(wordform)
             >>> gloss = project.WfiGlosses.Create(analysis, "run", project.WSHandle('en'))
-            >>> # Mark as human-approved
-            >>> project.WfiGlosses.Approve(gloss)
+            >>> # Mark the analysis as human-approved (glosses have no
+            >>> # approval concept of their own -- it lives on the analysis)
+            >>> project.WfiAnalyses.ApproveAnalysis(analysis)
             >>> # Get all glosses
             >>> for g in project.WfiGlosses.GetAll(analysis):
             ...         form = project.WfiGlosses.GetForm(g, "en")
@@ -2682,8 +2682,13 @@ class FLExProject(object):
             >>> stem_entry = project.LexEntry.Find("hlauk")
             >>> if stem_entry and stem_entry.SensesOS.Count > 0:
             ...     project.WfiMorphBundles.SetSense(stem, stem_entry.SensesOS[0])
-            >>> # Set morpheme type
-            >>> project.WfiMorphBundles.SetMorphemeType(stem, "stem")
+            >>> # Morph type lives on the allomorph, not the bundle --
+            >>> # WfiMorphBundles.SetMorphType is a retired stub that always
+            >>> # raises. Link the bundle to the entry's already-typed
+            >>> # allomorph instead.
+            >>> stem_allomorphs = list(project.Allomorphs.GetAll(stem_entry)) if stem_entry else []
+            >>> if stem_allomorphs:
+            ...     project.WfiMorphBundles.SetMorph(stem, stem_allomorphs[0])
         """
         if "_wfimorphbundle_ops" not in self.__dict__:
             from .TextsWords.WfiMorphBundleOperations import WfiMorphBundleOperations
@@ -2704,9 +2709,9 @@ class FLExProject(object):
             >>> project.OpenProject("MyProject", writeEnabled=True)
             >>> # Get all media files
             >>> for media in project.Media.GetAll():
-            ...     filename = project.Media.GetFilename(media)
+            ...     path = project.Media.GetInternalPath(media)
             ...     mtype = project.Media.GetMediaType(media)
-            ...     print(f"{filename} ({mtype})")
+            ...     print(f"{path} ({mtype})")
             >>> # Add a media file
             >>> media = project.Media.Create("/path/to/audio.wav", "My Recording")
             >>> # Copy file to project
@@ -2760,20 +2765,16 @@ class FLExProject(object):
         Example:
             >>> project = FLExProject()
             >>> project.OpenProject("MyProject", writeEnabled=True)
-            >>> # Create a filter for incomplete entries
-            >>> filter_def = {
-            ...     "name": "Incomplete Entries",
-            ...     "type": "LexEntry",
-            ...     "conditions": [
-            ...         {"field": "SensesOS", "operator": "isEmpty"}
-            ...     ]
-            ... }
-            >>> filter_obj = project.Filters.Create(filter_def)
-            >>> # Apply the filter
-            >>> results = project.Filters.ApplyFilter(filter_obj)
-            >>> print(f"Found {len(results)} incomplete entries")
-            >>> # Export filter
-            >>> json_str = project.Filters.ExportFilter(filter_obj)
+            >>> # Create a filter for verbs ("LexEntry" is FilterTypes.LEXENTRY)
+            >>> filter_obj = project.Filters.Create(
+            ...     "Verbs", "LexEntry", {"pos": "verb"}
+            ... )
+            >>> # Apply the filter to a collection of entries
+            >>> entries = list(project.LexEntry.GetAll())
+            >>> results = project.Filters.ApplyFilter(filter_obj, entries)
+            >>> print(f"Found {len(results)} verbs")
+            >>> # Export filter to a file
+            >>> project.Filters.ExportFilter(filter_obj, "/path/to/verbs.json")
         """
         if "_filter_ops" not in self.__dict__:
             from .Shared.FilterOperations import FilterOperations
@@ -2793,13 +2794,13 @@ class FLExProject(object):
             >>> project = FLExProject()
             >>> project.OpenProject("MyProject", writeEnabled=True)
             >>> # Get a text
-            >>> text = list(project.TextCatalog())[0]
+            >>> text = list(project.Texts.GetAll())[0]
             >>> # Create a discourse chart
-            >>> chart = project.Discourse.CreateChart(text, "Constituent Chart", "en")
+            >>> chart = project.Discourse.CreateChart(text, "Constituent Chart")
             >>> # Add rows
-            >>> row1 = project.Discourse.AddRow(chart, 0)
+            >>> row1 = project.Discourse.AddRow(chart)
             >>> # Get all charts
-            >>> for c in project.Discourse.GetAllCharts():
+            >>> for c in project.Discourse.GetAllCharts(text):
             ...     name = project.Discourse.GetChartName(c, "en")
             ...     rows = project.Discourse.GetRows(c)
             ...     print(f"Chart: {name} ({len(rows)} rows)")
@@ -2977,9 +2978,12 @@ class FLExProject(object):
             >>> project.OpenProject("MyProject", writeEnabled=True)
             >>> # Create human agent
             >>> person = project.Person.Create("John Smith", "en")
-            >>> agent = project.Agents.CreateHumanAgent("John Smith", person)
-            >>> # Create parser agent
-            >>> parser = project.Agents.CreateParserAgent("MyParser", "1.0.0")
+            >>> agent = project.Agents.Create("John Smith")
+            >>> project.Agents.SetHuman(agent, person)
+            >>> # Create parser agent (an agent is a "parser" simply by not
+            >>> # calling SetHuman on it)
+            >>> parser = project.Agents.Create("MyParser")
+            >>> project.Agents.SetVersion(parser, "1.0.0")
             >>> # Query agents
             >>> for a in project.Agents.GetAll():
             ...     name = project.Agents.GetName(a)
@@ -3033,15 +3037,18 @@ class FLExProject(object):
             >>> project = FLExProject()
             >>> project.OpenProject("MyProject", writeEnabled=True)
             >>> # Get a chart
-            >>> text = list(project.TextCatalog())[0]
-            >>> chart = project.Discourse.CreateChart(text, "Chart", "en")
-            >>> # Create overlay
-            >>> overlay = project.Overlays.Create(chart, "Temporal", "en")
-            >>> project.Overlays.SetVisible(overlay, True)
-            >>> # Get visible overlays
-            >>> for o in project.Overlays.GetVisibleOverlays(chart):
-            ...     name = project.Overlays.GetName(o)
-            ...     print(f"Overlay: {name}")
+            >>> text = list(project.Texts.GetAll())[0]
+            >>> chart = project.Discourse.CreateChart(text, "Chart")
+            >>> # NOTE: OverlayOperations.Create() is currently broken -- it
+            >>> # inherits PossibilityItemOperations.Create(), but
+            >>> # OverlayOperations._get_list_object() always returns None
+            >>> # (overlays are chart-scoped, no project-wide list), so this
+            >>> # call always raises FP_ParameterError. See flexicon issue #309.
+            >>> # overlay = project.Overlays.Create("Temporal")
+            >>> # project.Overlays.SetVisible(overlay, True)
+            >>> # for o in project.Overlays.GetVisibleOverlays(chart):
+            >>> #     name = project.Overlays.GetName(o)
+            >>> #     print(f"Overlay: {name}")
         """
         if "_overlay_ops" not in self.__dict__:
             from .Lists.OverlayOperations import OverlayOperations
@@ -3064,7 +3071,8 @@ class FLExProject(object):
             >>> free = project.TranslationTypes.GetFreeTranslationType()
             >>> literal = project.TranslationTypes.GetLiteralTranslationType()
             >>> # Create custom type
-            >>> gloss = project.TranslationTypes.Create("Interlinear Gloss", "IG", "en")
+            >>> gloss = project.TranslationTypes.Create("Interlinear Gloss", "en")
+            >>> project.TranslationTypes.SetAbbreviation(gloss, "IG", "en")
             >>> # Get all types
             >>> for t in project.TranslationTypes.GetAll():
             ...     name = project.TranslationTypes.GetName(t)

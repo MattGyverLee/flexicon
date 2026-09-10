@@ -1513,8 +1513,8 @@ class LexEntryOperations(BaseOperations):
             suffix
 
             >>> # Set using morph type object
-            >>> morph_types = project.lp.MorphTypesOA.PossibilitiesOS
-            >>> stem_type = morph_types[0]  # assuming first is stem
+            >>> morph_types = project.LexEntry.GetAvailableMorphTypes()
+            >>> stem_name, stem_type, is_stem = next(mt for mt in morph_types if mt[2])
             >>> project.LexEntry.SetMorphType(entry, stem_type)
 
         Notes:

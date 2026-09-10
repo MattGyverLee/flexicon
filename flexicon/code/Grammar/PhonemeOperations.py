@@ -723,7 +723,7 @@ class PhonemeOperations(BaseOperations):
             >>> if phoneme:
             ...     codes = project.Phonemes.GetCodes(phoneme)
             ...     for code in codes:
-            ...         ws = project.project.DefaultVernWs
+            ...         ws = project.GetDefaultVernacularWSHandle()
             ...         repr = ITsString(code.Representation.get_String(ws)).Text
             ...         print(repr)
             [t]   # plain voiceless alveolar stop
@@ -845,7 +845,7 @@ class PhonemeOperations(BaseOperations):
             ...     codes = project.Phonemes.GetCodes(phoneme)
             ...     # Remove the flap allophone
             ...     for code in codes:
-            ...         ws = project.project.DefaultVernWs
+            ...         ws = project.GetDefaultVernacularWSHandle()
             ...         repr = ITsString(code.Representation.get_String(ws)).Text
             ...         if repr == "[ɾ]":
             ...             project.Phonemes.RemoveCode(phoneme, code)

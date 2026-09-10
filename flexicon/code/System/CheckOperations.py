@@ -591,7 +591,7 @@ class CheckOperations(BaseOperations):
             Warnings: 3
 
             >>> # Run check on specific entries
-            >>> entries = list(project.LexiconGetAllEntries())[:10]
+            >>> entries = list(project.LexiconAllEntries())[:10]
             >>> results = project.Checks.RunCheck(check, entries)
 
         Notes:
@@ -1075,7 +1075,7 @@ class CheckOperations(BaseOperations):
             >>> project.Checks.RunCheck(check)
             >>>
             >>> # Get issues for a specific entry
-            >>> entry = list(project.LexiconGetAllEntries())[0]
+            >>> entry = list(project.LexiconAllEntries())[0]
             >>> issues = project.Checks.GetIssuesForObject(check, entry)
             >>> for issue in issues:
             ...     print(f"- {issue}")

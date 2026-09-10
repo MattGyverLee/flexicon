@@ -653,9 +653,9 @@ class MorphRuleOperations(BaseOperations):
             FP_NullParameterError: If rule_or_hvo is None.
 
         Example:
-            >>> morph_data = project.lp.MorphologicalDataOA
-            >>> if morph_data and morph_data.StrataOS.Count > 0:
-            ...     ruleOps.SetStratum(rule, morph_data.StrataOS[0])
+            >>> strata = list(project.Strata.GetAll())
+            >>> if strata:
+            ...     ruleOps.SetStratum(rule, strata[0])
 
             >>> # Clear stratum assignment
             >>> ruleOps.SetStratum(rule, None)

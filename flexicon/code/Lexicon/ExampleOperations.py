@@ -761,7 +761,7 @@ class ExampleOperations(BaseOperations):
             >>> if examples:
             ...     translations = exampleOps.GetTranslations(examples[0])
             ...     for trans in translations:
-            ...         wsHandle = project.project.DefaultAnalWs
+            ...         wsHandle = project.GetDefaultAnalysisWSHandle()
             ...         text = ITsString(trans.Translation.get_String(wsHandle)).Text
             ...         print(f"Translation: {text}")
             Translation: The dog ran quickly.

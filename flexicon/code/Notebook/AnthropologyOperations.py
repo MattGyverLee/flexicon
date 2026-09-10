@@ -691,9 +691,9 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Example:
             >>> # Get a category from the categories list
-            >>> categories = project.lp.AnthroListOA
-            >>> if categories and categories.PossibilitiesOS.Count > 0:
-            ...     category = categories.PossibilitiesOS[0]
+            >>> anthro_list = project.PossibilityLists.FindList("Anthropology Categories")
+            >>> if anthro_list:
+            ...     category = project.PossibilityLists.GetItems(anthro_list)[0]
             ...     items = project.Anthropology.FindByCategory(category)
             ...     for item in items:
             ...         name = project.Anthropology.GetName(item)
@@ -1150,8 +1150,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             >>> item = project.Anthropology.Find("Marriage Customs")
             >>>
             >>> # Set category from a possibility list
-            >>> # (assuming categories are defined in a list)
-            >>> category = project.lp.AnthroListOA.PossibilitiesOS[0]
+            >>> anthro_list = project.PossibilityLists.FindList("Anthropology Categories")
+            >>> category = project.PossibilityLists.GetItems(anthro_list)[0]
             >>> project.Anthropology.SetCategory(item, category)
             >>>
             >>> # Clear category
@@ -1633,8 +1633,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             >>> item = project.Anthropology.Find("Marriage Customs")
             >>>
             >>> # Get or create a person
-            >>> # (assuming people are in project.lp.PeopleOA)
-            >>> person = project.lp.PeopleOA.PossibilitiesOS[0]
+            >>> person = project.Person.Find("John Smith")
             >>>
             >>> # Link person to item
             >>> project.Anthropology.AddResearcher(item, person)
@@ -1693,7 +1692,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Example:
             >>> item = project.Anthropology.Find("Marriage Customs")
-            >>> person = project.lp.PeopleOA.PossibilitiesOS[0]
+            >>> person = project.Person.Find("John Smith")
             >>>
             >>> # Remove person link
             >>> project.Anthropology.RemoveResearcher(item, person)

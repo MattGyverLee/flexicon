@@ -716,9 +716,7 @@ class DataNotebookOperations(BaseOperations):
             >>> record = project.DataNotebook.Find("Interview 1")
             >>> rec_type = project.DataNotebook.GetRecordType(record)
             >>> if rec_type:
-            ...     type_name = ITsString(
-            ...         rec_type.Name.get_String(project.project.DefaultAnalWs)
-            ...     ).Text
+            ...     type_name = rec_type.Name.BestAnalysisAlternative.Text
             ...     print(f"Type: {type_name}")
             ... else:
             ...     print("No type set")
@@ -802,9 +800,7 @@ class DataNotebookOperations(BaseOperations):
         Example:
             >>> # List all record types
             >>> for rec_type in project.DataNotebook.GetAllRecordTypes():
-            ...     name = ITsString(
-            ...         rec_type.Name.get_String(project.project.DefaultAnalWs)
-            ...     ).Text
+            ...     name = rec_type.Name.BestAnalysisAlternative.Text
             ...     print(f"Type: {name}")
             Type: Interview
             Type: Observation
@@ -1729,15 +1725,15 @@ class DataNotebookOperations(BaseOperations):
     @OperationsMethod
     def AddSource(self, record_or_hvo, source):
         """
-        Add a bibliographic source/reference to a notebook record.
+        Add a source (person) to a notebook record.
 
-        Associates a source or bibliographic reference with the notebook record,
-        indicating which publications or materials are relevant to the documented
-        data.
+        Associates a source with the notebook record. Sources are ICmPerson
+        records (the LCM field is SourcesRC, sig="CmPerson") -- the people who
+        supplied or reported the documented data, not bibliographic citations.
 
         Args:
             record_or_hvo: The notebook record object (IRnGenericRec) or its HVO.
-            source: The source/reference object to add.
+            source: The ICmPerson object to add as a source.
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled.
@@ -1745,28 +1741,27 @@ class DataNotebookOperations(BaseOperations):
             FP_ParameterError: If the record or source doesn't exist.
 
         Example:
-            >>> # Add single source
+            >>> # Add single source (Sources are ICmPerson records -- the
+            >>> # people who supplied/reported the data, not bibliographic
+            >>> # citations)
             >>> record = project.DataNotebook.Find("Interview 1")
-            >>> source = project.Bibliography.Find("Smith 2020")
+            >>> source = project.Person.Find("Smith")
             >>> if source:
             ...     project.DataNotebook.AddSource(record, source)
 
             >>> # Add multiple sources
-            >>> sources = ["Smith 2020", "Johnson & Garcia 2018"]
-            >>> for name in sources:
-            ...     src = project.Bibliography.Find(name)
+            >>> names = ["Smith", "Garcia"]
+            >>> for name in names:
+            ...     src = project.Person.Find(name)
             ...     if src:
             ...         project.DataNotebook.AddSource(record, src)
-
-            >>> # Create and add new source
-            >>> new_source = project.Bibliography.Create("Doe 2024")
-            >>> project.DataNotebook.AddSource(record, new_source)
 
         Notes:
             - Adding same source twice has no effect (no duplicates)
             - Sources are not deleted when removed from records
-            - Use Bibliography operations to manage source objects
-            - Useful for tracking citations and references
+            - Sources are ICmPerson objects (see PersonOperations); use
+              project.Person.Find/Create to obtain one
+            - Useful for tracking who supplied/reported the recorded data
 
         See Also:
             GetSources, RemoveSource, AddResearcher
@@ -1785,14 +1780,15 @@ class DataNotebookOperations(BaseOperations):
     @OperationsMethod
     def RemoveSource(self, record_or_hvo, source):
         """
-        Remove a bibliographic source/reference from a notebook record.
+        Remove a source (person) from a notebook record.
 
-        Removes the association between a source and a notebook record. The
-        source object itself is not deleted.
+        Removes the association between a source and a notebook record (see
+        AddSource -- sources are ICmPerson records). The source object itself
+        is not deleted.
 
         Args:
             record_or_hvo: The notebook record object (IRnGenericRec) or its HVO.
-            source: The source/reference object to remove.
+            source: The ICmPerson object to remove as a source.
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled.
@@ -1801,7 +1797,7 @@ class DataNotebookOperations(BaseOperations):
 
         Example:
             >>> record = project.DataNotebook.Find("Interview 1")
-            >>> source = project.Bibliography.Find("Old Reference")
+            >>> source = project.Person.Find("Smith")
             >>> project.DataNotebook.RemoveSource(record, source)
 
         Notes:
@@ -2124,9 +2120,7 @@ class DataNotebookOperations(BaseOperations):
             >>> record = project.DataNotebook.Find("Interview 1")
             >>> status = project.DataNotebook.GetStatus(record)
             >>> if status:
-            ...     status_name = ITsString(
-            ...         status.Name.get_String(project.project.DefaultAnalWs)
-            ...     ).Text
+            ...     status_name = status.Name.BestAnalysisAlternative.Text
             ...     print(f"Status: {status_name}")
             ... else:
             ...     print("No status set")
@@ -2220,9 +2214,7 @@ class DataNotebookOperations(BaseOperations):
         Example:
             >>> # List all statuses
             >>> for status in project.DataNotebook.GetAllStatuses():
-            ...     name = ITsString(
-            ...         status.Name.get_String(project.project.DefaultAnalWs)
-            ...     ).Text
+            ...     name = status.Name.BestAnalysisAlternative.Text
             ...     print(f"Status: {name}")
             Status: Draft
             Status: In Review
@@ -2708,9 +2700,7 @@ class DataNotebookOperations(BaseOperations):
             >>> record = project.DataNotebook.Find("Interview 1")
             >>> confidence = project.DataNotebook.GetConfidence(record)
             >>> if confidence:
-            ...     conf_name = ITsString(
-            ...         confidence.Name.get_String(project.project.DefaultAnalWs)
-            ...     ).Text
+            ...     conf_name = confidence.Name.BestAnalysisAlternative.Text
             ...     print(f"Confidence: {conf_name}")
             ... else:
             ...     print("No confidence level set")

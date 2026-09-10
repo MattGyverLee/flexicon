@@ -353,7 +353,7 @@ class WfiMorphBundleOperations(BaseOperations):
             dict: Dictionary of syncable properties with their values.
 
         Example:
-            >>> props = project.MorphBundles.GetSyncableProperties(bundle)
+            >>> props = project.WfiMorphBundles.GetSyncableProperties(bundle)
             >>> print(props['Form'])
             {'en': 'run'}
             >>> print(props['SenseRA'])
@@ -719,7 +719,7 @@ class WfiMorphBundleOperations(BaseOperations):
             ...     sense = morphBundleOps.GetSense(bundles[0])
             ...     if sense:
             ...         # Get sense gloss
-            ...         wsHandle = project.project.DefaultAnalWs
+            ...         wsHandle = project.GetDefaultAnalysisWSHandle()
             ...         sense_gloss = ITsString(sense.Gloss.get_String(wsHandle)).Text
             ...         print(f"Linked to sense: {sense_gloss}")
             Linked to sense: run
@@ -757,7 +757,8 @@ class WfiMorphBundleOperations(BaseOperations):
             >>> bundles = list(morphBundleOps.GetAll(analysis))
             >>> if bundles:
             ...     # Link to a lexical sense
-            ...     senses = list(project.LexiconAllSenses())
+            ...     entries = list(project.LexiconAllEntries())
+            ...     senses = project.LexEntry.GetAllSenses(entries[0]) if entries else []
             ...     if senses:
             ...         morphBundleOps.SetSense(bundles[0], senses[0])
 
@@ -1128,7 +1129,7 @@ class WfiMorphBundleOperations(BaseOperations):
             bundle_or_hvo: The IWfiMorphBundle object or HVO.
 
         Returns:
-            ICmPossibility or None: The inflection type object, or None if not set.
+            LexEntryInflType or None: The inflection type object, or None if not set.
 
         Raises:
             FP_NullParameterError: If bundle_or_hvo is None.
@@ -1139,7 +1140,7 @@ class WfiMorphBundleOperations(BaseOperations):
             >>> if bundles:
             ...     inflType = morphBundleOps.GetInflType(bundles[0])
             ...     if inflType:
-            ...         wsHandle = project.project.DefaultAnalWs
+            ...         wsHandle = project.GetDefaultAnalysisWSHandle()
             ...         type_name = ITsString(inflType.Name.get_String(wsHandle)).Text
             ...         print(f"Inflection type: {type_name}")
             Inflection type: past tense
@@ -1167,7 +1168,8 @@ class WfiMorphBundleOperations(BaseOperations):
 
         Args:
             bundle_or_hvo: The IWfiMorphBundle object or HVO.
-            infl_type_or_hvo: The ICmPossibility inflection type object or HVO, or None to unset.
+            infl_type_or_hvo: The LexEntryInflType object or HVO (from
+                LexDb.VariantEntryTypesOA), or None to unset.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -1177,12 +1179,12 @@ class WfiMorphBundleOperations(BaseOperations):
             >>> morphBundleOps = WfiMorphBundleOperations(project)
             >>> bundles = list(morphBundleOps.GetAll(analysis))
             >>> if bundles:
-            ...     # Get an inflection type from the list
-            ...     if project.lp.MorphologicalDataOA:
-            ...         inflTypes = project.lp.MorphologicalDataOA.InflectionTypesOA
-            ...         if inflTypes and inflTypes.PossibilitiesOS.Count > 0:
-            ...             past_tense = inflTypes.PossibilitiesOS[0]
-            ...             morphBundleOps.SetInflType(bundles[0], past_tense)
+            ...     # Get an inflection type (LexEntryInflType lives in
+            ...     # LexDb.VariantEntryTypesOA, accessed via VariantOperations)
+            ...     infl_types = [t for t in project.Variants.GetAllTypes()
+            ...                   if t.ClassName == "LexEntryInflType"]
+            ...     if infl_types:
+            ...         morphBundleOps.SetInflType(bundles[0], infl_types[0])
 
             >>> # Clear inflection type
             >>> morphBundleOps.SetInflType(bundles[0], None)
@@ -1237,7 +1239,7 @@ class WfiMorphBundleOperations(BaseOperations):
             >>> if bundles:
             ...     inflClass = morphBundleOps.GetInflectionClass(bundles[0])
             ...     if inflClass:
-            ...         wsHandle = project.project.DefaultAnalWs
+            ...         wsHandle = project.GetDefaultAnalysisWSHandle()
             ...         class_name = ITsString(inflClass.Name.get_String(wsHandle)).Text
             ...         print(f"Inflection class: {class_name}")
             Inflection class: strong verb
@@ -1275,12 +1277,11 @@ class WfiMorphBundleOperations(BaseOperations):
             >>> morphBundleOps = WfiMorphBundleOperations(project)
             >>> bundles = list(morphBundleOps.GetAll(analysis))
             >>> if bundles:
-            ...     # Get an inflection class
-            ...     if project.lp.MorphologicalDataOA:
-            ...         inflClasses = project.lp.MorphologicalDataOA.InflectionClassesOC
-            ...         if inflClasses.Count > 0:
-            ...             inflClass = inflClasses[0]
-            ...             morphBundleOps.SetInflectionClass(bundles[0], inflClass)
+            ...     # Get an inflection class (owned per-POS, via project.POS)
+            ...     verb = project.POS.Find("Verb")
+            ...     classes = list(project.POS.GetInflectionClasses(verb)) if verb else []
+            ...     if classes:
+            ...         morphBundleOps.SetInflectionClass(bundles[0], classes[0])
 
             >>> # Clear inflection class
             >>> morphBundleOps.SetInflectionClass(bundles[0], None)

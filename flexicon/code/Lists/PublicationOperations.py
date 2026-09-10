@@ -402,7 +402,7 @@ class PublicationOperations(PossibilityItemOperations):
             >>> width = project.Publications.GetPageWidth(pub)
             >>> height = project.Publications.GetPageHeight(pub)
             >>> if width and height:
-            ...     print(f"Page size: {width}\" x {height}\"")
+            ...     print(f'Page size: {width}" x {height}"')
 
         Notes:
             - Returns None if page height is not set
@@ -769,7 +769,7 @@ class PublicationOperations(PossibilityItemOperations):
             >>> height = project.Publications.GetPageHeight(pub)
             >>> is_landscape = project.Publications.GetIsLandscape(pub)
             >>> orientation = "Landscape" if is_landscape else "Portrait"
-            >>> print(f"{orientation}: {width}\" x {height}\"")
+            >>> print(f'{orientation}: {width}" x {height}"')
             Portrait: 8.5" x 11.0"
 
         Notes:

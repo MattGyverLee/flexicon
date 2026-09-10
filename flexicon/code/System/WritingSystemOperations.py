@@ -290,8 +290,8 @@ class WritingSystemOperations(BaseOperations):
 
             >>> # Delete by handle
             >>> ws = list(project.WritingSystems.GetVernacular())[2]
-            ...     handle = ws.Handle
-            ...     project.WritingSystems.Delete(handle)
+            >>> handle = ws.Handle
+            >>> project.WritingSystems.Delete(handle)
 
         Notes:
             - Cannot delete default vernacular or analysis writing systems
@@ -880,7 +880,7 @@ class WritingSystemOperations(BaseOperations):
 
         Example:
             >>> # Get the best string from a lexeme form
-            >>> entry = project.LexEntries.GetEntry("test")
+            >>> entry = project.LexEntry.Find("test")
             >>> best_text = project.WritingSystems.GetBestString(entry.LexemeFormOA.Form)
             >>> print(best_text)
             test

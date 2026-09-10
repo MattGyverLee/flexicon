@@ -619,8 +619,7 @@ class NoteOperations(BaseOperations):
             ...     note_type = project.Note.GetNoteType(notes[0])
             ...     if note_type:
             ...         # Get the name of the note type
-            ...         ws = project.project.DefaultAnalWs
-            ...         type_name = ITsString(note_type.Name.get_String(ws)).Text
+            ...         type_name = note_type.Name.BestAnalysisAlternative.Text
             ...         print(f"Note type: {type_name}")
             Note type: To Do
 

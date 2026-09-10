@@ -1618,7 +1618,7 @@ class LexSenseOperations(BaseOperations):
             >>> if senses:
             ...     domains = project.Senses.GetSemanticDomains(senses[0])
             ...     for domain in domains:
-            ...         ws = project.project.DefaultAnalWs
+            ...         ws = project.GetDefaultAnalysisWSHandle()
             ...         name = ITsString(domain.Name.get_String(ws)).Text
             ...         print(f"Domain: {name}")
             Domain: 7.2.1 Walk
@@ -1744,7 +1744,7 @@ class LexSenseOperations(BaseOperations):
             >>> if senses:
             ...     examples = project.Senses.GetExamples(senses[0])
             ...     for ex in examples:
-            ...         ws = project.project.DefaultVernWs
+            ...         ws = project.GetDefaultVernacularWSHandle()
             ...         text = ITsString(ex.Example.get_String(ws)).Text
             ...         print(f"Example: {text}")
             Example: She runs every morning.
@@ -2032,7 +2032,7 @@ class LexSenseOperations(BaseOperations):
             >>> if senses:
             ...     status = project.Senses.GetStatus(senses[0])
             ...     if status:
-            ...         ws = project.project.DefaultAnalWs
+            ...         ws = project.GetDefaultAnalysisWSHandle()
             ...         name = ITsString(status.Name.get_String(ws)).Text
             ...         print(f"Status: {name}")
             Status: Approved
@@ -2111,7 +2111,7 @@ class LexSenseOperations(BaseOperations):
             >>> if senses:
             ...     sense_type = project.Senses.GetSenseType(senses[0])
             ...     if sense_type:
-            ...         ws = project.project.DefaultAnalWs
+            ...         ws = project.GetDefaultAnalysisWSHandle()
             ...         name = ITsString(sense_type.Name.get_String(ws)).Text
             ...         print(f"Type: {name}")
             Type: Figurative

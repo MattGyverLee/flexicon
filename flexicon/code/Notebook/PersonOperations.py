@@ -1423,8 +1423,9 @@ class PersonOperations(BaseOperations):
 
         Example:
             >>> person = project.Person.Find("John Smith")
-            >>> # Get language from project's languages list
-            >>> languages_list = project.lp.LanguagesOA
+            >>> # Get language from project's languages list (LanguagesOA
+            >>> # lives on LexDb, not LangProject)
+            >>> languages_list = project.lexDB.LanguagesOA
             >>> if languages_list:
             ...     spanish = languages_list.PossibilitiesOS[0]
             ...     project.Person.AddLanguage(person, spanish)

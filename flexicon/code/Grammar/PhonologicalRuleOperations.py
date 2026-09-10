@@ -535,10 +535,9 @@ class PhonologicalRuleOperations(BaseOperations):
             >>> phonRuleOps = PhonologicalRuleOperations(project)
             >>> rule = list(phonRuleOps.GetAll())[0]
             >>> # Get first stratum
-            >>> morph_data = project.lp.MorphologicalDataOA
-            >>> if morph_data and morph_data.StrataOS.Count > 0:
-            ...     stratum = morph_data.StrataOS[0]
-            ...     phonRuleOps.SetStratum(rule, stratum)
+            >>> strata = list(project.Strata.GetAll())
+            >>> if strata:
+            ...     phonRuleOps.SetStratum(rule, strata[0])
 
         See Also:
             GetStratum

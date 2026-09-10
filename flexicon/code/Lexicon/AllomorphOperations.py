@@ -233,8 +233,7 @@ class AllomorphOperations(BaseOperations):
             running
 
             >>> # Create with explicit morph type
-            >>> morphType = project.lexDB.MorphTypesOA.PossibilitiesOS[0]
-            >>> allomorph = project.Allomorphs.Create(entry, "ran", morphType)
+            >>> allomorph = project.Allomorphs.Create(entry, "ran", morphType="prefix")
 
             >>> # Create with specific writing system
             >>> allomorph = project.Allomorphs.Create(entry, "rʌn",
@@ -1109,7 +1108,7 @@ class AllomorphOperations(BaseOperations):
             >>> if allomorphs:
             ...     morphType = allomorphOps.GetMorphType(allomorphs[0])
             ...     # Get type name
-            ...     wsHandle = project.project.DefaultAnalWs
+            ...     wsHandle = project.GetDefaultAnalysisWSHandle()
             ...     type_name = ITsString(morphType.Name.get_String(wsHandle)).Text
             ...     print(type_name)
             stem
@@ -1147,9 +1146,9 @@ class AllomorphOperations(BaseOperations):
             >>> allomorphs = list(allomorphOps.GetAll(entry))
             >>> if allomorphs:
             ...     # Get a different morph type
-            ...     morphTypes = project.lp.MorphTypesOA.PossibilitiesOS
-            ...     prefix_type = [mt for mt in morphTypes
-            ...                    if "prefix" in str(mt).lower()][0]
+            ...     morphTypes = project.LexEntry.GetAvailableMorphTypes()
+            ...     prefix_type = next(mt for name, mt, is_stem in morphTypes
+            ...                        if not is_stem and "prefix" in name.lower())
             ...     allomorphOps.SetMorphType(allomorphs[0], prefix_type)
 
         Notes:
@@ -1191,7 +1190,7 @@ class AllomorphOperations(BaseOperations):
             >>> if allomorphs:
             ...     envs = allomorphOps.GetPhoneEnv(allomorphs[0])
             ...     for env in envs:
-            ...         wsHandle = project.project.DefaultAnalWs
+            ...         wsHandle = project.GetDefaultAnalysisWSHandle()
             ...         name = ITsString(env.Name.get_String(wsHandle)).Text
             ...         print(f"Environment: {name}")
             Environment: After voiceless consonant
@@ -1227,14 +1226,13 @@ class AllomorphOperations(BaseOperations):
             >>> allomorphOps = AllomorphOperations(project)
             >>> entry = project.LexiconAllEntries()[0]
             >>> allomorphs = list(allomorphOps.GetAll(entry))
-            >>> if allomorphs and project.lp.PhonologicalDataOA:
-            ...     envs = project.lp.PhonologicalDataOA.EnvironmentsOS
-            ...     if envs.Count > 0:
-            ...         allomorphOps.AddPhoneEnv(allomorphs[0], envs[0])
+            >>> envs = list(project.Environments.GetAll())
+            >>> if allomorphs and envs:
+            ...     allomorphOps.AddPhoneEnv(allomorphs[0], envs[0])
 
             >>> # Define that "-es" appears after sibilants
             >>> # (assuming you have created the environment)
-            >>> sibilant_env = project.lp.PhonologicalDataOA.EnvironmentsOS[0]
+            >>> sibilant_env = list(project.Environments.GetAll())[0]
             >>> allomorphOps.AddPhoneEnv(allomorphs[0], sibilant_env)
 
         Notes:

@@ -144,7 +144,8 @@ class TextOperations(BaseOperations):
             Genesis
 
             >>> # Create a text with genre
-            >>> narrative_genre = project.lp.GenreListOA.PossibilitiesOS[0]
+            >>> genre_list = project.PossibilityLists.FindList("Text Genres")
+            >>> narrative_genre = project.PossibilityLists.GetItems(genre_list)[0]
             >>> text = project.Texts.Create("Story 1", genre=narrative_genre)
 
         See Also:
@@ -691,8 +692,8 @@ class TextOperations(BaseOperations):
         Args:
             text_or_hvo: Either an IText object or its HVO (integer identifier).
             genre (ICmPossibility or None): The genre to assign. Must be a valid
-                ICmPossibility from the project's genre list (typically found in
-                project.lp.GenreListOA.PossibilitiesOS). If None, clears all genres.
+                ICmPossibility from the project's "Text Genres" possibility list
+                (see project.PossibilityLists.FindList). If None, clears all genres.
 
         Raises:
             FP_ReadOnlyError: If project was not opened with writeEnabled=True.
@@ -704,9 +705,10 @@ class TextOperations(BaseOperations):
             >>> text = list(project.Texts.GetAll())[0]
             >>>
             >>> # Set genre to first available genre
-            >>> if project.lp.GenreListOA.PossibilitiesOS.Count > 0:
-            ...     narrative = project.lp.GenreListOA.PossibilitiesOS[0]
-            ...     project.Texts.SetGenre(text, narrative)
+            >>> genre_list = project.PossibilityLists.FindList("Text Genres")
+            >>> items = project.PossibilityLists.GetItems(genre_list) if genre_list else []
+            >>> if items:
+            ...     project.Texts.SetGenre(text, items[0])
             >>>
             >>> # Clear genre
             >>> project.Texts.SetGenre(text, None)

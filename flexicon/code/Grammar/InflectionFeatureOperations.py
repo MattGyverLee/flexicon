@@ -1097,7 +1097,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
             >>> inflOps = InflectionFeatureOperations(project)
             >>> # Find and delete a test feature
             >>> for feature in inflOps.FeatureGetAll():
-            ...     ws = project.project.DefaultAnalWs
+            ...     ws = project.GetDefaultAnalysisWSHandle()
             ...     name = ITsString(feature.Name.get_String(ws)).Text
             ...     if name == "test_feature":
             ...         inflOps.FeatureDelete(feature)
@@ -1194,7 +1194,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
             ...     features = inflOps.GetFeatures(feature_system)
             ...     print(f"Feature system has {len(features)} features")
             ...     for feature in features:
-            ...         wsHandle = project.project.DefaultAnalWs
+            ...         wsHandle = project.GetDefaultAnalysisWSHandle()
             ...         name = ITsString(feature.Name.get_String(wsHandle)).Text
             ...         print(f"  - {name}")
             Feature system has 3 features
@@ -1311,7 +1311,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
 
             >>> # Iterate and display type names
             >>> for ftype in types:
-            ...     ws = project.project.DefaultAnalWs
+            ...     ws = project.GetDefaultAnalysisWSHandle()
             ...     name = ITsString(ftype.Name.get_String(ws)).Text
             ...     print(f"Type: {name}")
 

@@ -661,8 +661,12 @@ class BaseOperations:
 
             >>> # Sort in reverse order (most complex first)
             >>> def complexity(allo):
-            ...     env = project.Allomorphs.GetEnvironment(allo)
-            ...     return len(str(env)) if env else 0
+            ...     envs = project.Allomorphs.GetPhoneEnv(allo)
+            ...     if not envs:
+            ...         return 0
+            ...     ws = project.GetDefaultAnalysisWSHandle()
+            ...     name = ITsString(envs[0].Name.get_String(ws)).Text
+            ...     return len(name) if name else 0
             >>> project.Allomorphs.Sort(entry,
             ...     key_func=complexity,
             ...     reverse=True)
@@ -670,7 +674,7 @@ class BaseOperations:
 
             >>> # Sort examples by length (shortest first)
             >>> project.Examples.Sort(sense,
-            ...     key_func=lambda ex: len(project.Examples.GetText(ex)))
+            ...     key_func=lambda ex: len(project.Examples.GetExample(ex)))
             4
 
         Notes:
