@@ -77,6 +77,7 @@
     <span class="n">FP_TransactionError</span><span class="p">,</span>
     <span class="n">FP_ConflictingSaveError</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.lcm_casting</span> <span class="kn">import</span> <span class="n">cast_to_concrete</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -469,7 +470,7 @@
 <div class="viewcode-block" id="FLExProject.FromOpenProject">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.FLExProject.FLExProject.FromOpenProject">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">FromOpenProject</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">donor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">FromOpenProject</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">donor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;FLExProject&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Attach a flexicon facade to a project someone else already opened.</span>
 
@@ -504,6 +505,10 @@
 <span class="sd">          ``UndoableOperation()`` is refused.</span>
 <span class="sd">        * **Owns nothing.** ``CloseProject()`` on the returned view is a</span>
 <span class="sd">          no-op and ``SaveChanges()`` is refused. The host saves.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            FLExProject: A view over the donor&#39;s cache, or the donor itself</span>
+<span class="sd">                when it is already a flexicon FLExProject.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ParameterError: the donor is missing the cache or</span>
@@ -1828,7 +1833,7 @@
 <span class="sd">            &gt;&gt;&gt; if verb:</span>
 <span class="sd">            ...     project.WfiAnalyses.SetCategory(analysis, verb)</span>
 <span class="sd">            &gt;&gt;&gt; # Mark as human-approved</span>
-<span class="sd">            &gt;&gt;&gt; project.WfiAnalyses.Approve(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; project.WfiAnalyses.ApproveAnalysis(analysis)</span>
 <span class="sd">            &gt;&gt;&gt; # Get morph bundles</span>
 <span class="sd">            &gt;&gt;&gt; bundles = project.WfiAnalyses.GetMorphBundles(analysis)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1851,14 +1856,13 @@
 <span class="sd">            &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
 <span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
 <span class="sd">            &gt;&gt;&gt; para = list(text.ContentsOA.ParagraphsOS)[0]</span>
-<span class="sd">            &gt;&gt;&gt; # Get translations</span>
-<span class="sd">            &gt;&gt;&gt; trans = project.Paragraphs.GetTranslations(para)</span>
-<span class="sd">            &gt;&gt;&gt; # Set translation</span>
-<span class="sd">            &gt;&gt;&gt; project.Paragraphs.SetTranslation(para, &quot;In the beginning...&quot;, &quot;en&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; # Add note</span>
-<span class="sd">            &gt;&gt;&gt; note = project.Paragraphs.AddNote(para, &quot;Check translation&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; # Get style</span>
-<span class="sd">            &gt;&gt;&gt; style = project.Paragraphs.GetStyleName(para)</span>
+<span class="sd">            &gt;&gt;&gt; # Get text content</span>
+<span class="sd">            &gt;&gt;&gt; text_content = project.Paragraphs.GetText(para)</span>
+<span class="sd">            &gt;&gt;&gt; # Set text content</span>
+<span class="sd">            &gt;&gt;&gt; project.Paragraphs.SetText(para, &quot;In the beginning...&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Get segments</span>
+<span class="sd">            &gt;&gt;&gt; segments = project.Paragraphs.GetSegments(para)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;{len(segments)} segments&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s2">&quot;_paragraph_ops&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
             <span class="kn">from</span> <span class="nn">.TextsWords.ParagraphOperations</span> <span class="kn">import</span> <span class="n">ParagraphOperations</span>
@@ -1989,7 +1993,7 @@
 <span class="sd">            &gt;&gt;&gt; project = FLExProject()</span>
 <span class="sd">            &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
 <span class="sd">            &gt;&gt;&gt; # Get all allomorphs for an entry</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexiconGetFirstEntry()</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconGetEntry(0)</span>
 <span class="sd">            &gt;&gt;&gt; for allo in project.Allomorphs.GetAll(entry):</span>
 <span class="sd">            ...     form = project.Allomorphs.GetForm(allo)</span>
 <span class="sd">            ...     print(f&quot;Allomorph: {form}&quot;)</span>
@@ -2038,12 +2042,12 @@
 <span class="sd">            &gt;&gt;&gt; project = FLExProject()</span>
 <span class="sd">            &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
 <span class="sd">            &gt;&gt;&gt; # Get all inflection classes</span>
-<span class="sd">            &gt;&gt;&gt; for ic in project.InflectionFeatures.GetAllClasses():</span>
-<span class="sd">            ...     name = project.InflectionFeatures.GetClassName(ic)</span>
+<span class="sd">            &gt;&gt;&gt; for ic in project.InflectionFeatures.InflectionClassGetAll():</span>
+<span class="sd">            ...     name = project.InflectionFeatures.InflectionClassGetName(ic)</span>
 <span class="sd">            ...     print(f&quot;Inflection class: {name}&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; # Get all features</span>
-<span class="sd">            &gt;&gt;&gt; for feat in project.InflectionFeatures.GetAllFeatures():</span>
-<span class="sd">            ...     name = project.InflectionFeatures.GetFeatureName(feat)</span>
+<span class="sd">            &gt;&gt;&gt; for feat in project.InflectionFeatures.FeatureGetAll():</span>
+<span class="sd">            ...     name = feat.Name.BestAnalysisAlternative.Text</span>
 <span class="sd">            ...     print(f&quot;Feature: {name}&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s2">&quot;_inflectionfeature_ops&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
@@ -2736,8 +2740,9 @@
 <span class="sd">            &gt;&gt;&gt; # Get analysis and create gloss</span>
 <span class="sd">            &gt;&gt;&gt; analysis = project.WfiAnalyses.Create(wordform)</span>
 <span class="sd">            &gt;&gt;&gt; gloss = project.WfiGlosses.Create(analysis, &quot;run&quot;, project.WSHandle(&#39;en&#39;))</span>
-<span class="sd">            &gt;&gt;&gt; # Mark as human-approved</span>
-<span class="sd">            &gt;&gt;&gt; project.WfiGlosses.Approve(gloss)</span>
+<span class="sd">            &gt;&gt;&gt; # Mark the analysis as human-approved (glosses have no</span>
+<span class="sd">            &gt;&gt;&gt; # approval concept of their own -- it lives on the analysis)</span>
+<span class="sd">            &gt;&gt;&gt; project.WfiAnalyses.ApproveAnalysis(analysis)</span>
 <span class="sd">            &gt;&gt;&gt; # Get all glosses</span>
 <span class="sd">            &gt;&gt;&gt; for g in project.WfiGlosses.GetAll(analysis):</span>
 <span class="sd">            ...         form = project.WfiGlosses.GetForm(g, &quot;en&quot;)</span>
@@ -2768,8 +2773,13 @@
 <span class="sd">            &gt;&gt;&gt; stem_entry = project.LexEntry.Find(&quot;hlauk&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; if stem_entry and stem_entry.SensesOS.Count &gt; 0:</span>
 <span class="sd">            ...     project.WfiMorphBundles.SetSense(stem, stem_entry.SensesOS[0])</span>
-<span class="sd">            &gt;&gt;&gt; # Set morpheme type</span>
-<span class="sd">            &gt;&gt;&gt; project.WfiMorphBundles.SetMorphemeType(stem, &quot;stem&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Morph type lives on the allomorph, not the bundle --</span>
+<span class="sd">            &gt;&gt;&gt; # WfiMorphBundles.SetMorphType is a retired stub that always</span>
+<span class="sd">            &gt;&gt;&gt; # raises. Link the bundle to the entry&#39;s already-typed</span>
+<span class="sd">            &gt;&gt;&gt; # allomorph instead.</span>
+<span class="sd">            &gt;&gt;&gt; stem_allomorphs = list(project.Allomorphs.GetAll(stem_entry)) if stem_entry else []</span>
+<span class="sd">            &gt;&gt;&gt; if stem_allomorphs:</span>
+<span class="sd">            ...     project.WfiMorphBundles.SetMorph(stem, stem_allomorphs[0])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s2">&quot;_wfimorphbundle_ops&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
             <span class="kn">from</span> <span class="nn">.TextsWords.WfiMorphBundleOperations</span> <span class="kn">import</span> <span class="n">WfiMorphBundleOperations</span>
@@ -2790,9 +2800,9 @@
 <span class="sd">            &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
 <span class="sd">            &gt;&gt;&gt; # Get all media files</span>
 <span class="sd">            &gt;&gt;&gt; for media in project.Media.GetAll():</span>
-<span class="sd">            ...     filename = project.Media.GetFilename(media)</span>
+<span class="sd">            ...     path = project.Media.GetInternalPath(media)</span>
 <span class="sd">            ...     mtype = project.Media.GetMediaType(media)</span>
-<span class="sd">            ...     print(f&quot;{filename} ({mtype})&quot;)</span>
+<span class="sd">            ...     print(f&quot;{path} ({mtype})&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; # Add a media file</span>
 <span class="sd">            &gt;&gt;&gt; media = project.Media.Create(&quot;/path/to/audio.wav&quot;, &quot;My Recording&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; # Copy file to project</span>
@@ -2846,20 +2856,16 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; project = FLExProject()</span>
 <span class="sd">            &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
-<span class="sd">            &gt;&gt;&gt; # Create a filter for incomplete entries</span>
-<span class="sd">            &gt;&gt;&gt; filter_def = {</span>
-<span class="sd">            ...     &quot;name&quot;: &quot;Incomplete Entries&quot;,</span>
-<span class="sd">            ...     &quot;type&quot;: &quot;LexEntry&quot;,</span>
-<span class="sd">            ...     &quot;conditions&quot;: [</span>
-<span class="sd">            ...         {&quot;field&quot;: &quot;SensesOS&quot;, &quot;operator&quot;: &quot;isEmpty&quot;}</span>
-<span class="sd">            ...     ]</span>
-<span class="sd">            ... }</span>
-<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filters.Create(filter_def)</span>
-<span class="sd">            &gt;&gt;&gt; # Apply the filter</span>
-<span class="sd">            &gt;&gt;&gt; results = project.Filters.ApplyFilter(filter_obj)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(results)} incomplete entries&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; # Export filter</span>
-<span class="sd">            &gt;&gt;&gt; json_str = project.Filters.ExportFilter(filter_obj)</span>
+<span class="sd">            &gt;&gt;&gt; # Create a filter for verbs (&quot;LexEntry&quot; is FilterTypes.LEXENTRY)</span>
+<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filters.Create(</span>
+<span class="sd">            ...     &quot;Verbs&quot;, &quot;LexEntry&quot;, {&quot;pos&quot;: &quot;verb&quot;}</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; # Apply the filter to a collection of entries</span>
+<span class="sd">            &gt;&gt;&gt; entries = list(project.LexEntry.GetAll())</span>
+<span class="sd">            &gt;&gt;&gt; results = project.Filters.ApplyFilter(filter_obj, entries)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(results)} verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Export filter to a file</span>
+<span class="sd">            &gt;&gt;&gt; project.Filters.ExportFilter(filter_obj, &quot;/path/to/verbs.json&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s2">&quot;_filter_ops&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
             <span class="kn">from</span> <span class="nn">.Shared.FilterOperations</span> <span class="kn">import</span> <span class="n">FilterOperations</span>
@@ -2879,13 +2885,13 @@
 <span class="sd">            &gt;&gt;&gt; project = FLExProject()</span>
 <span class="sd">            &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
 <span class="sd">            &gt;&gt;&gt; # Get a text</span>
-<span class="sd">            &gt;&gt;&gt; text = list(project.TextCatalog())[0]</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
 <span class="sd">            &gt;&gt;&gt; # Create a discourse chart</span>
-<span class="sd">            &gt;&gt;&gt; chart = project.Discourse.CreateChart(text, &quot;Constituent Chart&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; chart = project.Discourse.CreateChart(text, &quot;Constituent Chart&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; # Add rows</span>
-<span class="sd">            &gt;&gt;&gt; row1 = project.Discourse.AddRow(chart, 0)</span>
+<span class="sd">            &gt;&gt;&gt; row1 = project.Discourse.AddRow(chart)</span>
 <span class="sd">            &gt;&gt;&gt; # Get all charts</span>
-<span class="sd">            &gt;&gt;&gt; for c in project.Discourse.GetAllCharts():</span>
+<span class="sd">            &gt;&gt;&gt; for c in project.Discourse.GetAllCharts(text):</span>
 <span class="sd">            ...     name = project.Discourse.GetChartName(c, &quot;en&quot;)</span>
 <span class="sd">            ...     rows = project.Discourse.GetRows(c)</span>
 <span class="sd">            ...     print(f&quot;Chart: {name} ({len(rows)} rows)&quot;)</span>
@@ -3063,9 +3069,12 @@
 <span class="sd">            &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
 <span class="sd">            &gt;&gt;&gt; # Create human agent</span>
 <span class="sd">            &gt;&gt;&gt; person = project.Person.Create(&quot;John Smith&quot;, &quot;en&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; agent = project.Agents.CreateHumanAgent(&quot;John Smith&quot;, person)</span>
-<span class="sd">            &gt;&gt;&gt; # Create parser agent</span>
-<span class="sd">            &gt;&gt;&gt; parser = project.Agents.CreateParserAgent(&quot;MyParser&quot;, &quot;1.0.0&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; agent = project.Agents.Create(&quot;John Smith&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Agents.SetHuman(agent, person)</span>
+<span class="sd">            &gt;&gt;&gt; # Create parser agent (an agent is a &quot;parser&quot; simply by not</span>
+<span class="sd">            &gt;&gt;&gt; # calling SetHuman on it)</span>
+<span class="sd">            &gt;&gt;&gt; parser = project.Agents.Create(&quot;MyParser&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Agents.SetVersion(parser, &quot;1.0.0&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; # Query agents</span>
 <span class="sd">            &gt;&gt;&gt; for a in project.Agents.GetAll():</span>
 <span class="sd">            ...     name = project.Agents.GetName(a)</span>
@@ -3119,15 +3128,18 @@
 <span class="sd">            &gt;&gt;&gt; project = FLExProject()</span>
 <span class="sd">            &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
 <span class="sd">            &gt;&gt;&gt; # Get a chart</span>
-<span class="sd">            &gt;&gt;&gt; text = list(project.TextCatalog())[0]</span>
-<span class="sd">            &gt;&gt;&gt; chart = project.Discourse.CreateChart(text, &quot;Chart&quot;, &quot;en&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; # Create overlay</span>
-<span class="sd">            &gt;&gt;&gt; overlay = project.Overlays.Create(chart, &quot;Temporal&quot;, &quot;en&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; project.Overlays.SetVisible(overlay, True)</span>
-<span class="sd">            &gt;&gt;&gt; # Get visible overlays</span>
-<span class="sd">            &gt;&gt;&gt; for o in project.Overlays.GetVisibleOverlays(chart):</span>
-<span class="sd">            ...     name = project.Overlays.GetName(o)</span>
-<span class="sd">            ...     print(f&quot;Overlay: {name}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; chart = project.Discourse.CreateChart(text, &quot;Chart&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # NOTE: OverlayOperations.Create() is currently broken -- it</span>
+<span class="sd">            &gt;&gt;&gt; # inherits PossibilityItemOperations.Create(), but</span>
+<span class="sd">            &gt;&gt;&gt; # OverlayOperations._get_list_object() always returns None</span>
+<span class="sd">            &gt;&gt;&gt; # (overlays are chart-scoped, no project-wide list), so this</span>
+<span class="sd">            &gt;&gt;&gt; # call always raises FP_ParameterError. See flexicon issue #309.</span>
+<span class="sd">            &gt;&gt;&gt; # overlay = project.Overlays.Create(&quot;Temporal&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # project.Overlays.SetVisible(overlay, True)</span>
+<span class="sd">            &gt;&gt;&gt; # for o in project.Overlays.GetVisibleOverlays(chart):</span>
+<span class="sd">            &gt;&gt;&gt; #     name = project.Overlays.GetName(o)</span>
+<span class="sd">            &gt;&gt;&gt; #     print(f&quot;Overlay: {name}&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s2">&quot;_overlay_ops&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
             <span class="kn">from</span> <span class="nn">.Lists.OverlayOperations</span> <span class="kn">import</span> <span class="n">OverlayOperations</span>
@@ -3150,7 +3162,8 @@
 <span class="sd">            &gt;&gt;&gt; free = project.TranslationTypes.GetFreeTranslationType()</span>
 <span class="sd">            &gt;&gt;&gt; literal = project.TranslationTypes.GetLiteralTranslationType()</span>
 <span class="sd">            &gt;&gt;&gt; # Create custom type</span>
-<span class="sd">            &gt;&gt;&gt; gloss = project.TranslationTypes.Create(&quot;Interlinear Gloss&quot;, &quot;IG&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; gloss = project.TranslationTypes.Create(&quot;Interlinear Gloss&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.TranslationTypes.SetAbbreviation(gloss, &quot;IG&quot;, &quot;en&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; # Get all types</span>
 <span class="sd">            &gt;&gt;&gt; for t in project.TranslationTypes.GetAll():</span>
 <span class="sd">            ...     name = project.TranslationTypes.GetName(t)</span>
@@ -5588,8 +5601,20 @@
 
 <span class="sd">        Note:</span>
 <span class="sd">            Returns None if the entry reference is not a complex form type.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If entry_ref does not resolve to an object</span>
+<span class="sd">                with a ComplexEntryTypesRS field (i.e. is not a LexEntryRef).</span>
+<span class="sd">                A base-typed (e.g. ICmObject, HVO-resolved) entry_ref is</span>
+<span class="sd">                cast to its concrete type first; see</span>
+<span class="sd">                BaseOperations.py:1568-1576 for why the uncast hasattr check</span>
+<span class="sd">                is otherwise always False regardless of the concrete object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">entry_ref</span><span class="p">,</span> <span class="s2">&quot;ComplexEntryTypesRS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">entry_ref</span><span class="o">.</span><span class="n">ComplexEntryTypesRS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">entry_ref</span> <span class="o">=</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">entry_ref</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">entry_ref</span><span class="p">,</span> <span class="s2">&quot;ComplexEntryTypesRS&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Object is not a LexEntryRef&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">entry_ref</span><span class="o">.</span><span class="n">ComplexEntryTypesRS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">entry_ref</span><span class="o">.</span><span class="n">ComplexEntryTypesRS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
@@ -5612,14 +5637,25 @@
 
 <span class="sd">        Note:</span>
 <span class="sd">            Replaces any existing complex form types with the specified one.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If entry_ref does not resolve to an object</span>
+<span class="sd">                with a ComplexEntryTypesRS field (i.e. is not a LexEntryRef).</span>
+<span class="sd">                pythonnet only surfaces the static type&#39;s attributes, so a</span>
+<span class="sd">                base-typed (e.g. ICmObject, HVO-resolved) entry_ref must be</span>
+<span class="sd">                cast to its concrete type before the check is meaningful --</span>
+<span class="sd">                see BaseOperations.py:1568-1576.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">entry_ref</span><span class="p">,</span> <span class="s2">&quot;ComplexEntryTypesRS&quot;</span><span class="p">):</span>
-            <span class="c1"># Clear-then-Add is two mutations: a failure between them would</span>
-            <span class="c1"># leave the entry ref with no complex form type at all, which is</span>
-            <span class="c1"># neither the old value nor the requested one.</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set complex form type&quot;</span><span class="p">):</span>
-                <span class="n">entry_ref</span><span class="o">.</span><span class="n">ComplexEntryTypesRS</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span>
-                <span class="n">entry_ref</span><span class="o">.</span><span class="n">ComplexEntryTypesRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">complex_form_type</span><span class="p">)</span></div>
+        <span class="n">entry_ref</span> <span class="o">=</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">entry_ref</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">entry_ref</span><span class="p">,</span> <span class="s2">&quot;ComplexEntryTypesRS&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Object is not a LexEntryRef&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Clear-then-Add is two mutations: a failure between them would</span>
+        <span class="c1"># leave the entry ref with no complex form type at all, which is</span>
+        <span class="c1"># neither the old value nor the requested one.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set complex form type&quot;</span><span class="p">):</span>
+            <span class="n">entry_ref</span><span class="o">.</span><span class="n">ComplexEntryTypesRS</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span>
+            <span class="n">entry_ref</span><span class="o">.</span><span class="n">ComplexEntryTypesRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">complex_form_type</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FLExProject.LexiconAddComplexForm">

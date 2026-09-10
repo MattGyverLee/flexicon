@@ -1879,6 +1879,7 @@
 <li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.GetVernacular"><code class="docutils literal notranslate"><span class="pre">GetVernacular()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.GetAnalysis"><code class="docutils literal notranslate"><span class="pre">GetAnalysis()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.Ensure"><code class="docutils literal notranslate"><span class="pre">Ensure()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.GetFontName"><code class="docutils literal notranslate"><span class="pre">GetFontName()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.SetFontName"><code class="docutils literal notranslate"><span class="pre">SetFontName()</span></code></a></li>
@@ -1893,6 +1894,7 @@
 <li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.GetDisplayName"><code class="docutils literal notranslate"><span class="pre">GetDisplayName()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.GetLanguageTag"><code class="docutils literal notranslate"><span class="pre">GetLanguageTag()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.Exists"><code class="docutils literal notranslate"><span class="pre">Exists()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.ExistsInStore"><code class="docutils literal notranslate"><span class="pre">ExistsInStore()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.GetBestString"><code class="docutils literal notranslate"><span class="pre">GetBestString()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.Duplicate"><code class="docutils literal notranslate"><span class="pre">Duplicate()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations.GetSyncableProperties"><code class="docutils literal notranslate"><span class="pre">GetSyncableProperties()</span></code></a></li>
@@ -2622,7 +2624,7 @@ on this computer”.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="flexicon.code.FLExProject.FLExProject.FromOpenProject">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FromOpenProject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">donor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/FLExProject.html#FLExProject.FromOpenProject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.FLExProject.FLExProject.FromOpenProject" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FromOpenProject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">donor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#flexicon.code.FLExProject.FLExProject" title="flexicon.code.FLExProject.FLExProject"><span class="pre">FLExProject</span></a></span></span><a class="reference internal" href="../_modules/flexicon/code/FLExProject.html#FLExProject.FromOpenProject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.FLExProject.FLExProject.FromOpenProject" title="Link to this definition">¶</a></dt>
 <dd><p>Attach a flexicon facade to a project someone else already opened.</p>
 <p><cite>donor</cite> is whatever the host handed <cite>Main()</cite>: under real FLExTools a
 <strong>flexlibs</strong> <code class="docutils literal notranslate"><span class="pre">FLExProject</span></code> (flextoolslib/code/FTModules.py:75), under
@@ -2654,6 +2656,16 @@ owns the transaction envelope. Use <code class="docutils literal notranslate"><s
 no-op and <code class="docutils literal notranslate"><span class="pre">SaveChanges()</span></code> is refused. The host saves.</p></li>
 </ul>
 <dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A view over the donor’s cache, or the donor itself</dt><dd><p>when it is already a flexicon FLExProject.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#flexicon.code.FLExProject.FLExProject" title="flexicon.code.FLExProject.FLExProject">FLExProject</a></p>
+</dd>
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#flexicon.code.exceptions.FP_ParameterError" title="flexicon.code.exceptions.FP_ParameterError"><strong>FP_ParameterError</strong></a> – the donor is missing the cache or
     <code class="docutils literal notranslate"><span class="pre">writeEnabled</span></code>. The message names every absent attribute
@@ -3525,7 +3537,7 @@ project never has anything to redo.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">verb</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="n">project</span><span class="o">.</span><span class="n">WfiAnalyses</span><span class="o">.</span><span class="n">SetCategory</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="n">verb</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Mark as human-approved</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">WfiAnalyses</span><span class="o">.</span><span class="n">Approve</span><span class="p">(</span><span class="n">analysis</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">WfiAnalyses</span><span class="o">.</span><span class="n">ApproveAnalysis</span><span class="p">(</span><span class="n">analysis</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get morph bundles</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">bundles</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">WfiAnalyses</span><span class="o">.</span><span class="n">GetMorphBundles</span><span class="p">(</span><span class="n">analysis</span><span class="p">)</span>
 </pre></div>
@@ -3549,14 +3561,13 @@ project never has anything to redo.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;MyProject&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">text</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">Texts</span><span class="o">.</span><span class="n">GetAll</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">para</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">ContentsOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get translations</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">trans</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Paragraphs</span><span class="o">.</span><span class="n">GetTranslations</span><span class="p">(</span><span class="n">para</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Set translation</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">Paragraphs</span><span class="o">.</span><span class="n">SetTranslation</span><span class="p">(</span><span class="n">para</span><span class="p">,</span> <span class="s2">&quot;In the beginning...&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Add note</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">note</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Paragraphs</span><span class="o">.</span><span class="n">AddNote</span><span class="p">(</span><span class="n">para</span><span class="p">,</span> <span class="s2">&quot;Check translation&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get style</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">style</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Paragraphs</span><span class="o">.</span><span class="n">GetStyleName</span><span class="p">(</span><span class="n">para</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get text content</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">text_content</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Paragraphs</span><span class="o">.</span><span class="n">GetText</span><span class="p">(</span><span class="n">para</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Set text content</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">Paragraphs</span><span class="o">.</span><span class="n">SetText</span><span class="p">(</span><span class="n">para</span><span class="p">,</span> <span class="s2">&quot;In the beginning...&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get segments</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">segments</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Paragraphs</span><span class="o">.</span><span class="n">GetSegments</span><span class="p">(</span><span class="n">para</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span><span class="si">}</span><span class="s2"> segments&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -3692,7 +3703,7 @@ project never has anything to redo.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;MyProject&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get all allomorphs for an entry</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">entry</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">LexiconGetFirstEntry</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">entry</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">LexiconGetEntry</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">allo</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">Allomorphs</span><span class="o">.</span><span class="n">GetAll</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="n">form</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Allomorphs</span><span class="o">.</span><span class="n">GetForm</span><span class="p">(</span><span class="n">allo</span><span class="p">)</span>
 <span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Allomorph: </span><span class="si">{</span><span class="n">form</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -3743,12 +3754,12 @@ project never has anything to redo.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;MyProject&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get all inflection classes</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">ic</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">InflectionFeatures</span><span class="o">.</span><span class="n">GetAllClasses</span><span class="p">():</span>
-<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">InflectionFeatures</span><span class="o">.</span><span class="n">GetClassName</span><span class="p">(</span><span class="n">ic</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">ic</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">InflectionFeatures</span><span class="o">.</span><span class="n">InflectionClassGetAll</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">InflectionFeatures</span><span class="o">.</span><span class="n">InflectionClassGetName</span><span class="p">(</span><span class="n">ic</span><span class="p">)</span>
 <span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Inflection class: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get all features</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">InflectionFeatures</span><span class="o">.</span><span class="n">GetAllFeatures</span><span class="p">():</span>
-<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">InflectionFeatures</span><span class="o">.</span><span class="n">GetFeatureName</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">InflectionFeatures</span><span class="o">.</span><span class="n">FeatureGetAll</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">feat</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">BestAnalysisAlternative</span><span class="o">.</span><span class="n">Text</span>
 <span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Feature: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -4452,8 +4463,9 @@ the merger has nothing to land on.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get analysis and create gloss</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">analysis</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">WfiAnalyses</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">wordform</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">gloss</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">WfiGlosses</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="s2">&quot;run&quot;</span><span class="p">,</span> <span class="n">project</span><span class="o">.</span><span class="n">WSHandle</span><span class="p">(</span><span class="s1">&#39;en&#39;</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Mark as human-approved</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">WfiGlosses</span><span class="o">.</span><span class="n">Approve</span><span class="p">(</span><span class="n">gloss</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Mark the analysis as human-approved (glosses have no</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># approval concept of their own -- it lives on the analysis)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">WfiAnalyses</span><span class="o">.</span><span class="n">ApproveAnalysis</span><span class="p">(</span><span class="n">analysis</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get all glosses</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">WfiGlosses</span><span class="o">.</span><span class="n">GetAll</span><span class="p">(</span><span class="n">analysis</span><span class="p">):</span>
 <span class="gp">... </span>        <span class="n">form</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">WfiGlosses</span><span class="o">.</span><span class="n">GetForm</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">)</span>
@@ -4485,8 +4497,13 @@ the merger has nothing to land on.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stem_entry</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">LexEntry</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="s2">&quot;hlauk&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">stem_entry</span> <span class="ow">and</span> <span class="n">stem_entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="n">project</span><span class="o">.</span><span class="n">WfiMorphBundles</span><span class="o">.</span><span class="n">SetSense</span><span class="p">(</span><span class="n">stem</span><span class="p">,</span> <span class="n">stem_entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Set morpheme type</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">WfiMorphBundles</span><span class="o">.</span><span class="n">SetMorphemeType</span><span class="p">(</span><span class="n">stem</span><span class="p">,</span> <span class="s2">&quot;stem&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Morph type lives on the allomorph, not the bundle --</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># WfiMorphBundles.SetMorphType is a retired stub that always</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># raises. Link the bundle to the entry&#39;s already-typed</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># allomorph instead.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stem_allomorphs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">Allomorphs</span><span class="o">.</span><span class="n">GetAll</span><span class="p">(</span><span class="n">stem_entry</span><span class="p">))</span> <span class="k">if</span> <span class="n">stem_entry</span> <span class="k">else</span> <span class="p">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">stem_allomorphs</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">project</span><span class="o">.</span><span class="n">WfiMorphBundles</span><span class="o">.</span><span class="n">SetMorph</span><span class="p">(</span><span class="n">stem</span><span class="p">,</span> <span class="n">stem_allomorphs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -4508,9 +4525,9 @@ the merger has nothing to land on.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;MyProject&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get all media files</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">media</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">Media</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
-<span class="gp">... </span>    <span class="n">filename</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Media</span><span class="o">.</span><span class="n">GetFilename</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">path</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Media</span><span class="o">.</span><span class="n">GetInternalPath</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
 <span class="gp">... </span>    <span class="n">mtype</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Media</span><span class="o">.</span><span class="n">GetMediaType</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">mtype</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">mtype</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Add a media file</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">media</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Media</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;/path/to/audio.wav&quot;</span><span class="p">,</span> <span class="s2">&quot;My Recording&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Copy file to project</span>
@@ -4566,20 +4583,16 @@ the merger has nothing to land on.</p>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;MyProject&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create a filter for incomplete entries</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">filter_def</span> <span class="o">=</span> <span class="p">{</span>
-<span class="gp">... </span>    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Incomplete Entries&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="s2">&quot;conditions&quot;</span><span class="p">:</span> <span class="p">[</span>
-<span class="gp">... </span>        <span class="p">{</span><span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;SensesOS&quot;</span><span class="p">,</span> <span class="s2">&quot;operator&quot;</span><span class="p">:</span> <span class="s2">&quot;isEmpty&quot;</span><span class="p">}</span>
-<span class="gp">... </span>    <span class="p">]</span>
-<span class="gp">... </span><span class="p">}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">filter_obj</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Filters</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">filter_def</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Apply the filter</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Filters</span><span class="o">.</span><span class="n">ApplyFilter</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span><span class="si">}</span><span class="s2"> incomplete entries&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Export filter</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">json_str</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Filters</span><span class="o">.</span><span class="n">ExportFilter</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create a filter for verbs (&quot;LexEntry&quot; is FilterTypes.LEXENTRY)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filter_obj</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Filters</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">&quot;Verbs&quot;</span><span class="p">,</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="s2">&quot;verb&quot;</span><span class="p">}</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Apply the filter to a collection of entries</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">entries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">LexEntry</span><span class="o">.</span><span class="n">GetAll</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Filters</span><span class="o">.</span><span class="n">ApplyFilter</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="n">entries</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span><span class="si">}</span><span class="s2"> verbs&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Export filter to a file</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">Filters</span><span class="o">.</span><span class="n">ExportFilter</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;/path/to/verbs.json&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -4600,13 +4613,13 @@ the merger has nothing to land on.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;MyProject&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get a text</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">text</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">TextCatalog</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">text</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">Texts</span><span class="o">.</span><span class="n">GetAll</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create a discourse chart</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">chart</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Discourse</span><span class="o">.</span><span class="n">CreateChart</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;Constituent Chart&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chart</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Discourse</span><span class="o">.</span><span class="n">CreateChart</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;Constituent Chart&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Add rows</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">row1</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Discourse</span><span class="o">.</span><span class="n">AddRow</span><span class="p">(</span><span class="n">chart</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">row1</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Discourse</span><span class="o">.</span><span class="n">AddRow</span><span class="p">(</span><span class="n">chart</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get all charts</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">Discourse</span><span class="o">.</span><span class="n">GetAllCharts</span><span class="p">():</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">Discourse</span><span class="o">.</span><span class="n">GetAllCharts</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Discourse</span><span class="o">.</span><span class="n">GetChartName</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">)</span>
 <span class="gp">... </span>    <span class="n">rows</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Discourse</span><span class="o">.</span><span class="n">GetRows</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
 <span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chart: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows)&quot;</span><span class="p">)</span>
@@ -4790,9 +4803,12 @@ the merger has nothing to land on.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;MyProject&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create human agent</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">person</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Person</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;John Smith&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">agent</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Agents</span><span class="o">.</span><span class="n">CreateHumanAgent</span><span class="p">(</span><span class="s2">&quot;John Smith&quot;</span><span class="p">,</span> <span class="n">person</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create parser agent</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Agents</span><span class="o">.</span><span class="n">CreateParserAgent</span><span class="p">(</span><span class="s2">&quot;MyParser&quot;</span><span class="p">,</span> <span class="s2">&quot;1.0.0&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">agent</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Agents</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;John Smith&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">Agents</span><span class="o">.</span><span class="n">SetHuman</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">person</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create parser agent (an agent is a &quot;parser&quot; simply by not</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># calling SetHuman on it)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Agents</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;MyParser&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">Agents</span><span class="o">.</span><span class="n">SetVersion</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="s2">&quot;1.0.0&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Query agents</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">Agents</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
 <span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Agents</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
@@ -4848,15 +4864,18 @@ the merger has nothing to land on.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;MyProject&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get a chart</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">text</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">TextCatalog</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">chart</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Discourse</span><span class="o">.</span><span class="n">CreateChart</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;Chart&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create overlay</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">overlay</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Overlays</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">chart</span><span class="p">,</span> <span class="s2">&quot;Temporal&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">Overlays</span><span class="o">.</span><span class="n">SetVisible</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get visible overlays</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">Overlays</span><span class="o">.</span><span class="n">GetVisibleOverlays</span><span class="p">(</span><span class="n">chart</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Overlays</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Overlay: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">text</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">Texts</span><span class="o">.</span><span class="n">GetAll</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chart</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Discourse</span><span class="o">.</span><span class="n">CreateChart</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;Chart&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># NOTE: OverlayOperations.Create() is currently broken -- it</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># inherits PossibilityItemOperations.Create(), but</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># OverlayOperations._get_list_object() always returns None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># (overlays are chart-scoped, no project-wide list), so this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># call always raises FP_ParameterError. See flexicon issue #309.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># overlay = project.Overlays.Create(&quot;Temporal&quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># project.Overlays.SetVisible(overlay, True)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># for o in project.Overlays.GetVisibleOverlays(chart):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#     name = project.Overlays.GetName(o)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#     print(f&quot;Overlay: {name}&quot;)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -4880,7 +4899,8 @@ the merger has nothing to land on.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">free</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">TranslationTypes</span><span class="o">.</span><span class="n">GetFreeTranslationType</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">literal</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">TranslationTypes</span><span class="o">.</span><span class="n">GetLiteralTranslationType</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create custom type</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">gloss</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">TranslationTypes</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;Interlinear Gloss&quot;</span><span class="p">,</span> <span class="s2">&quot;IG&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gloss</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">TranslationTypes</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;Interlinear Gloss&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">TranslationTypes</span><span class="o">.</span><span class="n">SetAbbreviation</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="s2">&quot;IG&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get all types</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">TranslationTypes</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
 <span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">TranslationTypes</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
@@ -6505,6 +6525,16 @@ Consider using LexEntry.Find() or LexEntry.GetAll() instead.</p>
 <p class="admonition-title">Note</p>
 <p>Returns None if the entry reference is not a complex form type.</p>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#flexicon.code.exceptions.FP_ParameterError" title="flexicon.code.exceptions.FP_ParameterError"><strong>FP_ParameterError</strong></a> – If entry_ref does not resolve to an object
+    with a ComplexEntryTypesRS field (i.e. is not a LexEntryRef).
+    A base-typed (e.g. ICmObject, HVO-resolved) entry_ref is
+    cast to its concrete type first; see
+    BaseOperations.py:1568-1576 for why the uncast hasattr check
+    is otherwise always False regardless of the concrete object.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -6530,6 +6560,16 @@ Consider using LexEntry.Find() or LexEntry.GetAll() instead.</p>
 <p class="admonition-title">Note</p>
 <p>Replaces any existing complex form types with the specified one.</p>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#flexicon.code.exceptions.FP_ParameterError" title="flexicon.code.exceptions.FP_ParameterError"><strong>FP_ParameterError</strong></a> – If entry_ref does not resolve to an object
+    with a ComplexEntryTypesRS field (i.e. is not a LexEntryRef).
+    pythonnet only surfaces the static type’s attributes, so a
+    base-typed (e.g. ICmObject, HVO-resolved) entry_ref must be
+    cast to its concrete type before the check is meaningful –
+    see BaseOperations.py:1568-1576.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -7353,6 +7393,9 @@ determine the derived interface type - you must cast explicitly.</p>
 <li><p>Owner / container types (used by .Owner casting paths in Lexicon,
 Notebook, and Discourse operations): LexEntry, LexSense, RnGenericRec,
 CmPossibility, CmAnthroItem, DsConstChart, Text, StText, StTxtPara</p></li>
+<li><p>Entry-ref type: LexEntryRef (ILexEntry.EntryRefsOS elements; needed
+to reach ComplexEntryTypesRS / ComponentLexemesRS / PrimaryLexemesRS
+/ VariantEntryTypesRS on a base-typed or HVO-resolved entry_ref)</p></li>
 </ul>
 </dd>
 </dl>

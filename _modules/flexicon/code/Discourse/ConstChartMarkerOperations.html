@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Discourse.ConstChartMarkerOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,10 +55,10 @@
 <span class="c1">#   Copyright 2026</span>
 <span class="c1">#</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">ICmPossibility</span><span class="p">,</span>
     <span class="n">ICmPossibilityFactory</span><span class="p">,</span>
     <span class="n">ICmPossibilityList</span><span class="p">,</span>
@@ -66,26 +66,26 @@
     <span class="n">IDsDiscourseData</span><span class="p">,</span>
     <span class="n">IDsDiscourseDataFactory</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
 
 
 <div class="viewcode-block" id="ConstChartMarkerOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Discourse.html#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ConstChartMarkerOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="k">class</span> <span class="nc">ConstChartMarkerOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Operations for managing the project-wide constituent-chart marker</span>
 <span class="sd">    vocabulary (``LangProject.DiscourseDataOA.ChartMarkersOA``).</span>
 
 <span class="sd">    Markers are ``ICmPossibility`` items that categorise content in</span>
 <span class="sd">    discourse charts (Topic, Focus, Tail, etc.). They live in a single</span>
 <span class="sd">    project-wide CmPossibilityList shared across every chart in the</span>
-<span class="sd">    project, and can be organised hierarchically -- a "Topic" marker</span>
-<span class="sd">    may have "Sentence Topic" and "Contrastive Topic" children.</span>
+<span class="sd">    project, and can be organised hierarchically -- a &quot;Topic&quot; marker</span>
+<span class="sd">    may have &quot;Sentence Topic&quot; and &quot;Contrastive Topic&quot; children.</span>
 
 <span class="sd">    Note: This is distinct from ``IConstChartTag``, which is the</span>
 <span class="sd">    per-cell annotation that references a marker. See</span>
@@ -96,20 +96,20 @@
 <span class="sd">        for m in project.ConstChartMarkers.GetAll():</span>
 <span class="sd">            print(project.ConstChartMarkers.GetName(m))</span>
 
-<span class="sd">        topic = project.ConstChartMarkers.Create("Topic")</span>
+<span class="sd">        topic = project.ConstChartMarkers.Create(&quot;Topic&quot;)</span>
 <span class="sd">        project.ConstChartMarkers.SetDescription(</span>
-<span class="sd">            topic, "Marks the sentence topic"</span>
+<span class="sd">            topic, &quot;Marks the sentence topic&quot;</span>
 <span class="sd">        )</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
     <span class="c1"># --- Core CRUD Operations ------------------------------------------</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new top-level chart marker in the project-wide</span>
 <span class="sd">        ChartMarkersOA possibility list.</span>
 
@@ -119,7 +119,7 @@
 <span class="sd">        discourse charting tool initialises both lazily.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            name (str): The marker's name. Stored in the default</span>
+<span class="sd">            name (str): The marker&#39;s name. Stored in the default</span>
 <span class="sd">                analysis writing system.</span>
 
 <span class="sd">        Returns:</span>
@@ -131,19 +131,19 @@
 <span class="sd">            FP_ParameterError: If name is empty.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; topic = project.ConstChartMarkers.Create("Topic")</span>
-<span class="sd">            &gt;&gt;&gt; project.ConstChartMarkers.Find("Topic").Hvo == topic.Hvo</span>
+<span class="sd">            &gt;&gt;&gt; topic = project.ConstChartMarkers.Create(&quot;Topic&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.ConstChartMarkers.Find(&quot;Topic&quot;).Hvo == topic.Hvo</span>
 <span class="sd">            True</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Marker name cannot be empty"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Marker name cannot be empty&quot;</span><span class="p">)</span>
 
         <span class="n">markers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetOrCreateChartMarkers</span><span class="p">()</span>
         <span class="n">ws_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Create chart marker '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create chart marker &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
                 <span class="n">ICmPossibilityFactory</span>
             <span class="p">)</span>
@@ -157,8 +157,8 @@
             <span class="k">return</span> <span class="n">new_marker</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a chart marker.</span>
 
 <span class="sd">        Args:</span>
@@ -167,26 +167,26 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If the project is not writeEnabled.</span>
 <span class="sd">            FP_NullParameterError: If marker_or_hvo is None.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">"marker_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
         <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveMarker</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete chart marker"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete chart marker&quot;</span><span class="p">):</span>
             <span class="n">marker</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a marker by name anywhere in the marker hierarchy.</span>
 
 <span class="sd">        Walks both the top-level ``PossibilitiesOS`` and every</span>
 <span class="sd">        nested ``SubPossibilitiesOS`` so hierarchical markers</span>
-<span class="sd">        (e.g. "Topic &gt; Contrastive Topic") are reachable.</span>
+<span class="sd">        (e.g. &quot;Topic &gt; Contrastive Topic&quot;) are reachable.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): The marker name to search for. Compared via</span>
 <span class="sd">                NFD-normalised, case-insensitive match against each</span>
-<span class="sd">                marker's Name in the chosen WS.</span>
+<span class="sd">                marker&#39;s Name in the chosen WS.</span>
 <span class="sd">            wsHandle: Optional writing system handle. Defaults to the</span>
 <span class="sd">                analysis WS.</span>
 
@@ -194,8 +194,8 @@
 <span class="sd">            ICmPossibility or None: First match in depth-first order,</span>
 <span class="sd">            or None when no marker has that name (or the marker list</span>
 <span class="sd">            is not yet initialised).</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="n">ws_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
@@ -212,18 +212,18 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Iterate every marker in the project, hierarchy included.</span>
 
 <span class="sd">        Returns markers in depth-first order: a top-level marker is</span>
-<span class="sd">        yielded before its sub-markers, then its sub-markers'</span>
+<span class="sd">        yielded before its sub-markers, then its sub-markers&#39;</span>
 <span class="sd">        sub-markers, and so on.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            list[ICmPossibility]: All markers, or an empty list when</span>
 <span class="sd">            the marker list is not yet initialised.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># The walk descends PossibilitiesOS / SubPossibilitiesOS, both</span>
         <span class="c1"># declared over ICmPossibility; cast the yielded markers so</span>
         <span class="c1"># subtype surface is reachable (issue #270).</span>
@@ -232,95 +232,109 @@
     <span class="c1"># --- Marker Properties ---------------------------------------------</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Return the marker's name in the default analysis WS (or "")."""</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">"marker_or_hvo"</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the marker&#39;s name in the default analysis WS (or &quot;&quot;).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
         <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveMarker</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
         <span class="n">ws_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Set the marker's name in the default analysis WS."""</span>
+    <span class="k">def</span> <span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the marker&#39;s name in the default analysis WS.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">"marker_or_hvo"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Marker name cannot be empty"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Marker name cannot be empty&quot;</span><span class="p">)</span>
 
         <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveMarker</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
         <span class="n">ws_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set chart marker name '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set chart marker name &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
             <span class="n">marker</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span>
                 <span class="n">ws_handle</span><span class="p">,</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">ws_handle</span><span class="p">)</span>
             <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Return the marker's description (or "" if not set)."""</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">"marker_or_hvo"</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the marker&#39;s description (or &quot;&quot; if not set).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
         <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveMarker</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
         <span class="n">ws_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Set the marker's description (default WS: analysis)."""</span>
+    <span class="k">def</span> <span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the marker&#39;s description (default WS: analysis).&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">"marker_or_hvo"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
         <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveMarker</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
         <span class="n">ws_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set chart marker description"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set chart marker description&quot;</span><span class="p">):</span>
             <span class="n">marker</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span>
                 <span class="n">ws_handle</span><span class="p">,</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">ws_handle</span><span class="p">)</span>
             <span class="p">)</span>
 
     <span class="c1"># --- Reordering Support --------------------------------------------</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Reorder operations are intentionally disabled on this class.</span>
 
-<span class="sd">        BaseOperations' MoveUp / MoveDown / Reorder rely on</span>
+<span class="sd">        BaseOperations&#39; MoveUp / MoveDown / Reorder rely on</span>
 <span class="sd">        ``_GetSequence(parent)`` to know which collection to reorder.</span>
 <span class="sd">        Returning the project-wide ``ChartMarkersOA.PossibilitiesOS``</span>
 <span class="sd">        would let a caller silently re-order a list every other user</span>
 <span class="sd">        of the project shares. Raise instead so the caller has to</span>
 <span class="sd">        manipulate the LCM list directly when project-wide reordering</span>
 <span class="sd">        is genuinely intended.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s2">"ConstChartMarkerOperations does not support inherited "</span>
-            <span class="s2">"MoveUp / MoveDown / Reorder: the ChartMarkers list is "</span>
-            <span class="s2">"project-wide, and reordering it from a single workflow "</span>
-            <span class="s2">"would mutate state every chart in the project shares. "</span>
-            <span class="s2">"If project-wide reordering is intended, manipulate "</span>
-            <span class="s2">"project.lp.DiscourseDataOA.ChartMarkersOA.PossibilitiesOS "</span>
-            <span class="s2">"directly."</span>
+            <span class="s2">&quot;ConstChartMarkerOperations does not support inherited &quot;</span>
+            <span class="s2">&quot;MoveUp / MoveDown / Reorder: the ChartMarkers list is &quot;</span>
+            <span class="s2">&quot;project-wide, and reordering it from a single workflow &quot;</span>
+            <span class="s2">&quot;would mutate state every chart in the project shares. &quot;</span>
+            <span class="s2">&quot;If project-wide reordering is intended, manipulate &quot;</span>
+            <span class="s2">&quot;project.lp.DiscourseDataOA.ChartMarkersOA.PossibilitiesOS &quot;</span>
+            <span class="s2">&quot;directly.&quot;</span>
         <span class="p">)</span>
 
     <span class="c1"># --- Private Helpers -----------------------------------------------</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveMarker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__ResolveMarker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+        <span class="c1"># Casts by ClassName BEFORE returning (issue #275, generalising</span>
+        <span class="c1"># #269&#39;s fix): self.project.Object() returns a bare ICmObject, so</span>
+        <span class="c1"># isinstance(obj, ICmPossibility) is False even for a genuine</span>
+        <span class="c1"># marker. Strict widening over the bare isinstance check.</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ICmPossibility</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                    <span class="s2">"HVO does not refer to a CmPossibility marker"</span>
-                <span class="p">)</span>
-            <span class="k">return</span> <span class="n">obj</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;CmPossibility&quot;</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ICmPossibility</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">obj</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;HVO does not refer to a CmPossibility marker&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;CmPossibility&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
         <span class="k">return</span> <span class="n">marker_or_hvo</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">ws</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span>
             <span class="n">ws</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__GetChartMarkers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Read-only access; returns the top-level sequence or None."""</span>
+    <span class="k">def</span> <span class="nf">__GetChartMarkers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read-only access; returns the top-level sequence or None.&quot;&quot;&quot;</span>
         <span class="n">discourse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DiscourseDataOA</span>
         <span class="k">if</span> <span class="n">discourse</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -329,48 +343,48 @@
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">markers_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__GetOrCreateChartMarkers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">__GetOrCreateChartMarkers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve the top-level marker sequence, creating</span>
 <span class="sd">        DiscourseDataOA and/or ChartMarkersOA on demand.</span>
 
 <span class="sd">        Both atomic-owning slots are initialised lazily by FLEx --</span>
 <span class="sd">        ``DiscourseDataOA`` when the user first opens the discourse</span>
 <span class="sd">        charting UI, ``ChartMarkersOA`` when the user adds the first</span>
-<span class="sd">        marker. Wrapper callers shouldn't have to know that ordering;</span>
+<span class="sd">        marker. Wrapper callers shouldn&#39;t have to know that ordering;</span>
 <span class="sd">        Create handles it here.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span>
         <span class="n">lp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span>
 
         <span class="c1"># Each `is None` guard stays OUTSIDE its transaction so an</span>
         <span class="c1"># already-initialised slot is a true no-op and does not open an empty</span>
         <span class="c1"># undo task. The bracket lives here rather than at the callers because</span>
-        <span class="c1"># this helper runs before Create's own transaction is entered; the CM</span>
+        <span class="c1"># this helper runs before Create&#39;s own transaction is entered; the CM</span>
         <span class="c1"># is nesting-aware, so a future caller may still wrap it safely.</span>
         <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">DiscourseDataOA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">dd_factory</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IDsDiscourseDataFactory</span><span class="p">)</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Initialise discourse data"</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Initialise discourse data&quot;</span><span class="p">):</span>
                 <span class="n">lp</span><span class="o">.</span><span class="n">DiscourseDataOA</span> <span class="o">=</span> <span class="n">dd_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
         <span class="n">discourse</span> <span class="o">=</span> <span class="n">lp</span><span class="o">.</span><span class="n">DiscourseDataOA</span>
 
         <span class="k">if</span> <span class="n">discourse</span><span class="o">.</span><span class="n">ChartMarkersOA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">list_factory</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityListFactory</span><span class="p">)</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Initialise chart marker list"</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Initialise chart marker list&quot;</span><span class="p">):</span>
                 <span class="n">discourse</span><span class="o">.</span><span class="n">ChartMarkersOA</span> <span class="o">=</span> <span class="n">list_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">discourse</span><span class="o">.</span><span class="n">ChartMarkersOA</span><span class="o">.</span><span class="n">PossibilitiesOS</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">__WalkMarkers</span><span class="p">(</span><span class="n">top_sequence</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Depth-first walk over a possibility hierarchy, or empty."""</span>
+    <span class="k">def</span> <span class="nf">__WalkMarkers</span><span class="p">(</span><span class="n">top_sequence</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Depth-first walk over a possibility hierarchy, or empty.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">top_sequence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="n">stack</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">top_sequence</span><span class="p">)</span>
         <span class="k">while</span> <span class="n">stack</span><span class="p">:</span>
             <span class="n">marker</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">yield</span> <span class="n">marker</span>
-            <span class="n">subs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">marker</span><span class="p">,</span> <span class="s2">"SubPossibilitiesOS"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">subs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">marker</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">subs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">subs</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">stack</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">subs</span><span class="p">)</span></div>
 
@@ -380,7 +394,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -396,7 +410,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -411,8 +425,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
     </div>
   </body>
 </html>

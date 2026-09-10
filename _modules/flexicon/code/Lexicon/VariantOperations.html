@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Lexicon.VariantOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,10 +55,10 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import BaseOperations parent class</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">ILexEntry</span><span class="p">,</span>
     <span class="n">ILexEntryRef</span><span class="p">,</span>
     <span class="n">ILexEntryRefFactory</span><span class="p">,</span>
@@ -66,29 +66,29 @@
     <span class="n">ILexEntryTypeRepository</span><span class="p">,</span>
     <span class="n">IVariantComponentLexeme</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Import string utilities</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span>
 
 
 <div class="viewcode-block" id="VariantOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.VariantOperations.VariantOperations">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">VariantOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="k">class</span> <span class="nc">VariantOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing variant forms in a FieldWorks project.</span>
 
 <span class="sd">    Variant forms represent alternative forms of lexical entries, including:</span>
-<span class="sd">    - Spelling variants (e.g., "color" vs. "colour")</span>
+<span class="sd">    - Spelling variants (e.g., &quot;color&quot; vs. &quot;colour&quot;)</span>
 <span class="sd">    - Dialectal variants (e.g., regional pronunciations)</span>
-<span class="sd">    - Irregularly inflected forms (e.g., "went" as past tense of "go")</span>
-<span class="sd">    - Free variants (e.g., "among" vs. "amongst")</span>
+<span class="sd">    - Irregularly inflected forms (e.g., &quot;went&quot; as past tense of &quot;go&quot;)</span>
+<span class="sd">    - Free variants (e.g., &quot;among&quot; vs. &quot;amongst&quot;)</span>
 
 <span class="sd">    Variants are linked through ILexEntryRef objects which can connect entries</span>
 <span class="sd">    as variants of each other or as components of complex forms.</span>
@@ -100,49 +100,49 @@
 <span class="sd">        from flexicon import FLExProject</span>
 
 <span class="sd">        project = FLExProject()</span>
-<span class="sd">        project.OpenProject("my project", writeEnabled=True)</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
 
 <span class="sd">        # Get all variant types</span>
 <span class="sd">        for vtype in project.Variants.GetAllTypes():</span>
 <span class="sd">            name = project.Variants.GetTypeName(vtype)</span>
-<span class="sd">            print(f"Variant type: {name}")</span>
+<span class="sd">            print(f&quot;Variant type: {name}&quot;)</span>
 
 <span class="sd">        # Find a specific variant type</span>
-<span class="sd">        spelling_type = project.Variants.FindType("Spelling Variant")</span>
+<span class="sd">        spelling_type = project.Variants.FindType(&quot;Spelling Variant&quot;)</span>
 
 <span class="sd">        # Create a variant</span>
-<span class="sd">        entry = project.LexEntry.Find("color")</span>
-<span class="sd">        variant = project.Variants.Create(entry, "colour", spelling_type)</span>
+<span class="sd">        entry = project.LexEntry.Find(&quot;color&quot;)</span>
+<span class="sd">        variant = project.Variants.Create(entry, &quot;colour&quot;, spelling_type)</span>
 
 <span class="sd">        # Get all variants for an entry</span>
 <span class="sd">        for var in project.Variants.GetAll(entry):</span>
 <span class="sd">            form = project.Variants.GetForm(var)</span>
 <span class="sd">            vtype = project.Variants.GetType(var)</span>
-<span class="sd">            print(f"Variant: {form} ({vtype})")</span>
+<span class="sd">            print(f&quot;Variant: {form} ({vtype})&quot;)</span>
 
 <span class="sd">        # For irregularly inflected forms</span>
-<span class="sd">        go_entry = project.LexEntry.Find("go")</span>
-<span class="sd">        went_entry = project.LexEntry.Find("went")</span>
-<span class="sd">        irregular_type = project.Variants.FindType("Irregularly Inflected Form")</span>
+<span class="sd">        go_entry = project.LexEntry.Find(&quot;go&quot;)</span>
+<span class="sd">        went_entry = project.LexEntry.Find(&quot;went&quot;)</span>
+<span class="sd">        irregular_type = project.Variants.FindType(&quot;Irregularly Inflected Form&quot;)</span>
 
 <span class="sd">        # Create variant with component</span>
-<span class="sd">        variant_ref = project.Variants.Create(went_entry, "went", irregular_type)</span>
+<span class="sd">        variant_ref = project.Variants.Create(went_entry, &quot;went&quot;, irregular_type)</span>
 <span class="sd">        project.Variants.AddComponentLexeme(variant_ref, go_entry)</span>
 
 <span class="sd">        project.CloseProject()</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize VariantOperations with a FLExProject instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: The FLExProject instance to operate on.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Specify which sequence to reorder for variants.</span>
 
 <span class="sd">        A LexEntryRef with RefType=0 is owned by the variant entry via</span>
@@ -152,15 +152,15 @@
 <span class="sd">        back-reference is the read-only ``VariantEntryRefs`` virtual list</span>
 <span class="sd">        on the COMPONENT entry, not the variant entry, and it is not</span>
 <span class="sd">        reorderable). MoveUp/MoveDown must operate on the owning sequence.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">EntryRefsOS</span>
 
     <span class="c1"># --- Variant Type Management ---</span>
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetAllTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all variant entry types defined in the project.</span>
 
 <span class="sd">        Variant types define the nature of the relationship between entries,</span>
@@ -174,7 +174,7 @@
 <span class="sd">            &gt;&gt;&gt; for vtype in project.Variants.GetAllTypes():</span>
 <span class="sd">            ...     name = project.Variants.GetTypeName(vtype)</span>
 <span class="sd">            ...     desc = project.Variants.GetTypeDescription(vtype)</span>
-<span class="sd">            ...     print(f"{name}: {desc}")</span>
+<span class="sd">            ...     print(f&quot;{name}: {desc}&quot;)</span>
 <span class="sd">            Spelling Variant: A variant spelling of the same word</span>
 <span class="sd">            Dialectal Variant: A form used in a particular dialect</span>
 <span class="sd">            Irregularly Inflected Form: An irregular inflection of a lexeme</span>
@@ -187,7 +187,7 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            FindType, GetTypeName, GetTypeDescription</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LexDbOA</span><span class="o">.</span><span class="n">VariantEntryTypesOA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
 
@@ -196,7 +196,7 @@
         <span class="c1"># LexEntryInflType) items, so ILexEntryType surface -- ReverseAbbr</span>
         <span class="c1"># and friends -- is unreachable and isinstance(t, ILexEntryType)</span>
         <span class="c1"># is False without a cast (issue #270).</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
+        <span class="kn">from</span> <span class="nn">..lcm_casting</span> <span class="kn">import</span> <span class="n">cast_to_concrete</span>
         <span class="k">for</span> <span class="n">vtype</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LexDbOA</span><span class="o">.</span><span class="n">VariantEntryTypesOA</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">vtype</span><span class="p">)</span>
             <span class="c1"># Also yield any subtypes</span>
@@ -205,14 +205,14 @@
                     <span class="k">yield</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">subtype</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">FindType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">FindType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a variant type by name.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): The name of the variant type to find (case-insensitive).</span>
-<span class="sd">                Common types: "Spelling Variant", "Dialectal Variant",</span>
-<span class="sd">                "Irregularly Inflected Form", "Free Variant", etc.</span>
+<span class="sd">                Common types: &quot;Spelling Variant&quot;, &quot;Dialectal Variant&quot;,</span>
+<span class="sd">                &quot;Irregularly Inflected Form&quot;, &quot;Free Variant&quot;, etc.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            ILexEntryType or None: The variant type if found, None otherwise.</span>
@@ -221,20 +221,20 @@
 <span class="sd">            FP_NullParameterError: If name is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; spelling_type = project.Variants.FindType("Spelling Variant")</span>
+<span class="sd">            &gt;&gt;&gt; spelling_type = project.Variants.FindType(&quot;Spelling Variant&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; if spelling_type:</span>
-<span class="sd">            ...     print(f"Found: {project.Variants.GetTypeName(spelling_type)}")</span>
+<span class="sd">            ...     print(f&quot;Found: {project.Variants.GetTypeName(spelling_type)}&quot;)</span>
 <span class="sd">            Found: Spelling Variant</span>
 
 <span class="sd">            &gt;&gt;&gt; # Case-insensitive search</span>
-<span class="sd">            &gt;&gt;&gt; dialectal = project.Variants.FindType("dialectal variant")</span>
-<span class="sd">            &gt;&gt;&gt; irregular = project.Variants.FindType("Irregularly Inflected Form")</span>
+<span class="sd">            &gt;&gt;&gt; dialectal = project.Variants.FindType(&quot;dialectal variant&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; irregular = project.Variants.FindType(&quot;Irregularly Inflected Form&quot;)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Search is case-insensitive</span>
 <span class="sd">            - Returns first match found</span>
 <span class="sd">            - Searches both types and subtypes</span>
-<span class="sd">            - Returns None if not found (doesn't raise exception)</span>
+<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
 <span class="sd">            - Common built-in types:</span>
 <span class="sd">              - Spelling Variant</span>
 <span class="sd">              - Dialectal Variant</span>
@@ -243,8 +243,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAllTypes, GetTypeName</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -260,8 +260,8 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetTypeName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_type</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetTypeName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_type</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the name of a variant type.</span>
 
 <span class="sd">        Args:</span>
@@ -277,13 +277,13 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; for vtype in project.Variants.GetAllTypes():</span>
 <span class="sd">            ...     name = project.Variants.GetTypeName(vtype)</span>
-<span class="sd">            ...     print(f"Type: {name}")</span>
+<span class="sd">            ...     print(f&quot;Type: {name}&quot;)</span>
 <span class="sd">            Type: Spelling Variant</span>
 <span class="sd">            Type: Dialectal Variant</span>
 <span class="sd">            Type: Irregularly Inflected Form</span>
 
 <span class="sd">            &gt;&gt;&gt; # Get in specific writing system</span>
-<span class="sd">            &gt;&gt;&gt; name_fr = project.Variants.GetTypeName(vtype, project.WSHandle('fr'))</span>
+<span class="sd">            &gt;&gt;&gt; name_fr = project.Variants.GetTypeName(vtype, project.WSHandle(&#39;fr&#39;))</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns empty string if name not set in specified writing system</span>
@@ -292,17 +292,17 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetTypeDescription, FindType</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_type</span><span class="p">,</span> <span class="s2">"variant_type"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_type</span><span class="p">,</span> <span class="s2">&quot;variant_type&quot;</span><span class="p">)</span>
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">variant_type</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetTypeDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_type</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetTypeDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_type</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the description of a variant type.</span>
 
 <span class="sd">        Args:</span>
@@ -316,7 +316,7 @@
 <span class="sd">            FP_NullParameterError: If variant_type is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; spelling_type = project.Variants.FindType("Spelling Variant")</span>
+<span class="sd">            &gt;&gt;&gt; spelling_type = project.Variants.FindType(&quot;Spelling Variant&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; if spelling_type:</span>
 <span class="sd">            ...     desc = project.Variants.GetTypeDescription(spelling_type)</span>
 <span class="sd">            ...     print(desc)</span>
@@ -330,20 +330,20 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetTypeName, FindType</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_type</span><span class="p">,</span> <span class="s2">"variant_type"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_type</span><span class="p">,</span> <span class="s2">&quot;variant_type&quot;</span><span class="p">)</span>
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="n">desc</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">variant_type</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="c1"># --- Variant Management ---</span>
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all variant references for a lexical entry, or all variants in the entire project.</span>
 
 <span class="sd">        This returns the entry references that define this entry as a variant</span>
@@ -358,17 +358,17 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Get variant references for specific entry</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("colour")</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;colour&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; for variant_ref in project.Variants.GetAll(entry):</span>
 <span class="sd">            ...     vtype = project.Variants.GetType(variant_ref)</span>
 <span class="sd">            ...     type_name = project.Variants.GetTypeName(vtype)</span>
-<span class="sd">            ...     print(f"Variant type: {type_name}")</span>
+<span class="sd">            ...     print(f&quot;Variant type: {type_name}&quot;)</span>
 <span class="sd">            Variant type: Spelling Variant</span>
 
 <span class="sd">            &gt;&gt;&gt; # Get ALL variant references in entire project</span>
 <span class="sd">            &gt;&gt;&gt; for variant_ref in project.Variants.GetAll():</span>
 <span class="sd">            ...     form = project.Variants.GetForm(variant_ref)</span>
-<span class="sd">            ...     print(f"Variant form: {form}")</span>
+<span class="sd">            ...     print(f&quot;Variant form: {form}&quot;)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - When entry_or_hvo is provided:</span>
@@ -383,7 +383,7 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetVariantCount, GetType</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">entry_or_hvo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Iterate ALL variant references in entire project</span>
             <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lexDB</span><span class="o">.</span><span class="n">Entries</span><span class="p">:</span>
@@ -401,8 +401,8 @@
                     <span class="k">yield</span> <span class="n">entry_ref</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">variant_form</span><span class="p">,</span> <span class="n">variant_type</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">variant_form</span><span class="p">,</span> <span class="n">variant_type</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a variant relationship for an entry.</span>
 
 <span class="sd">        This creates an ILexEntryRef object that defines the entry as a variant</span>
@@ -425,37 +425,37 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Create spelling variant</span>
-<span class="sd">            &gt;&gt;&gt; colour_entry = project.LexEntry.Find("colour")</span>
+<span class="sd">            &gt;&gt;&gt; colour_entry = project.LexEntry.Find(&quot;colour&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; if not colour_entry:</span>
-<span class="sd">            ...     colour_entry = project.LexEntry.Create("colour")</span>
-<span class="sd">            &gt;&gt;&gt; spelling_type = project.Variants.FindType("Spelling Variant")</span>
-<span class="sd">            &gt;&gt;&gt; variant = project.Variants.Create(colour_entry, "colour", spelling_type)</span>
+<span class="sd">            ...     colour_entry = project.LexEntry.Create(&quot;colour&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; spelling_type = project.Variants.FindType(&quot;Spelling Variant&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; variant = project.Variants.Create(colour_entry, &quot;colour&quot;, spelling_type)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create irregularly inflected form</span>
-<span class="sd">            &gt;&gt;&gt; went_entry = project.LexEntry.Find("went")</span>
-<span class="sd">            &gt;&gt;&gt; irregular_type = project.Variants.FindType("Irregularly Inflected Form")</span>
-<span class="sd">            &gt;&gt;&gt; variant_ref = project.Variants.Create(went_entry, "went", irregular_type)</span>
+<span class="sd">            &gt;&gt;&gt; went_entry = project.LexEntry.Find(&quot;went&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; irregular_type = project.Variants.FindType(&quot;Irregularly Inflected Form&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; variant_ref = project.Variants.Create(went_entry, &quot;went&quot;, irregular_type)</span>
 <span class="sd">            &gt;&gt;&gt; # Then add the base form as a component</span>
-<span class="sd">            &gt;&gt;&gt; go_entry = project.LexEntry.Find("go")</span>
+<span class="sd">            &gt;&gt;&gt; go_entry = project.LexEntry.Find(&quot;go&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; project.Variants.AddComponentLexeme(variant_ref, go_entry)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Creates an ILexEntryRef with RefType = 0 (Variant)</span>
 <span class="sd">            - The variant_type determines how the variant is classified</span>
 <span class="sd">            - For irregularly inflected forms, add ComponentLexemes afterward</span>
-<span class="sd">            - The variant_form is typically the same as the entry's lexeme form</span>
+<span class="sd">            - The variant_form is typically the same as the entry&#39;s lexeme form</span>
 <span class="sd">            - Multiple variant references can exist for one entry</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Delete, GetType, SetType, AddComponentLexeme</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">"entry_or_hvo"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_form</span><span class="p">,</span> <span class="s2">"variant_form"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_type</span><span class="p">,</span> <span class="s2">"variant_type"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_form</span><span class="p">,</span> <span class="s2">&quot;variant_form&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_type</span><span class="p">,</span> <span class="s2">&quot;variant_type&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">variant_form</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">variant_form</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Variant form cannot be empty"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Variant form cannot be empty&quot;</span><span class="p">)</span>
 
         <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
@@ -465,7 +465,7 @@
         <span class="c1"># LexEntryRef.VariantEntryTypesRS returns null until the ref is</span>
         <span class="c1"># owned, so accessing it before EntryRefsOS.Add raises a</span>
         <span class="c1"># System.NullReferenceException from native LCM (#165).</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Create variant"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create variant&quot;</span><span class="p">):</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexEntryRefFactory</span><span class="p">)</span>
             <span class="n">entry_ref</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
             <span class="n">entry</span><span class="o">.</span><span class="n">EntryRefsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">entry_ref</span><span class="p">)</span>
@@ -474,9 +474,9 @@
             <span class="n">entry_ref</span><span class="o">.</span><span class="n">RefType</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">entry_ref</span><span class="o">.</span><span class="n">VariantEntryTypesRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">variant_type</span><span class="p">)</span>
 
-            <span class="c1"># The variant form itself is typically the entry's lexeme form.</span>
-            <span class="c1"># We don't set a separate form on the ILexEntryRef; instead make</span>
-            <span class="c1"># sure the entry's lexeme form matches the requested variant_form.</span>
+            <span class="c1"># The variant form itself is typically the entry&#39;s lexeme form.</span>
+            <span class="c1"># We don&#39;t set a separate form on the ILexEntryRef; instead make</span>
+            <span class="c1"># sure the entry&#39;s lexeme form matches the requested variant_form.</span>
             <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="p">:</span>
                 <span class="n">current_form</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">current_form</span> <span class="ow">or</span> <span class="n">current_form</span> <span class="o">!=</span> <span class="n">variant_form</span><span class="p">:</span>
@@ -486,8 +486,8 @@
             <span class="k">return</span> <span class="n">entry_ref</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a variant reference.</span>
 
 <span class="sd">        This removes the variant relationship but does not delete the entry itself.</span>
@@ -500,7 +500,7 @@
 <span class="sd">            FP_NullParameterError: If variant_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("colour")</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;colour&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; for variant in project.Variants.GetAll(entry):</span>
 <span class="sd">            ...     # Delete the variant reference</span>
 <span class="sd">            ...     project.Variants.Delete(variant)</span>
@@ -512,15 +512,15 @@
 <span class="sd">            - Component lexeme links are also removed</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Removes the ILexEntryRef from the entry's EntryRefsOS collection</span>
+<span class="sd">            - Removes the ILexEntryRef from the entry&#39;s EntryRefsOS collection</span>
 <span class="sd">            - The owning entry remains unchanged</span>
 <span class="sd">            - Any component lexemes are automatically dereferenced</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetAll</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">"variant_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">&quot;variant_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">variant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetVariantObject</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">)</span>
 
@@ -530,20 +530,20 @@
         <span class="c1"># no-opped).</span>
         <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Variant ref has no owning entry"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Variant ref has no owning entry&quot;</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete variant reference"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete variant reference&quot;</span><span class="p">):</span>
             <span class="n">owner</span><span class="o">.</span><span class="n">EntryRefsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a variant reference, creating a new copy with a new GUID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            item_or_hvo: The ILexEntryRef object or HVO to duplicate.</span>
 <span class="sd">            insert_after (bool): If True (default), insert after the source variant.</span>
-<span class="sd">                                If False, insert at end of parent's entry refs list.</span>
+<span class="sd">                                If False, insert at end of parent&#39;s entry refs list.</span>
 <span class="sd">            deep (bool): Accepted for API uniformity across Operations classes. Variant has no owned objects, so this parameter is ignored.</span>
 
 <span class="sd">        Returns:</span>
@@ -554,22 +554,22 @@
 <span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("colour")</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;colour&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; variants = list(project.Variants.GetAll(entry))</span>
 <span class="sd">            &gt;&gt;&gt; if variants:</span>
 <span class="sd">            ...     # Duplicate the variant reference</span>
 <span class="sd">            ...     dup = project.Variants.Duplicate(variants[0])</span>
-<span class="sd">            ...     print(f"Original: {variants[0].Guid}")</span>
-<span class="sd">            ...     print(f"Duplicate: {dup.Guid}")</span>
+<span class="sd">            ...     print(f&quot;Original: {variants[0].Guid}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Duplicate: {dup.Guid}&quot;)</span>
 <span class="sd">            ...     vtype = project.Variants.GetType(dup)</span>
-<span class="sd">            ...     print(f"Type: {project.Variants.GetTypeName(vtype)}")</span>
+<span class="sd">            ...     print(f&quot;Type: {project.Variants.GetTypeName(vtype)}&quot;)</span>
 <span class="sd">            Original: 12345678-1234-1234-1234-123456789abc</span>
 <span class="sd">            Duplicate: 87654321-4321-4321-4321-cba987654321</span>
 <span class="sd">            Type: Spelling Variant</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Factory.Create() automatically generates a new GUID</span>
-<span class="sd">            - insert_after=True preserves the original variant's position/priority</span>
+<span class="sd">            - insert_after=True preserves the original variant&#39;s position/priority</span>
 <span class="sd">            - Simple properties copied: RefType, HideMinorEntry, ShowComplexFormsIn</span>
 <span class="sd">            - Reference Sequence (RS) properties copied: VariantEntryTypesRS, ComponentLexemesRS</span>
 <span class="sd">            - The duplicate shares the same form as the source (both owned by same entry)</span>
@@ -578,21 +578,21 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Delete, GetType</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">"item_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="c1"># Get source variant and parent. source.Owner is typed as</span>
         <span class="c1"># ICmObject; cast to ILexEntry so EntryRefsOS is reachable.</span>
-        <span class="c1"># Without this cast the previous `hasattr(parent, "EntryRefsOS")`</span>
+        <span class="c1"># Without this cast the previous `hasattr(parent, &quot;EntryRefsOS&quot;)`</span>
         <span class="c1"># silently returned False and the duplicate was orphaned.</span>
         <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetVariantObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Variant ref has no owning entry"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Variant ref has no owning entry&quot;</span><span class="p">)</span>
 
         <span class="c1"># Create new variant reference using factory (auto-generates new GUID)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Duplicate variant"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate variant&quot;</span><span class="p">):</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexEntryRefFactory</span><span class="p">)</span>
             <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
@@ -608,10 +608,10 @@
             <span class="c1"># Copy simple properties</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">RefType</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">RefType</span>
 
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">"HideMinorEntry"</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;HideMinorEntry&quot;</span><span class="p">):</span>
                 <span class="n">duplicate</span><span class="o">.</span><span class="n">HideMinorEntry</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">HideMinorEntry</span>
 
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">"ShowComplexFormsIn"</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;ShowComplexFormsIn&quot;</span><span class="p">):</span>
                 <span class="n">duplicate</span><span class="o">.</span><span class="n">ShowComplexFormsIn</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">ShowComplexFormsIn</span>
 
             <span class="c1"># Copy Reference Sequence (RS) properties</span>
@@ -624,12 +624,12 @@
                 <span class="n">duplicate</span><span class="o">.</span><span class="n">ComponentLexemesRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">component</span><span class="p">)</span>
 
             <span class="c1"># Copy complex entry types (if applicable)</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">"ComplexEntryTypesRS"</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;ComplexEntryTypesRS&quot;</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">ctype</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">ComplexEntryTypesRS</span><span class="p">:</span>
                     <span class="n">duplicate</span><span class="o">.</span><span class="n">ComplexEntryTypesRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">ctype</span><span class="p">)</span>
 
             <span class="c1"># Copy primary lexemes (if applicable)</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">"PrimaryLexemesRS"</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;PrimaryLexemesRS&quot;</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">plex</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">PrimaryLexemesRS</span><span class="p">:</span>
                     <span class="n">duplicate</span><span class="o">.</span><span class="n">PrimaryLexemesRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">plex</span><span class="p">)</span>
 
@@ -638,8 +638,8 @@
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all syncable properties of a variant reference for comparison.</span>
 
 <span class="sd">        Args:</span>
@@ -647,31 +647,31 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: Dictionary mapping property names to their values.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># Atomic properties</span>
         <span class="c1"># RefType - type of reference (0 = Variant, 1 = Complex Form)</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"RefType"</span><span class="p">):</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">"RefType"</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">RefType</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;RefType&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;RefType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">RefType</span>
 
         <span class="c1"># HideMinorEntry - whether to hide minor entry</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"HideMinorEntry"</span><span class="p">):</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">"HideMinorEntry"</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">HideMinorEntry</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;HideMinorEntry&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;HideMinorEntry&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">HideMinorEntry</span>
 
         <span class="c1"># ShowComplexFormsIn - flags for showing complex forms</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"ShowComplexFormsIn"</span><span class="p">):</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">"ShowComplexFormsIn"</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">ShowComplexFormsIn</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;ShowComplexFormsIn&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;ShowComplexFormsIn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">ShowComplexFormsIn</span>
 
-        <span class="c1"># Note: The variant form itself is stored on the owning entry's LexemeFormOA</span>
+        <span class="c1"># Note: The variant form itself is stored on the owning entry&#39;s LexemeFormOA</span>
         <span class="c1"># Note: VariantEntryTypesRS is a Reference Sequence (complex relationships) - not included as simple property</span>
         <span class="c1"># Note: ComponentLexemesRS is a Reference Sequence (complex relationships) - not included as simple property</span>
 
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two variant references and return their differences.</span>
 
 <span class="sd">        Args:</span>
@@ -682,7 +682,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: (is_different, differences_dict)</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ops1</span> <span class="o">=</span> <span class="n">ops1</span> <span class="ow">or</span> <span class="bp">self</span>
         <span class="n">ops2</span> <span class="o">=</span> <span class="n">ops2</span> <span class="ow">or</span> <span class="bp">self</span>
 
@@ -701,8 +701,8 @@
         <span class="k">return</span> <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the form of a variant.</span>
 
 <span class="sd">        This returns the lexeme form of the entry that owns this variant reference.</span>
@@ -718,41 +718,41 @@
 <span class="sd">            FP_NullParameterError: If variant_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("colour")</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;colour&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; for variant in project.Variants.GetAll(entry):</span>
 <span class="sd">            ...     form = project.Variants.GetForm(variant)</span>
-<span class="sd">            ...     print(f"Variant form: {form}")</span>
+<span class="sd">            ...     print(f&quot;Variant form: {form}&quot;)</span>
 <span class="sd">            Variant form: colour</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns the owning entry's lexeme form</span>
+<span class="sd">            - Returns the owning entry&#39;s lexeme form</span>
 <span class="sd">            - Returns empty string if entry has no lexeme form</span>
-<span class="sd">            - ILexEntryRef doesn't store form directly - it's on the entry</span>
+<span class="sd">            - ILexEntryRef doesn&#39;t store form directly - it&#39;s on the entry</span>
 <span class="sd">            - For component lexemes, use GetComponentLexemes()</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetForm, GetOwningEntry</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">"variant_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">&quot;variant_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">variant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetVariantObject</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="c1"># variant.Owner is typed as ICmObject in LCM. pythonnet only surfaces</span>
-        <span class="c1"># attributes from the static type, so hasattr(owner, "LexemeFormOA")</span>
+        <span class="c1"># attributes from the static type, so hasattr(owner, &quot;LexemeFormOA&quot;)</span>
         <span class="c1"># is always False without an explicit downcast. Cast to ILexEntry</span>
         <span class="c1"># so LexemeFormOA becomes accessible.</span>
         <span class="n">owner</span> <span class="o">=</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">variant</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">owner</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="p">:</span>
             <span class="n">form</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">owner</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-            <span class="k">return</span> <span class="n">form</span> <span class="ow">or</span> <span class="s2">""</span>
+            <span class="k">return</span> <span class="n">form</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">SetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">SetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the form of a variant.</span>
 
 <span class="sd">        This sets the lexeme form of the entry that owns this variant reference.</span>
@@ -768,27 +768,27 @@
 <span class="sd">            FP_ParameterError: If text is empty or entry has no lexeme form.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("colour")</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;colour&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; for variant in project.Variants.GetAll(entry):</span>
-<span class="sd">            ...     project.Variants.SetForm(variant, "coulour")  # Fix typo</span>
+<span class="sd">            ...     project.Variants.SetForm(variant, &quot;coulour&quot;)  # Fix typo</span>
 <span class="sd">            ...     print(project.Variants.GetForm(variant))</span>
 <span class="sd">            coulour</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Sets the owning entry's lexeme form</span>
+<span class="sd">            - Sets the owning entry&#39;s lexeme form</span>
 <span class="sd">            - Entry must have a lexeme form object</span>
 <span class="sd">            - Changes the headword of the variant entry</span>
 <span class="sd">            - Affects how the entry appears in the lexicon</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetForm, GetOwningEntry</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">"variant_or_hvo"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">&quot;variant_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Variant form cannot be empty"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Variant form cannot be empty&quot;</span><span class="p">)</span>
 
         <span class="n">variant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetVariantObject</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
@@ -798,16 +798,16 @@
         <span class="n">owner</span> <span class="o">=</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">variant</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">owner</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Entry has no lexeme form object"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Entry has no lexeme form object&quot;</span><span class="p">)</span>
 
         <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set variant form"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set variant form&quot;</span><span class="p">):</span>
             <span class="n">owner</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the variant type of a variant reference.</span>
 
 <span class="sd">        Args:</span>
@@ -820,12 +820,12 @@
 <span class="sd">            FP_NullParameterError: If variant_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("colour")</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;colour&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; for variant in project.Variants.GetAll(entry):</span>
 <span class="sd">            ...     vtype = project.Variants.GetType(variant)</span>
 <span class="sd">            ...     if vtype:</span>
 <span class="sd">            ...         name = project.Variants.GetTypeName(vtype)</span>
-<span class="sd">            ...         print(f"Variant type: {name}")</span>
+<span class="sd">            ...         print(f&quot;Variant type: {name}&quot;)</span>
 <span class="sd">            Variant type: Spelling Variant</span>
 
 <span class="sd">        Notes:</span>
@@ -836,8 +836,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetType, GetTypeName, GetAllTypes</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">"variant_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">&quot;variant_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">variant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetVariantObject</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">)</span>
 
@@ -847,8 +847,8 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">SetType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">,</span> <span class="n">variant_type</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">SetType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">,</span> <span class="n">variant_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the variant type of a variant reference.</span>
 
 <span class="sd">        This replaces all existing variant types with the specified type.</span>
@@ -862,9 +862,9 @@
 <span class="sd">            FP_NullParameterError: If variant_or_hvo or variant_type is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("colour")</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;colour&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; for variant in project.Variants.GetAll(entry):</span>
-<span class="sd">            ...     dialectal_type = project.Variants.FindType("Dialectal Variant")</span>
+<span class="sd">            ...     dialectal_type = project.Variants.FindType(&quot;Dialectal Variant&quot;)</span>
 <span class="sd">            ...     if dialectal_type:</span>
 <span class="sd">            ...         project.Variants.SetType(variant, dialectal_type)</span>
 <span class="sd">            ...         vtype = project.Variants.GetType(variant)</span>
@@ -879,14 +879,14 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetType, FindType, GetAllTypes</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">"variant_or_hvo"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_type</span><span class="p">,</span> <span class="s2">"variant_type"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">&quot;variant_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_type</span><span class="p">,</span> <span class="s2">&quot;variant_type&quot;</span><span class="p">)</span>
 
         <span class="n">variant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetVariantObject</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set variant type"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set variant type&quot;</span><span class="p">):</span>
             <span class="c1"># Clear existing types</span>
             <span class="n">variant</span><span class="o">.</span><span class="n">VariantEntryTypesRS</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span>
 
@@ -896,12 +896,12 @@
     <span class="c1"># --- Component Management (for irregularly inflected forms) ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetComponentLexemes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetComponentLexemes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the component lexemes of a variant.</span>
 
 <span class="sd">        Component lexemes are the base entries that make up an irregularly</span>
-<span class="sd">        inflected form. For example, "went" has "go" as a component.</span>
+<span class="sd">        inflected form. For example, &quot;went&quot; has &quot;go&quot; as a component.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            variant_or_hvo: The ILexEntryRef object or HVO.</span>
@@ -913,17 +913,17 @@
 <span class="sd">            FP_NullParameterError: If variant_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; # "went" is irregular past tense of "go"</span>
-<span class="sd">            &gt;&gt;&gt; went_entry = project.LexEntry.Find("went")</span>
+<span class="sd">            &gt;&gt;&gt; # &quot;went&quot; is irregular past tense of &quot;go&quot;</span>
+<span class="sd">            &gt;&gt;&gt; went_entry = project.LexEntry.Find(&quot;went&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; for variant in project.Variants.GetAll(went_entry):</span>
 <span class="sd">            ...     components = project.Variants.GetComponentLexemes(variant)</span>
 <span class="sd">            ...     for comp in components:</span>
 <span class="sd">            ...         headword = project.LexEntry.GetHeadword(comp)</span>
-<span class="sd">            ...         print(f"Component: {headword}")</span>
+<span class="sd">            ...         print(f&quot;Component: {headword}&quot;)</span>
 <span class="sd">            Component: go</span>
 
-<span class="sd">            &gt;&gt;&gt; # "worse" might have components "bad" or "ill"</span>
-<span class="sd">            &gt;&gt;&gt; worse_entry = project.LexEntry.Find("worse")</span>
+<span class="sd">            &gt;&gt;&gt; # &quot;worse&quot; might have components &quot;bad&quot; or &quot;ill&quot;</span>
+<span class="sd">            &gt;&gt;&gt; worse_entry = project.LexEntry.Find(&quot;worse&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; for variant in project.Variants.GetAll(worse_entry):</span>
 <span class="sd">            ...     for comp in project.Variants.GetComponentLexemes(variant):</span>
 <span class="sd">            ...         print(project.LexEntry.GetHeadword(comp))</span>
@@ -931,15 +931,15 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns empty list if no components</span>
-<span class="sd">            - Primarily used for "Irregularly Inflected Form" variant type</span>
+<span class="sd">            - Primarily used for &quot;Irregularly Inflected Form&quot; variant type</span>
 <span class="sd">            - Can have multiple components (rare but possible)</span>
 <span class="sd">            - Components are ILexEntry objects (not ILexEntryRef)</span>
 <span class="sd">            - Access via ComponentLexemesRS collection</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            AddComponentLexeme, RemoveComponentLexeme, Create</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">"variant_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">&quot;variant_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">variant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetVariantObject</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">)</span>
 
@@ -950,12 +950,12 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedElements</span><span class="p">(</span><span class="n">variant</span><span class="o">.</span><span class="n">ComponentLexemesRS</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">AddComponentLexeme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">AddComponentLexeme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a component lexeme to a variant.</span>
 
 <span class="sd">        This creates a link from an irregularly inflected form to its base entry.</span>
-<span class="sd">        For example, linking "went" to "go".</span>
+<span class="sd">        For example, linking &quot;went&quot; to &quot;go&quot;.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            variant_or_hvo: The ILexEntryRef object or HVO.</span>
@@ -966,14 +966,14 @@
 <span class="sd">            FP_NullParameterError: If variant_or_hvo or entry_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; # Create "went" as irregular past of "go"</span>
-<span class="sd">            &gt;&gt;&gt; went_entry = project.LexEntry.Find("went")</span>
-<span class="sd">            &gt;&gt;&gt; go_entry = project.LexEntry.Find("go")</span>
+<span class="sd">            &gt;&gt;&gt; # Create &quot;went&quot; as irregular past of &quot;go&quot;</span>
+<span class="sd">            &gt;&gt;&gt; went_entry = project.LexEntry.Find(&quot;went&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; go_entry = project.LexEntry.Find(&quot;go&quot;)</span>
 <span class="sd">            &gt;&gt;&gt;</span>
-<span class="sd">            &gt;&gt;&gt; irregular_type = project.Variants.FindType("Irregularly Inflected Form")</span>
-<span class="sd">            &gt;&gt;&gt; variant_ref = project.Variants.Create(went_entry, "went", irregular_type)</span>
+<span class="sd">            &gt;&gt;&gt; irregular_type = project.Variants.FindType(&quot;Irregularly Inflected Form&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; variant_ref = project.Variants.Create(went_entry, &quot;went&quot;, irregular_type)</span>
 <span class="sd">            &gt;&gt;&gt;</span>
-<span class="sd">            &gt;&gt;&gt; # Add "go" as the component</span>
+<span class="sd">            &gt;&gt;&gt; # Add &quot;go&quot; as the component</span>
 <span class="sd">            &gt;&gt;&gt; project.Variants.AddComponentLexeme(variant_ref, go_entry)</span>
 <span class="sd">            &gt;&gt;&gt;</span>
 <span class="sd">            &gt;&gt;&gt; # Verify</span>
@@ -983,7 +983,7 @@
 <span class="sd">            go</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Typically used with "Irregularly Inflected Form" variant type</span>
+<span class="sd">            - Typically used with &quot;Irregularly Inflected Form&quot; variant type</span>
 <span class="sd">            - Creates a reference from the variant to the base form</span>
 <span class="sd">            - Multiple components can be added (e.g., for suppletion)</span>
 <span class="sd">            - The component entry must already exist</span>
@@ -991,21 +991,21 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetComponentLexemes, RemoveComponentLexeme, Create</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">"variant_or_hvo"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">"entry_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">&quot;variant_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">variant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetVariantObject</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">)</span>
         <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Add the entry as a component</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Add component lexeme"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add component lexeme&quot;</span><span class="p">):</span>
             <span class="n">variant</span><span class="o">.</span><span class="n">ComponentLexemesRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveComponentLexeme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">RemoveComponentLexeme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a component lexeme from a variant.</span>
 
 <span class="sd">        Args:</span>
@@ -1017,44 +1017,44 @@
 <span class="sd">            FP_NullParameterError: If variant_or_hvo or entry_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; went_entry = project.LexEntry.Find("went")</span>
-<span class="sd">            &gt;&gt;&gt; go_entry = project.LexEntry.Find("go")</span>
+<span class="sd">            &gt;&gt;&gt; went_entry = project.LexEntry.Find(&quot;went&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; go_entry = project.LexEntry.Find(&quot;go&quot;)</span>
 <span class="sd">            &gt;&gt;&gt;</span>
 <span class="sd">            &gt;&gt;&gt; for variant in project.Variants.GetAll(went_entry):</span>
-<span class="sd">            ...     # Remove "go" as component</span>
+<span class="sd">            ...     # Remove &quot;go&quot; as component</span>
 <span class="sd">            ...     project.Variants.RemoveComponentLexeme(variant, go_entry)</span>
 <span class="sd">            ...</span>
 <span class="sd">            ...     # Verify removal</span>
 <span class="sd">            ...     components = project.Variants.GetComponentLexemes(variant)</span>
-<span class="sd">            ...     print(f"Remaining components: {len(components)}")</span>
+<span class="sd">            ...     print(f&quot;Remaining components: {len(components)}&quot;)</span>
 <span class="sd">            Remaining components: 0</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - If entry not in component list, this is a no-op (no error)</span>
 <span class="sd">            - Removes from ComponentLexemesRS collection</span>
-<span class="sd">            - Doesn't delete the component entry itself</span>
-<span class="sd">            - Doesn't affect the variant reference (only the component link)</span>
+<span class="sd">            - Doesn&#39;t delete the component entry itself</span>
+<span class="sd">            - Doesn&#39;t affect the variant reference (only the component link)</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetComponentLexemes, AddComponentLexeme</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">"variant_or_hvo"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">"entry_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">&quot;variant_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">variant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetVariantObject</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">)</span>
         <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Remove if present</span>
         <span class="k">if</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">variant</span><span class="o">.</span><span class="n">ComponentLexemesRS</span><span class="p">:</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Remove component lexeme"</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove component lexeme&quot;</span><span class="p">):</span>
                 <span class="n">variant</span><span class="o">.</span><span class="n">ComponentLexemesRS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
 
     <span class="c1"># --- Utilities ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwningEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetOwningEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the entry that owns a variant reference.</span>
 
 <span class="sd">        Args:</span>
@@ -1074,21 +1074,21 @@
 <span class="sd">            ...         owner_hw = project.LexEntry.GetHeadword(owner)</span>
 <span class="sd">            ...         var_form = project.Variants.GetForm(variant)</span>
 <span class="sd">            ...         vtype = project.Variants.GetType(variant)</span>
-<span class="sd">            ...         type_name = project.Variants.GetTypeName(vtype) if vtype else "?"</span>
-<span class="sd">            ...         print(f"{owner_hw} -&gt; {var_form} ({type_name})")</span>
+<span class="sd">            ...         type_name = project.Variants.GetTypeName(vtype) if vtype else &quot;?&quot;</span>
+<span class="sd">            ...         print(f&quot;{owner_hw} -&gt; {var_form} ({type_name})&quot;)</span>
 <span class="sd">            color -&gt; colour (Spelling Variant)</span>
 <span class="sd">            go -&gt; went (Irregularly Inflected Form)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns the ILexEntry that contains this variant reference</span>
-<span class="sd">            - The owner is the variant entry (e.g., "colour")</span>
+<span class="sd">            - The owner is the variant entry (e.g., &quot;colour&quot;)</span>
 <span class="sd">            - For irregularly inflected forms, owner is the irregular form</span>
 <span class="sd">            - Use GetComponentLexemes() to get the base form(s)</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, GetComponentLexemes</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">"variant_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">&quot;variant_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">variant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetVariantObject</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">)</span>
 
@@ -1098,8 +1098,8 @@
         <span class="k">return</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">variant</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">GetVariantCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">GetVariantCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the count of variant references for an entry.</span>
 
 <span class="sd">        Args:</span>
@@ -1112,14 +1112,14 @@
 <span class="sd">            FP_NullParameterError: If entry_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("colour")</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;colour&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; count = project.Variants.GetVariantCount(entry)</span>
-<span class="sd">            &gt;&gt;&gt; print(f"Entry has {count} variant reference(s)")</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Entry has {count} variant reference(s)&quot;)</span>
 <span class="sd">            Entry has 1 variant reference(s)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Check if entry has any variants</span>
 <span class="sd">            &gt;&gt;&gt; if project.Variants.GetVariantCount(entry) &gt; 0:</span>
-<span class="sd">            ...     print("This entry has variants")</span>
+<span class="sd">            ...     print(&quot;This entry has variants&quot;)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns 0 if entry has no variant references</span>
@@ -1129,8 +1129,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, Create</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">"entry_or_hvo"</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
 
@@ -1143,9 +1143,15 @@
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__GetEntryObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">__GetEntryObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to ILexEntry.</span>
+
+<span class="sd">        Casts by ``ClassName`` BEFORE returning (issue #275, generalising</span>
+<span class="sd">        #269&#39;s fix). ``self.project.Object(hvo)`` returns a bare</span>
+<span class="sd">        ``ICmObject``; without this cast, ``isinstance(obj, ILexEntry)``</span>
+<span class="sd">        is False even for a genuine entry, so the HVO path rejected every</span>
+<span class="sd">        real entry. Strict widening over the bare ``isinstance`` check.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entry_or_hvo: Either an ILexEntry object or an HVO (int).</span>
@@ -1154,18 +1160,36 @@
 <span class="sd">            ILexEntry: The resolved entry object.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If HVO doesn't refer to a lexical entry.</span>
-<span class="sd">        """</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a lexical entry.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ILexEntry</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a lexical entry"</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">obj</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ILexEntry</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">obj</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a lexical entry&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
         <span class="k">return</span> <span class="n">entry_or_hvo</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__GetVariantObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">__GetVariantObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to ILexEntryRef.</span>
+
+<span class="sd">        Casts by ``ClassName`` BEFORE returning (issue #275, generalising</span>
+<span class="sd">        #269&#39;s fix). Both ``&quot;LexEntryRef&quot;`` and ``&quot;VariantEntryRef&quot;`` are</span>
+<span class="sd">        recognised (confirmed sibling ClassNames for this interface --</span>
+<span class="sd">        see ``FLExProject.LexiconDeleteObject``&#39;s</span>
+<span class="sd">        ``class_name in (&quot;LexEntryRef&quot;, &quot;VariantEntryRef&quot;)`` dispatch).</span>
+<span class="sd">        Strict widening over the bare ``isinstance`` check, which failed</span>
+<span class="sd">        for every genuine variant reference reached via HVO.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            variant_or_hvo: Either an ILexEntryRef object or an HVO (int).</span>
@@ -1174,17 +1198,27 @@
 <span class="sd">            ILexEntryRef: The resolved variant reference object.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If HVO doesn't refer to a variant reference.</span>
-<span class="sd">        """</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a variant reference.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ILexEntryRef</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a variant reference"</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">obj</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;LexEntryRef&quot;</span><span class="p">,</span> <span class="s2">&quot;VariantEntryRef&quot;</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">ILexEntryRef</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ILexEntryRef</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">obj</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a variant reference&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;LexEntryRef&quot;</span><span class="p">,</span> <span class="s2">&quot;VariantEntryRef&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ILexEntryRef</span><span class="p">(</span><span class="n">variant_or_hvo</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
         <span class="k">return</span> <span class="n">variant_or_hvo</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to vernacular WS.</span>
 
 <span class="sd">        Args:</span>
@@ -1192,13 +1226,13 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            int: The writing system handle.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+    <span class="k">def</span> <span class="nf">__WSHandleAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
 
 <span class="sd">        Args:</span>
@@ -1206,7 +1240,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            int: The writing system handle.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span></div>
@@ -1217,7 +1251,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1233,7 +1267,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1248,8 +1282,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
     </div>
   </body>
 </html>
