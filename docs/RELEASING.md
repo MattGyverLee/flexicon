@@ -149,12 +149,13 @@ also exists. The two steps are separate on purpose -- see section 5.
 >    Actions schema it violated. `actionlint` catches invalid permission
 >    scopes and is the right local gate.
 >
-> Until the runner exists, treat the documentation site as **manually
-> maintained and currently stale**. A green release does not mean the API
-> docs were refreshed, and -- until a `RUNNER_REGISTRY_TOKEN` secret is
-> configured -- a docs run will still queue for 24 hours rather than
-> reporting why. **Check the docs run explicitly after every cut**; do not
-> infer it from a green PyPI publish.
+> Until the runner exists, the documentation site is **manually
+> maintained**. A green release does not mean the API docs were refreshed,
+> and -- until a `RUNNER_REGISTRY_TOKEN` secret is configured -- a docs run
+> will still queue for 24 hours rather than reporting why. **Check the docs
+> run explicitly after every cut**; do not infer it from a green PyPI
+> publish. Publish by hand instead: see section 5a, which is the path
+> actually used for v4.7.0.
 
 PyPI upload uses **Trusted Publishing** (OIDC): `publish.yml` requests an
 `id-token` and authenticates as the repo. There is no stored PyPI token
@@ -358,6 +359,64 @@ once per clone:
 ```bash
 gh repo set-default MattGyverLee/flexicon
 ```
+
+---
+
+## 5a. Publishing the docs by hand
+
+Until a FieldWorks runner exists this is **the only way the docs site gets
+updated**, and it is how v4.7.0 was published. Run it from a machine with
+FieldWorks installed -- the same requirement the runner would have had,
+because `import flexicon` probes the FW registry at import time.
+
+```bash
+python -m pip install -e ".[docs]"      # sphinx + ghp-import, once
+
+sphinx-apidoc -f -o docs/sphinx/api flexicon flexicon/tests flexicon/examples flexicon/sync/tests
+sphinx-build docs/sphinx flexicon/docs/flexiconAPI
+
+python -m ghp_import -n -c flexicon.langtech.cloud -p -f \
+  -m "docs: publish flexicon <version> Sphinx API to GitHub Pages" \
+  flexicon/docs/flexiconAPI
+```
+
+On Windows `make docs` and `make publishdocs` wrap exactly these commands
+(`make.bat`), and `make publishdocs` calls `docs` first.
+
+The `ghp_import` flags are load-bearing: `-n` writes `.nojekyll` so
+Sphinx's `_static/` directories survive, `-c` rewrites the `CNAME` for the
+custom domain (without it `-f` wipes the domain binding), `-p` pushes, and
+`-f` forces. It adds a commit to `gh-pages` rather than truncating it.
+
+### Expected output
+
+A healthy build ends with **`build succeeded, 7 warnings`** and **126 HTML
+pages**. The 7 warnings are long-standing docstring-indentation nits in
+`FLExProject.OpenProject`, `MSAOperations` and `string_utils`; they do not
+fail the build. A *silent* death at exit 127 partway through
+`api/flexicon.code` is the pythonnet/autodoc crash described in defect 2 --
+if it returns, check the `autodoc-skip-member` guard in
+`docs/sphinx/conf.py` first.
+
+Verified on Python 3.12.7 x64 / pythonnet 3.0.5 / Sphinx 7.3.7, which is
+the stack the crash was *originally* reported on, as well as on the
+3.11.15 / 3.1.0 / 9.0.4 stack the workflow pins.
+
+### Confirm it actually went live
+
+Pushing `gh-pages` only queues a Pages build; it can still fail there.
+
+```bash
+gh api repos/MattGyverLee/flexicon/pages/builds/latest \
+  --jq '{status, commit, error: .error.message}'
+```
+
+Wait for `"status": "built"` with a null `error`, and check the `commit`
+matches the one you just pushed. Then confirm the site serves the new
+content -- fetch a page that only exists in the release you just cut, e.g.
+`https://flexicon.langtech.cloud/api/flexicon.html` should contain
+`FromOpenProject` for 4.7.0 or later. A `200` on the site root proves only
+that the old site is still up.
 
 ---
 
