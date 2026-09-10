@@ -63,10 +63,6 @@ class TextOperations(BaseOperations):
         """
         super().__init__(project)
 
-    def _GetSequence(self, parent):
-        """Specify which sequence to reorder for text paragraphs."""
-        return parent.ContentsOS
-
     def __WSHandle(self, wsHandle):
         """
         Internal helper for writing system handles.

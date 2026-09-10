@@ -123,8 +123,13 @@ class DataNotebookOperations(BaseOperations):
         super().__init__(project)
 
     def _GetSequence(self, parent):
-        """Specify which sequence to reorder for notebook records."""
-        return parent.RecordsOS
+        """Specify which sequence to reorder for notebook records.
+
+        ``parent`` is an ``IRnGenericRec``; the ordered sequence of child
+        records lives on its ``SubRecordsOS`` property (there is no
+        ``RecordsOS`` on ``IRnGenericRec``).
+        """
+        return parent.SubRecordsOS
 
     def __WSHandle(self, wsHandle):
         """

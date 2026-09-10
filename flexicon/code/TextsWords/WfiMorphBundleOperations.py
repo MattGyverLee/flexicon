@@ -89,8 +89,13 @@ class WfiMorphBundleOperations(BaseOperations):
         super().__init__(project)
 
     def _GetSequence(self, parent):
-        """Specify which sequence to reorder for morph bundles."""
-        return parent.MorphsOS
+        """Specify which sequence to reorder for morph bundles.
+
+        ``parent`` is an ``IWfiAnalysis``; the ordered sequence of morph
+        bundles lives on its ``MorphBundlesOS`` property (there is no
+        ``MorphsOS`` on ``IWfiAnalysis``).
+        """
+        return parent.MorphBundlesOS
 
     # ==================== CORE CRUD OPERATIONS ====================
 
