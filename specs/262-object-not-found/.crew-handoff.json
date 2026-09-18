@@ -1,0 +1,39 @@
+{
+  "feature": "262-object-not-found",
+  "status": "in_progress",
+  "branch": "fix/262-object-stale-guid",
+  "baseline_commit": "49611cc",
+  "issues": ["#262"],
+  "ruling": "Catch the CLR KeyNotFoundException in FLExProject.Object() and re-raise FP_ParameterError preserving __cause__. The issue's own proposal (return None) was REJECTED by lex-domain: Object() is identity-resolution, not search, and None would convert a loud failure into a silent no-op on the write paths fed by it.",
+  "tasks_done": [
+    "T1 lex-domain adjudication (ruling + probe list)",
+    "T2 pattern audit via Explore (~40 same-class sites; 146-call-site fan-out through the chokepoint)",
+    "T3 lex-programmer implementation (chokepoint + 6 Tier-1 bypass sites + docs)",
+    "T4 mock coverage: tests/operations/test_issue262_object_stale_id.py, 15 passed"
+  ],
+  "tasks_remaining": [
+    "T5 lex-qc review -- NOT RUN",
+    "T6 live LCM verification -- NOT RUN (this is FAIL: unverified per CLAUDE.md)",
+    "T7 CHANGELOG entry disclosing the upstream divergence",
+    "T8 file the follow-up issue for the four System.Guid() FormatException leaks",
+    "T9 push branch and open PR with Pattern audit heading + live evidence link"
+  ],
+  "next_entry": "Run T6 first. Nothing here may be reported as done until tests/live_status.json shows run_mode=live and specs/262-object-not-found/evidence/live-<task>.md exists. See HANDOFF.md section 4 for the five probes, including the T5-blocking regression check on test_wfi_analysis.py, which depends on Object() raising for a deleted HVO.",
+  "open_questions": {
+    "Q1": "Is catching TypeError/AttributeError as broadly as the DataNotebookOperations house template risks masking genuine bugs? -- for lex-qc",
+    "Q2": "Should the five-line catch tuple, now duplicated across six sites, be factored into a helper? -- for lex-qc",
+    "Q3": "Do Hvo=0, negative Hvo, or a cross-project Hvo/Guid raise something other than KeyNotFoundException and slip past the catch tuple? -- live probe 3"
+  },
+  "out_of_scope": [
+    "Four unguarded System.Guid() parses leaking System.FormatException (PhonFeatureOperations.py:766, :958; catalog_backed.py:479; InflectionFeatureOperations.py:1496) -- different exception class, separate issue",
+    "The malformed-guid-string FormatException path in Object() itself, which is already correct",
+    "Any new public method, kwarg, or feature -- this is a bug fix only"
+  ],
+  "production_files_modified_so_far": [
+    "flexicon/code/FLExProject.py",
+    "flexicon/code/Lexicon/LexSenseOperations.py",
+    "docs/EXCEPTION_HANDLING.md"
+  ],
+  "worktree": "C:\\Github\\flexicon-bugfix-loop (disposable; main checkout had concurrent uncommitted edits from another session)",
+  "updated": "2026-09-18"
+}

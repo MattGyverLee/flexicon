@@ -39,7 +39,7 @@ When working with FLEx operations, you'll encounter these .NET exceptions from L
 
 | Exception Type | Cause | Example |
 |---|---|---|
-| `System.Collections.Generic.KeyNotFoundException` | Object not found by HVO or GUID | Invalid object lookup |
+| `System.Collections.Generic.KeyNotFoundException` | Object not found by HVO or GUID | Invalid object lookup. **`FLExProject.Object()` and other identity-resolution chokepoints catch this internally and re-raise `FP_ParameterError`** -- see "Object Lookup Exceptions" below; catch `FP_ParameterError`, not this raw CLR type, at those call sites. |
 | `System.FormatException` | Date/time or format parsing failed | `DateTime.Parse()` with invalid string |
 | `System.InvalidCastException` | Type cast failed (e.g., to ILexEntry) | Invalid object type conversion |
 | `System.ArgumentException` | Invalid argument to method | Wrong parameter value |
@@ -115,9 +115,23 @@ def get_as_entry_or_sense(obj):
 
 When retrieving objects by HVO (Handle Value Objects) or GUID:
 
-**Pattern: Safe Lookup with Specific Exception**
+**BEHAVIOUR CHANGE (issue #262):** `FLExProject.Object(hvoOrGuid)` used to
+leak the raw CLR `System.Collections.Generic.KeyNotFoundException` when
+`hvoOrGuid` was well-formed but stale (an Hvo/Guid that no longer
+resolves to a live object). It now catches that exception -- along with
+`TypeError`, `System.InvalidCastException`, `AttributeError`, and
+`KeyError` -- internally and re-raises `FP_ParameterError` naming the
+offending id. **`Object()` never returns `None` on a resolution
+failure** -- it is an identity-resolution lookup, not a search, so a
+stale id is a caller error, not a "not found" result. Catch
+`FP_ParameterError`, not the raw CLR exception, and do not check the
+return value for `None`. The same fix applies to the other
+identity-resolution chokepoints that bypass `Object()` and call the
+service locator directly (`GetCustomFieldValue()`, `SetPartOfSpeech()`).
+
+**Pattern: Safe Lookup with `FP_ParameterError`**
 ```python
-from System.Collections.Generic import KeyNotFoundException
+from flexicon import FLExProject, FP_ParameterError
 
 def get_object_by_hvo(project, hvo):
     """
@@ -136,25 +150,29 @@ def get_object_by_hvo(project, hvo):
     try:
         obj = project.Object(hvo)
         return obj
-    except KeyNotFoundException as e:
-        # Exception message format:
-        # "Unable to find hvo XXXXX in the object dictionary"
+    except FP_ParameterError as e:
         raise ValueError(f"Object HVO {hvo} not found: {e}")
 ```
 
 **Pattern: Lookup with Logging**
 ```python
 import logging
+from flexicon import FP_ParameterError
 
 def find_entry_safe(project, entry_guid):
     """
     Find a lexical entry by GUID, with detailed logging.
+
+    Returns None if the entry cannot be resolved. Note that this
+    function's None-on-failure contract is a deliberate choice at this
+    call site, not the default: `project.Object()` itself never returns
+    None -- it always raises `FP_ParameterError` for an unresolvable id.
     """
     logger = logging.getLogger(__name__)
     try:
         return project.LexiconGetEntry(entry_guid)
-    except KeyNotFoundException as e:
-        logger.error(f"Entry not found: {entry_guid}", exc_info=True)
+    except FP_ParameterError as e:
+        logger.error(f"Entry not found: {entry_guid}: {e}", exc_info=True)
         return None
 ```
 
@@ -402,8 +420,8 @@ except Exception:  # Too broad
 ```python
 try:
     obj = project.Object(hvo)
-except KeyNotFoundException:  # Specific
-    pass
+except FP_ParameterError:  # Specific -- Object() never returns None,
+    pass                   # and never leaks the raw CLR exception.
 ```
 
 ### 2. Preserve Exception Context
@@ -983,15 +1001,22 @@ When implementing exception handling in flexicon:
 
 ## Troubleshooting
 
-### "Exception was unhandled: KeyNotFoundException"
-**Cause:** Trying to access an object with invalid HVO
-**Fix:** Wrap lookup in try/except for `KeyNotFoundException`
+### "FP_ParameterError: Object() could not resolve hvoOrGuid"
+**Cause:** Trying to access an object with an invalid, stale, or
+nonexistent HVO/Guid. As of issue #262, `project.Object()` catches the
+raw CLR `KeyNotFoundException` (and related lookup-failure exceptions)
+internally, so it is no longer possible to see an unhandled
+`KeyNotFoundException` from this call -- it is always converted to
+`FP_ParameterError`.
+**Fix:** Wrap the lookup in try/except for `FP_ParameterError`
 
 ```python
+from flexicon import FP_ParameterError
+
 try:
     obj = project.Object(hvo)
-except KeyNotFoundException:
-    # Handle missing object
+except FP_ParameterError:
+    # Handle missing/stale object
     pass
 ```
 

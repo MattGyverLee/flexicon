@@ -1373,7 +1373,18 @@ class LexSenseOperations(BaseOperations):
 
         # Get POS object (handle both HVO and object)
         if isinstance(pos, int):
-            pos_obj = self.project.project.ServiceLocator.GetObject(pos)
+            try:
+                pos_obj = self.project.project.ServiceLocator.GetObject(pos)
+            except (
+                TypeError,
+                System.InvalidCastException,
+                AttributeError,
+                KeyError,
+                System.Collections.Generic.KeyNotFoundException,
+            ) as e:
+                raise FP_ParameterError(
+                    f"SetPartOfSpeech: pos does not resolve to an existing object: {pos!r} - {e}"
+                ) from e
         else:
             pos_obj = pos
 
@@ -1477,17 +1488,45 @@ class LexSenseOperations(BaseOperations):
                     # Resolve from_pos / to_pos using the same HVO-or-object
                     # pattern applied to pos earlier in this method.
                     if from_pos is not None:
-                        resolved_from = (
-                            self.project.project.ServiceLocator.GetObject(from_pos)
-                            if isinstance(from_pos, int) else from_pos
-                        )
+                        if isinstance(from_pos, int):
+                            try:
+                                resolved_from = self.project.project.ServiceLocator.GetObject(
+                                    from_pos
+                                )
+                            except (
+                                TypeError,
+                                System.InvalidCastException,
+                                AttributeError,
+                                KeyError,
+                                System.Collections.Generic.KeyNotFoundException,
+                            ) as e:
+                                raise FP_ParameterError(
+                                    "SetPartOfSpeech: from_pos does not resolve to an "
+                                    f"existing object: {from_pos!r} - {e}"
+                                ) from e
+                        else:
+                            resolved_from = from_pos
                     else:
                         resolved_from = pos_obj
                     if to_pos is not None:
-                        resolved_to = (
-                            self.project.project.ServiceLocator.GetObject(to_pos)
-                            if isinstance(to_pos, int) else to_pos
-                        )
+                        if isinstance(to_pos, int):
+                            try:
+                                resolved_to = self.project.project.ServiceLocator.GetObject(
+                                    to_pos
+                                )
+                            except (
+                                TypeError,
+                                System.InvalidCastException,
+                                AttributeError,
+                                KeyError,
+                                System.Collections.Generic.KeyNotFoundException,
+                            ) as e:
+                                raise FP_ParameterError(
+                                    "SetPartOfSpeech: to_pos does not resolve to an "
+                                    f"existing object: {to_pos!r} - {e}"
+                                ) from e
+                        else:
+                            resolved_to = to_pos
                     else:
                         resolved_to = None
                     self.project.MSA.CreateDerivAff(
