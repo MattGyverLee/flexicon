@@ -177,10 +177,12 @@ class TextOperations(BaseOperations):
             text_factory = self.project.project.ServiceLocator.GetService(ITextFactory)
             new_text = self._CreateWithGuid(text_factory, guid, "IText")
 
-            # Add to the texts collection. In newer LCM builds ILangProject's
-            # texts accessor is `Texts` (not `TextsOC` -- the latter has been
-            # renamed/removed). See issue #22.
-            self.project.lp.Texts.Add(new_text)
+            # No collection to add to: texts are unowned in LCM 11 and the
+            # factory has already registered this one with the repository.
+            # ILangProject.Texts is a derived read-only IList<IText>, so the
+            # `lp.Texts.Add(new_text)` that used to sit here was a no-op on a
+            # throwaway list (issue #317). #22 read the disappearance of
+            # TextsOC as a rename; it was an ownership-model change.
 
             # Set the name
             wsHandle = self.project.project.DefaultAnalWs
@@ -229,10 +231,13 @@ class TextOperations(BaseOperations):
 
         text_obj = self.__GetTextObject(text_or_hvo)
 
-        # Remove from collection. See note in Create() about the LCM API
-        # rename from TextsOC to Texts (issue #22).
+        # LCM Delete() removes the object from the repository. Texts are
+        # UNOWNED in LCM 11 -- ILangProject.Texts is a derived read-only
+        # IList<IText> rebuilt on each access, not an owning collection, so
+        # the `lp.Texts.Remove(text_obj)` this used to call mutated a
+        # throwaway list and silently deleted nothing (issue #317).
         with self._TransactionCM("Delete text"):
-            self.project.lp.Texts.Remove(text_obj)
+            text_obj.Delete()
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, deep=True, *, insert_after=True):

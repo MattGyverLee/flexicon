@@ -218,6 +218,43 @@ class TestTextOperationsValidation:
             ops.Create("Test Text")
 
 
+class TestTextOperationsDeleteMechanism:
+    """Mock-mode guard for #317 -- runs without a live FLEx project.
+
+    The live effect test (test_delete_actually_removes_the_text) is the real
+    proof, but this repo's per-PR CI is AST-only and never invokes pytest
+    against a database; the full suite runs weekly on a self-hosted runner.
+    These two assertions pin the mechanism in fast CI so a re-regression is
+    caught at PR time rather than up to a week later.
+    """
+
+    def test_delete_calls_delete_on_the_lcm_object(self, mock_flex_project):
+        """Delete() must go through ICmObject.Delete() on the text itself."""
+        from flexicon.code.TextsWords.TextOperations import TextOperations
+
+        ops = TextOperations(mock_flex_project)
+        text = Mock()
+
+        ops.Delete(text)
+
+        text.Delete.assert_called_once_with()
+
+    def test_delete_does_not_mutate_the_derived_texts_list(self, mock_flex_project):
+        """Delete() must not touch lp.Texts.
+
+        ILangProject.Texts is a derived read-only IList<IText> rebuilt on each
+        access (texts are unowned in LCM 11), so removing from it deletes
+        nothing and raises nothing. That was #317.
+        """
+        from flexicon.code.TextsWords.TextOperations import TextOperations
+
+        ops = TextOperations(mock_flex_project)
+
+        ops.Delete(Mock())
+
+        mock_flex_project.lp.Texts.Remove.assert_not_called()
+
+
 # =============================================================================
 # INTEGRATION TESTS - Require Real FLEx Project
 # =============================================================================
@@ -300,6 +337,48 @@ class TestTextOperationsIntegration:
             assert "Test Text 123" in title
         finally:
             ops.Delete(text)
+
+    @pytest.mark.live_phase("TextOperations", "delete")
+    def test_delete_actually_removes_the_text(self, flex_project):
+        """Regression for #317: Delete() must have an observable effect.
+
+        The old implementation called ``lp.Texts.Remove(text_obj)``.
+        ``ILangProject.Texts`` is a derived read-only ``IList<IText>``
+        rebuilt on each access (texts are unowned in LCM 11), so that
+        removed an element from a throwaway list, deleted nothing, and
+        raised nothing. Every "does it raise?" test passed against it.
+
+        Assert the effect, not the absence of an exception: the count
+        must drop and the text must stop existing.
+        """
+        from flexicon.code.TextsWords.TextOperations import TextOperations
+
+        ops = TextOperations(flex_project)
+        name = "Test Text 317 Delete Effect"
+
+        if ops.Exists(name):
+            from flexicon.code.Shared.string_utils import best_analysis_text
+            for stale in list(ops.GetAll()):
+                if best_analysis_text(stale.Name) == name:
+                    ops.Delete(stale)
+                    break
+
+        assert not ops.Exists(name), (
+            "stale-cleanup Delete() did not remove the leftover text -- "
+            "Delete() is a no-op again (see #317)"
+        )
+
+        before = len(list(ops.GetAll()))
+        text = ops.Create(name)
+        assert len(list(ops.GetAll())) == before + 1
+        assert ops.Exists(name)
+
+        ops.Delete(text)
+
+        assert len(list(ops.GetAll())) == before, (
+            "Delete() left the text count unchanged -- it deleted nothing"
+        )
+        assert not ops.Exists(name)
 
     def test_getall_returns_texts(self, flex_project):
         """Integration test: GetAll returns texts."""

@@ -11,6 +11,26 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`TextOperations.Delete()` never deleted anything** (#317). It called
+  `lp.Texts.Remove(text_obj)`, but `ILangProject.Texts` is a derived
+  read-only `IList<IText>` rebuilt on each access -- texts are *unowned*
+  in LCM 11 -- so the removal mutated a throwaway list. No LCM change, no
+  exception, and the caller's own loop counter happily reported N
+  deletions. Now calls `text_obj.Delete()`, matching the idiom
+  `WordformOperations.Delete()` already used for unowned objects.
+
+  Reported from the field: a delete-all-texts run reported "Deleted 152
+  of 152" three times, under both the MCP runner and the FlexTools GUI,
+  leaving all 152 texts in place.
+
+  The `lp.Texts.Add(new_text)` in `Create()` was the same no-op, but
+  harmless -- `ITextFactory.Create()` already registers the unowned
+  object -- and has been removed so it stops implying `lp.Texts` is
+  writable. Issue #22 read the disappearance of `TextsOC` as a rename; it
+  was an ownership-model change.
+
 ---
 
 ## [4.8.0] - 2026-09-10
