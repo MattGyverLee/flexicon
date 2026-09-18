@@ -56,7 +56,8 @@ def demo_pos_crud():
             try:
                 name = project.POS.GetName(obj) if hasattr(project.POS, "GetName") else str(obj)
                 print(f"  - {name}")
-            except:
+            except Exception as e:
+                print(f"Error ({type(e).__name__}): {e}")
                 print(f"  - [Object {initial_count + 1}]")
             initial_count += 1
             if initial_count >= 5:
@@ -78,32 +79,27 @@ def demo_pos_crud():
                 if existing:
                     project.POS.Delete(existing)
                     print("  Deleted existing test pos")
-        except:
-            pass
+        except Exception as e:
+            print(f"Error ({type(e).__name__}): {e}")
 
         # Create new object
         print(f"\nCreating new pos: '{test_name}'")
 
         try:
             # Attempt to create with common parameters
-            test_obj = project.POS.Create(test_name)
-        except TypeError:
-            try:
-                # Try without parameters if that fails
-                test_obj = project.POS.Create()
-                if hasattr(project.POS, "SetName"):
-                    project.POS.SetName(test_obj, test_name)
-            except Exception as e:
-                print(f"  Note: Create method may require specific parameters: {e}")
-                test_obj = None
+            test_obj = project.POS.Create(test_name, "ct")
+        except TypeError as e:
+            print(f"Error ({type(e).__name__}): {e}")
+            test_obj = None
+
 
         if test_obj:
             print(f"  SUCCESS: Pos created!")
             try:
                 if hasattr(project.POS, "GetName"):
                     print(f"  Name: {project.POS.GetName(test_obj)}")
-            except:
-                pass
+            except Exception as e:
+                print(f"Error ({type(e).__name__}): {e}")
         else:
             print(f"  Note: Could not create pos (may require special parameters)")
             print("  Skipping remaining tests...")
@@ -129,8 +125,8 @@ def demo_pos_crud():
                 try:
                     if hasattr(project.POS, "GetName"):
                         print(f"  Name: {project.POS.GetName(found_obj)}")
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Error ({type(e).__name__}): {e}")
             else:
                 print("  NOT FOUND")
 
@@ -189,8 +185,8 @@ def demo_pos_crud():
                 try:
                     if hasattr(project.POS, "GetName"):
                         print(f"  Name: {project.POS.GetName(updated_obj)}")
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Error ({type(e).__name__}): {e}")
             else:
                 print("  NOT FOUND - Update may not have persisted")
 
@@ -203,7 +199,8 @@ def demo_pos_crud():
             print(f"\nDeleting test pos...")
             try:
                 obj_name = project.POS.GetName(test_obj) if hasattr(project.POS, "GetName") else test_name
-            except:
+            except Exception as e:
+                print(f"Error ({type(e).__name__}): {e}")
                 obj_name = test_name
 
             project.POS.Delete(test_obj)
@@ -255,8 +252,8 @@ def demo_pos_crud():
                     if obj:
                         project.POS.Delete(obj)
                         print(f"  Cleaned up: {name}")
-        except:
-            pass
+        except Exception as e:
+            print(f"Error ({type(e).__name__}): {e}")
 
         print("\nClosing project...")
         project.CloseProject()
