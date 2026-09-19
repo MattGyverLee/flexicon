@@ -1,8 +1,8 @@
 {
   "feature": "lcm-member-truth-sweep",
   "status": "in_progress",
-  "last_cycle": 2,
-  "spurts_completed": 2,
+  "last_cycle": 3,
+  "spurts_completed": 3,
   "issues": [
     "#302",
     "#261",
@@ -27,22 +27,30 @@
     "T2.6",
     "T2.7",
     "T2.8",
-    "T2.9"
+    "T2.9",
+    "T3.1",
+    "T3.2",
+    "T3.3",
+    "T3.4",
+    "T3.5",
+    "T3.6",
+    "T3.7",
+    "T3.8"
   ],
   "checkpoints_total": 8,
-  "checkpoints_done": 2,
-  "next_checkpoint": "Checkpoint 3 -- #283 in Grammar/EnvironmentOperations.py",
-  "next_entry": "Start with T3.1/T3.2: rename LeftContextOA/RightContextOA -> ...RA at :494,495,550,551, then replace Duplicate's entire 'if deep:' context block (:633-653) with unconditional reference assignment, deleting the clone_properties/NewObject(ClassID) machinery. C8 requires inverting tests/operations/test_260_environment_resolver_gate.py:311-317 -- which deliberately asserts the bug -- in the SAME commit. Do NOT touch compound_rule.py:220,244 (ruling C9; Q3 cleared it).",
+  "checkpoints_done": 3,
+  "next_checkpoint": "Checkpoint 4 -- #259, morph bundle inflection class",
+  "next_entry": "Start with T4.1: implement the MSA navigation helper once (bundle.MsaRA -> null check -> cast_to_concrete -> narrow to IMoStemMsa -> .InflectionClassRA; returns None for a null MSA or a non-stem subtype, never raises) and route WfiMorphBundleOperations.py:1261 GetInflectionClass through it. Then T4.2's three silent copy loops (WfiMorphBundleOperations.py:335,336; WfiAnalysisOperations.py:589,590; WordformOperations.py:878,879) and T4.3's GetSyncableProperties:385,386. T4.5 (SetInflectionClass:1313) stays BLOCKED until T4.4's live MSA-sharing count feeds a domain ruling on Q2. T4.7 wants target_sandbox for writes and sena3_sandbox for the non-stem read path.",
   "open_questions": {
-    "Q2": "Does writing msa.InflectionClassRA through a bundle mutate sibling bundles? -- gates C11/SetInflectionClass -- task T4.4",
-    "Q4": "Does any caller pass deep=False to EnvironmentOperations.Duplicate? -- task T3.4"
+    "Q2": "Does writing msa.InflectionClassRA through a bundle mutate sibling bundles? -- gates C11/SetInflectionClass -- task T4.4"
   },
   "blocked_tasks": [
     "T4.5 (blocked on Q2)"
   ],
   "needs_human_pending": null,
   "production_files_modified_so_far": [
-    "flexicon/code/Notebook/DataNotebookOperations.py"
+    "flexicon/code/Notebook/DataNotebookOperations.py",
+    "flexicon/code/Grammar/EnvironmentOperations.py"
   ],
   "updated": "2026-09-18",
   "user_authorizations": {
@@ -55,7 +63,8 @@
   },
   "resolved_questions": {
     "Q1": "RESOLVED T2.1 -- lp.ResearchNotebookOA is non-null and HVO-identical to repo.Singleton on both projects. C1 stands in its ownership form; no flip needed.",
-    "Q3": "RESOLVED T2.5b -- no Context-named member exists under any suffix on MoEndoCompound/MoExoCompound. Catalogue 2 row 25 CLEARED; compound_rule.py untouched per C9. Documented as filed issue #327."
+    "Q3": "RESOLVED T2.5b -- no Context-named member exists under any suffix on MoEndoCompound/MoExoCompound. Catalogue 2 row 25 CLEARED; compound_rule.py untouched per C9. Documented as filed issue #327.",
+    "Q4": "RESOLVED T3.4 -- no caller in flexicon/, examples/ or tests/ passes deep=False to EnvironmentOperations.Duplicate; the only prior hit was the method's own docstring example. C7's unconditional reference assignment breaks no caller."
   },
   "issues_filed_this_campaign": {
     "authorized_by_user": "2026-09-18",
@@ -65,7 +74,16 @@
   },
   "ralph_loop": {
     "state": "stopped",
-    "reason": "User instruction after checkpoint 2: 'close the loop once you finish the next issue'.",
-    "restart": "Re-arm with the standing prompt in HANDOFF-main-session.md; next checkpoint is 3."
+    "reason": "User instruction after checkpoint 2: 'close the loop once you finish the next issue'. Spurt 3 ran operator-driven; checkpoint 3 is now complete, so the stop condition the user named is satisfied.",
+    "restart": "Re-arm with the standing prompt in HANDOFF-main-session.md only if the user asks; next checkpoint is 4."
+  },
+  "offline_baseline": {
+    "command": "python -m pytest -m \"not requires_live_project\" -q",
+    "expected": "1878 passed, 804 deselected, 0 failed",
+    "warning": "Do NOT use 'pytest tests/ -m ...' -- the path scope silently excludes flexicon/tests/ and flexicon/sync/tests/ and yields 1689. STATUS.md's old 1876 figure is superseded; the 2-count gap predates spurt 3 and reproduces on a clean 994f2ee worktree."
+  },
+  "issue_closing_policy": "BINDING: no commit may carry a close keyword against #302, #261, #283, #259, #303 or #309. All six close at checkpoint 8 after T8.5's final crew gate. Set at checkpoint 2 (commit 994f2ee) and re-affirmed for #283 at checkpoint 3. Phrase around the verb -- the commit-msg guard also blocks negated/possessive/quoted/narrated forms.",
+  "deferred_followups": {
+    "T8.6": "#283 delete-survival regression test, from the cycle-3 domain ruling Q-B. Duplicate an environment with a LeftContextRA, Delete the duplicate, re-read the SOURCE by HVO and assert LeftContextRA still resolves. Deferred because the risk is unrealized: Delete (:195-233) only calls EnvironmentsOS.Remove and never touches ContextsOS. Checkpoint 8 must not close with T8.6 open."
   }
 }

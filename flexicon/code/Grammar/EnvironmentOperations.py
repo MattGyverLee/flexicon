@@ -476,7 +476,10 @@ class EnvironmentOperations(BaseOperations):
 
         Notes:
             - This is a READ-ONLY property (no setter)
-            - Returns the LeftContextOA object if present
+            - Returns the LeftContextRA object if present (Reference
+              Atomic -- see specs/lcm-member-truth-sweep/spec.md C7;
+              the historical ``LeftContextOA`` name never existed on
+              ``IPhEnvironment``)
             - Left context specifies what must precede the target
             - Returns None if no left context is defined
             - The returned object is typically an IPhPhonContext
@@ -490,11 +493,8 @@ class EnvironmentOperations(BaseOperations):
 
         env = self.__ResolveObject(env_or_hvo)
 
-        # Return the left context if it exists
-        if hasattr(env, "LeftContextOA") and env.LeftContextOA:
-            return env.LeftContextOA
-
-        return None
+        # Return the left context if it exists (Reference Atomic).
+        return getattr(env, "LeftContextRA", None)
 
     @OperationsMethod
     def GetRightContextPattern(self, env_or_hvo):
@@ -532,7 +532,10 @@ class EnvironmentOperations(BaseOperations):
 
         Notes:
             - This is a READ-ONLY property (no setter)
-            - Returns the RightContextOA object if present
+            - Returns the RightContextRA object if present (Reference
+              Atomic -- see specs/lcm-member-truth-sweep/spec.md C7;
+              the historical ``RightContextOA`` name never existed on
+              ``IPhEnvironment``)
             - Right context specifies what must follow the target
             - Returns None if no right context is defined
             - The returned object is typically an IPhPhonContext
@@ -546,11 +549,8 @@ class EnvironmentOperations(BaseOperations):
 
         env = self.__ResolveObject(env_or_hvo)
 
-        # Return the right context if it exists
-        if hasattr(env, "RightContextOA") and env.RightContextOA:
-            return env.RightContextOA
-
-        return None
+        # Return the right context if it exists (Reference Atomic).
+        return getattr(env, "RightContextRA", None)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):
@@ -561,8 +561,13 @@ class EnvironmentOperations(BaseOperations):
             item_or_hvo: The IPhEnvironment object or HVO to duplicate.
             insert_after (bool): If True (default), insert after the source environment.
                                 If False, insert at end of environments list.
-            deep (bool): If True (default), deep copy owned context objects (LeftContextOA, RightContextOA).
-                        If False, contexts are not copied.
+            deep (bool): INERT for this method -- kept only because it is
+                        pinned surface (EnvironmentOperations.pyi:18).
+                        LeftContextRA/RightContextRA are Reference Atomic,
+                        not owned, so there is nothing to "deep copy": the
+                        duplicate always references the SAME context
+                        objects as the source, regardless of this flag.
+                        See specs/lcm-member-truth-sweep/spec.md C7.
 
         Returns:
             IPhEnvironment: The newly created duplicate environment with a new GUID.
@@ -575,12 +580,12 @@ class EnvironmentOperations(BaseOperations):
             >>> envOps = EnvironmentOperations(project)
             >>> word_initial = envOps.Create("Word Initial")
             >>> envOps.SetStringRepresentation(word_initial, "#_")
-            >>> # Deep copy (default - includes owned context objects)
             >>> copy = envOps.Duplicate(word_initial)
             >>> print(envOps.GetName(copy))
             Word Initial
 
-            >>> # Shallow copy (no context objects)
+            >>> # `deep` is INERT for context objects (see Notes) -- this
+            >>> # produces the same context references as the call above.
             >>> between_vowels = envOps.Create("Between Vowels")
             >>> copy = envOps.Duplicate(between_vowels, deep=False)
 
@@ -588,8 +593,11 @@ class EnvironmentOperations(BaseOperations):
             - Factory.Create() automatically generates a new GUID
             - insert_after=True preserves the original environment's position
             - Simple properties copied: Name, Description, StringRepresentation (MultiString)
-            - deep=True copies owned context objects (LeftContextOA, RightContextOA)
-            - Contexts are complex structures with their own owned objects
+            - LeftContextRA/RightContextRA are copied by REFERENCE,
+              unconditionally -- `deep` is INERT for this method. They are
+              Reference Atomic (not owned), so the duplicate points at the
+              SAME IPhPhonContext objects as the source; there is nothing
+              to clone. See specs/lcm-member-truth-sweep/spec.md C7.
 
         See Also:
             Create, Delete
@@ -626,33 +634,19 @@ class EnvironmentOperations(BaseOperations):
                 mkstr = TsStringUtils.MakeString(notation, wsHandle)
                 duplicate.StringRepresentation = mkstr
 
-            # Deep copy: owned context objects
-            if deep:
-                from ..lcm_casting import clone_properties
-
-                # Copy LeftContextOA if exists
-                if hasattr(source, "LeftContextOA") and source.LeftContextOA:
-                    try:
-                        # Create new context object of the same type
-                        src_context = source.LeftContextOA
-                        new_context = self.project.project.ServiceLocator.ObjectRepository.NewObject(src_context.ClassID)
-                        # Deep clone all properties
-                        clone_properties(src_context, new_context, self.project)
-                        duplicate.LeftContextOA = new_context
-                    except Exception:
-                        pass
-
-                # Copy RightContextOA if exists
-                if hasattr(source, "RightContextOA") and source.RightContextOA:
-                    try:
-                        # Create new context object of the same type
-                        src_context = source.RightContextOA
-                        new_context = self.project.project.ServiceLocator.ObjectRepository.NewObject(src_context.ClassID)
-                        # Deep clone all properties
-                        clone_properties(src_context, new_context, self.project)
-                        duplicate.RightContextOA = new_context
-                    except Exception:
-                        pass
+            # Reference assignment: LeftContextRA/RightContextRA are
+            # Reference Atomic (specs/lcm-member-truth-sweep/spec.md C7),
+            # not owned -- there is nothing to clone. A duplicate
+            # environment points at the SAME IPhPhonContext objects as
+            # the source. This is UNCONDITIONAL, not gated behind `deep`
+            # (which is inert for this method -- see the Args/Notes
+            # above): gating correct behaviour behind a flag is the
+            # anti-pattern CLAUDE.md's "Don't Add a Flag for Behaviour
+            # That Should Be Unconditional" section forbids.
+            if source.LeftContextRA is not None:
+                duplicate.LeftContextRA = source.LeftContextRA
+            if source.RightContextRA is not None:
+                duplicate.RightContextRA = source.RightContextRA
 
             return duplicate
 
@@ -670,12 +664,17 @@ class EnvironmentOperations(BaseOperations):
         ``GetStringRepresentation``/``SetStringRepresentation``
         (``env.StringRepresentation...``), ``GetSyncableProperties``
         (``getattr(env, prop_name)``) -- raises ``AttributeError`` on the
-        int-HVO entry path, and ``GetLeftContextPattern`` /
-        ``GetRightContextPattern`` (``hasattr(env, "LeftContextOA"/
-        "RightContextOA")``) silently return ``None`` instead -- a wrong
-        answer with no exception, no traceback (confirmed live: P6, P6b,
-        P7; see specs/260-environment-resolver-cast/evidence/
-        live-T2-red-p6-p6b-p7.md for the RED-before-fix reproduction).
+        int-HVO entry path. (Historically -- before the #283 fix,
+        specs/lcm-member-truth-sweep/spec.md C7 -- ``GetLeftContextPattern``
+        / ``GetRightContextPattern`` also returned ``None`` on a
+        correctly-cast object, but for an unrelated reason: at the time
+        they read ``LeftContextOA``/``RightContextOA``, property names
+        that never existed on ``IPhEnvironment`` under any cast. The real,
+        now-corrected names are ``LeftContextRA``/``RightContextRA``
+        (Reference Atomic), confirmed live: P6, P6b, P7; see
+        specs/260-environment-resolver-cast/evidence/
+        live-T2-red-p6-p6b-p7.md for the RED-before-fix reproduction of
+        the missing-cast defect this method fixes.)
 
         Unlike its sibling ``AllomorphOperations.__GetEnvironmentObject``
         (uncast too, but a genuine BUG-FREE contract mismatch there --
@@ -743,7 +742,8 @@ class EnvironmentOperations(BaseOperations):
 
         Notes:
             - Returns all MultiString properties (all writing systems)
-            - Does not include owned objects (LeftContextOA, RightContextOA)
+            - Does not include context references (LeftContextRA,
+              RightContextRA -- see specs/lcm-member-truth-sweep/spec.md C7)
             - Does not include GUID or HVO
         """
         env = self.__ResolveObject(item)

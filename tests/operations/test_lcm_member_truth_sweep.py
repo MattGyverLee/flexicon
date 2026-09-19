@@ -203,6 +203,11 @@ class TestPart1InflClassGroundTruth:
 class TestPart2EnvironmentContextGroundTruth:
 
     def test_2a_iphenvironment_full_surface(self):
+        # Ground-truth reflection anchor, not a bug-asserting anchor --
+        # NOT inverted under spec.md C7/C8's #283 fix (the LCM surface
+        # itself never had LeftContextOA/RightContextOA; only production
+        # code's property NAMES were wrong). See
+        # specs/lcm-member-truth-sweep/spec.md C8(c).
         pytest.importorskip("SIL.LCModel")
         import clr
         from SIL.LCModel import IPhEnvironment
@@ -258,6 +263,14 @@ class TestPart2EnvironmentContextGroundTruth:
         RE-QUERIES both the source and duplicate from the LCM by HVO
         and compares LeftContextRA/RightContextRA identity (HVO) to
         determine reference vs. clone semantics.
+
+        INVERTED under specs/lcm-member-truth-sweep/spec.md C7/C8 (#283):
+        this originally only PRINTED its observation, because production
+        Duplicate() wrote the nonexistent LeftContextOA/RightContextOA
+        names and therefore dropped both contexts unconditionally. Now
+        that Duplicate() copies LeftContextRA/RightContextRA by reference,
+        this asserts the reference semantics as a hard requirement rather
+        than merely observing them.
         """
         from SIL.LCModel import (
             IPhSimpleContextSegFactory,
@@ -339,21 +352,30 @@ class TestPart2EnvironmentContextGroundTruth:
             print("[2d] duplicate LeftContextRA hvo=" + str(dup_left_hvo))
             print("[2d] duplicate RightContextRA hvo=" + str(dup_right_hvo))
 
-            if dup_left_hvo is None and dup_right_hvo is None:
-                print(
-                    "[2d] OBSERVATION: Duplicate did not populate "
-                    "LeftContextRA/RightContextRA on the copy at all -- "
-                    "current Duplicate code writes to the nonexistent "
-                    "LeftContextOA/RightContextOA names (hasattr guard "
-                    "silently False), so neither reference nor clone "
-                    "semantics currently apply: the field is dropped "
-                    "entirely, same defect class as #259."
-                )
-            else:
-                same_left = dup_left_hvo == src_left_hvo
-                same_right = dup_right_hvo == src_right_hvo
-                print("[2d] left same HVO (reference semantics if True): " + str(same_left))
-                print("[2d] right same HVO (reference semantics if True): " + str(same_right))
+            assert dup_left_hvo is not None, (
+                "Duplicate() did not populate LeftContextRA on the copy -- "
+                "expected reference-copy semantics per spec.md C7 (#283); "
+                "re-derive if this regresses."
+            )
+            assert dup_right_hvo is not None, (
+                "Duplicate() did not populate RightContextRA on the copy "
+                "-- expected reference-copy semantics per spec.md C7 "
+                "(#283); re-derive if this regresses."
+            )
+            assert dup_left_hvo == src_left_hvo, (
+                "Duplicate's LeftContextRA HVO (" + str(dup_left_hvo) + ") "
+                "does not match the source's (" + str(src_left_hvo) + ") -- "
+                "expected the SAME IPhPhonContext object (reference "
+                "semantics), not a clone."
+            )
+            assert dup_right_hvo == src_right_hvo, (
+                "Duplicate's RightContextRA HVO (" + str(dup_right_hvo) + ") "
+                "does not match the source's (" + str(src_right_hvo) + ") -- "
+                "expected the SAME IPhPhonContext object (reference "
+                "semantics), not a clone."
+            )
+            print("[2d] left same HVO (reference semantics): True")
+            print("[2d] right same HVO (reference semantics): True")
 
         finally:
             # Best-effort cleanup. sena3_sandbox is a tempdir copy that

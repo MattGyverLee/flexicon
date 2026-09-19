@@ -31,6 +31,28 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   writable. Issue #22 read the disappearance of `TextsOC` as a rename; it
   was an ownership-model change.
 
+- **`EnvironmentOperations` context accessors read a property name that
+  does not exist on `IPhEnvironment`** (#283). `GetLeftContextPattern()` /
+  `GetRightContextPattern()` read `LeftContextOA`/`RightContextOA`, and
+  `Duplicate()`'s deep-copy block wrote the same names -- but
+  `IPhEnvironment` has no Owning Atomic context member under either name;
+  the real properties are `LeftContextRA`/`RightContextRA` (Reference
+  Atomic). Every `hasattr()` guard against the old names was silently
+  `False`, so the getters always returned `None` and `Duplicate` silently
+  dropped both contexts on every call, for every environment, regardless
+  of the `deep` argument.
+
+  Now fixed to read/write the real names. `Duplicate()` copies
+  `LeftContextRA`/`RightContextRA` by **reference, unconditionally** --
+  under Reference Atomic there is nothing to clone, so the duplicate
+  environment points at the same `IPhPhonContext` objects as the source.
+  The `deep` parameter stays in the signature (it is pinned surface,
+  `EnvironmentOperations.pyi:18`) but is now **inert** for context
+  copying; no caller in this codebase ever passed `deep=False` to this
+  method (the only prior `deep=False` reference was a docstring example).
+  The `clone_properties`/`ObjectRepository.NewObject(ClassID)` machinery
+  and its two bare `except Exception: pass` swallows have been removed.
+
 ---
 
 ## [4.8.0] - 2026-09-10
