@@ -782,7 +782,11 @@ class WordformOperations(BaseOperations):
                 - WfiMorphBundle objects with Form MultiString
                   (IWfiMorphBundle has no Gloss field of its own; the
                   displayed gloss comes from SenseRA.Gloss)
-                - Morph bundle references: SenseRA, MsaRA, MorphRA, InflClassRA
+                - Morph bundle references: SenseRA, MsaRA, MorphRA
+                  (IWfiMorphBundle has no InflClassRA member of its own;
+                  the inflection class lives on the MSA
+                  (IMoStemMsa.InflectionClassRA) and rides along
+                  automatically because MsaRA is copied by reference)
 
             What's NOT Copied:
                 - EvaluationsRC (approval status) - duplicates start unapproved
@@ -875,8 +879,19 @@ class WordformOperations(BaseOperations):
                                 new_bundle.MsaRA = bundle.MsaRA
                             if hasattr(bundle, "MorphRA") and bundle.MorphRA:
                                 new_bundle.MorphRA = bundle.MorphRA
-                            if hasattr(bundle, "InflClassRA") and bundle.InflClassRA:
-                                new_bundle.InflClassRA = bundle.InflClassRA
+
+                            # No separate inflection-class copy needed:
+                            # IWfiMorphBundle has no InflClassRA member (the
+                            # guard above was always False; the dead body
+                            # wrote a nonexistent `new_bundle.InflClassRA`).
+                            # Inflection class lives on the MSA
+                            # (IMoStemMsa.InflectionClassRA), and the MsaRA
+                            # assignment above already copies that MSA
+                            # REFERENCE, so new_bundle sees the same
+                            # inflection class as bundle via the shared MSA.
+                            # See get_inflection_class_from_msa() in
+                            # lcm_casting.py (issue #259 /
+                            # lcm-member-truth-sweep C10/T4.2).
 
                 logger.info(f"Deep copied {source.AnalysesOC.Count} analyses with nested structures")
 

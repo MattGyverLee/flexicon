@@ -1,10 +1,12 @@
 # STATUS -- lcm-member-truth-sweep
 
-**Last updated:** 2026-09-18 (end of spurt 3)
-**Status:** in_progress -- 3 of 8 checkpoints complete
-**Baseline:** `598f41e` (v4.8.0); spurt-3 diffs measured against `994f2ee`
-**Issues:** #302, #261, #283, #259, #303, #309 -- **none are closed yet**;
-the campaign closes all six at checkpoint 8 (see "Issue-closing policy").
+**Last updated:** 2026-09-18 (end of spurt 4)
+**Status:** in_progress -- 4 of 8 checkpoints complete; **the Ralph loop
+stops here at the user's instruction** (see "Ralph loop" below)
+**Baseline:** `598f41e` (v4.8.0); spurt-4 diffs measured against `dd959d9`
+**Issues:** #302, #261, #303, #309 remain open and close at checkpoint 8.
+**#283 and #259 are CLOSED by the checkpoint-4 commit** under an explicit
+user override of the campaign policy -- see "Issue-closing policy".
 **Ralph loop:** RUNNING -- **RE-ARMED by the user on 2026-09-18**, before
 checkpoint 3 was planned. The instruction was "start the ralph loop on
 those four", naming #283, #259, #303 and #309, i.e. checkpoints 3 through
@@ -129,17 +131,23 @@ Two non-blocking findings, both dispositioned (nothing left dangling):
   context. This is missing coverage of the highest-risk regression path,
   not a live defect. **Checkpoint 8 must not close with T8.6 open.**
 
-## Issue-closing policy (binding for the rest of the campaign)
+## Issue-closing policy -- AMENDED at spurt 4 by user override
 
-No commit in this campaign may carry a close keyword against #302, #261,
-#283, #259, #303 or #309. All six close at **checkpoint 8**, after T8.5's
-final crew gate on the whole campaign diff. This was set at checkpoint 2
-(commit `994f2ee`: "Neither issue is closed by this commit -- the campaign
-closes them at checkpoint 8") and is re-affirmed here for #283. The
-mid-spurt user authorization to *file* issues explicitly did not extend to
-closing any of the six. Phrase around the verb in commit messages; the
-`.githooks` `commit-msg` guard also blocks possessive, negated, quoted and
-narrated forms, so write neither `closes #283` nor `does not close #283`.
+**The original policy** (set at checkpoint 2, commit `994f2ee`) was that no
+commit may carry a close keyword against any of the six, and all six close
+at **checkpoint 8** after T8.5's final gate on the whole campaign diff.
+
+**#283 and #259 are now exempt.** On 2026-09-18 the user instructed: *"stop
+when 259 lands. commit and push to close that and 283"*. That is a direct
+override of the campaign policy for those two issues, and the user outranks
+the campaign record. Both are fixed, live-verified (`run_mode: live`) and
+reviewed, so the closures are honest rather than merely authorized.
+
+**Still binding for the remaining four.** #302, #261, #303 and #309 keep the
+original policy and close at checkpoint 8. Do not widen this override: it
+names two issues, not the batch. Phrase around close verbs for those four --
+the `.githooks` `commit-msg` guard blocks possessive, negated, quoted and
+narrated forms, so write neither `closes #303` nor `does not close #303`.
 
 ## What landed in spurt 2 (checkpoint 2: #302 + #261)
 
@@ -246,7 +254,103 @@ RESOLVED (no `deep=False` caller exists).
 **Spurt 2:** C1 was confirmed rather than flipped; C9 was confirmed by the Q3
 clearance. C13's filing gate is discharged.
 
-## Next pickup (checkpoint 4)
+## What landed this spurt (checkpoint 4: #259) -- COMPLETE
+
+**#259 is fixed, live-verified and closed.** Cycles 4 and 5.
+
+### T4.4 -- the Q2 live probe (read-only, Sena 3 sandbox)
+
+MSA sharing is the **dominant** case, not an edge case: **1648 of 1838**
+bundles with a non-null `MsaRA` (**89.66%**) share that MSA with at least
+one other bundle, across **203** multiply-referenced MSAs, with a **maximum
+fan-out of 267** bundles on a single MSA. Corrections to prior campaign
+figures: total bundles is **1932**, not 1838 (the old number was the
+non-null-`MsaRA` subset); **94** bundles have a null `MsaRA`; the 1144
+non-stem figure is confirmed exact. **0 of 694** stem bundles carry a
+non-null `InflectionClassRA` today. -> `evidence/live-T4.4-msa-sharing.md`
+
+### Q2 RESOLVED -- ruling C11 is `warn`
+
+Domain's Part A is the load-bearing finding: `WfiMorphBundle.MsaRA`
+references the same MSA a sense's Grammatical Info points at, and in the
+FLEx UI editing inflection class there **is** meant to propagate to every
+analysis referencing it. So the 267x fan-out is **correct FLEx behaviour
+wearing a misleading Python signature** -- the defect is that
+`SetInflectionClass(bundle, cls)` implies per-bundle scope when the true
+grain is per-lexeme/per-MSA. Refuse would block legitimate behaviour;
+redirect would need new API surface that C13 bars. -> `reviews/cycle5-domain.md`
+
+### T4.1/T4.2/T4.3/T4.6 -- the read path
+
+`get_inflection_class_from_msa()` added to `lcm_casting.py` next to
+`get_pos_from_msa`, routed through `GetInflectionClass` and
+`GetSyncableProperties`. All three `Duplicate` copy loops resolved as
+**case (a)** -- `MsaRA` is copied by reference so the class rides along --
+and the dead always-false `hasattr(source, "InflClassRA")` branches were
+DELETED rather than rewritten into action-at-a-distance writes.
+-> `reviews/cycle4-programmer.md`
+
+### T4.5 -- the write path, unblocked by the ruling
+
+`SetInflectionClass` now mirrors the getter's navigation, raises
+`FP_ParameterError` for the 94 null-MSA and 1144 non-stem bundles (no
+writable target), and prints a **qualitative** shared-MSA warning in the
+`MergeObject` idiom. It deliberately does **not** compute a fan-out count
+per call: it is a per-object setter that can run in a loop, so an
+`AllInstances()` pass per call would turn O(n) into O(n^2).
+-> `reviews/cycle5-programmer-T4.5.md`
+
+### T4.7 -- live verification: PASS
+
+`run_mode: live`, Sena 3 sandbox. 23/23 on the campaign live file (including
+the new `TestPart8InflClassLive`), 8/8 on `test_issue254_live_cycle2.py`,
+offline **1878 passed / 0 failed**. All six checkpoint items pass, including
+the planted-class trap (Sena 3 has no inflection-class data, so an
+observation-only sweep would have been a vacuous green) and all three
+`Duplicate` call sites end-to-end. -> `evidence/live-T4-inflclass.md`,
+`reviews/cycle5-verification-T4.7.md`
+
+### Two process hazards worth carrying forward
+
+1. **Concurrent-edit hazard.** T4.5 and T4.7 ran in parallel and edited the
+   same test file; T4.5's fix superseded T4.7's brief, which had pinned
+   `SetInflectionClass` as still raising. The verifier reconciled both and
+   verified the CURRENT behaviour rather than pinning stale behaviour --
+   the right call, but it happened by its judgment, not by design. Do not
+   run a programmer and a verifier on the same files concurrently again
+   without saying which one owns the file.
+2. **The transcript-extraction fallback in `HANDOFF-main-session.md` does
+   not work in this harness** -- every subagent `output_file` is 0 bytes.
+   Recovery is `SendMessage` back to the same agent. That section is now
+   corrected.
+
+## Two new pre-existing defects found incidentally (checkpoint 4)
+
+Neither is introduced by this work; both are live-confirmed.
+
+- **`GetSyncableProperties` calls a nonexistent `FLExProject
+  .GetMultiStringDict()`** -- fails for **1932 of 1932** bundles, and the
+  same dead call exists in **7 other Operations classes**. Green offline
+  only because mock auto-vivification resolves the missing attribute. This
+  is exactly the blind spot the `FLEXLIBS_REQUIRE_LIVE=1` gate exists for.
+- **`project.Object(hvo)` returns a bare `ICmObject`**, so the HVO-int half
+  of `bundle_or_hvo` raises `AttributeError` on derived-member access.
+  Reproduced on the **untouched** `GetMSA(hvo)`, which is what confirms it
+  predates this cycle; `GetInflectionClass(hvo)` and
+  `SetInflectionClass(hvo, ...)` inherit it. The object half -- the
+  documented calling convention used by every doc example -- works.
+
+**#259's closure covers the `InflClassRA` navigation bug, not the HVO-int
+resolution bug**, which is a different bug class affecting `GetMSA` too.
+
+## Next pickup (checkpoint 5) -- NOT started; loop stopped
+
+Checkpoints 5-7 are **#303/#309, `Lists/OverlayOperations.py`** (ruling
+C12), then checkpoint 8 closes the campaign and the remaining four issues.
+T8.6 (the deferred delete-survival test from checkpoint 3) must not be left
+open when checkpoint 8 closes.
+
+## Superseded: the original checkpoint-4 pickup note
 
 **#259, morph bundle inflection class** -- T4.1 through T4.8, across
 `WfiMorphBundleOperations.py`, `WfiAnalysisOperations.py` and
@@ -263,8 +367,11 @@ writing through a shared MSA should refuse, warn or accept. T4.7 needs
 `target_sandbox` for the writes and `sena3_sandbox` for the subtype-mix read
 path (the 1144-bundle non-stem population).
 
-## Nothing is blocked
+## Nothing is blocked; the loop is stopped by instruction, not by a blocker
 
-No `needs_human` gate is open. Q2 gates T4.5 only, and it is answerable by
-the crew's own live probe (T4.4) -- it needs a domain ruling, not a user
-decision.
+No `needs_human` gate is open. Q2 is RESOLVED (ruling C11 = `warn`), so
+nothing gates T4.5 any more. Checkpoint 5 is fully specified and ready.
+
+The Ralph loop stops after this spurt because the user said *"stop when 259
+lands"* -- a scope decision, not a technical blocker. Re-arm with the
+standing prompt in `HANDOFF-main-session.md` to continue at checkpoint 5.

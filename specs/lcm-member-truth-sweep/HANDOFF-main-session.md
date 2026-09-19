@@ -26,9 +26,22 @@ arrived.
    `dispatch_plan` block the ENTIRE BODY of your hand-back report -- not a
    description of it, not a claim that it exists elsewhere."*
 2. If it still does not arrive, do **not** retry a fourth time and do not
-   reconstruct the prompts from lex-lead's prose summary. Extract the real
-   block from its transcript. The transcript is large (300KB+ of JSONL) --
-   never `cat`/`tail` it. Parse it:
+   reconstruct the prompts from lex-lead's prose summary.
+
+   **-- CHECK THIS BEFORE RELYING ON THE SNIPPET BELOW (spurt 4, 2026-09-18). --**
+   The transcript-extraction fallback **did not work** in the spurt-4 session.
+   It is not that the parse failed: every subagent `output_file` under
+   `.../tasks/*.output` was **0 bytes**, for all eleven agents of that
+   session, so there was nothing to parse. The block lex-lead believed it had
+   emitted was simply gone. Recovery there was a `SendMessage` back to the
+   same agent (which resumes it with its context intact, so it can re-emit the
+   block cheaply without re-deriving the plan) -- prefer that over a fresh
+   `Agent` call, which would re-plan from scratch.
+
+   Treat the snippet as conditional: `stat` the `output_file` first, and only
+   parse it if it is non-empty. When it is empty, fall back to `SendMessage`.
+   Where the transcript IS populated, it is large (300KB+ of JSONL) -- never
+   `cat`/`tail` it. Parse it:
 
 ```python
 # adapt the path; the agent's output_file is given in its spawn result

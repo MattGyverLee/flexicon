@@ -1,8 +1,8 @@
 {
   "feature": "lcm-member-truth-sweep",
   "status": "in_progress",
-  "last_cycle": 3,
-  "spurts_completed": 3,
+  "last_cycle": 5,
+  "spurts_completed": 4,
   "issues": [
     "#302",
     "#261",
@@ -35,22 +35,32 @@
     "T3.5",
     "T3.6",
     "T3.7",
-    "T3.8"
+    "T3.8",
+    "T4.1",
+    "T4.2",
+    "T4.3",
+    "T4.4",
+    "T4.5",
+    "T4.6",
+    "T4.7",
+    "T4.8"
   ],
   "checkpoints_total": 8,
-  "checkpoints_done": 3,
-  "next_checkpoint": "Checkpoint 4 -- #259, morph bundle inflection class",
-  "next_entry": "Start with T4.1: implement the MSA navigation helper once (bundle.MsaRA -> null check -> cast_to_concrete -> narrow to IMoStemMsa -> .InflectionClassRA; returns None for a null MSA or a non-stem subtype, never raises) and route WfiMorphBundleOperations.py:1261 GetInflectionClass through it. Then T4.2's three silent copy loops (WfiMorphBundleOperations.py:335,336; WfiAnalysisOperations.py:589,590; WordformOperations.py:878,879) and T4.3's GetSyncableProperties:385,386. T4.5 (SetInflectionClass:1313) stays BLOCKED until T4.4's live MSA-sharing count feeds a domain ruling on Q2. T4.7 wants target_sandbox for writes and sena3_sandbox for the non-stem read path.",
+  "checkpoints_done": 4,
+  "next_checkpoint": "Checkpoint 5 -- #303/#309, Lists/OverlayOperations.py (C12)",
+  "next_entry": "Checkpoints 5-7 rewrite OverlayOperations under ruling C12 (overlays are project-scoped, not chart-scoped; ICmOverlay is not an ICmPossibility). Checkpoint 8 closes the campaign and the four remaining issues, and must not close with T8.6 (the deferred environment delete-survival test) still open.",
   "open_questions": {
     "Q2": "Does writing msa.InflectionClassRA through a bundle mutate sibling bundles? -- gates C11/SetInflectionClass -- task T4.4"
   },
-  "blocked_tasks": [
-    "T4.5 (blocked on Q2)"
-  ],
+  "blocked_tasks": [],
   "needs_human_pending": null,
   "production_files_modified_so_far": [
     "flexicon/code/Notebook/DataNotebookOperations.py",
-    "flexicon/code/Grammar/EnvironmentOperations.py"
+    "flexicon/code/Grammar/EnvironmentOperations.py",
+    "flexicon/code/lcm_casting.py",
+    "flexicon/code/TextsWords/WfiMorphBundleOperations.py",
+    "flexicon/code/TextsWords/WfiAnalysisOperations.py",
+    "flexicon/code/TextsWords/WordformOperations.py"
   ],
   "updated": "2026-09-18",
   "user_authorizations": {
@@ -59,12 +69,19 @@
       "date": "2026-09-18",
       "quote": "you can file the issues. don't wait for me",
       "scope": "T2.7 / T8.4 -- the crew may run gh issue create for the Catalogue 2 proposal batch on MattGyverLee/flexicon without pausing for further approval. Run gh repo set-default MattGyverLee/flexicon first. Filing only -- this does NOT authorize closing #302/#261/#283/#259/#303/#309, nor any destructive live-LCM write, both of which remain stop conditions."
+    },
+    "close_283_and_259": {
+      "granted": true,
+      "date": "2026-09-18",
+      "quote": "stop when 259 lands. commit and push to close that and 283",
+      "scope": "SUPERSEDES the campaign issue-closing policy for these TWO issues only. #283 and #259 are to be closed by commit keyword on the commit that lands #259. Does NOT authorize closing #302, #261, #303 or #309 -- those still close at checkpoint 8."
     }
   },
   "resolved_questions": {
     "Q1": "RESOLVED T2.1 -- lp.ResearchNotebookOA is non-null and HVO-identical to repo.Singleton on both projects. C1 stands in its ownership form; no flip needed.",
     "Q3": "RESOLVED T2.5b -- no Context-named member exists under any suffix on MoEndoCompound/MoExoCompound. Catalogue 2 row 25 CLEARED; compound_rule.py untouched per C9. Documented as filed issue #327.",
-    "Q4": "RESOLVED T3.4 -- no caller in flexicon/, examples/ or tests/ passes deep=False to EnvironmentOperations.Duplicate; the only prior hit was the method's own docstring example. C7's unconditional reference assignment breaks no caller."
+    "Q4": "RESOLVED cycle 3 -- no real caller passes deep=False to EnvironmentOperations.Duplicate; the only hit was a docstring example.",
+    "Q2": "RESOLVED cycle 4/5 -- 1648/1838 (89.66%) of bundles share their MSA, max fan-out 267. Domain ruled the sharing is CORRECT FLEx behaviour (MsaRA references the same MSA as the sense Grammatical Info), so the defect is the per-bundle signature, not the write. Ruling C11 = warn: mirror the getter navigation, FP_ParameterError for null/non-stem targets, qualitative shared-MSA warning, no per-call fan-out count."
   },
   "issues_filed_this_campaign": {
     "authorized_by_user": "2026-09-18",
@@ -73,11 +90,9 @@
     "note": "Catalogue 2 siblings plus four out-of-scope DataNotebookOperations defects found during T2.4. None are fixed by this campaign (C13)."
   },
   "ralph_loop": {
-    "state": "running",
-    "reason": "Re-armed by the user on 2026-09-18: start the ralph loop on those four (#283, #259, #303, #309 = checkpoints 3-8). Supersedes the post-checkpoint-2 stop condition, which spurt 3 close-out acted on before the re-arm reached this file.",
-    "restart": "Already armed; standing prompt is in HANDOFF-main-session.md. Next checkpoint is 4.",
-    "authorized": "2026-09-18",
-    "scope": "Checkpoints 3-8. Does NOT relax the needs_human gate or the prohibition on unattended destructive live-LCM writes."
+    "state": "stopped",
+    "reason": "User instruction 2026-09-18: 'stop when 259 lands'. Checkpoint 4 landed, so the loop ends here. Not a technical blocker.",
+    "restart": "Re-arm with the standing prompt in HANDOFF-main-session.md; next checkpoint is 5."
   },
   "offline_baseline": {
     "command": "python -m pytest -m \"not requires_live_project\" -q",
@@ -87,5 +102,18 @@
   "issue_closing_policy": "BINDING: no commit may carry a close keyword against #302, #261, #283, #259, #303 or #309. All six close at checkpoint 8 after T8.5's final crew gate. Set at checkpoint 2 (commit 994f2ee) and re-affirmed for #283 at checkpoint 3. Phrase around the verb -- the commit-msg guard also blocks negated/possessive/quoted/narrated forms.",
   "deferred_followups": {
     "T8.6": "#283 delete-survival regression test, from the cycle-3 domain ruling Q-B. Duplicate an environment with a LeftContextRA, Delete the duplicate, re-read the SOURCE by HVO and assert LeftContextRA still resolves. Deferred because the risk is unrealized: Delete (:195-233) only calls EnvironmentsOS.Remove and never touches ContextsOS. Checkpoint 8 must not close with T8.6 open."
-  }
+  },
+  "issues_closed": {
+    "closed": [
+      "#283",
+      "#259"
+    ],
+    "authorized_by_user": "2026-09-18",
+    "quote": "stop when 259 lands. commit and push to close that and 283",
+    "note": "Overrides the campaign issue-closing policy for these two ONLY. #302, #261, #303, #309 still close at checkpoint 8."
+  },
+  "new_defects_found_checkpoint4": [
+    "GetSyncableProperties calls nonexistent FLExProject.GetMultiStringDict() -- 1932/1932 bundles fail; same dead call in 7 other Operations classes; masked offline by mock auto-vivification",
+    "project.Object(hvo) returns a bare ICmObject so the HVO-int half of bundle_or_hvo raises AttributeError on derived-member access; reproduced on the untouched GetMSA, so pre-existing. NOT covered by #259 closure."
+  ]
 }
