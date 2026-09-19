@@ -152,10 +152,16 @@ Stop and surface to the user -- do not let the loop proceed -- when:
 - The next step would be a **destructive live-LCM write** (e.g. writing to a
   target that must be `-restore`d first). The loop must never do this
   unattended.
-- **T2.7 / T8.4 -- the known upcoming gate.** Catalogue 2's sibling issues
-  are drafted by the crew into `proposed-issues.md` but **filing requires
-  the user's approval**. Before any `gh issue create`, run
-  `gh repo set-default MattGyverLee/flexicon` -- with no default, `gh`
+- **T2.7 / T8.4 -- gate LIFTED 2026-09-18.** The user authorized filing
+  directly ("you can file the issues. don't wait for me"), so the crew may
+  run `gh issue create` for the Catalogue 2 batch on
+  `MattGyverLee/flexicon` without pausing. `gh repo set-default
+  MattGyverLee/flexicon` has been run in this clone. The authorization
+  covers **filing only** -- it does not authorize closing #302/#261/#283/
+  #259/#303/#309, and it does not relax the destructive-live-write stop
+  condition. Catalogue 2's sibling issues are still drafted into
+  `proposed-issues.md` first, so the filed text is reviewable.
+  The `set-default` step is not optional: with no default, `gh`
   prefers `upstream` (`cdfarrow/flexlibs`), whose numbering tops out near
   #17, so every issue this project cites returns "Could not resolve to an
   issue", which reads exactly like "it does not exist."

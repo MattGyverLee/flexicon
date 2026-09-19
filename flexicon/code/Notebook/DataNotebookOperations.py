@@ -184,16 +184,22 @@ class DataNotebookOperations(BaseOperations):
         hvo = self.__ValidatedRecordHvo(record_or_hvo)
 
         try:
-            obj = self.project.project.GetObject(hvo)
+            # LcmCache (self.project.project) has no GetObject member; the
+            # house path is FLExProject.Object(), which resolves through
+            # ServiceLocator.GetObject() (ruling C6). AttributeError is
+            # deliberately not caught here any more: catching it laundered
+            # the previous bug (a missing GetObject attribute) into a
+            # false-positive "invalid HVO" on every call, masking the real
+            # cause. Any genuine AttributeError now propagates unchanged.
+            obj = self.project.Object(hvo)
             return IRnGenericRec(obj)
         except (
             TypeError,
             System.InvalidCastException,
-            AttributeError,
             KeyError,
             System.Collections.Generic.KeyNotFoundException,
         ) as e:
-            raise FP_ParameterError(f"Invalid notebook record object or HVO: {record_or_hvo} - {e}")
+            raise FP_ParameterError(f"Invalid notebook record object or HVO: {record_or_hvo} - {e}") from e
 
     # --- Core CRUD Operations ---
 
@@ -302,15 +308,15 @@ class DataNotebookOperations(BaseOperations):
 
         wsHandle = self.__WSHandle(wsHandle)
 
-        # Get the research notebook repository
-        repos = self.project.project.ServiceLocator.GetService(IRnResearchNbkRepository)
         factory = self.project.project.ServiceLocator.GetService(IRnGenericRecFactory)
 
-        # Create the record in the RecordsOC collection
+        # Create the record in the RecordsOC collection, owned by the
+        # project's single ResearchNotebookOA -- not by the repository,
+        # which has no RecordsOC member (ruling C1).
         with self._TransactionCM(f"Create notebook record '{title}'"):
 
             record = factory.Create()
-            repos.RecordsOC.Add(record)
+            self.project.lp.ResearchNotebookOA.RecordsOC.Add(record)
 
             # Set title
             mkstr = TsStringUtils.MakeString(title, wsHandle)
@@ -372,25 +378,25 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        # Get the repository and remove the record
-        repos = self.project.project.ServiceLocator.GetService(IRnResearchNbkRepository)
-
         with self._TransactionCM("Delete notebook record"):
 
             # SubRecordsOS lives on IRnGenericRec (the parent record's concrete
             # interface), not on the base ICmObject that pythonnet returns from
             # .Owner. The prior hasattr(owner, "SubRecordsOS") was therefore
             # always False on a real sub-record -- execution fell through to
-            # repos.RecordsOC.Remove(record), which removes from the top-level
-            # records collection (where the sub-record never lived). Sub-record
-            # deletes either silently no-op'd or removed the wrong row.
-            # Route through _GetTypedOwner to recover IRnGenericRec before
-            # checking the slot. (issue #133, same class as #98/#116)
+            # the top-level RecordsOC.Remove(record), which removes from the
+            # top-level records collection (where the sub-record never lived).
+            # Sub-record deletes either silently no-op'd or removed the wrong
+            # row. Route through _GetTypedOwner to recover IRnGenericRec
+            # before checking the slot. (issue #133, same class as #98/#116)
             parent = self._GetTypedOwner(record)
             if parent is not None and hasattr(parent, "SubRecordsOS"):
                 parent.SubRecordsOS.Remove(record)
             else:
-                repos.RecordsOC.Remove(record)
+                # Top-level record: RecordsOC is owned by the project's
+                # single ResearchNotebookOA, not by the repository, which
+                # has no RecordsOC member (ruling C1).
+                self.project.lp.ResearchNotebookOA.RecordsOC.Remove(record)
 
     @OperationsMethod
     def Exists(self, title, wsHandle=None):
@@ -2459,9 +2465,9 @@ class DataNotebookOperations(BaseOperations):
             insert_after (bool): For sub-records (SubRecordsOS is an ordered
                 sequence), controls whether the duplicate is inserted
                 immediately after the source. Ignored for top-level records:
-                RecordsOC is an unordered ILcmOwningCollection with no
-                Insert() method, so top-level duplicates are always appended
-                via Add().
+                RecordsOC (owned by ResearchNotebookOA -- ruling C1) is an
+                unordered ILcmOwningCollection with no Insert() method, so
+                top-level duplicates are always appended via Add().
             deep (bool): If True (default), also duplicate owned objects (sub-records).
                         If False, only copy simple properties and references.
 
@@ -2523,11 +2529,13 @@ class DataNotebookOperations(BaseOperations):
                 else:
                     parent_record.SubRecordsOS.Add(duplicate)
             else:
-                # Parent is the top-level repository. RecordsOC is an unordered
-                # ILcmOwningCollection; insert_after has no semantic meaning here
-                # and is ignored -- the duplicate is always appended via Add().
-                repos = self.project.project.ServiceLocator.GetService(IRnResearchNbkRepository)
-                repos.RecordsOC.Add(duplicate)
+                # Parent is the notebook's top-level RecordsOC, owned by
+                # ResearchNotebookOA -- not the repository, which has no
+                # RecordsOC member (ruling C1). It is an unordered
+                # ILcmOwningCollection; insert_after has no semantic meaning
+                # here and is ignored -- the duplicate is always appended
+                # via Add().
+                self.project.lp.ResearchNotebookOA.RecordsOC.Add(duplicate)
 
             # Copy simple MultiString properties
             duplicate.Title.CopyAlternatives(source.Title)

@@ -1,23 +1,71 @@
 {
   "feature": "lcm-member-truth-sweep",
   "status": "in_progress",
-  "last_cycle": 1,
-  "spurts_completed": 1,
-  "issues": ["#302", "#261", "#283", "#259", "#303", "#309"],
+  "last_cycle": 2,
+  "spurts_completed": 2,
+  "issues": [
+    "#302",
+    "#261",
+    "#283",
+    "#259",
+    "#303",
+    "#309"
+  ],
   "baseline_commit": "598f41e",
-  "tasks_done": ["T1.1", "T1.2", "T1.3", "T1.4", "T1.5"],
+  "tasks_done": [
+    "T1.1",
+    "T1.2",
+    "T1.3",
+    "T1.4",
+    "T1.5",
+    "T2.1",
+    "T2.2",
+    "T2.3",
+    "T2.4",
+    "T2.5",
+    "T2.5b",
+    "T2.6",
+    "T2.7",
+    "T2.8",
+    "T2.9"
+  ],
   "checkpoints_total": 8,
-  "checkpoints_done": 1,
-  "next_checkpoint": "Checkpoint 2 -- #302 + #261 in DataNotebookOperations.py",
-  "next_entry": "Run T2.1 first: the live probe gating ruling C1 (lp.ResearchNotebookOA non-null on Target and Sena 3, and Hvo-equal to repos.Singleton). If it fails, flip C1 to repos.Singleton.RecordsOC BEFORE writing any fix; then T2.2-T2.9.",
+  "checkpoints_done": 2,
+  "next_checkpoint": "Checkpoint 3 -- #283 in Grammar/EnvironmentOperations.py",
+  "next_entry": "Start with T3.1/T3.2: rename LeftContextOA/RightContextOA -> ...RA at :494,495,550,551, then replace Duplicate's entire 'if deep:' context block (:633-653) with unconditional reference assignment, deleting the clone_properties/NewObject(ClassID) machinery. C8 requires inverting tests/operations/test_260_environment_resolver_gate.py:311-317 -- which deliberately asserts the bug -- in the SAME commit. Do NOT touch compound_rule.py:220,244 (ruling C9; Q3 cleared it).",
   "open_questions": {
-    "Q1": "lp.ResearchNotebookOA null-safety / Singleton equivalence -- gates C1 -- task T2.1",
     "Q2": "Does writing msa.InflectionClassRA through a bundle mutate sibling bundles? -- gates C11/SetInflectionClass -- task T4.4",
-    "Q3": "Live dir() on MoEndoCompound/MoExoCompound -- raises Catalogue 2 row 25 confidence -- task T2.5b",
     "Q4": "Does any caller pass deep=False to EnvironmentOperations.Duplicate? -- task T3.4"
   },
-  "blocked_tasks": ["T4.5 (blocked on Q2)"],
-  "needs_human_pending": "T2.7 / T8.4 -- Catalogue 2 issue filing requires the user's approval; the crew drafts proposed-issues.md but must not file.",
-  "production_files_modified_so_far": [],
-  "updated": "2026-09-18"
+  "blocked_tasks": [
+    "T4.5 (blocked on Q2)"
+  ],
+  "needs_human_pending": null,
+  "production_files_modified_so_far": [
+    "flexicon/code/Notebook/DataNotebookOperations.py"
+  ],
+  "updated": "2026-09-18",
+  "user_authorizations": {
+    "catalogue2_issue_filing": {
+      "granted": true,
+      "date": "2026-09-18",
+      "quote": "you can file the issues. don't wait for me",
+      "scope": "T2.7 / T8.4 -- the crew may run gh issue create for the Catalogue 2 proposal batch on MattGyverLee/flexicon without pausing for further approval. Run gh repo set-default MattGyverLee/flexicon first. Filing only -- this does NOT authorize closing #302/#261/#283/#259/#303/#309, nor any destructive live-LCM write, both of which remain stop conditions."
+    }
+  },
+  "resolved_questions": {
+    "Q1": "RESOLVED T2.1 -- lp.ResearchNotebookOA is non-null and HVO-identical to repo.Singleton on both projects. C1 stands in its ownership form; no flip needed.",
+    "Q3": "RESOLVED T2.5b -- no Context-named member exists under any suffix on MoEndoCompound/MoExoCompound. Catalogue 2 row 25 CLEARED; compound_rule.py untouched per C9. Documented as filed issue #327."
+  },
+  "issues_filed_this_campaign": {
+    "authorized_by_user": "2026-09-18",
+    "range": "#322-#331",
+    "source": "specs/lcm-member-truth-sweep/proposed-issues.md (10 clusters)",
+    "note": "Catalogue 2 siblings plus four out-of-scope DataNotebookOperations defects found during T2.4. None are fixed by this campaign (C13)."
+  },
+  "ralph_loop": {
+    "state": "stopped",
+    "reason": "User instruction after checkpoint 2: 'close the loop once you finish the next issue'.",
+    "restart": "Re-arm with the standing prompt in HANDOFF-main-session.md; next checkpoint is 3."
+  }
 }

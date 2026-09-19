@@ -1,80 +1,117 @@
 # STATUS -- lcm-member-truth-sweep
 
-**Last updated:** 2026-09-18 (end of spurt 1)
-**Status:** in_progress -- 1 of 8 checkpoints complete
-**Baseline:** `598f41e` (v4.8.0)
+**Last updated:** 2026-09-18 (end of spurt 2)
+**Status:** in_progress -- 2 of 8 checkpoints complete
+**Baseline:** `598f41e` (v4.8.0); spurt-2 diffs measured against `03d82c6`
 **Issues:** #302, #261, #283, #259, #303, #309
+**Ralph loop:** STOPPED at the user's instruction after checkpoint 2
+("close the loop once you finish the next issue"). Checkpoint 3 has not
+been started. Restart per the standing prompt in `HANDOFF-main-session.md`.
 
-## What landed this spurt (checkpoint 1: ground truth + spec)
+## What landed this spurt (checkpoint 2: #302 + #261)
 
-Cycle 1 was investigation only -- **no production file was modified**
-(`git status --porcelain` clean of `flexicon/` edits). Three specialists ran
-in parallel and all three returned.
+**#302 and #261 are fixed and live-verified.** This is the first spurt to
+modify a production file.
 
-- **Live reflection sweep** (`run_mode: live`, Sena 3 + pure
-  `clr.GetClrType`) settled all six issues' member surfaces.
-  -> `reviews/cycle1-verification.md`, `evidence/live-cycle1-reflection.md`
-- **9 reflection ratchet tests** added, all passing live.
-  -> `tests/operations/test_lcm_member_truth_sweep.py`
-- **Domain ruling** on the `OverlayOperations` rewrite: drop the
-  `PossibilityItemOperations` base, re-root on `ILangProject.OverlaysOC`,
-  delete 10 dead methods with a migration table, split over 3 spurts.
-  -> `reviews/cycle1-domain.md`
-- **Blast-radius + sibling catalogues**: 62 executable production sites
-  across the six issues; 25 ranked sibling candidates, 22 of them
-  high-confidence silent data loss. -> `reviews/cycle1-explore.md`
-- **Spec and task list written**, with 14 binding rulings (C1-C14) and 4
-  open questions (Q1-Q4). -> `spec.md`, `tasks.md`
+### T2.1 -- the C1 gate: PASS
 
-### Headline findings
+`lp.ResearchNotebookOA` is non-null and HVO-identical to
+`IRnResearchNbkRepository.Singleton` on both projects (Target 10335, Sena 3
+27234); `RecordsOC` counts and HVO sets match; `.Singleton` was never null;
+`Count` is 1 on both. **C1 stands in its ownership form** -- no spec flip was
+needed. -> `evidence/live-T2.1-notebook-owner.md`,
+`reviews/cycle2-verification-T2.1.md`
 
-- **#259 is a navigation fix, not a rename.** `IWfiMorphBundle` has no such
-  member at all; the value lives one hop away at
-  `IMoStemMsa.InflectionClassRA`. Of 1932 real Sena 3 bundles, 94 have a
-  null `MsaRA` and 1144 of the 1838 non-null ones carry a non-stem MSA that
-  **raises** on unguarded access. The type narrowing is load-bearing.
-- **#283 drops data today.** A seeded live probe showed the duplicate's
-  contexts `None` after `Duplicate(deep=True)` -- the code implements
-  neither reference nor clone semantics, just silent loss.
-- **#261's real blast radius is 38 public methods**, not the one the issue
-  names, and a bare `except` mislabels the cause in all 38.
-- **Two existing tests are compromised.**
-  `test_datanotebook_duplicate.py` never imports the production module and
-  would pass no matter what `Duplicate()` does (C4: delete and rewrite).
-  `test_260_environment_resolver_gate.py:311-317` deliberately asserts the
-  bug and will go red on the #283 fix (C8: invert in the same commit).
+### T2.2 / T2.3 -- the fixes
 
-### Rulings made this spurt (full text in `spec.md` section 3)
+`flexicon/code/Notebook/DataNotebookOperations.py`:
 
-- **C1** #302 adopts `self.project.lp.ResearchNotebookOA.RecordsOC` (the
-  existing house idiom) over `repos.Singleton.RecordsOC` (which would be a
-  brand-new pattern -- `.Singleton` appears zero times in `flexicon/`).
-  Gated on the T2.1 live probe; flips if `ResearchNotebookOA` can be null.
-- **C13** Catalogue 2's 22 siblings stay **out of scope for behaviour
-  change** -- but with a named owner and date, not a vague "later": the
-  catalogue is copied to a durable file (T2.6), a ready-to-file proposal
-  batch is drafted at the end of checkpoint 2 (T2.7), and rows already in
-  scope get live absence-ratchets at zero marginal cost (T2.5).
-- **C14** Future dispatches must respect each specialist's toolset:
-  `lex-domain`, `Explore`, `lex-qc`, `lex-author`, `lex-README` and
-  `lex-synthesis` are read-only and cannot write their own report files.
+- Three `RecordsOC` sites (`Create`, `Delete`'s top-level `else:`,
+  `Duplicate`) now go through `self.project.lp.ResearchNotebookOA.RecordsOC`;
+  the three dead `GetService(IRnResearchNbkRepository)` lookups that fed them
+  are deleted. The C3 site in the enumerable getter (`:238`, was `:232`) and
+  its import survive untouched.
+- `__GetRecordObject` now calls `self.project.Object(hvo)` instead of the
+  nonexistent `LcmCache.GetObject`. `AttributeError` is out of the `except`
+  tuple and the raise is chained `from e`, so the mask that mislabelled the
+  cause across all 38 routed methods is off (C6).
 
-## Next pickup (checkpoint 2)
+-> `reviews/cycle2-programmer-T2.2-T2.3.md`
 
-**#302 + #261 in `flexicon/code/Notebook/DataNotebookOperations.py`** --
-four executable lines across two issues in one file.
+### T2.4 / T2.5 / T2.5b -- tests
 
-Start with **T2.1**: the live probe that gates C1 (is
-`lp.ResearchNotebookOA` non-null on both Target and Sena 3, and is it the
-same object as `repos.Singleton`?). If that probe fails, flip C1 to the
-`Singleton` form **before** writing any fix.
+- `tests/operations/test_datanotebook_duplicate.py` deleted and rewritten
+  (C4). The old file never imported the production module and could not
+  fail; the replacement is 6 live tests that genuinely exercise
+  `DataNotebookOperations`, re-read by HVO, and cover the int-HVO entry path
+  with six routed methods.
+- `tests/operations/test_lcm_member_truth_sweep.py` extended from 9 to 19
+  live tests: T2.1's `TestPart4NotebookOwnerGate`, T2.5's five absence
+  ratchets plus the C2 pin, and T2.5b's compound-context surface dump.
+- **Q3 answered and row 25 CLEARED:** no Context-named member exists under
+  any suffix on `MoEndoCompound` or `MoExoCompound`. `compound_rule.py`
+  stays untouched (C9).
 
-Then T2.2 (the three `RecordsOC` sites), T2.3 (the resolver plus removing
-the `except` mask), T2.4 (delete and rewrite the non-test), T2.5-T2.7 (the
-C13 catalogue hand-off), T2.8 (live evidence), T2.9 (commit and push).
+-> `evidence/live-T2.5-siblings.md`, `reviews/cycle2-programmer-T2.4-T2.5.md`
+
+### T2.8 -- verification: PASS
+
+25/25 live on the two campaign files plus 4/4 on an independently-written
+probe, `run_mode: live` on both. Offline regression **1876 passed / 0 failed**
+vs **1883 / 0** at `03d82c6`; the -7/+20 delta closes exactly (7 deleted mock
+tests out, 20 live tests in). -> `evidence/live-T2-notebook.md`,
+`reviews/cycle2-verification-T2.8.md`
+
+**One scope limitation, recorded not buried:** `Duplicate()` does not run to
+completion. Four lines after the #302 placement it raises on
+`duplicate.Title.CopyAlternatives(...)` -- a separate pre-existing defect now
+filed as #328. The #302 placement is verified by its observable effect on
+`RecordsOC` before that crash, and the probe pins the crash to that specific
+defect so a real placement regression cannot hide behind it.
+
+### T2.6 / T2.7 -- Catalogue 2 made durable, and FILED
+
+- `catalogue2-siblings.md` holds all 25 rows verbatim, with the Live
+  upgrades table backfilled from real T2.5/T2.5b evidence.
+- `proposed-issues.md` drafted 10 clusters, and **all ten were filed** as
+  **#322-#331** on `MattGyverLee/flexicon` after the user authorized filing
+  mid-spurt. The C13 `needs_human` gate is therefore **closed**.
+
+## Four new defects found incidentally (all filed)
+
+T2.4's live work surfaced four `DataNotebookOperations` defects that are not
+among the six chartered issues and were not in Catalogue 2:
+
+- **#328** `Title` is a bare `ITsString` and there is no `Text` member at all
+  -- `Create`, `CreateSubRecord`, `SetTitle`, `SetContent` and `Duplicate`'s
+  copy lines crash unconditionally; the getters silently return `""`.
+- **#329** real names are `StatusRA`/`TypeRA`/`ConfidenceRA` -- getters always
+  return `None`, and the setters write a throwaway Python attribute that
+  never reaches the LCM.
+- **#330** `DateOfEvent` is `GenDate`, not `System.DateTime` --
+  `SetDateOfEvent` raises `TypeError` on every call.
+- **#331** `Duplicate()`/`GetParentRecord()` use `isinstance()` on the raw
+  uncast `.Owner`, always False live -- the same bug class `Delete()` already
+  fixed under #133.
+
+#328 is why both the crew's tests and the T2.8 probe seed records through the
+raw factory rather than through `Create()`.
+
+## Rulings
+
+No ruling changed this spurt. C1 was confirmed rather than flipped; C9 was
+confirmed by the Q3 clearance. C13's filing gate is now discharged.
+
+## Next pickup (checkpoint 3)
+
+**#283 in `Grammar/EnvironmentOperations.py`** -- T3.1 through T3.5. Start
+with T3.1/T3.2: rename `LeftContextOA`/`RightContextOA` ->
+`...RA` at `:494,495,550,551`, then replace `Duplicate`'s whole `if deep:`
+context block with unconditional reference assignment. C8 requires inverting
+`test_260_environment_resolver_gate.py:311-317` -- which deliberately asserts
+the bug -- **in the same commit**.
 
 ## Nothing is blocked
 
-No `needs_human` gate is open. The one that will open is T2.7/T8.4: issue
-filing for Catalogue 2 requires the user's approval and cannot be done by
-the crew.
+No `needs_human` gate is open. The one that was (Catalogue 2 filing) was
+authorized and discharged this spurt.

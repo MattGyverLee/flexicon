@@ -428,3 +428,339 @@ class TestPart3NotebookRepositoryGroundTruth:
             "-- NOT the raw LcmCache.GetObject(hvo) that "
             "DataNotebookOperations.py:187 currently calls directly."
         )
+
+
+class TestPart4NotebookOwnerGate:
+    """
+    T2.1 -- answers Q1, gates ruling C1 (spec.md section 3/4).
+
+    C1 proposes rewriting #302's three DataNotebookOperations.py sites to
+    the OWNERSHIP form (self.project.lp.ResearchNotebookOA.RecordsOC)
+    rather than the REPOSITORY form (repos.Singleton.RecordsOC), on the
+    premise that ResearchNotebookOA is never null where Singleton is not,
+    and that the two resolve to the same underlying object. This class is
+    READ-ONLY on both target_sandbox and sena3_sandbox -- no writes, no
+    seeding, nothing to restore.
+    """
+
+    @pytest.mark.live_phase("DataNotebookOperations", "read")
+    def test_4a_target_sandbox_ownership_vs_repository_gate(self, target_sandbox):
+        self._probe(target_sandbox, "Target")
+
+    @pytest.mark.live_phase("DataNotebookOperations", "read")
+    def test_4b_sena3_sandbox_ownership_vs_repository_gate(self, sena3_sandbox):
+        self._probe(sena3_sandbox, "Sena 3")
+
+    @staticmethod
+    def _probe(project, label):
+        from SIL.LCModel import IRnResearchNbkRepository
+
+        repo = project.project.ServiceLocator.GetService(IRnResearchNbkRepository)
+
+        print("")
+        print("[4] " + label + ": IRnResearchNbkRepository.Count = " + str(repo.Count))
+
+        singleton = repo.Singleton
+        singleton_is_null = singleton is None
+        print("[4] " + label + ": repo.Singleton is None: " + str(singleton_is_null))
+
+        owner = project.lp.ResearchNotebookOA
+        owner_is_null = owner is None
+        print("[4] " + label + ": project.lp.ResearchNotebookOA is None: " + str(owner_is_null))
+
+        assert not owner_is_null, (
+            "[4] " + label + ": project.lp.ResearchNotebookOA is NULL -- "
+            "C1 (ownership form) FAILS this gate; ruling must flip to "
+            "repos.Singleton.RecordsOC."
+        )
+        assert not singleton_is_null, (
+            "[4] " + label + ": repo.Singleton is unexpectedly NULL -- "
+            "re-derive Q1 before trusting either form."
+        )
+
+        print("[4] " + label + ": ResearchNotebookOA.Hvo = " + str(owner.Hvo))
+        print("[4] " + label + ": repo.Singleton.Hvo = " + str(singleton.Hvo))
+        assert owner.Hvo == singleton.Hvo, (
+            "[4] " + label + ": ResearchNotebookOA.Hvo != repo.Singleton.Hvo "
+            "-- they are NOT the same object; C1 FAILS this gate."
+        )
+
+        owner_records = list(owner.RecordsOC)
+        singleton_records = list(singleton.RecordsOC)
+        print("[4] " + label + ": ResearchNotebookOA.RecordsOC count = " + str(len(owner_records)))
+        print("[4] " + label + ": repo.Singleton.RecordsOC count = " + str(len(singleton_records)))
+        assert len(owner_records) == len(singleton_records), (
+            "[4] " + label + ": RecordsOC counts differ between the "
+            "ownership form and the repository form -- C1 FAILS this gate."
+        )
+        owner_hvos = sorted(r.Hvo for r in owner_records)
+        singleton_hvos = sorted(r.Hvo for r in singleton_records)
+        assert owner_hvos == singleton_hvos, (
+            "[4] " + label + ": RecordsOC HVO sets differ between the "
+            "ownership form and the repository form -- C1 FAILS this gate."
+        )
+
+        print(
+            "[4] " + label + ": CONCLUSION: ResearchNotebookOA is non-null, "
+            "HVO-identical to repos.Singleton, and RecordsOC agrees "
+            "exactly (count + HVO set) between both access paths."
+        )
+
+
+class TestPart5CatalogueSiblingAbsenceRatchets:
+    """
+    T2.5 -- ruling C13 carve-out (spec.md section 3). Live-reflection
+    ABSENCE ratchets for Catalogue 2 sibling rows (see
+    specs/lcm-member-truth-sweep/catalogue2-siblings.md), upgrading them
+    from "snapshot-derived, medium confidence" to "live-confirmed"
+    before they are proposed as issues. Also pins ruling C2.
+
+    NO production line for any of these rows is edited by this class --
+    they are catalogued-only siblings, out of scope for behaviour
+    change in this campaign. Pure clr.GetClrType reflection, exactly
+    like TestPart1/TestPart2's (a) methods; no project needs to be
+    open, only SIL.LCModel importable.
+    """
+
+    def test_5a_irngenericrec_has_no_textsrc(self):
+        """
+        Catalogue 2 rows 1-2 (Notebook/DataNotebookOperations.py
+        LinkToText/UnlinkFromText, :1911,1913,1952,1954): both guard on
+        record.TextsRC. IRnGenericRec carries TextRA (atomic reference)
+        and no TextsRC at all.
+        """
+        pytest.importorskip("SIL.LCModel")
+        from SIL.LCModel import IRnGenericRec
+
+        props, _ = _dump_type_surface(IRnGenericRec, "IRnGenericRec")
+        assert "TextRA" in props
+        assert "TextsRC" not in props, (
+            "TextsRC now exists on IRnGenericRec -- re-derive Catalogue 2 "
+            "rows 1-2 before proposing them as issues"
+        )
+
+    def test_5b_icmanthroitem_has_no_textsrc(self):
+        """
+        Catalogue 2 rows 3-4 (Notebook/AnthropologyOperations.py
+        AddText/RemoveText, :1403,1407,1461,1465): both guard on
+        item.TextsRC. ICmAnthroItem has no TextsRC anywhere in its
+        surface.
+        """
+        pytest.importorskip("SIL.LCModel")
+        from SIL.LCModel import ICmAnthroItem
+
+        props, _ = _dump_type_surface(ICmAnthroItem, "ICmAnthroItem")
+        assert "TextsRC" not in props, (
+            "TextsRC now exists on ICmAnthroItem -- re-derive Catalogue 2 "
+            "rows 3-4 before proposing them as issues"
+        )
+
+    def test_5c_ilangproject_has_no_rectypesoa(self):
+        """
+        Carve-out row (Notebook/DataNotebookOperations.py:825,
+        GetAllRecordTypes): guards on self.project.lp.RecTypesOA.
+        ILangProject has no RecTypesOA.
+        """
+        pytest.importorskip("SIL.LCModel")
+        from SIL.LCModel import ILangProject
+
+        props, _ = _dump_type_surface(ILangProject, "ILangProject")
+        assert "RecTypesOA" not in props, (
+            "RecTypesOA now exists on ILangProject -- re-derive the "
+            "carve-out row before proposing it as an issue"
+        )
+
+    def test_5d_icmperson_has_no_languagesrc(self):
+        """
+        Catalogue 2 row 5 (Notebook/PersonOperations.py:1067,
+        Duplicate): guards on source.LanguagesRC. ICmPerson carries
+        PositionsRC, PlacesOfResidenceRC, ResearchersRC, RestrictionsRC
+        -- no LanguagesRC.
+        """
+        pytest.importorskip("SIL.LCModel")
+        from SIL.LCModel import ICmPerson
+
+        props, _ = _dump_type_surface(ICmPerson, "ICmPerson")
+        assert "LanguagesRC" not in props, (
+            "LanguagesRC now exists on ICmPerson -- re-derive Catalogue 2 "
+            "row 5 before proposing it as an issue"
+        )
+
+    def test_5e_icmbaseannotation_has_no_repliesos(self):
+        """
+        Catalogue 2 rows 6-10 (Notebook/NoteOperations.py, multiple
+        sites, and Notebook/annotation.py): all guard on some spelling
+        of {,parent_,source_,owner.}RepliesOS against ICmBaseAnnotation.
+        IScrScriptureNote uses ResponsesOS instead; ICmBaseAnnotation
+        itself has no Replies* member.
+        """
+        pytest.importorskip("SIL.LCModel")
+        from SIL.LCModel import ICmBaseAnnotation
+
+        props, _ = _dump_type_surface(ICmBaseAnnotation, "ICmBaseAnnotation")
+        assert "RepliesOS" not in props, (
+            "RepliesOS now exists on ICmBaseAnnotation -- re-derive "
+            "Catalogue 2 rows 6-10 before proposing them as issues"
+        )
+
+    def test_5f_pin_c2_rnresearchnbkrepository_surface(self):
+        """
+        Pins ruling C2 (spec.md section 3): IRnResearchNbkRepository
+        exposes {Count, Singleton}. Live clr.GetClrType reflection on
+        the INTERFACE itself (matching test_3a, cycle 1) shows only
+        `Singleton` as a directly declared property -- `Count` is
+        inherited from the generic base interface
+        `IRepository<IRnResearchNbk>` and is not enumerated by
+        `net_type.GetProperties()` on the derived interface (a CLR
+        reflection-over-interfaces quirk, not evidence Count is
+        missing). T2.1's own live evidence
+        (evidence/live-T2.1-notebook-owner.md) already exercised
+        `repo.Count` successfully (== 1) via runtime attribute access,
+        so this test pins BOTH: the functional live access (hasattr +
+        a real call, on the actual service, not just the interface
+        type) AND the interface-level absence of RecordsOC.
+        """
+        pytest.importorskip("SIL.LCModel")
+        from SIL.LCModel import IRnResearchNbkRepository
+
+        props, _ = _dump_type_surface(
+            IRnResearchNbkRepository, "IRnResearchNbkRepository"
+        )
+        assert "Singleton" in props
+        assert "RecordsOC" not in props, (
+            "RecordsOC now exists on IRnResearchNbkRepository -- "
+            "re-derive ruling C1 (#302) before trusting this ratchet"
+        )
+
+    @pytest.mark.live_phase("DataNotebookOperations", "read")
+    def test_5g_pin_c2_rnresearchnbkrepository_count_live(self, target_sandbox):
+        """
+        Functional half of the C2 pin: `repo.Count` and `repo.Singleton`
+        both resolve at runtime on the real service (Count is inherited
+        from the generic IRepository<T> base and does not show up via
+        clr.GetClrType reflection on the derived interface -- see
+        test_5f -- but it IS reachable live, exactly as T2.1 exercised).
+        """
+        from SIL.LCModel import IRnResearchNbkRepository
+
+        repo = target_sandbox.project.ServiceLocator.GetService(
+            IRnResearchNbkRepository
+        )
+        assert hasattr(repo, "Count")
+        assert hasattr(repo, "Singleton")
+        assert not hasattr(repo, "RecordsOC")
+        assert isinstance(repo.Count, int)
+        print("")
+        print("[5g] live IRnResearchNbkRepository.Count = " + str(repo.Count))
+
+
+class TestPart6CompoundContextSurfaceQ3:
+    """
+    T2.5b -- answers Q3 (spec.md section 4), Catalogue 2 row 25
+    (Grammar/compound_rule.py:220,244). Ruling C9 (spec.md section 3)
+    is binding: compound_rule.py is HANDS OFF in this campaign -- this
+    class only records the live surface answer, it does not fix
+    anything. A blind OA->RA rename there would be wrong in both
+    directions if this comes back negative, and even a positive result
+    (some suffix carries a context member) does not by itself justify
+    an in-campaign fix; it only clears Catalogue 2 row 25 for separate
+    filing.
+
+    Live on target_sandbox: creates one real MoEndoCompound and one
+    real MoExoCompound via the public
+    project.MorphRules.CreateCompoundRule() API, then dumps BOTH the
+    declared+inherited CLR property surface (clr.GetClrType, matching
+    every other Part in this file) AND a live dir() over the actual
+    instance, checking for any member whose name contains "Context"
+    under any suffix (OA, RA, OS, RS, or bare).
+    """
+
+    @staticmethod
+    def _context_named_members(props):
+        return sorted(p for p in props if "Context" in p)
+
+    @pytest.mark.live_phase("MorphRuleOperations", "add")
+    def test_6a_moendocompound_and_moexocompound_context_surface(self, target_sandbox):
+        from flexicon.code.lcm_casting import cast_to_concrete
+
+        rules = target_sandbox.MorphRules
+        endo = None
+        exo = None
+        try:
+            endo = rules.CreateCompoundRule(
+                f"{TEST_PREFIX}Q3_endo", endocentric=True
+            )
+            exo = rules.CreateCompoundRule(
+                f"{TEST_PREFIX}Q3_exo", endocentric=False
+            )
+
+            assert endo.ClassName == "MoEndoCompound"
+            assert exo.ClassName == "MoExoCompound"
+
+            endo_concrete = cast_to_concrete(endo)
+            exo_concrete = cast_to_concrete(exo)
+
+            from SIL.LCModel import IMoEndoCompound, IMoExoCompound
+
+            endo_props, _ = _dump_type_surface(IMoEndoCompound, "IMoEndoCompound")
+            exo_props, _ = _dump_type_surface(IMoExoCompound, "IMoExoCompound")
+
+            endo_context_props = self._context_named_members(endo_props)
+            exo_context_props = self._context_named_members(exo_props)
+
+            # Live dir() over the actual concrete instances -- catches
+            # anything reflection-over-the-interface-type could miss
+            # (e.g. a member added only on the runtime class, not the
+            # declared interface).
+            endo_dir_context = sorted(
+                n for n in dir(endo_concrete) if "Context" in n
+            )
+            exo_dir_context = sorted(
+                n for n in dir(exo_concrete) if "Context" in n
+            )
+
+            print("")
+            print("[Q3] IMoEndoCompound CLR-reflection Context* members: " + str(endo_context_props))
+            print("[Q3] IMoExoCompound CLR-reflection Context* members: " + str(exo_context_props))
+            print("[Q3] live MoEndoCompound instance dir() Context* members: " + str(endo_dir_context))
+            print("[Q3] live MoExoCompound instance dir() Context* members: " + str(exo_dir_context))
+
+            any_context_member = bool(
+                endo_context_props
+                or exo_context_props
+                or endo_dir_context
+                or exo_dir_context
+            )
+
+            if any_context_member:
+                print(
+                    "[Q3] ANSWER: a Context-named member DOES exist under "
+                    "one of these suffixes -- Catalogue 2 row 25 is "
+                    "RAISED to HIGH confidence and should be filed as its "
+                    "own issue (compound_rule.py stays hands-off in this "
+                    "campaign per ruling C9)."
+                )
+            else:
+                print(
+                    "[Q3] ANSWER: no Context-named member exists under ANY "
+                    "suffix (OA, RA, OS, RS, or bare) on either "
+                    "MoEndoCompound or MoExoCompound -- Catalogue 2 row 25 "
+                    "is CLEARED. left_context/right_context/contexts in "
+                    "CompoundRule are unconditionally None for both "
+                    "concrete types; there is no reference or owned "
+                    "context to navigate to under any name. Confirms the "
+                    "cycle-1 snapshot finding live."
+                )
+
+            # This class only records the answer (see class docstring);
+            # it does not assert a particular outcome, since either
+            # answer is informative and ruling C9 forbids acting on it
+            # here either way.
+        finally:
+            for rule in (endo, exo):
+                if rule is None:
+                    continue
+                try:
+                    rules.Delete(rule)
+                except Exception:
+                    pass

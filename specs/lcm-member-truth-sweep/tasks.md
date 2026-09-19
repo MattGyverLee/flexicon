@@ -28,7 +28,7 @@ Mark a task done only when its evidence file exists.
 
 ---
 
-## Checkpoint 2 -- #302 + #261, `DataNotebookOperations.py` (NEXT)
+## Checkpoint 2 -- #302 + #261, `DataNotebookOperations.py` (DONE, spurt 2)
 
 Both issues live in one file and total four executable lines. Do them in
 one spurt; they share a live evidence run.
@@ -95,12 +95,12 @@ one spurt; they share a live evidence run.
       `gh repo set-default MattGyverLee/flexicon` before any future `gh`
       issue call.
 
-- [ ] **T2.8** Live verification of T2.2-T2.4 against `target_sandbox`,
+- [x] **T2.8** Live verification of T2.2-T2.4 against `target_sandbox`,
       with pre/post state **re-read by HVO**. -> `evidence/live-T2-notebook.md`.
       Plus the offline regression run (`-m "not requires_live_project"`) with
       the pass count recorded and compared to the `598f41e` baseline.
 
-- [ ] **T2.9** Commit and push. Suggested subject:
+- [x] **T2.9** Commit and push. Suggested subject:
       `fix(notebook): route record resolution through project.Object and own RecordsOC (#302, #261)`.
       Note the close-keyword hazard in `spec.md` gate 7.
 
@@ -109,7 +109,7 @@ a real one, Catalogue 2 made durable and drafted for filing.
 
 ---
 
-## Checkpoint 3 -- #283, `Grammar/EnvironmentOperations.py`
+## Checkpoint 3 -- #283, `Grammar/EnvironmentOperations.py` (NEXT)
 
 - [ ] **T3.1 (C7)** Rename `LeftContextOA`/`RightContextOA` ->
       `LeftContextRA`/`RightContextRA` at `:494,495,550,551` (the two
