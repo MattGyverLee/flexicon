@@ -26,6 +26,7 @@ from SIL.LCModel import (
     IMoAffixAllomorphFactory,
     ILexEntry,
     IPhEnvironment,
+    LexEntryTags,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
@@ -1299,6 +1300,82 @@ class AllomorphOperations(BaseOperations):
         if env in allomorph.PhoneEnvRC:
             with self._TransactionCM("Remove phonological environment"):
                 allomorph.PhoneEnvRC.Remove(env)
+
+    # --- Navigation Operations ---
+
+    @OperationsMethod
+    def GetOwningEntry(self, allomorph_or_hvo):
+        """
+        Get the lexical entry that owns this allomorph.
+
+        Args:
+            allomorph_or_hvo: The IMoForm object (IMoStemAllomorph or
+                IMoAffixAllomorph) or HVO.
+
+        Returns:
+            ILexEntry: The owning entry, or None if the allomorph has no
+            owning entry anywhere above it in the ownership chain.
+
+        Raises:
+            FP_NullParameterError: If allomorph_or_hvo is None.
+
+        Example:
+            >>> entry = project.LexEntry.Find("run")
+            >>> allomorphs = project.Allomorphs.GetAll(entry)
+            >>> owner = project.Allomorphs.GetOwningEntry(allomorphs[0])
+            >>> print(project.LexEntry.GetHeadword(owner))
+            run
+
+            >>> # Round trip: GetAll walks entry -> allomorphs; this walks
+            >>> # allomorph -> entry.
+            >>> for allomorph in project.Allomorphs.GetAll():
+            ...     owner = project.Allomorphs.GetOwningEntry(allomorph)
+            ...     if owner is None:
+            ...         continue
+            ...     form = project.Allomorphs.GetForm(allomorph)
+            ...     print(f"{form} -> {project.LexEntry.GetHeadword(owner)}")
+            run -> run
+            ran -> run
+
+        Notes:
+            - Returns None rather than raising when no owning entry exists.
+              Callers must handle None; do not assume an entry is always
+              found.
+            - Climbs the ownership chain to the nearest ILexEntry ancestor
+              (liblcm CmObject.cs:3349, OwnerOfClass walks Owner recursively
+              and answers null when no ancestor of the class is found). It
+              does NOT take a single `.Owner` hop: an IMoForm reached through
+              an affix-form chain does not necessarily sit directly under its
+              entry, so one hop can land on the wrong object. The one-hop
+              `GetOwningEntry` implementations on EtymologyOperations,
+              PronunciationOperations and VariantOperations are valid for
+              their own owner shapes and are deliberately NOT the template
+              here (D-A8).
+            - The null guard runs BEFORE the ILexEntry cast, because casting
+              a null result is the crash this guard exists to prevent.
+
+        See Also:
+            GetAll, GetForm, Create
+        """
+        self._ValidateParam(allomorph_or_hvo, "allomorph_or_hvo")
+
+        allomorph = self.__GetAllomorphObject(allomorph_or_hvo)
+
+        # Template: LexSenseOperations.GetOwningEntry (LexSenseOperations.py
+        # :2826), not the one-hop `.Owner` siblings in this directory.
+        # OwnerOfClass is confirmed present on IMoForm / IMoStemAllomorph /
+        # IMoAffixAllomorph in tests/contract/snapshots/liblcm_baseline.json,
+        # and returns null when there is no such ancestor
+        # (liblcm src/SIL.LCModel/DomainImpl/CmObject.cs:3349).
+        _owner = allomorph.OwnerOfClass(LexEntryTags.kClassId)
+        if _owner is None:
+            return None
+
+        # Cast to the declared return type only after the null guard. Raw
+        # OwnerOfClass output is typed ICmObject; pythonnet surfaces
+        # ILexEntry members (LexemeFormOA, SensesOS, ...) only after the
+        # explicit interface cast.
+        return ILexEntry(_owner)
 
     # --- Private Helper Methods ---
 

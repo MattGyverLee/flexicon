@@ -216,6 +216,8 @@ def initialize_flex_for_tests():
             ("flexicon.code.Discourse.ConstChartClauseMarkerOperations", "ConstChartClauseMarkerOperations"),
             ("flexicon.code.Discourse.ConstChartWordGroupOperations", "ConstChartWordGroupOperations"),
             ("flexicon.code.Discourse.ConstChartMovedTextOperations", "ConstChartMovedTextOperations"),
+            # Parser
+            ("flexicon.code.Parser.ParserOperations", "ParserOperations"),
             # Shared
             ("flexicon.code.Shared.MediaOperations", "MediaOperations"),
             ("flexicon.code.Shared.FilterOperations", "FilterOperations"),
@@ -802,6 +804,8 @@ _OPERATIONS_CLASS_DOMAIN = {
     "ConstChartClauseMarkerOperations": "Discourse",
     "ConstChartWordGroupOperations": "Discourse",
     "ConstChartMovedTextOperations": "Discourse",
+    # Parser
+    "ParserOperations": "Parser",
     # Shared
     "MediaOperations": "Shared",
     "FilterOperations": "Shared",

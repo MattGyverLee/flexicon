@@ -61,6 +61,15 @@ from ..FLExProject import (
     FP_NullParameterError,
 )
 
+# Import the read-side wrapper + smart collection this module's GetAll
+# hands back. Both already existed in full (morphosyntax_analysis.py,
+# msa_collection.py); GetAll is the call path that finally instantiates
+# them, so the subtype differences between the four concrete MSA classes
+# stay behind the wrapper's is_* / as_* / pos_* families rather than
+# reaching the caller as a ClassName test or a cast (Principle VI).
+from .morphosyntax_analysis import MorphosyntaxAnalysis
+from .msa_collection import MSACollection
+
 
 # --- Structured result for RemoveOrphaned (issue #206) ----------------------
 # Follows the namedtuple-with-docstring convention used elsewhere in this
@@ -114,7 +123,7 @@ Fields:
 
 class MSAOperations(BaseOperations):
     """
-    Creation + attach operations for morphosyntactic analyses (MSAs).
+    Read, creation and attach operations for morphosyntactic analyses (MSAs).
 
     A LexSense's grammatical analysis lives in
     ``sense.MorphoSyntaxAnalysisRA``, which is a reference to an MSA owned
@@ -124,8 +133,9 @@ class MSAOperations(BaseOperations):
     entry) and a SandboxGenericMSA descriptor.
 
     This wrapper hides the ServiceLocator + SandboxGenericMSA dance and
-    auto-attaches the new MSA to the sense, mirroring the read-side
-    coverage in MorphosyntaxAnalysis.
+    auto-attaches the new MSA to the sense; ``GetAll`` covers the reading
+    direction, handing back MorphosyntaxAnalysis wrappers in an
+    MSACollection so subtype differences never reach the caller.
 
     Usage::
 
@@ -136,6 +146,11 @@ class MSAOperations(BaseOperations):
 
         entry = list(project.LexiconAllEntries())[0]
         sense = entry.SensesOS[0]
+
+        # Read: every MSA owned by the entry, already wrapped.
+        for msa in project.MSA.GetAll(entry):
+            if msa.is_deriv_aff_msa:
+                print(msa.pos_from, "->", msa.pos_to)
 
         # Stem MSA (most common case): assign POS to a lexical entry.
         verb_pos = project.POS.Find("Verb")
@@ -153,6 +168,127 @@ class MSAOperations(BaseOperations):
 
     def __init__(self, project):
         super().__init__(project)
+
+    # ------------------------------------------------------------------
+    # Reading
+    # ------------------------------------------------------------------
+
+    @OperationsMethod
+    def GetAll(self, entry_or_hvo=None):
+        """
+        Get every morphosyntactic analysis owned by an entry, or by the
+        whole project.
+
+        Reads ``entry.MorphoSyntaxAnalysesOC`` and returns a smart
+        collection of wrapped MSA objects that transparently handle the
+        four concrete subtypes (MoStemMsa, MoDerivAffMsa, MoInflAffMsa,
+        MoUnclassifiedAffixMsa). The caller never tests ``ClassName`` and
+        never casts: subtype differences are reached through the
+        wrapper's ``is_*`` / ``as_*`` / ``pos_*`` families instead.
+
+        Args:
+            entry_or_hvo: The ILexEntry object or HVO whose
+                MorphoSyntaxAnalysesOC should be read. Pass None (the
+                default) to sweep every entry in the project.
+
+        Returns:
+            MSACollection[MorphosyntaxAnalysis]: Smart collection of
+                MorphosyntaxAnalysis wrapper objects, showing a subtype
+                breakdown on ``str()`` and supporting filtered queries.
+                Empty collection if the entry owns no MSAs.
+
+        Raises:
+            FP_ParameterError: If entry_or_hvo is supplied but does not
+                resolve to a valid ILexEntry.
+
+        Example:
+            >>> entry = list(project.LexiconAllEntries())[0]
+            >>>
+            >>> # Every MSA on one entry
+            >>> msas = project.MSA.GetAll(entry)
+            >>> print(msas)  # Shows subtype breakdown
+            # MSACollection (3 total)
+            #   MoStemMsa: 2 (66%)
+            #   MoDerivAffMsa: 1 (33%)
+            >>>
+            >>> # Iterate the wrapped objects -- no ClassName, no cast
+            >>> for msa in msas:
+            ...     if msa.is_deriv_aff_msa:
+            ...         print(msa.pos_from, "->", msa.pos_to)
+            ...     else:
+            ...         print(msa.pos_main)
+            >>>
+            >>> # len() and indexing work directly on the collection
+            >>> print(len(msas))
+            3
+            >>> first = msas[0]
+            >>>
+            >>> # Filter by subtype, or by POS, and chain the two
+            >>> verb_pos = project.POS.Find("Verb")
+            >>> verb_stems = project.MSA.GetAll(entry).filter(pos_main=verb_pos)
+            >>>
+            >>> # Project-wide sweep
+            >>> all_msas = project.MSA.GetAll()
+            >>> print(f"Project has {len(all_msas)} MSAs")
+
+        Notes:
+            - Wiring, not new design. MorphosyntaxAnalysis
+              (morphosyntax_analysis.py) and MSACollection
+              (msa_collection.py) were already complete; this accessor is
+              the call path that instantiates them.
+            - Deliberately NOT decorated with ``@wrap_enumerable``, unlike
+              most GetAll methods in this library. That decorator adapts
+              return values that lack sequence behavior -- a raw C#
+              IEnumerable or a bare Python generator. ``MSACollection``
+              already supplies ``__len__``, ``__getitem__`` (including
+              slicing) and ``__iter__`` through SmartCollection, so
+              ``_needs_enumerable_wrap`` (BaseOperations.py) returns False
+              for it and the decorator would be an inert no-op that
+              falsely implied the result needed adapting. The behavioral
+              collection contract -- loop it, ``len()`` it, index it,
+              re-iterate it -- is met in full, by MSACollection itself.
+            - This method performs no write and does not require a
+              write-enabled project. That is a property of this method,
+              not of MSAOperations: the class is write-capable, and its
+              CreateStem / CreateDerivAff / CreateInflAff /
+              CreateUnclassifiedAffix / SetStemMsaPos / SetDerivAffMsaPos
+              / ChangeAffixVariant / RemoveOrphaned siblings all mutate
+              the project and call _EnsureWriteEnabled.
+            - Collection order follows FLEx's MorphoSyntaxAnalysesOC
+              order. When entry_or_hvo is None, entries are visited in
+              ILexEntryRepository order and each entry's MSAs are
+              appended in turn.
+            - An entry's MorphoSyntaxAnalysesOC can contain an MSA no
+              sense currently points at; GetAll reports what the entry
+              owns, and does not filter orphans. Use RemoveOrphaned to
+              prune them.
+            - ``ILexEntry.MorphoSyntaxAnalysesOC`` is
+              ``ILcmOwningCollection<IMoMorphSynAnalysis>``, read-only,
+              per tests/contract/snapshots/liblcm_baseline.json
+              (liblcm 11.0.0.0).
+
+        See Also:
+            CreateStem, CreateDerivAff, CreateInflAff,
+            CreateUnclassifiedAffix, RemoveOrphaned,
+            morphosyntax_analysis.MorphosyntaxAnalysis,
+            msa_collection.MSACollection
+        """
+        analyses = []
+
+        if entry_or_hvo is None:
+            entries = self.project.ObjectsIn(ILexEntryRepository)
+        else:
+            entries = [self.__ResolveEntry(entry_or_hvo)]
+
+        for entry_obj in entries:
+            for msa in entry_obj.MorphoSyntaxAnalysesOC:
+                analyses.append(MorphosyntaxAnalysis(msa))
+
+        return MSACollection(analyses)
+
+    # ------------------------------------------------------------------
+    # Creation + attach
+    # ------------------------------------------------------------------
 
     @OperationsMethod
     def CreateStem(self, sense, pos):

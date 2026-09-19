@@ -6,19 +6,28 @@
 
 from typing import Any
 from ..BaseOperations import BaseOperations
+from .msa_collection import MSACollection
 
 class MSAOperations(BaseOperations[Any]):
     """
-    Creation + attach operations for morphosyntactic analyses (MSAs).
+    Read, creation and attach operations for morphosyntactic analyses (MSAs).
 
-    Unlike most Operations classes, MSAOperations exposes no GetAll/Find/
-    Create/Delete surface -- MSAs are owned per-entry (not top-level
-    enumerable) and are created/attached through the Create*/Set* helpers
-    below. The common Operations surface is inherited from BaseOperations.
-    See msa_collection.MSACollection for the read/iteration side.
+    MSAs are owned per-entry rather than being top-level enumerable, so
+    GetAll takes the owning entry (or None to sweep the project) and
+    returns an MSACollection of MorphosyntaxAnalysis wrappers. Creation and
+    attachment go through the Create*/Set* helpers below. The rest of the
+    common Operations surface is inherited from BaseOperations.
+
+    This class is write-capable: everything below GetAll mutates the
+    project and requires a write-enabled FLExProject.
     """
 
     def __init__(self, project: Any) -> None: ...
+
+    # Read every MSA owned by an entry (or, with None, by the project).
+    # Not @wrap_enumerable-decorated: MSACollection already supplies
+    # __len__/__getitem__/__iter__, so the decorator would be a no-op.
+    def GetAll(self, entry_or_hvo: Any = None) -> MSACollection: ...
 
     # Create + attach a new MSA to a sense (returns the new LCM MSA object).
     def CreateStem(self, sense: Any, pos: Any) -> Any: ...

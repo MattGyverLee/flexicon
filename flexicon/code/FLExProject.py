@@ -3364,6 +3364,59 @@ class FLExProject(object):
             self._constchartclausemarker_ops = ConstChartClauseMarkerOperations(self)
         return self._constchartclausemarker_ops
 
+    # --- Parser ---
+
+    @property
+    def Parser(self):
+        """
+        Access to READ-ONLY morphological parser operations.
+
+        Singular, like the other service facades (``POS``, ``LexEntry``,
+        ``MSA``): a plural accessor names a collection namespace, and a
+        parser is a service rather than a collection.
+
+        THE IMPORT BELOW IS FUNCTION-LOCAL ON PURPOSE, and that is FR-003
+        rather than a style choice. Nothing about the parser is loaded when
+        ``flexicon`` is imported, so a machine whose parser component is
+        missing, relocated, or from a different FieldWorks installation
+        still imports the package -- it degrades to "parser unavailable",
+        carrying a reason, instead of failing at import. Loading is
+        triggered by USE.
+
+        Nothing this area ADDS writes: none of its six operations records
+        or files a parse result back into the project, and a standing test
+        enforces that by set equality over the public surface rather than by
+        reviewing method names. The limit of the claim, stated so a caller
+        is not misled by it: the generic reordering helpers inherited by
+        every Operations class are still present here, and Swap /
+        MoveBefore / MoveAfter / ApplySyncableProperties take their targets
+        as arguments and will write if handed writable objects. None can
+        record a parse result. See ParserOperations' class docstring.
+
+        Returns:
+            ParserOperations: Instance providing read-only parser methods.
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("MyProject", writeEnabled=False)
+            >>> # Ask first -- asking never raises, on any machine
+            >>> status = project.Parser.GetAvailability()
+            >>> if not status.available:
+            ...     print(status.reason)
+            ... else:
+            ...     result = project.Parser.ParseWord("mengambil")
+            ...     doc = project.Parser.ParseWordXml("mengambil")
+            ...     trace = project.Parser.TraceWordXml("mengambil")
+            >>> # Grammar currency is asked, never assumed
+            >>> if status.available and not project.Parser.IsUpToDate():
+            ...     project.Parser.Reload()
+        """
+        if "_parser_ops" not in self.__dict__:
+            from .Parser.ParserOperations import ParserOperations
+
+            self._parser_ops = ParserOperations(self)
+        return self._parser_ops
+
     # Singular/plural aliases for backward compatibility are generated at
     # module scope from FLExProject._OP_NAMESPACE_ALIASES (see the end of
     # this module). Each generated alias emits a DeprecationWarning that
