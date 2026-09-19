@@ -60,13 +60,13 @@ import pytest
 
 REQUIRED_HCPARSER_MEMBERS = frozenset(
     {
-        "HCParser(LcmCache)",                       # construction from a cache
-        "Update()",                                 # grammar update
-        "Reset()",                                  # A2.2 -- the discard half of the reload
-        "IsUpToDate()",                             # A2.2 -- the currency read
-        "ParseWord(string)",                        # plain parse
-        "ParseWordXml(string)",                     # structured parse
-        "TraceWordXml(string, IEnumerable<int>)",   # trace
+        "HCParser(LcmCache)",  # construction from a cache
+        "Update()",  # grammar update
+        "Reset()",  # A2.2 -- the discard half of the reload
+        "IsUpToDate()",  # A2.2 -- the currency read
+        "ParseWord(string)",  # plain parse
+        "ParseWordXml(string)",  # structured parse
+        "TraceWordXml(string, IEnumerable<int>)",  # trace
     }
 )
 
@@ -140,10 +140,14 @@ def parser_core():
         pytest.skip("ParserCore.dll not present at %s" % dll)
 
     try:
-        import clr  # type: ignore # noqa: F401 -- availability probe; raises ImportError if pythonnet is absent # pyright: ignore[reportUnusedImport]
+        # clr must be imported before System resolves; it is the pythonnet
+        # availability probe, not an unused import.
+        import clr  # type: ignore
         import System
         from System.Reflection import BindingFlags
-    except ImportError as exc:                       # pragma: no cover
+
+        assert clr is not None
+    except ImportError as exc:  # pragma: no cover
         pytest.skip("pythonnet/CLR unavailable: %s" % exc)
 
     assembly = System.Reflection.Assembly.LoadFile(dll)
@@ -176,17 +180,19 @@ class TestA21BoundMemberSurface:
 
     def test_hcparser_type_is_present(self, parser_core):
         assert "HCParser" in parser_core["surfaces"], (
-            "HCParser is absent from %s; the facade has nothing to bind"
-            % parser_core["path"]
+            "HCParser is absent from %s; the facade has nothing to bind" % parser_core["path"]
         )
 
     def test_every_bound_member_exists(self, parser_core):
         present = parser_core["surfaces"]["HCParser"]["members"]
         missing = sorted(REQUIRED_HCPARSER_MEMBERS - present)
-        assert not missing, (
-            "ParserCore.dll at %s is missing %d member(s) the CP2a facade binds: %s\n"
-            "Present on HCParser: %s"
-            % (parser_core["path"], len(missing), missing, sorted(present))
+        assert (
+            not missing
+        ), "ParserCore.dll at %s is missing %d member(s) the CP2a facade binds: %s\n" "Present on HCParser: %s" % (
+            parser_core["path"],
+            len(missing),
+            missing,
+            sorted(present),
         )
 
 
@@ -199,18 +205,19 @@ class TestA22ResetAndCurrency:
     research rather than working around it.
     """
 
-    @pytest.mark.parametrize(
-        "name,expected_return", sorted(CURRENCY_AND_RESET_MEMBERS.items())
-    )
+    @pytest.mark.parametrize("name,expected_return", sorted(CURRENCY_AND_RESET_MEMBERS.items()))
     def test_member_exists_on_hcparser(self, parser_core, name, expected_return):
         returns = parser_core["surfaces"]["HCParser"]["returns"]
         assert name in returns, (
             "HCParser.%s() is ABSENT from the installed component. FR-043's "
             "reset-then-update reload cannot be bound; halt CP2a." % name
         )
-        assert returns[name] == expected_return, (
-            "HCParser.%s() returns %s, not %s -- the facade's contract assumes "
-            "the latter." % (name, returns[name], expected_return)
+        assert (
+            returns[name] == expected_return
+        ), "HCParser.%s() returns %s, not %s -- the facade's contract assumes " "the latter." % (
+            name,
+            returns[name],
+            expected_return,
         )
 
     @pytest.mark.parametrize("name", sorted(CURRENCY_AND_RESET_MEMBERS))
@@ -269,9 +276,7 @@ class TestA24VersionReadNeverCompared:
 
     def test_version_is_readable(self, parser_core):
         detected = parser_core["detected_version"]
-        assert re.match(r"^\d+\.\d+\.\d+$", detected), (
-            "detected_version %r is not a readable version triple" % detected
-        )
+        assert re.match(r"^\d+\.\d+\.\d+$", detected), "detected_version %r is not a readable version triple" % detected
 
     def test_version_is_not_used_as_a_gate_here(self, parser_core):
         """This tier reports the version and makes no decision from it.
