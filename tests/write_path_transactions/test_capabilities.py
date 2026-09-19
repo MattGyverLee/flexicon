@@ -30,14 +30,19 @@
 import flexicon
 
 
-#: The four tokens agreed in docs/FLEXTOOLSMCP_WRITE_CONTRACT.md section 3.
+#: The four write-path tokens agreed in
+#: docs/FLEXTOOLSMCP_WRITE_CONTRACT.md section 3, plus "parser" (4.9.0).
 #: Kept as a literal rather than imported from flexicon so the test actually
 #: pins the value instead of comparing the constant to itself.
+#:
+#: "parser" was added LAST in CP2a, after tiers A1, A2 and A3 all passed --
+#: the capability behind it is landed and live-verified, not planned.
 EXPECTED_TOKENS = {
     "ui-injection",
     "refresh-from-disk",
     "per-operation-uow",
     "transaction-rollback",
+    "parser",
 }
 
 

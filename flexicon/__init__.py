@@ -12,7 +12,7 @@
 #   License:    LGPL-2.1-or-later  (see LICENSE.txt)
 # ----------------------------------------------------------------------------
 
-version = "4.8.0"
+version = "4.9.0"
 
 #: Capabilities this *build* of flexicon implements, probed with ``in``.
 #:
@@ -64,11 +64,27 @@ version = "4.8.0"
 #: ``OpenProject()`` already warns once per call when ``writeEnabled=True`` is
 #: combined with an explicit ``undoable=False``, so the mode dependence is
 #: surfaced at the boundary where the mode is chosen as well as here.
+#:
+#: ``parser`` is mode-independent but MACHINE-dependent, and the distinction
+#: matters more here than for the four above. The token says this build ships
+#: ``project.Parser``; it says NOTHING about whether the machine reading it
+#: can reach a parser, because that depends on a FieldWorks component this
+#: package does not install and deliberately does not require. A consumer
+#: must therefore PROBE rather than infer::
+#:
+#:     if "parser" in getattr(flexicon, "CAPABILITIES", frozenset()):
+#:         status = project.Parser.GetAvailability()   # ask the machine
+#:         if status.available:
+#:             ...
+#:
+#: Treating the token as "a parser is available" is the one misreading that
+#: turns a degrade-with-a-reason into a crash.
 CAPABILITIES = frozenset({
     "ui-injection",
     "refresh-from-disk",
     "per-operation-uow",
     "transaction-rollback",
+    "parser",
 })
 
 # Define exported classes, etc. at the top level of the package
@@ -373,6 +389,14 @@ from .code.Discourse.ConstChartWordGroupOperations import (
 
 from .code.Discourse.ConstChartMovedTextOperations import (
     ConstChartMovedTextOperations,
+)
+
+# Parser Operations -- READ-ONLY access to the FieldWorks morphological
+# parser. Importing this module never touches ParserCore.dll: the component
+# probe is deferred to the first GetAvailability() call, so `import flexicon`
+# still succeeds on a machine with no parser (FR-003).
+from .code.Parser.ParserOperations import (
+    ParserOperations,
 )
 
 # Pythonic Wrapper - suffix-free property access

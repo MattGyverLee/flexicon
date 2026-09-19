@@ -700,6 +700,57 @@ class TextOperations(BaseOperations):
 
         return None
 
+    @wrap_enumerable
+    @OperationsMethod
+    def GetGenres(self, text_or_hvo):
+        """
+        Get every genre assigned to a text.
+
+        Reads the text's ``GenresRC`` reference collection in full, so a
+        text carrying more than one genre reports all of them. The singular
+        GetGenre reports only the first and is deliberately unchanged; use
+        this method whenever the count matters.
+
+        Args:
+            text_or_hvo: Either an IText object or its HVO (integer identifier).
+
+        Returns:
+            list: List of ICmPossibility genre objects assigned to the text.
+                Empty list when no genre is assigned (never None).
+
+        Raises:
+            FP_NullParameterError: If text_or_hvo is None.
+            FP_ParameterError: If the text does not exist or is invalid.
+
+        Example:
+            >>> text = list(project.Texts.GetAll())[0]
+            >>> genres = project.Texts.GetGenres(text)
+            >>> for genre in genres:
+            ...     print(genre.Name.BestAnalysisAlternative.Text)
+            Narrative
+            >>> if not genres:
+            ...     print("No genre assigned")
+
+        Notes:
+            - Returns an empty list when nothing is assigned, so `if not
+              genres:` is the empty check; there is no None case.
+            - IText.GenresRC is an ILcmReferenceCollection (verified in
+              tests/contract/snapshots/liblcm_baseline.json, under IText's
+              reflected_properties). A reference COLLECTION carries no
+              positional guarantee the way a reference sequence does, so do
+              not read meaning into the order of the returned list.
+            - Genres are ICmPossibility items from the project's "Text
+              Genres" possibility list (project.PossibilityLists.FindList).
+            - The list is a snapshot taken at call time; a later SetGenre
+              does not update a list already returned.
+
+        See Also:
+            GetGenre, SetGenre, Create
+        """
+        text_obj = self.__GetTextObject(text_or_hvo)
+
+        return list(text_obj.GenresRC)
+
     @OperationsMethod
     def SetGenre(self, text_or_hvo, genre):
         """

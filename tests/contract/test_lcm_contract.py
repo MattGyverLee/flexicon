@@ -191,6 +191,32 @@ class TestContractExtraction:
         assert s["total_repositories"] == len(expected_contract["repositories"])
 
 
+class TestNonContractPrefixesStaysScoped:
+    """A silent exclusion list needs a guard, or it grows unreviewed.
+
+    NON_CONTRACT_PREFIXES removes namespaces from the LCM contract scan
+    entirely, so anything added to it stops being checked and nothing says
+    so. One entry is defensible and argued in place (ParserCore is an
+    OPTIONAL component; admitting it would make a contract test demand the
+    very component FR-003 promises to work without). A second entry added
+    without that argument would be invisible.
+
+    This asserts the list stays exactly what was reviewed. Widening it is
+    then a deliberate act that edits a test, rather than a one-line append
+    nobody sees.
+    """
+
+    def test_exclusion_list_is_exactly_the_reviewed_entry(self):
+        from tests.contract.extract_lcm_contract import NON_CONTRACT_PREFIXES
+
+        assert set(NON_CONTRACT_PREFIXES) == {"SIL.FieldWorks.WordWorks.Parser"}, (
+            "NON_CONTRACT_PREFIXES has changed to %r. Each entry silently "
+            "removes a namespace from the LCM contract, so each needs its own "
+            "justification in extract_lcm_contract.py and its own update "
+            "here." % (NON_CONTRACT_PREFIXES,)
+        )
+
+
 class TestContractStability:
     """
     Compare current contract against the checked-in baseline.
