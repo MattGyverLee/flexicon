@@ -47,7 +47,7 @@
   "blocked_tasks": [
     "T4.5 (blocked on Q2)"
   ],
-  "needs_human_pending": "Not a technical blocker. The user's standing instruction after checkpoint 2 was 'close the loop once you finish the next issue'; #283 was that issue and checkpoint 3 is now complete, so the stop condition is satisfied. Checkpoint 4 (#259) is fully planned and unblocked, but no further spurt should start unattended until the user says to continue or re-arms the Ralph loop.",
+  "needs_human_pending": null,
   "production_files_modified_so_far": [
     "flexicon/code/Notebook/DataNotebookOperations.py",
     "flexicon/code/Grammar/EnvironmentOperations.py"
@@ -73,9 +73,11 @@
     "note": "Catalogue 2 siblings plus four out-of-scope DataNotebookOperations defects found during T2.4. None are fixed by this campaign (C13)."
   },
   "ralph_loop": {
-    "state": "stopped",
-    "reason": "User instruction after checkpoint 2: 'close the loop once you finish the next issue'. Spurt 3 ran operator-driven; checkpoint 3 is now complete, so the stop condition the user named is satisfied.",
-    "restart": "Re-arm with the standing prompt in HANDOFF-main-session.md only if the user asks; next checkpoint is 4."
+    "state": "running",
+    "reason": "Re-armed by the user on 2026-09-18: start the ralph loop on those four (#283, #259, #303, #309 = checkpoints 3-8). Supersedes the post-checkpoint-2 stop condition, which spurt 3 close-out acted on before the re-arm reached this file.",
+    "restart": "Already armed; standing prompt is in HANDOFF-main-session.md. Next checkpoint is 4.",
+    "authorized": "2026-09-18",
+    "scope": "Checkpoints 3-8. Does NOT relax the needs_human gate or the prohibition on unattended destructive live-LCM writes."
   },
   "offline_baseline": {
     "command": "python -m pytest -m \"not requires_live_project\" -q",

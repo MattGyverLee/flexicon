@@ -5,11 +5,16 @@
 **Baseline:** `598f41e` (v4.8.0); spurt-3 diffs measured against `994f2ee`
 **Issues:** #302, #261, #283, #259, #303, #309 -- **none are closed yet**;
 the campaign closes all six at checkpoint 8 (see "Issue-closing policy").
-**Ralph loop:** STOPPED at the user's instruction after checkpoint 2
-("close the loop once you finish the next issue"). Spurt 3 was run as an
-operator-driven spurt, not by the loop, and checkpoint 3 is now complete.
-The loop stays stopped; restart per the standing prompt in
-`HANDOFF-main-session.md` if the user re-arms it.
+**Ralph loop:** RUNNING -- **RE-ARMED by the user on 2026-09-18**, before
+checkpoint 3 was planned. The instruction was "start the ralph loop on
+those four", naming #283, #259, #303 and #309, i.e. checkpoints 3 through
+8. That **supersedes** the post-checkpoint-2 instruction ("close the loop
+once you finish the next issue"), which spurt 3's close-out read from this
+file and acted on because the re-arm had not yet been recorded here. There
+is no open stop condition at checkpoint 3: the loop continues to checkpoint
+4 (#259) and on to #303/#309. The protective gates are unchanged --
+`needs_human` on a genuine blocker, and never a destructive live-LCM write
+unattended.
 
 ## Offline regression baseline -- CORRECTED (read this before quoting a number)
 
