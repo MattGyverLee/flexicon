@@ -104,6 +104,15 @@
     <span class="n">FP_NullParameterError</span><span class="p">,</span>
 <span class="p">)</span>
 
+<span class="c1"># Import the read-side wrapper + smart collection this module&#39;s GetAll</span>
+<span class="c1"># hands back. Both already existed in full (morphosyntax_analysis.py,</span>
+<span class="c1"># msa_collection.py); GetAll is the call path that finally instantiates</span>
+<span class="c1"># them, so the subtype differences between the four concrete MSA classes</span>
+<span class="c1"># stay behind the wrapper&#39;s is_* / as_* / pos_* families rather than</span>
+<span class="c1"># reaching the caller as a ClassName test or a cast (Principle VI).</span>
+<span class="kn">from</span> <span class="nn">.morphosyntax_analysis</span> <span class="kn">import</span> <span class="n">MorphosyntaxAnalysis</span>
+<span class="kn">from</span> <span class="nn">.msa_collection</span> <span class="kn">import</span> <span class="n">MSACollection</span>
+
 
 <span class="c1"># --- Structured result for RemoveOrphaned (issue #206) ----------------------</span>
 <span class="c1"># Follows the namedtuple-with-docstring convention used elsewhere in this</span>
@@ -159,7 +168,7 @@
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.MSAOperations.MSAOperations">[docs]</a>
 <span class="k">class</span> <span class="nc">MSAOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Creation + attach operations for morphosyntactic analyses (MSAs).</span>
+<span class="sd">    Read, creation and attach operations for morphosyntactic analyses (MSAs).</span>
 
 <span class="sd">    A LexSense&#39;s grammatical analysis lives in</span>
 <span class="sd">    ``sense.MorphoSyntaxAnalysisRA``, which is a reference to an MSA owned</span>
@@ -169,8 +178,9 @@
 <span class="sd">    entry) and a SandboxGenericMSA descriptor.</span>
 
 <span class="sd">    This wrapper hides the ServiceLocator + SandboxGenericMSA dance and</span>
-<span class="sd">    auto-attaches the new MSA to the sense, mirroring the read-side</span>
-<span class="sd">    coverage in MorphosyntaxAnalysis.</span>
+<span class="sd">    auto-attaches the new MSA to the sense; ``GetAll`` covers the reading</span>
+<span class="sd">    direction, handing back MorphosyntaxAnalysis wrappers in an</span>
+<span class="sd">    MSACollection so subtype differences never reach the caller.</span>
 
 <span class="sd">    Usage::</span>
 
@@ -181,6 +191,11 @@
 
 <span class="sd">        entry = list(project.LexiconAllEntries())[0]</span>
 <span class="sd">        sense = entry.SensesOS[0]</span>
+
+<span class="sd">        # Read: every MSA owned by the entry, already wrapped.</span>
+<span class="sd">        for msa in project.MSA.GetAll(entry):</span>
+<span class="sd">            if msa.is_deriv_aff_msa:</span>
+<span class="sd">                print(msa.pos_from, &quot;-&gt;&quot;, msa.pos_to)</span>
 
 <span class="sd">        # Stem MSA (most common case): assign POS to a lexical entry.</span>
 <span class="sd">        verb_pos = project.POS.Find(&quot;Verb&quot;)</span>
@@ -198,6 +213,127 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Reading</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get every morphosyntactic analysis owned by an entry, or by the</span>
+<span class="sd">        whole project.</span>
+
+<span class="sd">        Reads ``entry.MorphoSyntaxAnalysesOC`` and returns a smart</span>
+<span class="sd">        collection of wrapped MSA objects that transparently handle the</span>
+<span class="sd">        four concrete subtypes (MoStemMsa, MoDerivAffMsa, MoInflAffMsa,</span>
+<span class="sd">        MoUnclassifiedAffixMsa). The caller never tests ``ClassName`` and</span>
+<span class="sd">        never casts: subtype differences are reached through the</span>
+<span class="sd">        wrapper&#39;s ``is_*`` / ``as_*`` / ``pos_*`` families instead.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: The ILexEntry object or HVO whose</span>
+<span class="sd">                MorphoSyntaxAnalysesOC should be read. Pass None (the</span>
+<span class="sd">                default) to sweep every entry in the project.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            MSACollection[MorphosyntaxAnalysis]: Smart collection of</span>
+<span class="sd">                MorphosyntaxAnalysis wrapper objects, showing a subtype</span>
+<span class="sd">                breakdown on ``str()`` and supporting filtered queries.</span>
+<span class="sd">                Empty collection if the entry owns no MSAs.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If entry_or_hvo is supplied but does not</span>
+<span class="sd">                resolve to a valid ILexEntry.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = list(project.LexiconAllEntries())[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Every MSA on one entry</span>
+<span class="sd">            &gt;&gt;&gt; msas = project.MSA.GetAll(entry)</span>
+<span class="sd">            &gt;&gt;&gt; print(msas)  # Shows subtype breakdown</span>
+<span class="sd">            # MSACollection (3 total)</span>
+<span class="sd">            #   MoStemMsa: 2 (66%)</span>
+<span class="sd">            #   MoDerivAffMsa: 1 (33%)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Iterate the wrapped objects -- no ClassName, no cast</span>
+<span class="sd">            &gt;&gt;&gt; for msa in msas:</span>
+<span class="sd">            ...     if msa.is_deriv_aff_msa:</span>
+<span class="sd">            ...         print(msa.pos_from, &quot;-&gt;&quot;, msa.pos_to)</span>
+<span class="sd">            ...     else:</span>
+<span class="sd">            ...         print(msa.pos_main)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # len() and indexing work directly on the collection</span>
+<span class="sd">            &gt;&gt;&gt; print(len(msas))</span>
+<span class="sd">            3</span>
+<span class="sd">            &gt;&gt;&gt; first = msas[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Filter by subtype, or by POS, and chain the two</span>
+<span class="sd">            &gt;&gt;&gt; verb_pos = project.POS.Find(&quot;Verb&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; verb_stems = project.MSA.GetAll(entry).filter(pos_main=verb_pos)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Project-wide sweep</span>
+<span class="sd">            &gt;&gt;&gt; all_msas = project.MSA.GetAll()</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Project has {len(all_msas)} MSAs&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Wiring, not new design. MorphosyntaxAnalysis</span>
+<span class="sd">              (morphosyntax_analysis.py) and MSACollection</span>
+<span class="sd">              (msa_collection.py) were already complete; this accessor is</span>
+<span class="sd">              the call path that instantiates them.</span>
+<span class="sd">            - Deliberately NOT decorated with ``@wrap_enumerable``, unlike</span>
+<span class="sd">              most GetAll methods in this library. That decorator adapts</span>
+<span class="sd">              return values that lack sequence behavior -- a raw C#</span>
+<span class="sd">              IEnumerable or a bare Python generator. ``MSACollection``</span>
+<span class="sd">              already supplies ``__len__``, ``__getitem__`` (including</span>
+<span class="sd">              slicing) and ``__iter__`` through SmartCollection, so</span>
+<span class="sd">              ``_needs_enumerable_wrap`` (BaseOperations.py) returns False</span>
+<span class="sd">              for it and the decorator would be an inert no-op that</span>
+<span class="sd">              falsely implied the result needed adapting. The behavioral</span>
+<span class="sd">              collection contract -- loop it, ``len()`` it, index it,</span>
+<span class="sd">              re-iterate it -- is met in full, by MSACollection itself.</span>
+<span class="sd">            - This method performs no write and does not require a</span>
+<span class="sd">              write-enabled project. That is a property of this method,</span>
+<span class="sd">              not of MSAOperations: the class is write-capable, and its</span>
+<span class="sd">              CreateStem / CreateDerivAff / CreateInflAff /</span>
+<span class="sd">              CreateUnclassifiedAffix / SetStemMsaPos / SetDerivAffMsaPos</span>
+<span class="sd">              / ChangeAffixVariant / RemoveOrphaned siblings all mutate</span>
+<span class="sd">              the project and call _EnsureWriteEnabled.</span>
+<span class="sd">            - Collection order follows FLEx&#39;s MorphoSyntaxAnalysesOC</span>
+<span class="sd">              order. When entry_or_hvo is None, entries are visited in</span>
+<span class="sd">              ILexEntryRepository order and each entry&#39;s MSAs are</span>
+<span class="sd">              appended in turn.</span>
+<span class="sd">            - An entry&#39;s MorphoSyntaxAnalysesOC can contain an MSA no</span>
+<span class="sd">              sense currently points at; GetAll reports what the entry</span>
+<span class="sd">              owns, and does not filter orphans. Use RemoveOrphaned to</span>
+<span class="sd">              prune them.</span>
+<span class="sd">            - ``ILexEntry.MorphoSyntaxAnalysesOC`` is</span>
+<span class="sd">              ``ILcmOwningCollection&lt;IMoMorphSynAnalysis&gt;``, read-only,</span>
+<span class="sd">              per tests/contract/snapshots/liblcm_baseline.json</span>
+<span class="sd">              (liblcm 11.0.0.0).</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            CreateStem, CreateDerivAff, CreateInflAff,</span>
+<span class="sd">            CreateUnclassifiedAffix, RemoveOrphaned,</span>
+<span class="sd">            morphosyntax_analysis.MorphosyntaxAnalysis,</span>
+<span class="sd">            msa_collection.MSACollection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">analyses</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">entry_or_hvo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">entries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ObjectsIn</span><span class="p">(</span><span class="n">ILexEntryRepository</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">entries</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__ResolveEntry</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)]</span>
+
+        <span class="k">for</span> <span class="n">entry_obj</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">msa</span> <span class="ow">in</span> <span class="n">entry_obj</span><span class="o">.</span><span class="n">MorphoSyntaxAnalysesOC</span><span class="p">:</span>
+                <span class="n">analyses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MorphosyntaxAnalysis</span><span class="p">(</span><span class="n">msa</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">MSACollection</span><span class="p">(</span><span class="n">analyses</span><span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Creation + attach</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span> <span class="nf">CreateStem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>

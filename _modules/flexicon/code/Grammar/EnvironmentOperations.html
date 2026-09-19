@@ -521,7 +521,10 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - This is a READ-ONLY property (no setter)</span>
-<span class="sd">            - Returns the LeftContextOA object if present</span>
+<span class="sd">            - Returns the LeftContextRA object if present (Reference</span>
+<span class="sd">              Atomic -- see specs/lcm-member-truth-sweep/spec.md C7;</span>
+<span class="sd">              the historical ``LeftContextOA`` name never existed on</span>
+<span class="sd">              ``IPhEnvironment``)</span>
 <span class="sd">            - Left context specifies what must precede the target</span>
 <span class="sd">            - Returns None if no left context is defined</span>
 <span class="sd">            - The returned object is typically an IPhPhonContext</span>
@@ -535,11 +538,8 @@
 
         <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Return the left context if it exists</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s2">&quot;LeftContextOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">env</span><span class="o">.</span><span class="n">LeftContextOA</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">env</span><span class="o">.</span><span class="n">LeftContextOA</span>
-
-        <span class="k">return</span> <span class="kc">None</span>
+        <span class="c1"># Return the left context if it exists (Reference Atomic).</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s2">&quot;LeftContextRA&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span> <span class="nf">GetRightContextPattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
@@ -577,7 +577,10 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - This is a READ-ONLY property (no setter)</span>
-<span class="sd">            - Returns the RightContextOA object if present</span>
+<span class="sd">            - Returns the RightContextRA object if present (Reference</span>
+<span class="sd">              Atomic -- see specs/lcm-member-truth-sweep/spec.md C7;</span>
+<span class="sd">              the historical ``RightContextOA`` name never existed on</span>
+<span class="sd">              ``IPhEnvironment``)</span>
 <span class="sd">            - Right context specifies what must follow the target</span>
 <span class="sd">            - Returns None if no right context is defined</span>
 <span class="sd">            - The returned object is typically an IPhPhonContext</span>
@@ -591,11 +594,8 @@
 
         <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Return the right context if it exists</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s2">&quot;RightContextOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">env</span><span class="o">.</span><span class="n">RightContextOA</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">env</span><span class="o">.</span><span class="n">RightContextOA</span>
-
-        <span class="k">return</span> <span class="kc">None</span>
+        <span class="c1"># Return the right context if it exists (Reference Atomic).</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s2">&quot;RightContextRA&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -606,8 +606,13 @@
 <span class="sd">            item_or_hvo: The IPhEnvironment object or HVO to duplicate.</span>
 <span class="sd">            insert_after (bool): If True (default), insert after the source environment.</span>
 <span class="sd">                                If False, insert at end of environments list.</span>
-<span class="sd">            deep (bool): If True (default), deep copy owned context objects (LeftContextOA, RightContextOA).</span>
-<span class="sd">                        If False, contexts are not copied.</span>
+<span class="sd">            deep (bool): INERT for this method -- kept only because it is</span>
+<span class="sd">                        pinned surface (EnvironmentOperations.pyi:18).</span>
+<span class="sd">                        LeftContextRA/RightContextRA are Reference Atomic,</span>
+<span class="sd">                        not owned, so there is nothing to &quot;deep copy&quot;: the</span>
+<span class="sd">                        duplicate always references the SAME context</span>
+<span class="sd">                        objects as the source, regardless of this flag.</span>
+<span class="sd">                        See specs/lcm-member-truth-sweep/spec.md C7.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IPhEnvironment: The newly created duplicate environment with a new GUID.</span>
@@ -620,12 +625,12 @@
 <span class="sd">            &gt;&gt;&gt; envOps = EnvironmentOperations(project)</span>
 <span class="sd">            &gt;&gt;&gt; word_initial = envOps.Create(&quot;Word Initial&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; envOps.SetStringRepresentation(word_initial, &quot;#_&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; # Deep copy (default - includes owned context objects)</span>
 <span class="sd">            &gt;&gt;&gt; copy = envOps.Duplicate(word_initial)</span>
 <span class="sd">            &gt;&gt;&gt; print(envOps.GetName(copy))</span>
 <span class="sd">            Word Initial</span>
 
-<span class="sd">            &gt;&gt;&gt; # Shallow copy (no context objects)</span>
+<span class="sd">            &gt;&gt;&gt; # `deep` is INERT for context objects (see Notes) -- this</span>
+<span class="sd">            &gt;&gt;&gt; # produces the same context references as the call above.</span>
 <span class="sd">            &gt;&gt;&gt; between_vowels = envOps.Create(&quot;Between Vowels&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; copy = envOps.Duplicate(between_vowels, deep=False)</span>
 
@@ -633,8 +638,11 @@
 <span class="sd">            - Factory.Create() automatically generates a new GUID</span>
 <span class="sd">            - insert_after=True preserves the original environment&#39;s position</span>
 <span class="sd">            - Simple properties copied: Name, Description, StringRepresentation (MultiString)</span>
-<span class="sd">            - deep=True copies owned context objects (LeftContextOA, RightContextOA)</span>
-<span class="sd">            - Contexts are complex structures with their own owned objects</span>
+<span class="sd">            - LeftContextRA/RightContextRA are copied by REFERENCE,</span>
+<span class="sd">              unconditionally -- `deep` is INERT for this method. They are</span>
+<span class="sd">              Reference Atomic (not owned), so the duplicate points at the</span>
+<span class="sd">              SAME IPhPhonContext objects as the source; there is nothing</span>
+<span class="sd">              to clone. See specs/lcm-member-truth-sweep/spec.md C7.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Delete</span>
@@ -671,33 +679,19 @@
                 <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">notation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
                 <span class="n">duplicate</span><span class="o">.</span><span class="n">StringRepresentation</span> <span class="o">=</span> <span class="n">mkstr</span>
 
-            <span class="c1"># Deep copy: owned context objects</span>
-            <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
-                <span class="kn">from</span> <span class="nn">..lcm_casting</span> <span class="kn">import</span> <span class="n">clone_properties</span>
-
-                <span class="c1"># Copy LeftContextOA if exists</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;LeftContextOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">LeftContextOA</span><span class="p">:</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="c1"># Create new context object of the same type</span>
-                        <span class="n">src_context</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">LeftContextOA</span>
-                        <span class="n">new_context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">ObjectRepository</span><span class="o">.</span><span class="n">NewObject</span><span class="p">(</span><span class="n">src_context</span><span class="o">.</span><span class="n">ClassID</span><span class="p">)</span>
-                        <span class="c1"># Deep clone all properties</span>
-                        <span class="n">clone_properties</span><span class="p">(</span><span class="n">src_context</span><span class="p">,</span> <span class="n">new_context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
-                        <span class="n">duplicate</span><span class="o">.</span><span class="n">LeftContextOA</span> <span class="o">=</span> <span class="n">new_context</span>
-                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                        <span class="k">pass</span>
-
-                <span class="c1"># Copy RightContextOA if exists</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;RightContextOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">RightContextOA</span><span class="p">:</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="c1"># Create new context object of the same type</span>
-                        <span class="n">src_context</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">RightContextOA</span>
-                        <span class="n">new_context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">ObjectRepository</span><span class="o">.</span><span class="n">NewObject</span><span class="p">(</span><span class="n">src_context</span><span class="o">.</span><span class="n">ClassID</span><span class="p">)</span>
-                        <span class="c1"># Deep clone all properties</span>
-                        <span class="n">clone_properties</span><span class="p">(</span><span class="n">src_context</span><span class="p">,</span> <span class="n">new_context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
-                        <span class="n">duplicate</span><span class="o">.</span><span class="n">RightContextOA</span> <span class="o">=</span> <span class="n">new_context</span>
-                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                        <span class="k">pass</span>
+            <span class="c1"># Reference assignment: LeftContextRA/RightContextRA are</span>
+            <span class="c1"># Reference Atomic (specs/lcm-member-truth-sweep/spec.md C7),</span>
+            <span class="c1"># not owned -- there is nothing to clone. A duplicate</span>
+            <span class="c1"># environment points at the SAME IPhPhonContext objects as</span>
+            <span class="c1"># the source. This is UNCONDITIONAL, not gated behind `deep`</span>
+            <span class="c1"># (which is inert for this method -- see the Args/Notes</span>
+            <span class="c1"># above): gating correct behaviour behind a flag is the</span>
+            <span class="c1"># anti-pattern CLAUDE.md&#39;s &quot;Don&#39;t Add a Flag for Behaviour</span>
+            <span class="c1"># That Should Be Unconditional&quot; section forbids.</span>
+            <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">LeftContextRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">LeftContextRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">LeftContextRA</span>
+            <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">RightContextRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">RightContextRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">RightContextRA</span>
 
             <span class="k">return</span> <span class="n">duplicate</span>
 
@@ -715,12 +709,17 @@
 <span class="sd">        ``GetStringRepresentation``/``SetStringRepresentation``</span>
 <span class="sd">        (``env.StringRepresentation...``), ``GetSyncableProperties``</span>
 <span class="sd">        (``getattr(env, prop_name)``) -- raises ``AttributeError`` on the</span>
-<span class="sd">        int-HVO entry path, and ``GetLeftContextPattern`` /</span>
-<span class="sd">        ``GetRightContextPattern`` (``hasattr(env, &quot;LeftContextOA&quot;/</span>
-<span class="sd">        &quot;RightContextOA&quot;)``) silently return ``None`` instead -- a wrong</span>
-<span class="sd">        answer with no exception, no traceback (confirmed live: P6, P6b,</span>
-<span class="sd">        P7; see specs/260-environment-resolver-cast/evidence/</span>
-<span class="sd">        live-T2-red-p6-p6b-p7.md for the RED-before-fix reproduction).</span>
+<span class="sd">        int-HVO entry path. (Historically -- before the #283 fix,</span>
+<span class="sd">        specs/lcm-member-truth-sweep/spec.md C7 -- ``GetLeftContextPattern``</span>
+<span class="sd">        / ``GetRightContextPattern`` also returned ``None`` on a</span>
+<span class="sd">        correctly-cast object, but for an unrelated reason: at the time</span>
+<span class="sd">        they read ``LeftContextOA``/``RightContextOA``, property names</span>
+<span class="sd">        that never existed on ``IPhEnvironment`` under any cast. The real,</span>
+<span class="sd">        now-corrected names are ``LeftContextRA``/``RightContextRA``</span>
+<span class="sd">        (Reference Atomic), confirmed live: P6, P6b, P7; see</span>
+<span class="sd">        specs/260-environment-resolver-cast/evidence/</span>
+<span class="sd">        live-T2-red-p6-p6b-p7.md for the RED-before-fix reproduction of</span>
+<span class="sd">        the missing-cast defect this method fixes.)</span>
 
 <span class="sd">        Unlike its sibling ``AllomorphOperations.__GetEnvironmentObject``</span>
 <span class="sd">        (uncast too, but a genuine BUG-FREE contract mismatch there --</span>
@@ -788,7 +787,8 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns all MultiString properties (all writing systems)</span>
-<span class="sd">            - Does not include owned objects (LeftContextOA, RightContextOA)</span>
+<span class="sd">            - Does not include context references (LeftContextRA,</span>
+<span class="sd">              RightContextRA -- see specs/lcm-member-truth-sweep/spec.md C7)</span>
 <span class="sd">            - Does not include GUID or HVO</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>

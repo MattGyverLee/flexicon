@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>flexicon.code.Parser package &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../_static/pyramid.css?v=bc59a08c" />
+    <script src="../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="flexicon.code.Reversal package" href="flexicon.code.Reversal.html" />
+    <link rel="prev" title="flexicon.code.Notebook package" href="flexicon.code.Notebook.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Reversal.html" title="flexicon.code.Reversal package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Notebook.html" title="flexicon.code.Notebook package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >flexicon</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="flexicon.html" >flexicon package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="flexicon.code.html" accesskey="U">flexicon.code package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Parser package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="flexicon-code-parser-package">
+<h1>flexicon.code.Parser package<a class="headerlink" href="#flexicon-code-parser-package" title="Link to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-flexicon.code.Parser.ParserOperations">
+<span id="flexicon-code-parser-parseroperations-module"></span><h2>flexicon.code.Parser.ParserOperations module<a class="headerlink" href="#module-flexicon.code.Parser.ParserOperations" title="Link to this heading">¶</a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="flexicon.code.Parser.ParserOperations.REQUIRED_MEMBERS">
+<span class="sig-prename descclassname"><span class="pre">flexicon.code.Parser.ParserOperations.</span></span><span class="sig-name descname"><span class="pre">REQUIRED_MEMBERS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('HCParser(LcmCache)',</span> <span class="pre">'Update()',</span> <span class="pre">'Reset()',</span> <span class="pre">'IsUpToDate()',</span> <span class="pre">'ParseWord(string)',</span> <span class="pre">'ParseWordXml(string)',</span> <span class="pre">'TraceWordXml(string,</span> <span class="pre">IEnumerable&lt;int&gt;)')</span></em><a class="headerlink" href="#flexicon.code.Parser.ParserOperations.REQUIRED_MEMBERS" title="Link to this definition">¶</a></dt>
+<dd><p>Every member this facade calls, rendered the way the C# source spells it.
+Verified against the real installed component by tier A2
+(tests/test_parser_reflective.py) BEFORE any of the behaviour below was
+written – Constitution Principle I. <cite>Reset()</cite> and <cite>IsUpToDate()</cite> had
+never been verified anywhere, in either repository, before that tier.</p>
+<p>Deliberately NOT the same list as FlexToolsMCP’s
+src/flextoolsmcp/server/parser_probe.py. The two diverge in both
+directions and neither is a superset of the other: that module
+additionally requires the filing member, which is the write spine and
+which this read facade never binds; this list additionally requires the
+reset and currency members, which that module does not cover. Each check
+probes what its OWN surface binds, and CP2a changes zero lines of the
+other one (FR-041, Decision D1).</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Parser.ParserOperations.ParserAvailability">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flexicon.code.Parser.ParserOperations.</span></span><span class="sig-name descname"><span class="pre">ParserAvailability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">available</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Parser/ParserOperations.html#ParserAvailability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Parser.ParserOperations.ParserAvailability" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Whether this project can reach the parser, and why not if it cannot.</p>
+<p>Returned, never raised. Asking whether the parser is reachable succeeds
+on every machine, in every condition – a missing component, a component
+from another FieldWorks install, a component whose surface has moved, a
+permissions error on the directory, a pythonnet failure. That is SC-001,
+and it is the single property tier A1 exists to test.</p>
+<p>This is the first degrading-with-reason return in flexicon. The package
+otherwise has exactly two behaviours, raise or silently become None, and
+neither is right here: a script that wants to know whether it can parse
+should be able to ask without guarding the question in a try block.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>available</strong> (<em>bool</em>) – Whether the parser operations may be called.</p></li>
+<li><p><strong>reason</strong> (<em>str</em>) – Why not, when <cite>available</cite> is False. Empty when
+available. States WHAT WAS CHECKED and nothing more.</p></li>
+<li><p><strong>version</strong> (<em>str</em><em> or </em><em>None</em>) – The detected component version, or None when
+the component was never loaded. Reported, never compared.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p><cite>version</cite> is REPORTED AND NEVER COMPARED AGAINST A MINIMUM
+(FR-006). A version floor is the check that looks reasonable in
+review and then refuses to run on the one machine whose
+FieldWorks build number sorts the wrong way. The gate is the two
+checks below, neither of which reads a number:
+same-installation, and the bound surface exists. A standing AST
+test on each side of the repository boundary asserts zero
+comparisons (tests/test_parser_structure.py, A1.2).</p></li>
+<li><p>The same-installation check is DIRECTORY EQUALITY ONLY. See
+<cite>GetAvailability</cite> for the limit of what that proves.</p></li>
+</ul>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">status</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Parser</span><span class="o">.</span><span class="n">GetAvailability</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="o">.</span><span class="n">available</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No parser: </span><span class="si">{</span><span class="n">status</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">else</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parser </span><span class="si">{</span><span class="n">status</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2"> ready&quot;</span><span class="p">)</span>
+<span class="go">Parser 9.3.10 ready</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>ParserOperations.GetAvailability</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flexicon.code.Parser.ParserOperations.ParserAvailability.available">
+<span class="sig-name descname"><span class="pre">available</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#flexicon.code.Parser.ParserOperations.ParserAvailability.available" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flexicon.code.Parser.ParserOperations.ParserAvailability.reason">
+<span class="sig-name descname"><span class="pre">reason</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#flexicon.code.Parser.ParserOperations.ParserAvailability.reason" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flexicon.code.Parser.ParserOperations.ParserAvailability.version">
+<span class="sig-name descname"><span class="pre">version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#flexicon.code.Parser.ParserOperations.ParserAvailability.version" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Parser.ParserOperations.ParserOperations">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flexicon.code.Parser.ParserOperations.</span></span><span class="sig-name descname"><span class="pre">ParserOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Parser/ParserOperations.html#ParserOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Parser.ParserOperations.ParserOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>READ-ONLY access to the FieldWorks morphological parser.</p>
+<p>Reached as <code class="docutils literal notranslate"><span class="pre">project.Parser</span></code>. Ask a word whether it parses, get the
+parser’s structured answer, or trace an attempt to see why it failed.</p>
+<p>THIS SURFACE IS READ-ONLY BY CONSTRUCTION, AND THAT IS LOAD-BEARING.
+There is no operation here that records, files or otherwise writes a
+parse result back into the project, and there is no transaction and no
+write-enable check anywhere in this module – because there is nothing
+to guard. If you are about to add a method that persists a parse, stop:
+the read-only safety claim made by every caller of this surface rests on
+that absence, and a standing test enumerates the public surface by set
+equality to keep it true (tests/test_parser_offline.py, A1.4). Persisting
+a parse is a later checkpoint’s work and arrives with its own guards.</p>
+<p>THE EXACT LIMIT OF THAT CLAIM, since a caller is entitled to know where
+it stops. “Read-only” covers everything this class ADDS – all six
+methods above. It does not extend to the generic reordering helpers every
+Operations class inherits from BaseOperations. Four of them (Sort,
+MoveUp, MoveDown, MoveToIndex) are inert here because they route through
+<cite>_GetSequence</cite>, which this class deliberately does not override. The rest
+– Swap, MoveBefore, MoveAfter, ApplySyncableProperties – take their
+targets as arguments and WILL write if you hand them writable objects.
+None of them can record a parse result, and this class adds no new reach,
+but <cite>project.Parser.Swap(a, b)</cite> is not a no-op and should not be read as
+one.</p>
+<p>DEGRADES, DOES NOT EXPLODE. On a machine where the parser component is
+missing, relocated, or from a different FieldWorks installation,
+importing flexicon still works and <code class="docutils literal notranslate"><span class="pre">GetAvailability()</span></code> answers with a
+reason. Only CALLING an operation raises, and it raises with that same
+reason. Ask first if you are not sure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">status</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Parser</span><span class="o">.</span><span class="n">GetAvailability</span><span class="p">()</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="o">.</span><span class="n">available</span><span class="p">:</span>
+    <span class="n">report</span><span class="o">.</span><span class="n">Warning</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>ONE GRAMMAR, AND ITS CURRENCY IS ASKED, NEVER ASSUMED. At most one
+loaded grammar is held at a time, for the project in use; switching
+projects releases the previous one. Before every parse the parser is
+ASKED whether its grammar is current, and a stale grammar is reloaded
+before the word is parsed – never after, and never from a local flag
+that this class maintains, because a local flag is exactly what goes
+stale when something else changes the model.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flexicon</span> <span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;IndonesianHC-Complete&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">status</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Parser</span><span class="o">.</span><span class="n">GetAvailability</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">status</span><span class="o">.</span><span class="n">available</span><span class="p">:</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Parser</span><span class="o">.</span><span class="n">ParseWord</span><span class="p">(</span><span class="s2">&quot;mengambil&quot;</span><span class="p">)</span>
+    <span class="n">trace</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Parser</span><span class="o">.</span><span class="n">TraceWordXml</span><span class="p">(</span><span class="s2">&quot;mengambil&quot;</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>ParserAvailability</p>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Parser.ParserOperations.ParserOperations.GetAvailability">
+<span class="sig-name descname"><span class="pre">GetAvailability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Parser.ParserOperations.ParserOperations.GetAvailability" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Parser.ParserOperations.ParserOperations.ParseWord">
+<span class="sig-name descname"><span class="pre">ParseWord</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Parser.ParserOperations.ParserOperations.ParseWord" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Parser.ParserOperations.ParserOperations.ParseWordXml">
+<span class="sig-name descname"><span class="pre">ParseWordXml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Parser.ParserOperations.ParserOperations.ParseWordXml" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Parser.ParserOperations.ParserOperations.TraceWordXml">
+<span class="sig-name descname"><span class="pre">TraceWordXml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Parser.ParserOperations.ParserOperations.TraceWordXml" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Parser.ParserOperations.ParserOperations.Reload">
+<span class="sig-name descname"><span class="pre">Reload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Parser.ParserOperations.ParserOperations.Reload" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Parser.ParserOperations.ParserOperations.IsUpToDate">
+<span class="sig-name descname"><span class="pre">IsUpToDate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Parser.ParserOperations.ParserOperations.IsUpToDate" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Parser">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-flexicon.code.Parser" title="Link to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">flexicon.code.Parser package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-flexicon.code.Parser.ParserOperations">flexicon.code.Parser.ParserOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Parser.ParserOperations.REQUIRED_MEMBERS"><code class="docutils literal notranslate"><span class="pre">REQUIRED_MEMBERS</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Parser.ParserOperations.ParserAvailability"><code class="docutils literal notranslate"><span class="pre">ParserAvailability</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Parser.ParserOperations.ParserAvailability.available"><code class="docutils literal notranslate"><span class="pre">available</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Parser.ParserOperations.ParserAvailability.reason"><code class="docutils literal notranslate"><span class="pre">reason</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Parser.ParserOperations.ParserAvailability.version"><code class="docutils literal notranslate"><span class="pre">version</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#flexicon.code.Parser.ParserOperations.ParserOperations"><code class="docutils literal notranslate"><span class="pre">ParserOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Parser.ParserOperations.ParserOperations.GetAvailability"><code class="docutils literal notranslate"><span class="pre">GetAvailability()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Parser.ParserOperations.ParserOperations.ParseWord"><code class="docutils literal notranslate"><span class="pre">ParseWord()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Parser.ParserOperations.ParserOperations.ParseWordXml"><code class="docutils literal notranslate"><span class="pre">ParseWordXml()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Parser.ParserOperations.ParserOperations.TraceWordXml"><code class="docutils literal notranslate"><span class="pre">TraceWordXml()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Parser.ParserOperations.ParserOperations.Reload"><code class="docutils literal notranslate"><span class="pre">Reload()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Parser.ParserOperations.ParserOperations.IsUpToDate"><code class="docutils literal notranslate"><span class="pre">IsUpToDate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Parser">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="flexicon.code.Notebook.html"
+                          title="previous chapter">flexicon.code.Notebook package</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="flexicon.code.Reversal.html"
+                          title="next chapter">flexicon.code.Reversal package</a></p>
+  </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Reversal.html" title="flexicon.code.Reversal package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Notebook.html" title="flexicon.code.Notebook package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >flexicon</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="flexicon.html" >flexicon package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="flexicon.code.html" >flexicon.code package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Parser package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    </div>
+  </body>
+</html>

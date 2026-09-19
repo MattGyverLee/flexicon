@@ -634,8 +634,17 @@
                         <span class="n">new_bundle</span><span class="o">.</span><span class="n">MsaRA</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">MsaRA</span>
                     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">bundle</span><span class="p">,</span> <span class="s2">&quot;MorphRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">bundle</span><span class="o">.</span><span class="n">MorphRA</span><span class="p">:</span>
                         <span class="n">new_bundle</span><span class="o">.</span><span class="n">MorphRA</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">MorphRA</span>
-                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">bundle</span><span class="p">,</span> <span class="s2">&quot;InflClassRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">bundle</span><span class="o">.</span><span class="n">InflClassRA</span><span class="p">:</span>
-                        <span class="n">new_bundle</span><span class="o">.</span><span class="n">InflClassRA</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">InflClassRA</span>
+
+                    <span class="c1"># No separate inflection-class copy needed: IWfiMorphBundle</span>
+                    <span class="c1"># has no InflClassRA member (the guard above was always</span>
+                    <span class="c1"># False; the dead body wrote a nonexistent</span>
+                    <span class="c1"># `new_bundle.InflClassRA`). Inflection class lives on</span>
+                    <span class="c1"># the MSA (IMoStemMsa.InflectionClassRA), and the MsaRA</span>
+                    <span class="c1"># assignment above already copies that MSA REFERENCE, so</span>
+                    <span class="c1"># new_bundle sees the same inflection class as bundle via</span>
+                    <span class="c1"># the shared MSA. See get_inflection_class_from_msa() in</span>
+                    <span class="c1"># lcm_casting.py (issue #259 / lcm-member-truth-sweep</span>
+                    <span class="c1"># C10/T4.2).</span>
 
             <span class="k">return</span> <span class="n">duplicate</span>
 

@@ -188,6 +188,12 @@ allomorphs “-s”, “-es”, and “-en” (ox/oxen).</p>
 <dd><p>Automatically instantiate and call the method.</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lexicon.AllomorphOperations.AllomorphOperations.GetOwningEntry">
+<span class="sig-name descname"><span class="pre">GetOwningEntry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lexicon.AllomorphOperations.AllomorphOperations.GetOwningEntry" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -1899,7 +1905,7 @@ MorphoSyntaxAnalysesOC are omitted.</p>
 <dt class="sig sig-object py" id="flexicon.code.Lexicon.MSAOperations.MSAOperations">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flexicon.code.Lexicon.MSAOperations.</span></span><span class="sig-name descname"><span class="pre">MSAOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Lexicon/MSAOperations.html#MSAOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Lexicon.MSAOperations.MSAOperations" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
-<p>Creation + attach operations for morphosyntactic analyses (MSAs).</p>
+<p>Read, creation and attach operations for morphosyntactic analyses (MSAs).</p>
 <p>A LexSense’s grammatical analysis lives in
 <code class="docutils literal notranslate"><span class="pre">sense.MorphoSyntaxAnalysisRA</span></code>, which is a reference to an MSA owned
 by <code class="docutils literal notranslate"><span class="pre">sense.Entry.MorphoSyntaxAnalysesOC</span></code>. LCM offers four concrete
@@ -1907,8 +1913,9 @@ MSA subtypes that share IMoMorphSynAnalysis as base; each subtype has
 its own factory whose 2-arg Create overload takes an owner (the sense’s
 entry) and a SandboxGenericMSA descriptor.</p>
 <p>This wrapper hides the ServiceLocator + SandboxGenericMSA dance and
-auto-attaches the new MSA to the sense, mirroring the read-side
-coverage in MorphosyntaxAnalysis.</p>
+auto-attaches the new MSA to the sense; <code class="docutils literal notranslate"><span class="pre">GetAll</span></code> covers the reading
+direction, handing back MorphosyntaxAnalysis wrappers in an
+MSACollection so subtype differences never reach the caller.</p>
 <p>Usage:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flexicon</span> <span class="kn">import</span> <span class="n">FLExProject</span>
 
@@ -1917,6 +1924,11 @@ coverage in MorphosyntaxAnalysis.</p>
 
 <span class="n">entry</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">LexiconAllEntries</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">sense</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># Read: every MSA owned by the entry, already wrapped.</span>
+<span class="k">for</span> <span class="n">msa</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">MSA</span><span class="o">.</span><span class="n">GetAll</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">msa</span><span class="o">.</span><span class="n">is_deriv_aff_msa</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">msa</span><span class="o">.</span><span class="n">pos_from</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">,</span> <span class="n">msa</span><span class="o">.</span><span class="n">pos_to</span><span class="p">)</span>
 
 <span class="c1"># Stem MSA (most common case): assign POS to a lexical entry.</span>
 <span class="n">verb_pos</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">POS</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="s2">&quot;Verb&quot;</span><span class="p">)</span>
@@ -1933,6 +1945,12 @@ coverage in MorphosyntaxAnalysis.</p>
 <p>morphosyntax_analysis.MorphosyntaxAnalysis (reading)
 msa_collection.MSACollection (iteration)</p>
 </div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lexicon.MSAOperations.MSAOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lexicon.MSAOperations.MSAOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="flexicon.code.Lexicon.MSAOperations.MSAOperations.CreateStem">
 <span class="sig-name descname"><span class="pre">CreateStem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lexicon.MSAOperations.MSAOperations.CreateStem" title="Link to this definition">¶</a></dt>
@@ -3858,6 +3876,7 @@ returns True to include it in the result.</p>
 <li><a class="reference internal" href="#flexicon.code.Lexicon.AllomorphOperations.AllomorphOperations.GetPhoneEnv"><code class="docutils literal notranslate"><span class="pre">GetPhoneEnv()</span></code></a></li>
 <li><a class="reference internal" href="#flexicon.code.Lexicon.AllomorphOperations.AllomorphOperations.AddPhoneEnv"><code class="docutils literal notranslate"><span class="pre">AddPhoneEnv()</span></code></a></li>
 <li><a class="reference internal" href="#flexicon.code.Lexicon.AllomorphOperations.AllomorphOperations.RemovePhoneEnv"><code class="docutils literal notranslate"><span class="pre">RemovePhoneEnv()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lexicon.AllomorphOperations.AllomorphOperations.GetOwningEntry"><code class="docutils literal notranslate"><span class="pre">GetOwningEntry()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -4141,6 +4160,7 @@ returns True to include it in the result.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#flexicon.code.Lexicon.MSAOperations.MSAOperations"><code class="docutils literal notranslate"><span class="pre">MSAOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lexicon.MSAOperations.MSAOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
 <li><a class="reference internal" href="#flexicon.code.Lexicon.MSAOperations.MSAOperations.CreateStem"><code class="docutils literal notranslate"><span class="pre">CreateStem()</span></code></a></li>
 <li><a class="reference internal" href="#flexicon.code.Lexicon.MSAOperations.MSAOperations.CreateDerivAff"><code class="docutils literal notranslate"><span class="pre">CreateDerivAff()</span></code></a></li>
 <li><a class="reference internal" href="#flexicon.code.Lexicon.MSAOperations.MSAOperations.CreateInflAff"><code class="docutils literal notranslate"><span class="pre">CreateInflAff()</span></code></a></li>

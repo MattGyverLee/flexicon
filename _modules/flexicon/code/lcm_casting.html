@@ -790,6 +790,154 @@
 
 
 
+<span class="c1"># MSA ClassName -&gt; the property that holds its Inflection Class reference.</span>
+<span class="c1"># Only MoStemMsa exposes a plain InflectionClassRA. MoDerivAffMsa instead</span>
+<span class="c1"># splits inflection-class information across FromInflectionClassRA /</span>
+<span class="c1"># ToInflectionClassRA (a different pair of properties, handled separately</span>
+<span class="c1"># by MSAOperations.ChangeAffixVariant), and MoInflAffMsa /</span>
+<span class="c1"># MoUnclassifiedAffixMsa have no inflection-class member at all. This is</span>
+<span class="c1"># the single source of truth for &quot;does this MSA subtype carry a plain</span>
+<span class="c1"># InflectionClassRA&quot; -- confirmed by live reflection against 1838 Sena 3</span>
+<span class="c1"># bundles (1144 non-stem MSAs raise AttributeError on unguarded</span>
+<span class="c1"># .InflectionClassRA); see issue #259 / lcm-member-truth-sweep ruling C10.</span>
+<span class="n">_MSA_INFLECTION_CLASS_PROPERTY</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;MoStemMsa&quot;</span><span class="p">:</span> <span class="s2">&quot;InflectionClassRA&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Public: exported for callers that need to know whether an MSA ClassName</span>
+<span class="c1"># carries a plain InflectionClassRA without re-literalizing the class name.</span>
+<span class="n">INFLECTION_CLASS_BEARING_MSA_CLASSES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">_MSA_INFLECTION_CLASS_PROPERTY</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_inflection_class_from_msa">
+<a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.get_inflection_class_from_msa">[docs]</a>
+<span class="k">def</span> <span class="nf">get_inflection_class_from_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the inflection class (IMoInflClass) from an MSA, if any.</span>
+
+<span class="sd">    ``IWfiMorphBundle`` has no ``InflClassRA`` member of its own -- the</span>
+<span class="sd">    inflection class lives on the bundle&#39;s linked MSA</span>
+<span class="sd">    (``IMoStemMsa.InflectionClassRA``), reached via ``bundle.MsaRA``. This</span>
+<span class="sd">    is the single navigation path for that lookup: callers should not</span>
+<span class="sd">    re-implement &quot;MsaRA -&gt; cast -&gt; narrow to IMoStemMsa -&gt; InflectionClassRA&quot;</span>
+<span class="sd">    at each call site (issue #259 / lcm-member-truth-sweep C10).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        msa: An MSA object (``IMoMorphSynAnalysis`` or a derived type), or</span>
+<span class="sd">            ``None``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        IMoInflClass or None: The inflection class if ``msa`` is a</span>
+<span class="sd">        ``MoStemMsa`` with one set. Returns ``None`` for a ``None`` msa,</span>
+<span class="sd">        for any non-stem MSA subtype (``MoDerivAffMsa``, ``MoInflAffMsa``,</span>
+<span class="sd">        ``MoUnclassifiedAffixMsa``), and for a ``MoStemMsa`` with no</span>
+<span class="sd">        inflection class set. Never raises.</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        from flexicon.code.lcm_casting import get_inflection_class_from_msa</span>
+
+<span class="sd">        infl_class = get_inflection_class_from_msa(bundle.MsaRA)</span>
+<span class="sd">        if infl_class:</span>
+<span class="sd">            name = infl_class.Name.BestAnalysisAlternative.Text</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - Returns None rather than raising exceptions for robustness.</span>
+<span class="sd">        - Deliberately does NOT fall back to</span>
+<span class="sd">          MoDerivAffMsa.FromInflectionClassRA/ToInflectionClassRA -- those</span>
+<span class="sd">          are a different pair of properties with different semantics; use</span>
+<span class="sd">          cast_to_concrete() directly if you need one of them.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">msa</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">_ensure_interfaces</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">class_name</span> <span class="o">=</span> <span class="n">msa</span><span class="o">.</span><span class="n">ClassName</span>
+
+    <span class="n">infl_class_property</span> <span class="o">=</span> <span class="n">_MSA_INFLECTION_CLASS_PROPERTY</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">infl_class_property</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Not a stem MSA -- no plain InflectionClassRA on this subtype.</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">interface_type</span> <span class="o">=</span> <span class="n">_interface_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">interface_type</span><span class="p">:</span>
+            <span class="n">concrete</span> <span class="o">=</span> <span class="n">interface_type</span><span class="p">(</span><span class="n">msa</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">concrete</span><span class="p">,</span> <span class="n">infl_class_property</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="c1"># If anything fails, return None rather than crashing</span>
+        <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="set_inflection_class_on_msa">
+<a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.set_inflection_class_on_msa">[docs]</a>
+<span class="k">def</span> <span class="nf">set_inflection_class_on_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="n">infl_class</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Set the inflection class (IMoInflClass) on an MSA&#39;s InflectionClassRA,</span>
+<span class="sd">    if that MSA subtype carries one.</span>
+
+<span class="sd">    Mirrors ``get_inflection_class_from_msa()``&#39;s navigation for the write</span>
+<span class="sd">    side: ``msa`` -&gt; ``cast_to_concrete()`` -&gt; narrow to ``IMoStemMsa`` -&gt;</span>
+<span class="sd">    set ``InflectionClassRA``. This is the single navigation path for that</span>
+<span class="sd">    write: callers should not re-implement it at each call site (issue #259</span>
+<span class="sd">    / lcm-member-truth-sweep C10/C11).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        msa: An MSA object (``IMoMorphSynAnalysis`` or a derived type), or</span>
+<span class="sd">            ``None``.</span>
+<span class="sd">        infl_class: The ``IMoInflClass`` to assign, or ``None`` to clear it.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if ``msa`` is a ``MoStemMsa`` and its</span>
+<span class="sd">        ``InflectionClassRA`` was set to ``infl_class``. False if ``msa``</span>
+<span class="sd">        is ``None`` or its ``ClassName`` is not ``MoStemMsa`` -- there was</span>
+<span class="sd">        no writable target, and nothing was changed.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - Never raises for a ``None`` or non-stem ``msa``; returns False</span>
+<span class="sd">          instead so callers can build their own diagnostic naming the</span>
+<span class="sd">          actual MSA state (see</span>
+<span class="sd">          ``WfiMorphBundleOperations.SetInflectionClass``, which raises</span>
+<span class="sd">          ``FP_ParameterError`` with the bundle&#39;s MSA ``ClassName``).</span>
+<span class="sd">        - Deliberately does NOT fall back to</span>
+<span class="sd">          ``MoDerivAffMsa.FromInflectionClassRA``/``ToInflectionClassRA`` --</span>
+<span class="sd">          those are a different pair of properties with different</span>
+<span class="sd">          semantics; use ``cast_to_concrete()`` directly if you need one of</span>
+<span class="sd">          them.</span>
+<span class="sd">        - Because an MSA (``IMoStemMsa``) is typically shared -- referenced</span>
+<span class="sd">          by ``LexSense.MorphoSyntaxAnalysisRA`` and by every</span>
+<span class="sd">          ``WfiMorphBundle.MsaRA`` that points at it -- writing through</span>
+<span class="sd">          this helper changes the value for every bundle and sense that</span>
+<span class="sd">          shares the MSA. That fan-out is correct FLEx behaviour (the MSA</span>
+<span class="sd">          *is* the shared &quot;Grammatical Info&quot;), not a bug; see the #259</span>
+<span class="sd">          domain ruling.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">msa</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="n">_ensure_interfaces</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">msa</span><span class="o">.</span><span class="n">ClassName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_MSA_INFLECTION_CLASS_PROPERTY</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="n">infl_class_property</span> <span class="o">=</span> <span class="n">_MSA_INFLECTION_CLASS_PROPERTY</span><span class="p">[</span><span class="n">msa</span><span class="o">.</span><span class="n">ClassName</span><span class="p">]</span>
+    <span class="n">concrete</span> <span class="o">=</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">msa</span><span class="p">)</span>
+    <span class="nb">setattr</span><span class="p">(</span><span class="n">concrete</span><span class="p">,</span> <span class="n">infl_class_property</span><span class="p">,</span> <span class="n">infl_class</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+
 <div class="viewcode-block" id="clone_properties">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.clone_properties">[docs]</a>
 <span class="k">def</span> <span class="nf">clone_properties</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">dest_obj</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

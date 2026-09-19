@@ -3454,6 +3454,59 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_constchartclausemarker_ops</span> <span class="o">=</span> <span class="n">ConstChartClauseMarkerOperations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constchartclausemarker_ops</span>
 
+    <span class="c1"># --- Parser ---</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">Parser</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Access to READ-ONLY morphological parser operations.</span>
+
+<span class="sd">        Singular, like the other service facades (``POS``, ``LexEntry``,</span>
+<span class="sd">        ``MSA``): a plural accessor names a collection namespace, and a</span>
+<span class="sd">        parser is a service rather than a collection.</span>
+
+<span class="sd">        THE IMPORT BELOW IS FUNCTION-LOCAL ON PURPOSE, and that is FR-003</span>
+<span class="sd">        rather than a style choice. Nothing about the parser is loaded when</span>
+<span class="sd">        ``flexicon`` is imported, so a machine whose parser component is</span>
+<span class="sd">        missing, relocated, or from a different FieldWorks installation</span>
+<span class="sd">        still imports the package -- it degrades to &quot;parser unavailable&quot;,</span>
+<span class="sd">        carrying a reason, instead of failing at import. Loading is</span>
+<span class="sd">        triggered by USE.</span>
+
+<span class="sd">        Nothing this area ADDS writes: none of its six operations records</span>
+<span class="sd">        or files a parse result back into the project, and a standing test</span>
+<span class="sd">        enforces that by set equality over the public surface rather than by</span>
+<span class="sd">        reviewing method names. The limit of the claim, stated so a caller</span>
+<span class="sd">        is not misled by it: the generic reordering helpers inherited by</span>
+<span class="sd">        every Operations class are still present here, and Swap /</span>
+<span class="sd">        MoveBefore / MoveAfter / ApplySyncableProperties take their targets</span>
+<span class="sd">        as arguments and will write if handed writable objects. None can</span>
+<span class="sd">        record a parse result. See ParserOperations&#39; class docstring.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ParserOperations: Instance providing read-only parser methods.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; project = FLExProject()</span>
+<span class="sd">            &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=False)</span>
+<span class="sd">            &gt;&gt;&gt; # Ask first -- asking never raises, on any machine</span>
+<span class="sd">            &gt;&gt;&gt; status = project.Parser.GetAvailability()</span>
+<span class="sd">            &gt;&gt;&gt; if not status.available:</span>
+<span class="sd">            ...     print(status.reason)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     result = project.Parser.ParseWord(&quot;mengambil&quot;)</span>
+<span class="sd">            ...     doc = project.Parser.ParseWordXml(&quot;mengambil&quot;)</span>
+<span class="sd">            ...     trace = project.Parser.TraceWordXml(&quot;mengambil&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Grammar currency is asked, never assumed</span>
+<span class="sd">            &gt;&gt;&gt; if status.available and not project.Parser.IsUpToDate():</span>
+<span class="sd">            ...     project.Parser.Reload()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;_parser_ops&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.Parser.ParserOperations</span> <span class="kn">import</span> <span class="n">ParserOperations</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parser_ops</span> <span class="o">=</span> <span class="n">ParserOperations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser_ops</span>
+
     <span class="c1"># Singular/plural aliases for backward compatibility are generated at</span>
     <span class="c1"># module scope from FLExProject._OP_NAMESPACE_ALIASES (see the end of</span>
     <span class="c1"># this module). Each generated alias emits a DeprecationWarning that</span>

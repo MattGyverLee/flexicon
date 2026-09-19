@@ -222,10 +222,12 @@
             <span class="n">text_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ITextFactory</span><span class="p">)</span>
             <span class="n">new_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CreateWithGuid</span><span class="p">(</span><span class="n">text_factory</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="s2">&quot;IText&quot;</span><span class="p">)</span>
 
-            <span class="c1"># Add to the texts collection. In newer LCM builds ILangProject&#39;s</span>
-            <span class="c1"># texts accessor is `Texts` (not `TextsOC` -- the latter has been</span>
-            <span class="c1"># renamed/removed). See issue #22.</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">Texts</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_text</span><span class="p">)</span>
+            <span class="c1"># No collection to add to: texts are unowned in LCM 11 and the</span>
+            <span class="c1"># factory has already registered this one with the repository.</span>
+            <span class="c1"># ILangProject.Texts is a derived read-only IList&lt;IText&gt;, so the</span>
+            <span class="c1"># `lp.Texts.Add(new_text)` that used to sit here was a no-op on a</span>
+            <span class="c1"># throwaway list (issue #317). #22 read the disappearance of</span>
+            <span class="c1"># TextsOC as a rename; it was an ownership-model change.</span>
 
             <span class="c1"># Set the name</span>
             <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
@@ -274,10 +276,13 @@
 
         <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Remove from collection. See note in Create() about the LCM API</span>
-        <span class="c1"># rename from TextsOC to Texts (issue #22).</span>
+        <span class="c1"># LCM Delete() removes the object from the repository. Texts are</span>
+        <span class="c1"># UNOWNED in LCM 11 -- ILangProject.Texts is a derived read-only</span>
+        <span class="c1"># IList&lt;IText&gt; rebuilt on each access, not an owning collection, so</span>
+        <span class="c1"># the `lp.Texts.Remove(text_obj)` this used to call mutated a</span>
+        <span class="c1"># throwaway list and silently deleted nothing (issue #317).</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete text&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">Texts</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">text_obj</span><span class="p">)</span>
+            <span class="n">text_obj</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -745,6 +750,57 @@
             <span class="k">return</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">GenresRC</span><span class="o">.</span><span class="n">FirstOrDefault</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span> <span class="nf">GetGenres</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get every genre assigned to a text.</span>
+
+<span class="sd">        Reads the text&#39;s ``GenresRC`` reference collection in full, so a</span>
+<span class="sd">        text carrying more than one genre reports all of them. The singular</span>
+<span class="sd">        GetGenre reports only the first and is deliberately unchanged; use</span>
+<span class="sd">        this method whenever the count matters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmPossibility genre objects assigned to the text.</span>
+<span class="sd">                Empty list when no genre is assigned (never None).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; genres = project.Texts.GetGenres(text)</span>
+<span class="sd">            &gt;&gt;&gt; for genre in genres:</span>
+<span class="sd">            ...     print(genre.Name.BestAnalysisAlternative.Text)</span>
+<span class="sd">            Narrative</span>
+<span class="sd">            &gt;&gt;&gt; if not genres:</span>
+<span class="sd">            ...     print(&quot;No genre assigned&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns an empty list when nothing is assigned, so `if not</span>
+<span class="sd">              genres:` is the empty check; there is no None case.</span>
+<span class="sd">            - IText.GenresRC is an ILcmReferenceCollection (verified in</span>
+<span class="sd">              tests/contract/snapshots/liblcm_baseline.json, under IText&#39;s</span>
+<span class="sd">              reflected_properties). A reference COLLECTION carries no</span>
+<span class="sd">              positional guarantee the way a reference sequence does, so do</span>
+<span class="sd">              not read meaning into the order of the returned list.</span>
+<span class="sd">            - Genres are ICmPossibility items from the project&#39;s &quot;Text</span>
+<span class="sd">              Genres&quot; possibility list (project.PossibilityLists.FindList).</span>
+<span class="sd">            - The list is a snapshot taken at call time; a later SetGenre</span>
+<span class="sd">              does not update a list already returned.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetGenre, SetGenre, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">GenresRC</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span> <span class="nf">SetGenre</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">genre</span><span class="p">):</span>

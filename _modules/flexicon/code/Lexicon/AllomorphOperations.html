@@ -69,6 +69,7 @@
     <span class="n">IMoAffixAllomorphFactory</span><span class="p">,</span>
     <span class="n">ILexEntry</span><span class="p">,</span>
     <span class="n">IPhEnvironment</span><span class="p">,</span>
+    <span class="n">LexEntryTags</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
 <span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
@@ -1344,6 +1345,82 @@
         <span class="k">if</span> <span class="n">env</span> <span class="ow">in</span> <span class="n">allomorph</span><span class="o">.</span><span class="n">PhoneEnvRC</span><span class="p">:</span>
             <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove phonological environment&quot;</span><span class="p">):</span>
                 <span class="n">allomorph</span><span class="o">.</span><span class="n">PhoneEnvRC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+
+    <span class="c1"># --- Navigation Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span> <span class="nf">GetOwningEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the lexical entry that owns this allomorph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object (IMoStemAllomorph or</span>
+<span class="sd">                IMoAffixAllomorph) or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexEntry: The owning entry, or None if the allomorph has no</span>
+<span class="sd">            owning entry anywhere above it in the ownership chain.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = project.Allomorphs.GetAll(entry)</span>
+<span class="sd">            &gt;&gt;&gt; owner = project.Allomorphs.GetOwningEntry(allomorphs[0])</span>
+<span class="sd">            &gt;&gt;&gt; print(project.LexEntry.GetHeadword(owner))</span>
+<span class="sd">            run</span>
+
+<span class="sd">            &gt;&gt;&gt; # Round trip: GetAll walks entry -&gt; allomorphs; this walks</span>
+<span class="sd">            &gt;&gt;&gt; # allomorph -&gt; entry.</span>
+<span class="sd">            &gt;&gt;&gt; for allomorph in project.Allomorphs.GetAll():</span>
+<span class="sd">            ...     owner = project.Allomorphs.GetOwningEntry(allomorph)</span>
+<span class="sd">            ...     if owner is None:</span>
+<span class="sd">            ...         continue</span>
+<span class="sd">            ...     form = project.Allomorphs.GetForm(allomorph)</span>
+<span class="sd">            ...     print(f&quot;{form} -&gt; {project.LexEntry.GetHeadword(owner)}&quot;)</span>
+<span class="sd">            run -&gt; run</span>
+<span class="sd">            ran -&gt; run</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None rather than raising when no owning entry exists.</span>
+<span class="sd">              Callers must handle None; do not assume an entry is always</span>
+<span class="sd">              found.</span>
+<span class="sd">            - Climbs the ownership chain to the nearest ILexEntry ancestor</span>
+<span class="sd">              (liblcm CmObject.cs:3349, OwnerOfClass walks Owner recursively</span>
+<span class="sd">              and answers null when no ancestor of the class is found). It</span>
+<span class="sd">              does NOT take a single `.Owner` hop: an IMoForm reached through</span>
+<span class="sd">              an affix-form chain does not necessarily sit directly under its</span>
+<span class="sd">              entry, so one hop can land on the wrong object. The one-hop</span>
+<span class="sd">              `GetOwningEntry` implementations on EtymologyOperations,</span>
+<span class="sd">              PronunciationOperations and VariantOperations are valid for</span>
+<span class="sd">              their own owner shapes and are deliberately NOT the template</span>
+<span class="sd">              here (D-A8).</span>
+<span class="sd">            - The null guard runs BEFORE the ILexEntry cast, because casting</span>
+<span class="sd">              a null result is the crash this guard exists to prevent.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, GetForm, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Template: LexSenseOperations.GetOwningEntry (LexSenseOperations.py</span>
+        <span class="c1"># :2826), not the one-hop `.Owner` siblings in this directory.</span>
+        <span class="c1"># OwnerOfClass is confirmed present on IMoForm / IMoStemAllomorph /</span>
+        <span class="c1"># IMoAffixAllomorph in tests/contract/snapshots/liblcm_baseline.json,</span>
+        <span class="c1"># and returns null when there is no such ancestor</span>
+        <span class="c1"># (liblcm src/SIL.LCModel/DomainImpl/CmObject.cs:3349).</span>
+        <span class="n">_owner</span> <span class="o">=</span> <span class="n">allomorph</span><span class="o">.</span><span class="n">OwnerOfClass</span><span class="p">(</span><span class="n">LexEntryTags</span><span class="o">.</span><span class="n">kClassId</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">_owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Cast to the declared return type only after the null guard. Raw</span>
+        <span class="c1"># OwnerOfClass output is typed ICmObject; pythonnet surfaces</span>
+        <span class="c1"># ILexEntry members (LexemeFormOA, SensesOS, ...) only after the</span>
+        <span class="c1"># explicit interface cast.</span>
+        <span class="k">return</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">_owner</span><span class="p">)</span>
 
     <span class="c1"># --- Private Helper Methods ---</span>
 

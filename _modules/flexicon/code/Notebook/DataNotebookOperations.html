@@ -229,16 +229,22 @@
         <span class="n">hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ValidatedRecordHvo</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetObject</span><span class="p">(</span><span class="n">hvo</span><span class="p">)</span>
+            <span class="c1"># LcmCache (self.project.project) has no GetObject member; the</span>
+            <span class="c1"># house path is FLExProject.Object(), which resolves through</span>
+            <span class="c1"># ServiceLocator.GetObject() (ruling C6). AttributeError is</span>
+            <span class="c1"># deliberately not caught here any more: catching it laundered</span>
+            <span class="c1"># the previous bug (a missing GetObject attribute) into a</span>
+            <span class="c1"># false-positive &quot;invalid HVO&quot; on every call, masking the real</span>
+            <span class="c1"># cause. Any genuine AttributeError now propagates unchanged.</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">hvo</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">IRnGenericRec</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span>
             <span class="ne">TypeError</span><span class="p">,</span>
             <span class="n">System</span><span class="o">.</span><span class="n">InvalidCastException</span><span class="p">,</span>
-            <span class="ne">AttributeError</span><span class="p">,</span>
             <span class="ne">KeyError</span><span class="p">,</span>
             <span class="n">System</span><span class="o">.</span><span class="n">Collections</span><span class="o">.</span><span class="n">Generic</span><span class="o">.</span><span class="n">KeyNotFoundException</span><span class="p">,</span>
         <span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid notebook record object or HVO: </span><span class="si">{</span><span class="n">record_or_hvo</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid notebook record object or HVO: </span><span class="si">{</span><span class="n">record_or_hvo</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
 
     <span class="c1"># --- Core CRUD Operations ---</span>
 
@@ -347,15 +353,15 @@
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
-        <span class="c1"># Get the research notebook repository</span>
-        <span class="n">repos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IRnResearchNbkRepository</span><span class="p">)</span>
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IRnGenericRecFactory</span><span class="p">)</span>
 
-        <span class="c1"># Create the record in the RecordsOC collection</span>
+        <span class="c1"># Create the record in the RecordsOC collection, owned by the</span>
+        <span class="c1"># project&#39;s single ResearchNotebookOA -- not by the repository,</span>
+        <span class="c1"># which has no RecordsOC member (ruling C1).</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create notebook record &#39;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
 
             <span class="n">record</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
-            <span class="n">repos</span><span class="o">.</span><span class="n">RecordsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ResearchNotebookOA</span><span class="o">.</span><span class="n">RecordsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
 
             <span class="c1"># Set title</span>
             <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
@@ -417,25 +423,25 @@
 
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Get the repository and remove the record</span>
-        <span class="n">repos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IRnResearchNbkRepository</span><span class="p">)</span>
-
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete notebook record&quot;</span><span class="p">):</span>
 
             <span class="c1"># SubRecordsOS lives on IRnGenericRec (the parent record&#39;s concrete</span>
             <span class="c1"># interface), not on the base ICmObject that pythonnet returns from</span>
             <span class="c1"># .Owner. The prior hasattr(owner, &quot;SubRecordsOS&quot;) was therefore</span>
             <span class="c1"># always False on a real sub-record -- execution fell through to</span>
-            <span class="c1"># repos.RecordsOC.Remove(record), which removes from the top-level</span>
-            <span class="c1"># records collection (where the sub-record never lived). Sub-record</span>
-            <span class="c1"># deletes either silently no-op&#39;d or removed the wrong row.</span>
-            <span class="c1"># Route through _GetTypedOwner to recover IRnGenericRec before</span>
-            <span class="c1"># checking the slot. (issue #133, same class as #98/#116)</span>
+            <span class="c1"># the top-level RecordsOC.Remove(record), which removes from the</span>
+            <span class="c1"># top-level records collection (where the sub-record never lived).</span>
+            <span class="c1"># Sub-record deletes either silently no-op&#39;d or removed the wrong</span>
+            <span class="c1"># row. Route through _GetTypedOwner to recover IRnGenericRec</span>
+            <span class="c1"># before checking the slot. (issue #133, same class as #98/#116)</span>
             <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;SubRecordsOS&quot;</span><span class="p">):</span>
                 <span class="n">parent</span><span class="o">.</span><span class="n">SubRecordsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">repos</span><span class="o">.</span><span class="n">RecordsOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+                <span class="c1"># Top-level record: RecordsOC is owned by the project&#39;s</span>
+                <span class="c1"># single ResearchNotebookOA, not by the repository, which</span>
+                <span class="c1"># has no RecordsOC member (ruling C1).</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ResearchNotebookOA</span><span class="o">.</span><span class="n">RecordsOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -2504,9 +2510,9 @@
 <span class="sd">            insert_after (bool): For sub-records (SubRecordsOS is an ordered</span>
 <span class="sd">                sequence), controls whether the duplicate is inserted</span>
 <span class="sd">                immediately after the source. Ignored for top-level records:</span>
-<span class="sd">                RecordsOC is an unordered ILcmOwningCollection with no</span>
-<span class="sd">                Insert() method, so top-level duplicates are always appended</span>
-<span class="sd">                via Add().</span>
+<span class="sd">                RecordsOC (owned by ResearchNotebookOA -- ruling C1) is an</span>
+<span class="sd">                unordered ILcmOwningCollection with no Insert() method, so</span>
+<span class="sd">                top-level duplicates are always appended via Add().</span>
 <span class="sd">            deep (bool): If True (default), also duplicate owned objects (sub-records).</span>
 <span class="sd">                        If False, only copy simple properties and references.</span>
 
@@ -2568,11 +2574,13 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">parent_record</span><span class="o">.</span><span class="n">SubRecordsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Parent is the top-level repository. RecordsOC is an unordered</span>
-                <span class="c1"># ILcmOwningCollection; insert_after has no semantic meaning here</span>
-                <span class="c1"># and is ignored -- the duplicate is always appended via Add().</span>
-                <span class="n">repos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IRnResearchNbkRepository</span><span class="p">)</span>
-                <span class="n">repos</span><span class="o">.</span><span class="n">RecordsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+                <span class="c1"># Parent is the notebook&#39;s top-level RecordsOC, owned by</span>
+                <span class="c1"># ResearchNotebookOA -- not the repository, which has no</span>
+                <span class="c1"># RecordsOC member (ruling C1). It is an unordered</span>
+                <span class="c1"># ILcmOwningCollection; insert_after has no semantic meaning</span>
+                <span class="c1"># here and is ignored -- the duplicate is always appended</span>
+                <span class="c1"># via Add().</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ResearchNotebookOA</span><span class="o">.</span><span class="n">RecordsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
 
             <span class="c1"># Copy simple MultiString properties</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Title</span><span class="p">)</span>

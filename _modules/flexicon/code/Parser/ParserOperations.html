@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Parser.ParserOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Parser.ParserOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Parser.ParserOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ParserOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ParserOperations</span>
+<span class="c1">#          READ-ONLY access to the FieldWorks morphological parser for</span>
+<span class="c1">#          SIL Language and Culture Model (LCM) projects.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2026</span>
+<span class="c1">#</span>
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># NOTHING FROM THE PARSER COMPONENT IS IMPORTED AT MODULE SCOPE.</span>
+<span class="c1">#</span>
+<span class="c1"># This is the whole of FR-003, and it is not a style preference. `import</span>
+<span class="c1"># flexicon` must keep working on a machine whose parser component is missing,</span>
+<span class="c1"># renamed or relocated -- such a machine degrades to &quot;parser unavailable&quot;,</span>
+<span class="c1"># never to a broken package import. Every reference to ParserCore below sits</span>
+<span class="c1"># INSIDE a function, and tests/test_parser_structure.py (A1.3) asserts that</span>
+<span class="c1"># by AST walk, in both directions: no module-scope parser import anywhere in</span>
+<span class="c1"># the package, and at least one function-local one here.</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span>
+<span class="kn">from</span> <span class="nn">..exceptions</span> <span class="kn">import</span> <span class="n">FP_ParameterError</span><span class="p">,</span> <span class="n">FP_RuntimeError</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># What the facade binds, and where it looks</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="n">PARSER_COMPONENT</span> <span class="o">=</span> <span class="s2">&quot;ParserCore.dll&quot;</span>
+<span class="n">DATA_MODEL_COMPONENT</span> <span class="o">=</span> <span class="s2">&quot;SIL.LCModel.dll&quot;</span>
+
+<span class="n">PARSER_NAMESPACE</span> <span class="o">=</span> <span class="s2">&quot;SIL.FieldWorks.WordWorks.Parser&quot;</span>
+<span class="n">PARSER_ASSEMBLY</span> <span class="o">=</span> <span class="s2">&quot;ParserCore&quot;</span>
+
+<span class="c1">#: Every member this facade calls, rendered the way the C# source spells it.</span>
+<span class="c1">#: Verified against the real installed component by tier A2</span>
+<span class="c1">#: (tests/test_parser_reflective.py) BEFORE any of the behaviour below was</span>
+<span class="c1">#: written -- Constitution Principle I. `Reset()` and `IsUpToDate()` had</span>
+<span class="c1">#: never been verified anywhere, in either repository, before that tier.</span>
+<span class="c1">#:</span>
+<span class="c1">#: Deliberately NOT the same list as FlexToolsMCP&#39;s</span>
+<span class="c1">#: src/flextoolsmcp/server/parser_probe.py. The two diverge in both</span>
+<span class="c1">#: directions and neither is a superset of the other: that module</span>
+<span class="c1">#: additionally requires the filing member, which is the write spine and</span>
+<span class="c1">#: which this read facade never binds; this list additionally requires the</span>
+<span class="c1">#: reset and currency members, which that module does not cover. Each check</span>
+<span class="c1">#: probes what its OWN surface binds, and CP2a changes zero lines of the</span>
+<span class="c1">#: other one (FR-041, Decision D1).</span>
+<span class="n">REQUIRED_MEMBERS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;HCParser(LcmCache)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Update()&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Reset()&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;IsUpToDate()&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ParseWord(string)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ParseWordXml(string)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TraceWordXml(string, IEnumerable&lt;int&gt;)&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_CLR_PRIMITIVE_NAMES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;String&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Int32&quot;</span><span class="p">:</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Boolean&quot;</span><span class="p">:</span> <span class="s2">&quot;bool&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Void&quot;</span><span class="p">:</span> <span class="s2">&quot;void&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Object&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># ParserAvailability</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="ParserAvailability">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Parser.html#flexicon.code.Parser.ParserOperations.ParserAvailability">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ParserAvailability</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether this project can reach the parser, and why not if it cannot.</span>
+
+<span class="sd">    Returned, never raised. Asking whether the parser is reachable succeeds</span>
+<span class="sd">    on every machine, in every condition -- a missing component, a component</span>
+<span class="sd">    from another FieldWorks install, a component whose surface has moved, a</span>
+<span class="sd">    permissions error on the directory, a pythonnet failure. That is SC-001,</span>
+<span class="sd">    and it is the single property tier A1 exists to test.</span>
+
+<span class="sd">    This is the first degrading-with-reason return in flexicon. The package</span>
+<span class="sd">    otherwise has exactly two behaviours, raise or silently become None, and</span>
+<span class="sd">    neither is right here: a script that wants to know whether it can parse</span>
+<span class="sd">    should be able to ask without guarding the question in a try block.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        available (bool): Whether the parser operations may be called.</span>
+<span class="sd">        reason (str): Why not, when `available` is False. Empty when</span>
+<span class="sd">            available. States WHAT WAS CHECKED and nothing more.</span>
+<span class="sd">        version (str or None): The detected component version, or None when</span>
+<span class="sd">            the component was never loaded. Reported, never compared.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - `version` is REPORTED AND NEVER COMPARED AGAINST A MINIMUM</span>
+<span class="sd">          (FR-006). A version floor is the check that looks reasonable in</span>
+<span class="sd">          review and then refuses to run on the one machine whose</span>
+<span class="sd">          FieldWorks build number sorts the wrong way. The gate is the two</span>
+<span class="sd">          checks below, neither of which reads a number:</span>
+<span class="sd">          same-installation, and the bound surface exists. A standing AST</span>
+<span class="sd">          test on each side of the repository boundary asserts zero</span>
+<span class="sd">          comparisons (tests/test_parser_structure.py, A1.2).</span>
+<span class="sd">        - The same-installation check is DIRECTORY EQUALITY ONLY. See</span>
+<span class="sd">          `GetAvailability` for the limit of what that proves.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; status = project.Parser.GetAvailability()</span>
+<span class="sd">        &gt;&gt;&gt; if not status.available:</span>
+<span class="sd">        ...     print(f&quot;No parser: {status.reason}&quot;)</span>
+<span class="sd">        ... else:</span>
+<span class="sd">        ...     print(f&quot;Parser {status.version} ready&quot;)</span>
+<span class="sd">        Parser 9.3.10 ready</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        ParserOperations.GetAvailability</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">available</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Resolution seams</span>
+<span class="c1">#</span>
+<span class="c1"># These two are module-level functions rather than expressions inlined into</span>
+<span class="c1"># the probe for a reason that is testable rather than aesthetic: tier A1</span>
+<span class="c1"># replaces them to simulate a component that cannot be resolved. A probe with</span>
+<span class="c1"># no seam can only be observed on a machine that happens to be broken, which</span>
+<span class="c1"># is not a test -- it is a machine. tests/test_parser_offline.py asserts both</span>
+<span class="c1"># names exist, so they are contract, not incidental implementation.</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<span class="k">def</span> <span class="nf">_parser_component_path</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Where ParserCore.dll is expected, per flexicon&#39;s own install resolution.</span>
+
+<span class="sd">    Uses FLExGlobals.FWCodeDir -- the registry-derived FieldWorks directory</span>
+<span class="sd">    that `import flexicon` has already resolved through FLExInit. Deliberately</span>
+<span class="sd">    not FlexToolsMCP&#39;s resolution: this repository does not import that one</span>
+<span class="sd">    (Decision D1), and the two checks stay independent on purpose.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">FLExGlobals</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">FLExGlobals</span><span class="o">.</span><span class="n">FWCodeDir</span><span class="p">:</span>
+        <span class="n">FLExGlobals</span><span class="o">.</span><span class="n">InitialiseFWGlobals</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">FLExGlobals</span><span class="o">.</span><span class="n">FWCodeDir</span><span class="p">),</span> <span class="n">PARSER_COMPONENT</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_data_model_dir</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The directory the LOADED data model assembly actually came from.</span>
+
+<span class="sd">    &quot;The data model in use&quot; in FR-004 means the SIL.LCModel already resolved</span>
+<span class="sd">    into this process, not the one a directory happens to contain. Reading</span>
+<span class="sd">    the loaded assembly&#39;s own location is what makes the comparison in</span>
+<span class="sd">    `GetAvailability` non-trivial: an install directory pointing somewhere</span>
+<span class="sd">    other than where the data model was loaded from IS the foreign-install</span>
+<span class="sd">    case, and it is the failure no version floor would have caught.</span>
+
+<span class="sd">    Returns None when the assembly cannot be located, which the caller</span>
+<span class="sd">    reports as unavailable rather than treating as a match.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">System</span>
+
+        <span class="k">for</span> <span class="n">assembly</span> <span class="ow">in</span> <span class="n">System</span><span class="o">.</span><span class="n">AppDomain</span><span class="o">.</span><span class="n">CurrentDomain</span><span class="o">.</span><span class="n">GetAssemblies</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">assembly</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span><span class="o">.</span><span class="n">Name</span> <span class="o">==</span> <span class="s2">&quot;SIL.LCModel&quot;</span><span class="p">:</span>
+                <span class="n">location</span> <span class="o">=</span> <span class="n">assembly</span><span class="o">.</span><span class="n">Location</span>
+                <span class="k">if</span> <span class="n">location</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">location</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">_format_clr_type</span><span class="p">(</span><span class="n">clr_type</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Render a .NET System.Type the way the C# source spells it.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">clr_type</span><span class="o">.</span><span class="n">IsGenericType</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">re</span>
+
+            <span class="n">base</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;`\d+&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">clr_type</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_format_clr_type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">clr_type</span><span class="o">.</span><span class="n">GetGenericArguments</span><span class="p">())</span>
+            <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&lt;</span><span class="si">%s</span><span class="s2">&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">clr_type</span><span class="o">.</span><span class="n">IsArray</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">[]&quot;</span> <span class="o">%</span> <span class="n">_format_clr_type</span><span class="p">(</span><span class="n">clr_type</span><span class="o">.</span><span class="n">GetElementType</span><span class="p">())</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">clr_type</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">clr_type</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">_CLR_PRIMITIVE_NAMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_reflect_member_surface</span><span class="p">(</span><span class="n">component_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;(present member names, detected version) for the component on disk.</span>
+
+<span class="sd">    Reflection only -- Assembly.LoadFile plus GetConstructors/GetMethods. No</span>
+<span class="sd">    cache is constructed, no grammar is loaded and no word is parsed, so</span>
+<span class="sd">    probing is free of side effects on the project.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">System</span>
+    <span class="kn">from</span> <span class="nn">System.Reflection</span> <span class="kn">import</span> <span class="n">BindingFlags</span>
+
+    <span class="n">assembly</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Reflection</span><span class="o">.</span><span class="n">Assembly</span><span class="o">.</span><span class="n">LoadFile</span><span class="p">(</span><span class="n">component_path</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">assembly</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span>
+    <span class="n">detected</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">.</span><span class="si">%d</span><span class="s2">.</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">Version</span><span class="o">.</span><span class="n">Major</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">Version</span><span class="o">.</span><span class="n">Minor</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">Version</span><span class="o">.</span><span class="n">Build</span><span class="p">)</span>
+
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">BindingFlags</span><span class="o">.</span><span class="n">Public</span> <span class="o">|</span> <span class="n">BindingFlags</span><span class="o">.</span><span class="n">Instance</span> <span class="o">|</span> <span class="n">BindingFlags</span><span class="o">.</span><span class="n">DeclaredOnly</span>
+    <span class="n">present</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">clr_type</span> <span class="ow">in</span> <span class="n">assembly</span><span class="o">.</span><span class="n">GetTypes</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">clr_type</span><span class="o">.</span><span class="n">Name</span> <span class="o">!=</span> <span class="s2">&quot;HCParser&quot;</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">ctor</span> <span class="ow">in</span> <span class="n">clr_type</span><span class="o">.</span><span class="n">GetConstructors</span><span class="p">(</span><span class="n">flags</span><span class="p">):</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_format_clr_type</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">ParameterType</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">ctor</span><span class="o">.</span><span class="n">GetParameters</span><span class="p">())</span>
+            <span class="n">present</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">(</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">clr_type</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">params</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">clr_type</span><span class="o">.</span><span class="n">GetMethods</span><span class="p">(</span><span class="n">flags</span><span class="p">):</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_format_clr_type</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">ParameterType</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">method</span><span class="o">.</span><span class="n">GetParameters</span><span class="p">())</span>
+            <span class="n">present</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">(</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">params</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">present</span><span class="p">,</span> <span class="n">detected</span>
+
+
+<span class="k">def</span> <span class="nf">_probe_availability</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve availability. Never raises, whatever it hits.</span>
+
+<span class="sd">    The blanket except is deliberate and is the requirement, not laziness:</span>
+<span class="sd">    SC-001 says the ANSWER is still an answer when the probe itself fails.</span>
+<span class="sd">    A corrupt component, a pythonnet that will not load, a directory the</span>
+<span class="sd">    process cannot stat -- each produces an unavailable status carrying what</span>
+<span class="sd">    went wrong, because a caller who asked a question deserves a sentence</span>
+<span class="sd">    rather than a traceback.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">component</span> <span class="o">=</span> <span class="n">_parser_component_path</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ParserAvailability</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;the FieldWorks installation could not be resolved: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">exc</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">component</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">ParserAvailability</span><span class="p">(</span>
+                <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> was not found at </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">PARSER_COMPONENT</span><span class="p">,</span> <span class="n">component</span><span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="n">model_dir</span> <span class="o">=</span> <span class="n">_data_model_dir</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">model_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ParserAvailability</span><span class="p">(</span>
+                <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;the loaded </span><span class="si">%s</span><span class="s2"> could not be located, so the same-installation &quot;</span>
+                <span class="s2">&quot;check could not be made&quot;</span> <span class="o">%</span> <span class="n">DATA_MODEL_COMPONENT</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">component_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">component</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normcase</span><span class="p">(</span><span class="n">component_dir</span><span class="p">)</span> <span class="o">!=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normcase</span><span class="p">(</span><span class="n">model_dir</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">ParserAvailability</span><span class="p">(</span>
+                <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> was found in </span><span class="si">%s</span><span class="s2"> but the data model in use was loaded from &quot;</span>
+                <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">; the two directories differ, so the component belongs to a &quot;</span>
+                <span class="s2">&quot;different FieldWorks installation&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">PARSER_COMPONENT</span><span class="p">,</span> <span class="n">component_dir</span><span class="p">,</span> <span class="n">model_dir</span><span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="n">present</span><span class="p">,</span> <span class="n">detected</span> <span class="o">=</span> <span class="n">_reflect_member_surface</span><span class="p">(</span><span class="n">component</span><span class="p">)</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">REQUIRED_MEMBERS</span><span class="p">)</span> <span class="o">-</span> <span class="n">present</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ParserAvailability</span><span class="p">(</span>
+                <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> at </span><span class="si">%s</span><span class="s2"> does not declare </span><span class="si">%s</span><span class="s2">&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">PARSER_COMPONENT</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing</span><span class="p">)),</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ParserAvailability</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">detected</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ParserAvailability</span><span class="p">(</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> at </span><span class="si">%s</span><span class="s2"> could not be inspected: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">PARSER_COMPONENT</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">exc</span><span class="p">),</span>
+        <span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># ParserOperations</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="ParserOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Parser.html#flexicon.code.Parser.ParserOperations.ParserOperations">[docs]</a>
+<span class="k">class</span> <span class="nc">ParserOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    READ-ONLY access to the FieldWorks morphological parser.</span>
+
+<span class="sd">    Reached as ``project.Parser``. Ask a word whether it parses, get the</span>
+<span class="sd">    parser&#39;s structured answer, or trace an attempt to see why it failed.</span>
+
+<span class="sd">    THIS SURFACE IS READ-ONLY BY CONSTRUCTION, AND THAT IS LOAD-BEARING.</span>
+<span class="sd">    There is no operation here that records, files or otherwise writes a</span>
+<span class="sd">    parse result back into the project, and there is no transaction and no</span>
+<span class="sd">    write-enable check anywhere in this module -- because there is nothing</span>
+<span class="sd">    to guard. If you are about to add a method that persists a parse, stop:</span>
+<span class="sd">    the read-only safety claim made by every caller of this surface rests on</span>
+<span class="sd">    that absence, and a standing test enumerates the public surface by set</span>
+<span class="sd">    equality to keep it true (tests/test_parser_offline.py, A1.4). Persisting</span>
+<span class="sd">    a parse is a later checkpoint&#39;s work and arrives with its own guards.</span>
+
+<span class="sd">    THE EXACT LIMIT OF THAT CLAIM, since a caller is entitled to know where</span>
+<span class="sd">    it stops. &quot;Read-only&quot; covers everything this class ADDS -- all six</span>
+<span class="sd">    methods above. It does not extend to the generic reordering helpers every</span>
+<span class="sd">    Operations class inherits from BaseOperations. Four of them (Sort,</span>
+<span class="sd">    MoveUp, MoveDown, MoveToIndex) are inert here because they route through</span>
+<span class="sd">    `_GetSequence`, which this class deliberately does not override. The rest</span>
+<span class="sd">    -- Swap, MoveBefore, MoveAfter, ApplySyncableProperties -- take their</span>
+<span class="sd">    targets as arguments and WILL write if you hand them writable objects.</span>
+<span class="sd">    None of them can record a parse result, and this class adds no new reach,</span>
+<span class="sd">    but `project.Parser.Swap(a, b)` is not a no-op and should not be read as</span>
+<span class="sd">    one.</span>
+
+<span class="sd">    DEGRADES, DOES NOT EXPLODE. On a machine where the parser component is</span>
+<span class="sd">    missing, relocated, or from a different FieldWorks installation,</span>
+<span class="sd">    importing flexicon still works and ``GetAvailability()`` answers with a</span>
+<span class="sd">    reason. Only CALLING an operation raises, and it raises with that same</span>
+<span class="sd">    reason. Ask first if you are not sure::</span>
+
+<span class="sd">        status = project.Parser.GetAvailability()</span>
+<span class="sd">        if not status.available:</span>
+<span class="sd">            report.Warning(status.reason)</span>
+
+<span class="sd">    ONE GRAMMAR, AND ITS CURRENCY IS ASKED, NEVER ASSUMED. At most one</span>
+<span class="sd">    loaded grammar is held at a time, for the project in use; switching</span>
+<span class="sd">    projects releases the previous one. Before every parse the parser is</span>
+<span class="sd">    ASKED whether its grammar is current, and a stale grammar is reloaded</span>
+<span class="sd">    before the word is parsed -- never after, and never from a local flag</span>
+<span class="sd">    that this class maintains, because a local flag is exactly what goes</span>
+<span class="sd">    stale when something else changes the model.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexicon import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;IndonesianHC-Complete&quot;, writeEnabled=False)</span>
+
+<span class="sd">        status = project.Parser.GetAvailability()</span>
+<span class="sd">        if status.available:</span>
+<span class="sd">            result = project.Parser.ParseWord(&quot;mengambil&quot;)</span>
+<span class="sd">            trace = project.Parser.TraceWordXml(&quot;mengambil&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        ParserAvailability</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ParserOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+        <span class="c1"># Resolved once, lazily, on the first question asked. The probe is</span>
+        <span class="c1"># terminal per instance: a component that was absent a moment ago is</span>
+        <span class="c1"># not going to appear mid-script, and re-probing per call would make</span>
+        <span class="c1"># every parse pay for reflection.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_availability</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># The bound parser handle and the cache it was built for. Holding the</span>
+        <span class="c1"># cache alongside the handle is how &quot;at most one grammar, for the</span>
+        <span class="c1"># project in use&quot; is enforced without a registry: a handle built for</span>
+        <span class="c1"># a different cache is released rather than reused.</span>
+        <span class="c1">#</span>
+        <span class="c1"># These two names, with `_availability` above, are the documented</span>
+        <span class="c1"># seam tier A1 drives the currency path through. They are contract.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parser_cache</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Whether the last operation left the component&#39;s morpher filtered to</span>
+        <span class="c1"># a subset of entries and rules. See _ClearAnyRestriction: this is not</span>
+        <span class="c1"># bookkeeping for its own sake, it is what stops a restricted trace</span>
+        <span class="c1"># from silently truncating the NEXT plain parse.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restricted</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># --- Availability ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span> <span class="nf">GetAvailability</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Report whether this project can reach the parser, and why not if it cannot.</span>
+
+<span class="sd">        Asking NEVER raises, on any machine, in any condition. A missing</span>
+<span class="sd">        component, a component from another FieldWorks install, a component</span>
+<span class="sd">        whose surface has moved, a permissions error, a pythonnet failure --</span>
+<span class="sd">        each produces a status carrying what went wrong.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ParserAvailability: `available`, `reason`, and the detected</span>
+<span class="sd">            `version` (reported, never compared against a minimum).</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; status = project.Parser.GetAvailability()</span>
+<span class="sd">            &gt;&gt;&gt; print(status.available, status.version)</span>
+<span class="sd">            True 9.3.10</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Two checks, and NEITHER READS A VERSION NUMBER (FR-006):</span>
+<span class="sd">              (1) the component resolves from the same directory the data</span>
+<span class="sd">              model in use was loaded from, and (2) every member this class</span>
+<span class="sd">              calls is present on it.</span>
+<span class="sd">            - WHAT CHECK 1 DOES NOT PROVE, stated here because the reason</span>
+<span class="sd">              string must not imply more than was tested: the test is</span>
+<span class="sd">              DIRECTORY EQUALITY ONLY. A foreign ParserCore.dll copied into</span>
+<span class="sd">              the correct FieldWorks directory passes it undetected. It</span>
+<span class="sd">              catches the accident -- two installs mixed across an</span>
+<span class="sd">              in-process boundary -- not the adversary.</span>
+<span class="sd">            - The member list checked here is deliberately NOT the same list</span>
+<span class="sd">              FlexToolsMCP&#39;s src/flextoolsmcp/server/parser_probe.py checks,</span>
+<span class="sd">              and the two are not drifting apart by accident. That module</span>
+<span class="sd">              probes the surface IT binds, which includes the member that</span>
+<span class="sd">              files a parse result; this class never binds that member, and</span>
+<span class="sd">              it additionally requires the reset and currency members, which</span>
+<span class="sd">              that module has no use for. Neither list is a superset of the</span>
+<span class="sd">              other and neither should be reconciled into the other</span>
+<span class="sd">              (Decision D1).</span>
+<span class="sd">            - The result is cached for the lifetime of this instance.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            ParserAvailability</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_availability</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_availability</span> <span class="o">=</span> <span class="n">_probe_availability</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_availability</span>
+
+    <span class="c1"># --- Parsing ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span> <span class="nf">ParseWord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse a single word form and return the parser&#39;s result object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            word (str): The word form to parse, in the vernacular.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ParseResult: The parser&#39;s own result. Analyses on it carry LIVE</span>
+<span class="sd">            references to the lexical objects they were built from --</span>
+<span class="sd">            IMoForm, IMoMorphSynAnalysis, ILexEntryInflType -- not their</span>
+<span class="sd">            text. A caller can go from a parse straight back to the entry</span>
+<span class="sd">            that produced it without a lookup.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_RuntimeError: If the parser is unavailable, carrying the same</span>
+<span class="sd">                reason `GetAvailability()` would have reported.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; result = project.Parser.ParseWord(&quot;mengambil&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(result.Analyses.Count)</span>
+<span class="sd">            2</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - The grammar&#39;s currency is confirmed immediately before the</span>
+<span class="sd">              parse, and a stale grammar is reloaded first.</span>
+<span class="sd">            - Object identity is preserved here and NOT on the serialized</span>
+<span class="sd">              forms below: once the parser has written a document, the</span>
+<span class="sd">              objects in it survive only as integer identifiers.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            ParseWordXml, TraceWordXml, GetAvailability</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CurrentHandle</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ClearAnyRestriction</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">word</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">handle</span><span class="o">.</span><span class="n">ParseWord</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span> <span class="nf">ParseWordXml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse a single word form and return the parser&#39;s structured document.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            word (str): The word form to parse, in the vernacular.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            XDocument: The parser&#39;s serialized parse document.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_RuntimeError: If the parser is unavailable, carrying the same</span>
+<span class="sd">                reason `GetAvailability()` would have reported.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; doc = project.Parser.ParseWordXml(&quot;mengambil&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(doc.Root.Name.LocalName)</span>
+<span class="sd">            Wordform</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Lexical objects survive on this document as integer</span>
+<span class="sd">              identifiers, not as live references. Use `ParseWord` when you</span>
+<span class="sd">              need to reach the objects themselves.</span>
+<span class="sd">            - The grammar&#39;s currency is confirmed immediately before the</span>
+<span class="sd">              parse, and a stale grammar is reloaded first.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            ParseWord, TraceWordXml</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CurrentHandle</span><span class="p">()</span><span class="o">.</span><span class="n">ParseWordXml</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+        <span class="c1"># The component resets its own selectors on this path (it passes a</span>
+        <span class="c1"># null restriction through), so whatever a previous trace narrowed is</span>
+        <span class="c1"># open again once this returns.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restricted</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span> <span class="nf">TraceWordXml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">,</span> <span class="n">analyses</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Trace a parse attempt, optionally restricted to specific analyses.</span>
+
+<span class="sd">        A trace explains an attempt: which rules fired, which failed, and</span>
+<span class="sd">        where a candidate was rejected. It is the expensive answer, and the</span>
+<span class="sd">        one worth asking for when a plain parse came back empty.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            word (str): The word form to trace, in the vernacular.</span>
+<span class="sd">            analyses (iterable of int, optional): Identifiers of the</span>
+<span class="sd">                analyses to restrict the trace to. None traces without</span>
+<span class="sd">                restriction. An EMPTY sequence is refused -- see Raises.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            XDocument: The parser&#39;s serialized trace document.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_RuntimeError: If the parser is unavailable, carrying the same</span>
+<span class="sd">                reason `GetAvailability()` would have reported.</span>
+<span class="sd">            FP_ParameterError: If `analyses` is an empty sequence. Pass None</span>
+<span class="sd">                for an unrestricted trace; an empty restriction would limit</span>
+<span class="sd">                the trace to no analyses at all.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; doc = project.Parser.TraceWordXml(&quot;mengambil&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(doc.Root.Name.LocalName)</span>
+<span class="sd">            Wordform</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - The restriction is passed through EXACTLY as given. This</span>
+<span class="sd">              method never substitutes a different restriction, never</span>
+<span class="sd">              widens one to an unrestricted search, and never reorders or</span>
+<span class="sd">              scores what it was handed. That is also why an empty</span>
+<span class="sd">              restriction is refused instead of being read as &quot;no</span>
+<span class="sd">              restriction&quot; -- widening it would answer a different question.</span>
+<span class="sd">            - A RESTRICTION OUTLIVES THE CALL, inside the component. The</span>
+<span class="sd">              component narrows its morpher&#39;s entry and rule selectors and</span>
+<span class="sd">              leaves them narrowed, and a plain parse does not reset them.</span>
+<span class="sd">              This class undoes that before the next plain parse, so callers</span>
+<span class="sd">              do not have to know; the cost is one extra parse, paid only</span>
+<span class="sd">              when a restricted trace is actually followed by a plain parse.</span>
+<span class="sd">            - Objects in the returned document are integer identifiers;</span>
+<span class="sd">              turning them back into lexical objects is a repository lookup</span>
+<span class="sd">              the caller makes, and this class deliberately does not do it</span>
+<span class="sd">              for them.</span>
+<span class="sd">            - The grammar&#39;s currency is confirmed immediately before the</span>
+<span class="sd">              trace, and a stale grammar is reloaded first.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            ParseWord, ParseWordXml</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">restriction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_AsIdentifierSequence</span><span class="p">(</span><span class="n">analyses</span><span class="p">)</span>
+        <span class="n">handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CurrentHandle</span><span class="p">()</span>
+        <span class="c1"># SET BEFORE THE CALL, NOT AFTER, AND THE ORDER IS THE WHOLE POINT.</span>
+        <span class="c1"># The component installs its selectors at the START of the call, so</span>
+        <span class="c1"># they are narrowed the moment it begins. If the parse then throws --</span>
+        <span class="c1"># a difficult form, a bad identifier in the restriction, a</span>
+        <span class="c1"># marshalling failure -- a flag set afterwards would never be set,</span>
+        <span class="c1"># _ClearAnyRestriction would return early, and the next plain parse</span>
+        <span class="c1"># would be served truncated: silently, indefinitely, which is</span>
+        <span class="c1"># verbatim the defect this whole mechanism exists to prevent.</span>
+        <span class="c1"># Setting it first fails the safe way. The worst case is one wasted</span>
+        <span class="c1"># clearing parse; the worst case the other way round is a wrong</span>
+        <span class="c1"># answer.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restricted</span> <span class="o">=</span> <span class="n">restriction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">handle</span><span class="o">.</span><span class="n">TraceWordXml</span><span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">restriction</span><span class="p">)</span>
+
+    <span class="c1"># --- Grammar lifetime ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span> <span class="nf">Reload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Discard the loaded grammar and load it again. Unconditionally.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_RuntimeError: If the parser is unavailable, carrying the same</span>
+<span class="sd">                reason `GetAvailability()` would have reported.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; project.Parser.Reload()</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Parser.IsUpToDate())</span>
+<span class="sd">            True</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - THIS IS TWO STEPS, RESET THEN UPDATE, AND THE ORDER MATTERS.</span>
+<span class="sd">              The component&#39;s own update is guarded by a condition that</span>
+<span class="sd">              short-circuits when it believes the model has not changed, so</span>
+<span class="sd">              a reload bound to a bare update would return having done</span>
+<span class="sd">              nothing and serve the next parse from the very grammar the</span>
+<span class="sd">              caller just asked to have discarded. The reset is what makes</span>
+<span class="sd">              the update unconditional. FieldWorks&#39; own reload does the same</span>
+<span class="sd">              two steps in the same order.</span>
+<span class="sd">            - You rarely need to call this. Every parse already confirms</span>
+<span class="sd">              currency and reloads a stale grammar on its own; this is for</span>
+<span class="sd">              the case where you changed the model yourself and want the</span>
+<span class="sd">              cost paid now rather than on the next word.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsUpToDate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CurrentHandle</span><span class="p">(</span><span class="n">confirm_currency</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">handle</span><span class="o">.</span><span class="n">Reset</span><span class="p">()</span>
+        <span class="n">handle</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
+        <span class="c1"># A reloaded grammar has open selectors, so nothing is left to undo.</span>
+        <span class="c1"># Kept in step deliberately: the flag is meant to TRACK the</span>
+        <span class="c1"># component&#39;s state, not merely to remember what this class last did.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restricted</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span> <span class="nf">IsUpToDate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ask the parser whether its loaded grammar is current.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the loaded grammar matches the project&#39;s current</span>
+<span class="sd">            model, False if it is stale.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_RuntimeError: If the parser is unavailable, carrying the same</span>
+<span class="sd">                reason `GetAvailability()` would have reported.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Parser.IsUpToDate())</span>
+<span class="sd">            True</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - The question is put to the PARSER every time it is asked. This</span>
+<span class="sd">              class keeps no flag of its own, because a flag it maintained</span>
+<span class="sd">              would be right only until something outside this class changed</span>
+<span class="sd">              the model -- which is precisely the case the question exists</span>
+<span class="sd">              to detect.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Reload</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_CurrentHandle</span><span class="p">(</span><span class="n">confirm_currency</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">IsUpToDate</span><span class="p">())</span>
+
+    <span class="c1"># --- Internals ---</span>
+    <span class="c1">#</span>
+    <span class="c1"># Every call into the component below is bound POSITIONALLY, never by</span>
+    <span class="c1"># parameter name. The interface declares its parameter as `word` and the</span>
+    <span class="c1"># implementation spells it `form`, so a keyword call resolves against</span>
+    <span class="c1"># whichever of the two pythonnet happened to pick -- working on the</span>
+    <span class="c1"># author&#39;s machine and failing on someone else&#39;s. Positional binding</span>
+    <span class="c1"># makes the disagreement harmless, and tier A1 asserts it structurally</span>
+    <span class="c1"># rather than leaving it as a convention to remember.</span>
+
+    <span class="k">def</span> <span class="nf">_Require</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Refuse with the availability reason, or return the status.&quot;&quot;&quot;</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAvailability</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="o">.</span><span class="n">available</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_RuntimeError</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">status</span>
+
+    <span class="k">def</span> <span class="nf">_ReleaseGrammar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Drop the held grammar, discarding it first if we still can.</span>
+
+<span class="sd">        Best-effort by design: this runs when we are switching away from a</span>
+<span class="sd">        cache, and a handle whose project is already closing may refuse the</span>
+<span class="sd">        discard. Failing to tidy up an outgoing grammar must not break the</span>
+<span class="sd">        incoming one.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parser_cache</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># The next handle is a fresh parser with open selectors.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restricted</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">handle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">handle</span><span class="o">.</span><span class="n">Reset</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_CurrentHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">confirm_currency</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The bound parser for the project in use, with a current grammar.</span>
+
+<span class="sd">        Enforces both grammar-lifetime clauses in one place, which is why</span>
+<span class="sd">        every public operation goes through it and none reaches the</span>
+<span class="sd">        component directly: at most one grammar is held, for the cache in</span>
+<span class="sd">        use, and its currency is confirmed immediately before it is reused.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_Require</span><span class="p">()</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">cache</span><span class="p">:</span>
+            <span class="c1"># A handle built for another project is released before the new</span>
+            <span class="c1"># one is built, never alongside it -- &quot;at most one&quot; is a bound on</span>
+            <span class="c1"># what is held at any instant, not a tidy-up done afterwards.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ReleaseGrammar</span><span class="p">()</span>
+            <span class="n">handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ConstructParser</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+            <span class="n">handle</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="n">handle</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parser_cache</span> <span class="o">=</span> <span class="n">cache</span>
+            <span class="k">return</span> <span class="n">handle</span>
+
+        <span class="n">handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span>
+        <span class="k">if</span> <span class="n">confirm_currency</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">handle</span><span class="o">.</span><span class="n">IsUpToDate</span><span class="p">():</span>
+            <span class="n">handle</span><span class="o">.</span><span class="n">Reset</span><span class="p">()</span>
+            <span class="n">handle</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">handle</span>
+
+    <span class="k">def</span> <span class="nf">_ConstructParser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Bind the component and construct a parser over `cache`.</span>
+
+<span class="sd">        The import is FUNCTION-LOCAL, and that is FR-003: loading the</span>
+<span class="sd">        component is triggered by USE, so a machine that never touches</span>
+<span class="sd">        project.Parser never needs ParserCore.dll to exist, and one whose</span>
+<span class="sd">        installation moved degrades to unavailable instead of failing to</span>
+<span class="sd">        import flexicon at all.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">clr</span>
+
+        <span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="n">PARSER_ASSEMBLY</span><span class="p">)</span>
+        <span class="kn">from</span> <span class="nn">SIL.FieldWorks.WordWorks.Parser</span> <span class="kn">import</span> <span class="n">HCParser</span>
+
+        <span class="k">return</span> <span class="n">HCParser</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_ClearAnyRestriction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo a restriction a previous trace left on the component.</span>
+
+<span class="sd">        WHY THIS EXISTS -- verified against the component&#39;s source and</span>
+<span class="sd">        against a live project, not inferred. ParserCore&#39;s ParseToXml sets</span>
+
+<span class="sd">            m_morpher.LexEntrySelector / m_morpher.RuleSelector</span>
+
+<span class="sd">        from the restriction it was handed, at the START of every call, and</span>
+<span class="sd">        those selectors OUTLIVE the call. Plain ParseWord is the one entry</span>
+<span class="sd">        point that never touches them -- it calls the morpher directly. So a</span>
+<span class="sd">        restricted trace followed by a plain parse returns a truncated</span>
+<span class="sd">        answer, silently and indefinitely, until something else happens to</span>
+<span class="sd">        reset the selectors.</span>
+
+<span class="sd">        Observed live on IndonesianHC-Complete: a word parsing with one</span>
+<span class="sd">        analysis returns ZERO after any restricted trace, and keeps</span>
+<span class="sd">        returning zero, until an unrestricted call re-opens the selectors.</span>
+<span class="sd">        No exception, no warning -- just a wrong answer, which is the worst</span>
+<span class="sd">        shape a defect can take.</span>
+
+<span class="sd">        The reset uses the component&#39;s OWN path: ParseWordXml passes a null</span>
+<span class="sd">        restriction, which is what makes ParseToXml reopen both selectors.</span>
+<span class="sd">        It costs one extra parse, paid only when a restricted trace actually</span>
+<span class="sd">        preceded a plain parse, never on the common unrestricted route.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restricted</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">handle</span><span class="o">.</span><span class="n">ParseWordXml</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restricted</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_AsIdentifierSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analyses</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Render `analyses` as the restriction the component expects.</span>
+
+<span class="sd">        None means DO NOT RESTRICT, and the component spells that as null --</span>
+<span class="sd">        NOT as an empty sequence. The distinction is load-bearing and the</span>
+<span class="sd">        two are near-opposites: ParseToXml branches on</span>
+<span class="sd">        `selectTraceMorphs != null`, so a null reopens the selectors while</span>
+<span class="sd">        an EMPTY array installs a filter that admits nothing. Passing an</span>
+<span class="sd">        empty array for &quot;no restriction&quot; is therefore not a harmless</span>
+<span class="sd">        approximation -- it restricts the parser to nothing at all, and</span>
+<span class="sd">        leaves it that way.</span>
+
+<span class="sd">        An explicitly empty sequence is refused rather than quietly widened.</span>
+<span class="sd">        Restricting to no analyses can only ever produce no analyses, so it</span>
+<span class="sd">        is a caller error; and silently turning it into an unrestricted</span>
+<span class="sd">        search would be answering a different question than the one asked.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">analyses</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">analyses</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">values</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;analyses is empty. An empty restriction limits the trace to &quot;</span>
+                <span class="s2">&quot;no analyses at all, which can only return nothing. Pass None &quot;</span>
+                <span class="s2">&quot;to trace without restriction, or pass the analyses you want.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="kn">import</span> <span class="nn">System</span>
+
+        <span class="n">sequence</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Array</span><span class="p">[</span><span class="n">System</span><span class="o">.</span><span class="n">Int32</span><span class="p">](</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+            <span class="n">sequence</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="n">sequence</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Parser.ParserOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    </div>
+  </body>
+</html>
