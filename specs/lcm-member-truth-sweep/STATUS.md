@@ -324,19 +324,20 @@ observation-only sweep would have been a vacuous green) and all three
    Recovery is `SendMessage` back to the same agent. That section is now
    corrected.
 
-## Two new pre-existing defects found incidentally (checkpoint 4)
+## Two new pre-existing defects found incidentally (checkpoint 4) -- FILED
 
-Neither is introduced by this work; both are live-confirmed.
+Neither is introduced by this work; both are live-confirmed and both are
+now filed rather than left as prose in this file.
 
-- **`GetSyncableProperties` calls a nonexistent `FLExProject
+- **#332 -- `GetSyncableProperties` calls a nonexistent `FLExProject
   .GetMultiStringDict()`** -- fails for **1932 of 1932** bundles, and the
   same dead call exists in **7 other Operations classes**. Green offline
   only because mock auto-vivification resolves the missing attribute. This
   is exactly the blind spot the `FLEXLIBS_REQUIRE_LIVE=1` gate exists for.
-- **`project.Object(hvo)` returns a bare `ICmObject`**, so the HVO-int half
-  of `bundle_or_hvo` raises `AttributeError` on derived-member access.
-  Reproduced on the **untouched** `GetMSA(hvo)`, which is what confirms it
-  predates this cycle; `GetInflectionClass(hvo)` and
+- **#333 -- `project.Object(hvo)` returns a bare `ICmObject`**, so the
+  HVO-int half of `bundle_or_hvo` raises `AttributeError` on derived-member
+  access. Reproduced on the **untouched** `GetMSA(hvo)`, which is what
+  confirms it predates this cycle; `GetInflectionClass(hvo)` and
   `SetInflectionClass(hvo, ...)` inherit it. The object half -- the
   documented calling convention used by every doc example -- works.
 
