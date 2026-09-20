@@ -4351,8 +4351,13 @@ class FLExProject(object):
             item = self.project.DomainDataByFlid.get_ObjectProp(hvo, fieldID)
             if not item:
                 return ""
+            # Resolve the repository outside the try, so a broken
+            # service-locator chain surfaces as itself rather than being
+            # relabelled as a failed item lookup. Matches the hoist the
+            # ReferenceCollection branch below already does.
+            getPossibilityObject = self.ObjectRepository(ICmPossibilityRepository).GetObject
             try:
-                poss = self.ObjectRepository(ICmPossibilityRepository).GetObject(item)
+                poss = getPossibilityObject(item)
             except (
                 TypeError,
                 System.InvalidCastException,

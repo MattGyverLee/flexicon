@@ -1,6 +1,6 @@
 {
   "feature": "262-object-not-found",
-  "status": "in_progress",
+  "status": "ready_for_review",
   "branch": "fix/262-object-stale-guid",
   "baseline_commit": "49611cc",
   "issues": ["#262"],
@@ -9,31 +9,43 @@
     "T1 lex-domain adjudication (ruling + probe list)",
     "T2 pattern audit via Explore (~40 same-class sites; 146-call-site fan-out through the chokepoint)",
     "T3 lex-programmer implementation (chokepoint + 6 Tier-1 bypass sites + docs)",
-    "T4 mock coverage: tests/operations/test_issue262_object_stale_id.py, 15 passed"
+    "T4 mock coverage: tests/operations/test_issue262_object_stale_id.py, 15 passed",
+    "T5 lex-qc review -- APPROVE WITH CHANGES; both required changes applied (ReferenceAtom repository hoist, CHANGELOG entry)",
+    "T6 live LCM verification -- PASS, run_mode=live, 7/7, evidence/live-262-verification.md",
+    "T7 CHANGELOG entry disclosing the upstream divergence"
   ],
   "tasks_remaining": [
-    "T5 lex-qc review -- NOT RUN",
-    "T6 live LCM verification -- NOT RUN (this is FAIL: unverified per CLAUDE.md)",
-    "T7 CHANGELOG entry disclosing the upstream divergence",
     "T8 file the follow-up issue for the four System.Guid() FormatException leaks",
-    "T9 push branch and open PR with Pattern audit heading + live evidence link"
+    "T9 open PR -- no merge; human review is the gate"
   ],
-  "next_entry": "Run T6 first. Nothing here may be reported as done until tests/live_status.json shows run_mode=live and specs/262-object-not-found/evidence/live-<task>.md exists. See HANDOFF.md section 4 for the five probes, including the T5-blocking regression check on test_wfi_analysis.py, which depends on Object() raising for a deleted HVO.",
-  "open_questions": {
-    "Q1": "Is catching TypeError/AttributeError as broadly as the DataNotebookOperations house template risks masking genuine bugs? -- for lex-qc",
-    "Q2": "Should the five-line catch tuple, now duplicated across six sites, be factored into a helper? -- for lex-qc",
-    "Q3": "Do Hvo=0, negative Hvo, or a cross-project Hvo/Guid raise something other than KeyNotFoundException and slip past the catch tuple? -- live probe 3"
+  "next_entry": "T5 and T6 are discharged. The live run confirmed KeyNotFoundException is the only CLR type produced, including for Hvo=0, Hvo=-1 and a foreign Guid, so nothing escapes the catch tuple. Remaining work is T8 and T9 only.",
+  "live_verification": {
+    "run_mode": "live",
+    "run_timestamp": "2026-09-20T19:47:25Z",
+    "result": "7 passed",
+    "command": "$env:FLEXLIBS_REQUIRE_LIVE = \"1\"; python -m pytest tests/operations/test_issue262_object_stale_id_live.py -m requires_live_project -q",
+    "fixture": "target_sandbox (tempdir copy; the machine-shared Target was never touched)",
+    "clr_type_confirmed": "System.Collections.Generic.KeyNotFoundException for all stale-id forms, plus Hvo=0, Hvo=-1, and a foreign Guid -- nothing escaped the catch tuple",
+    "evidence": "specs/262-object-not-found/evidence/live-262-verification.md"
   },
+  "qc_resolutions": {
+    "Q1": "RESOLVED. Catch-tuple breadth accepted for house-template consistency, since every site preserves __cause__ via `from e` and inlines the original message, so a mislabelled error is still diagnosable. One genuine asymmetry fixed: the GetCustomFieldValue ReferenceAtom branch evaluated the whole ObjectRepository(...).GetObject chain inside the try, so a broken service locator would have been relabelled as a failed item lookup. The repository resolution is now hoisted out, matching the ReferenceCollection branch.",
+    "Q2": "RESOLVED -- shared helper DECLINED. Copy-paste is the established house convention (already duplicated 4x in DiscourseOperations.py and DataNotebookOperations.py before this branch); factoring only the 6 new sites would leave a worse mixed state, and CLAUDE.md forbids introducing an abstraction that is not already convention. Revisit only as a separate sweep across all 10 sites.",
+    "Q3": "RESOLVED by live probe 3 -- Hvo=0, Hvo=-1 and a random foreign Guid all surface as FP_ParameterError; no ArgumentException/OverflowException escaped."
+  },
+  "open_questions": {},
   "out_of_scope": [
-    "Four unguarded System.Guid() parses leaking System.FormatException (PhonFeatureOperations.py:766, :958; catalog_backed.py:479; InflectionFeatureOperations.py:1496) -- different exception class, separate issue",
+    "Four unguarded System.Guid() parses leaking System.FormatException (PhonFeatureOperations.py:766, :958; catalog_backed.py:479; InflectionFeatureOperations.py:1496) -- different exception class, separate issue (T8)",
     "The malformed-guid-string FormatException path in Object() itself, which is already correct",
-    "Any new public method, kwarg, or feature -- this is a bug fix only"
+    "Any new public method, kwarg, or feature -- this is a bug fix only",
+    "docs/EXCEPTION_HANDLING.md:432,438,474 generic KeyNotFoundException snippets -- not Object()-specific; lex-qc rated cosmetic, left alone"
   ],
   "production_files_modified_so_far": [
     "flexicon/code/FLExProject.py",
     "flexicon/code/Lexicon/LexSenseOperations.py",
-    "docs/EXCEPTION_HANDLING.md"
+    "docs/EXCEPTION_HANDLING.md",
+    "CHANGELOG.md"
   ],
   "worktree": "C:\\Github\\flexicon-bugfix-loop (disposable; main checkout had concurrent uncommitted edits from another session)",
-  "updated": "2026-09-18"
+  "updated": "2026-09-20"
 }

@@ -1,10 +1,11 @@
 # Handoff -- #262 `FLExProject.Object()` leaks a raw CLR exception
 
 **Branch:** `fix/262-object-stale-guid`
-**Status:** implemented, mock-verified, **NOT live-verified**. Do not open a
-PR or report this as done until section 4 is discharged.
+**Status:** ready for review. Implemented, QC-reviewed, and **live-verified**
+(`run_mode: live`, 7/7) -- section 4 is discharged; see
+`evidence/live-262-verification.md`.
 **Baseline:** `49611cc` (main)
-**Written:** 2026-09-18
+**Written:** 2026-09-18 · **Updated:** 2026-09-20
 
 ---
 
@@ -85,17 +86,30 @@ instead of becoming an `FP_*` exception.*
   `FLExInit.py:91`) does translate consistently; the object-lookup boundary
   does not. This branch fixes the chokepoint, not the whole gap.
 
-## 4. What is NOT done -- required before a PR
+## 4. Live verification -- DISCHARGED 2026-09-20
 
-**No live LCM verification has been performed. Per CLAUDE.md this is a
-`FAIL: unverified`, not a clean result.** Run against a **sandbox** fixture
-(`target_sandbox` -- never in-place `target_project`; other sessions share
-the machine-global projects), with:
+**PASS.** `tests/live_status.json` shows `"run_mode": "live"`
+(`2026-09-20T19:47:25Z`), 7/7 passed. Test file:
+`tests/operations/test_issue262_object_stale_id_live.py`. Full evidence:
+`evidence/live-262-verification.md`, with the raw captured CLR data in
+`evidence/live-262-probes-raw.json`.
 
     $env:FLEXLIBS_REQUIRE_LIVE = "1"
-    python -m pytest <live test file> -m requires_live_project -q
+    python -m pytest tests/operations/test_issue262_object_stale_id_live.py -m requires_live_project -q
 
-Probes to discharge, from lex-domain:
+Run against `target_sandbox` (a tempdir copy); the machine-shared Target
+project was never touched.
+
+**The load-bearing result:** the CLR type is
+`System.Collections.Generic.KeyNotFoundException` for every stale-id form,
+*and* for `Hvo=0`, `Hvo=-1` and a random foreign Guid. Nothing escaped the
+catch tuple as `ArgumentException`, `OverflowException`, or anything else,
+so the production `except` clause is correctly specified rather than
+merely assumed. Probe 5 confirmed the cascade-delete pattern in
+`test_wfi_analysis.py` still works, its broad `except Exception:` catching
+`FP_ParameterError` as it previously caught the raw CLR type.
+
+The probes, as originally specified by lex-domain and all now discharged:
 
 1. Create an object, capture `.Guid` and `.Hvo`, delete it, then call
    `Object(guid_str)`, `Object(System.Guid(...))` and `Object(hvo_int)` on
@@ -116,14 +130,36 @@ Probes to discharge, from lex-domain:
    Its `except Exception:` should still catch `FP_ParameterError`, but
    confirm it rather than assume.
 
-Write results to `specs/262-object-not-found/evidence/live-<task>.md`:
-exact command, the `run_mode` value from `tests/live_status.json` (must be
-`"live"`), pre-state and post-state **read back from the LCM**, pass/fail.
+### lex-qc review -- DISCHARGED 2026-09-20
 
-Also still pending: **lex-qc review** (not yet run). Two things to put in
-front of it -- whether catching `TypeError`/`AttributeError` this broadly
-risks masking genuine bugs, and whether the duplicated five-line catch tuple
-across six sites should be factored into a helper.
+Verdict: **APPROVE WITH CHANGES**. Both required changes are applied.
+
+1. **ReferenceAtom repository hoist.** The `GetCustomFieldValue`
+   ReferenceAtom branch evaluated the whole
+   `self.ObjectRepository(ICmPossibilityRepository).GetObject(item)` chain
+   inside the `try`, so an `AttributeError` from a broken service-locator
+   chain would have been relabelled as a failed item lookup. The
+   repository resolution is now hoisted out, matching what the
+   ReferenceCollection branch two cases below already did.
+2. **CHANGELOG entry** for the behavioural divergence from upstream.
+
+The two queued questions were answered:
+
+- *Catch-tuple breadth* (`TypeError`/`AttributeError`): accepted for
+  house-template consistency. Every site preserves `__cause__` via
+  `from e` and inlines the original message, so a mislabelled error is
+  still diagnosable -- mislabelled, not swallowed.
+- *Factoring the duplicated tuple into a helper*: **declined.**
+  Copy-paste is the established convention here -- the same five-line
+  block is already duplicated four times in `DiscourseOperations.py` and
+  `DataNotebookOperations.py` before this branch. Migrating only the six
+  new sites would leave a worse mixed state, and CLAUDE.md forbids
+  introducing an abstraction that is not already house convention. If it
+  is ever done, it should be one sweep across all ten sites.
+
+Left alone as cosmetic: `docs/EXCEPTION_HANDLING.md:432,438,474` still
+show generic `except KeyNotFoundException` snippets, but they illustrate
+non-`Object()` call sites and sit beside a correctly-updated example.
 
 ## 5. Upstream parity
 
