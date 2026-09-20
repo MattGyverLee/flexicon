@@ -602,7 +602,7 @@ class TestA35OneGrammarHeldAndCurrencyConfirmed:
         confirmations -- a cached answer or an exempt route shows up here as
         a count that does not match.
         """
-        handle = available_parser._parser
+        handle = available_parser._CurrentHandle(confirm_currency=False)
         assert handle is not None
 
         calls = {"n": 0}
