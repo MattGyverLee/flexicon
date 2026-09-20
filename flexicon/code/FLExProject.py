@@ -4000,6 +4000,19 @@ class FLExProject(object):
         """
         Returns the `CmObject` for the given Hvo or guid (`str` or `System.Guid`).
         Refer to `.ClassName` to determine the LCM class.
+
+        This is an identity-resolution lookup, not a search: `hvoOrGuid`
+        is expected to name an object that exists. A well-formed but
+        stale or nonexistent Hvo/Guid is therefore a caller error, not a
+        "not found" result -- it never returns `None`. Callers must
+        catch `FP_ParameterError` rather than checking the return value
+        for `None`.
+
+        Raises:
+            FP_ParameterError: If `hvoOrGuid` is not an Hvo (int),
+                `System.Guid`, or `str`; if a `str` is not a well-formed
+                guid; or if a well-formed Hvo/Guid does not resolve to an
+                existing object in the project (e.g. a stale reference).
         """
         if isinstance(hvoOrGuid, str):
             try:
@@ -4008,7 +4021,18 @@ class FLExProject(object):
                 raise FP_ParameterError("Invalid parameter, hvoOrGuid")
 
         if isinstance(hvoOrGuid, (System.Guid, int)):
-            return self.project.ServiceLocator.GetObject(hvoOrGuid)
+            try:
+                return self.project.ServiceLocator.GetObject(hvoOrGuid)
+            except (
+                TypeError,
+                System.InvalidCastException,
+                AttributeError,
+                KeyError,
+                System.Collections.Generic.KeyNotFoundException,
+            ) as e:
+                raise FP_ParameterError(
+                    f"Object() could not resolve hvoOrGuid: {hvoOrGuid!r} - {e}"
+                ) from e
         else:
             raise FP_ParameterError("hvoOrGuid must be an Hvo (int), System.Guid or str")
 
@@ -4380,7 +4404,23 @@ class FLExProject(object):
             item = self.project.DomainDataByFlid.get_ObjectProp(hvo, fieldID)
             if not item:
                 return ""
-            poss = self.ObjectRepository(ICmPossibilityRepository).GetObject(item)
+            # Resolve the repository outside the try, so a broken
+            # service-locator chain surfaces as itself rather than being
+            # relabelled as a failed item lookup. Matches the hoist the
+            # ReferenceCollection branch below already does.
+            getPossibilityObject = self.ObjectRepository(ICmPossibilityRepository).GetObject
+            try:
+                poss = getPossibilityObject(item)
+            except (
+                TypeError,
+                System.InvalidCastException,
+                AttributeError,
+                KeyError,
+                System.Collections.Generic.KeyNotFoundException,
+            ) as e:
+                raise FP_ParameterError(
+                    f"GetCustomFieldValue: could not resolve possibility item: {item!r} - {e}"
+                ) from e
             return poss.ShortName
 
         elif fieldType == CellarPropertyType.ReferenceCollection:
@@ -4389,7 +4429,18 @@ class FLExProject(object):
             items = []
             for i in range(numItems):
                 item = self.project.DomainDataByFlid.get_VecItem(hvo, fieldID, i)
-                poss = getPossibilityObject(item)
+                try:
+                    poss = getPossibilityObject(item)
+                except (
+                    TypeError,
+                    System.InvalidCastException,
+                    AttributeError,
+                    KeyError,
+                    System.Collections.Generic.KeyNotFoundException,
+                ) as e:
+                    raise FP_ParameterError(
+                        f"GetCustomFieldValue: could not resolve possibility item: {item!r} - {e}"
+                    ) from e
                 items.append(poss.ShortName)
             return items
 

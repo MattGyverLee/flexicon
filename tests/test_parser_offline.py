@@ -244,13 +244,19 @@ WRITE_SPINE_NAMES = ("_EnsureWriteEnabled", "_TransactionCM", "ProcessParse", "P
 
 
 def _declared_public_names(cls):
-    """Public names DECLARED on the class, not inherited.
+    """Public callables DECLARED on the class, not inherited.
 
     Scoped to `vars(cls)` on purpose. Every Operations class in the package
     inherits BaseOperations' generic reordering helpers; those are not part
-    of what CP2a adds and are handled separately below.
+    of what CP2a adds and are handled separately below. The contract this
+    test pins is the callable API surface, so helper attributes injected by
+    decorators or descriptors do not count as public operations.
     """
-    return {name for name in vars(cls) if not name.startswith("_")}
+    return {
+        name
+        for name in vars(cls)
+        if not name.startswith("_") and inspect.isroutine(getattr(cls, name))
+    }
 
 
 class TestA14NoWriteSurface:

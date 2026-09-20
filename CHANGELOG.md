@@ -113,6 +113,36 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`FLExProject.Object()` leaked a raw CLR exception for a stale id**
+  (#262). A well-formed but stale or deleted Hvo/Guid surfaced a bare
+  `System.Collections.Generic.KeyNotFoundException` through the wrapper
+  boundary, while a *malformed* guid string two lines above was already
+  translated into `FP_ParameterError` -- an intent to wrap left half
+  done. Callers who followed the "not found -> `None`" idiom got an
+  unhandled CLR type instead.
+
+  `Object()` now raises `FP_ParameterError`, preserving the original CLR
+  exception as `__cause__`. The same wrap was applied to the six sites
+  that bypass it: the `ReferenceAtom` and `ReferenceCollection` branches
+  of `GetCustomFieldValue()`, and `pos`/`from_pos`/`to_pos` resolution in
+  `LexSenseOperations.SetPartOfSpeech()` (the latter two inside an open
+  transaction, where the leak also aborted a partially-opened undo task).
+  Roughly 146 `self.project.Object()` call sites are covered transitively
+  through the chokepoint.
+
+  `Object()` deliberately does **not** return `None` for a stale id. It
+  resolves an identity the caller already holds, not a search, and its
+  result is routinely passed straight into a write -- returning `None`
+  would convert a loud failure into a silent no-op.
+
+  **Behaviour change, and a deliberate divergence from upstream
+  `cdfarrow/flexlibs`**, whose `Object()` is byte-identical to the
+  pre-fix version and still leaks the CLR type. Code doing
+  `except KeyNotFoundException:` around `project.Object(...)` will stop
+  catching anything and must catch `FP_ParameterError` instead;
+  `docs/EXCEPTION_HANDLING.md`, which previously documented the raw CLR
+  type as the contract, has been updated.
+
 - **An unrestricted trace poisoned every later parse of the same word**
   -- found by live verification. `TraceWordXml` passed an *empty*
   restriction to the parser component where it should have passed a null.
@@ -2664,4 +2694,3 @@ See CONTRIBUTING.md for guidelines on contributing to Flexicon.
 - **v2.1.x**: Legacy, security fixes only
 - **v2.0.x**: End of life
 - **v1.x**: End of life
-

@@ -475,9 +475,9 @@ class TestDataNotebookAttributeErrorNotRelabelledLive:
             with pytest.raises(AttributeError) as excinfo:
                 notebook.GetTitle(hvo)
 
-            # It must be the real AttributeError, not a FP_ParameterError
-            # wrapping/relabelling it.
-            assert not isinstance(excinfo.value, FP_ParameterError)
+            # It must be the exact AttributeError we raised, not a
+            # relabelled wrapper exception.
+            assert type(excinfo.value) is AttributeError
             assert "simulated genuine coding-mistake" in str(excinfo.value)
         finally:
             monkeypatch.undo()
