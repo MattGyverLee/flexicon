@@ -11,6 +11,58 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+> **Contains a `BREAKING (behavioural)` entry -- read it before upgrading.**
+> Ships as a **minor** bump, not `v5.0.0`, per the precedent set by 4.4.0,
+> 4.6.0, 4.7.0 and 4.8.0: no signature changes, no default's meaning
+> changes for a caller that passes it explicitly.
+
+### Fixed
+
+- **BREAKING (behavioural): `LexEntryOperations.MergeObject()` /
+  `LexSenseOperations.MergeObject()` auto-deduplication never actually
+  removed anything** (#318). The three private dedup helpers
+  (`__DeduplicatePronunciationsInEntry`, `__DeduplicateAllomorphsInEntry`,
+  `__DeduplicateExamplesInSense`) all called `dupe.OwningList.Remove(dupe)`
+  to remove a detected duplicate. `OwningList` exists only on
+  `ICmPossibility` in LCM 11 -- not on `ILexPronunciation`, `IMoForm`, or
+  `ILexExampleSentence` -- so every removal attempt raised `AttributeError`,
+  which a broad `except Exception: logger.warning(...)` swallowed. Dedup
+  has never functioned; `removed_count` stayed 0 and the merge appeared to
+  succeed. Fixed by removing via the correct owning sequence
+  (`entry.PronunciationsOS`/`entry.AlternateFormsOS`/`sense.ExamplesOS`) --
+  `.Remove()` on an LCM owning sequence *is* the deletion path (owned
+  objects cannot be orphaned), so no separate `Delete()` call is made.
+
+  **Behaviour change:** the inner per-item `except Exception` is narrowed
+  so `AttributeError`/`TypeError` (and everything else -- no genuinely
+  benign LCM-side removal failure was identifiable) now propagate instead
+  of being logged and swallowed, and a new `FP_DeduplicationError` is
+  raised whenever duplicates were detected but not all of them could be
+  removed -- "0 removed because there were 0 duplicates" and "0 removed
+  because every removal failed" must not collapse into the same silent
+  return (the exact collapse issue #291 identified as a defect). Because
+  `MergeObject(auto_deduplicate=True)` is the **default**, this new
+  exception can now surface at call sites that never mentioned
+  deduplication at all. Pass `auto_deduplicate=False` to opt out while
+  migrating.
+
+- **`OverlayOperations.GetElements()`/`AddElement()`/`RemoveElement()` were
+  unconditional no-ops** (#320). All three branched on `overlay.InstancesOS`
+  and `overlay.Elements`, neither of which exists anywhere on `ICmOverlay`
+  in LCM 11 (`ICmOverlay`'s complete property surface is `Name`,
+  `PossItemsRC`, `PossListRA`) -- both `hasattr` guards were always
+  `False`, so `GetElements()` always returned `[]` and `AddElement()`/
+  `RemoveElement()` silently did nothing, regardless of the overlay's
+  actual contents. Fixed by rewriting all three against `PossItemsRC`
+  (a reference collection: add/remove only link/unlink, never affecting
+  the underlying `ICmPossibility`'s lifetime), mirroring the already-correct
+  `GetPossItems()` in the same file. The dead `hasattr` branches are
+  deleted, not kept as fallbacks. `AddElement()` now also raises
+  `FP_ParameterError` if the element is not a member of the possibility
+  list the overlay is bound to (`overlay.PossListRA`) -- a defensive
+  guard added because whether FLEx's UI enforces this is not derivable
+  from static reflection.
+
 ---
 
 ## [4.9.0] - 2026-09-19

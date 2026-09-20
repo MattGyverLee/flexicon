@@ -40,6 +40,7 @@ from SIL.LCModel.Utils import ReflectionHelper
 # Import flexlibs exceptions
 from ..FLExProject import (
     FP_ParameterError,
+    FP_DeduplicationError,
 )
 
 # Import LCM casting utilities for pythonnet interface casting.
@@ -3908,29 +3909,46 @@ class LexSenseOperations(BaseOperations):
         if not sense.ExamplesOS or len(sense.ExamplesOS) < 2:
             return  # No duplicates possible
 
-        try:
-            duplicates = self.__FindDuplicateExamplesInSense(sense)
-            merged_count = 0
+        duplicates = self.__FindDuplicateExamplesInSense(sense)
 
-            for master, dupes in duplicates:
-                for dupe in dupes:
-                    try:
-                        logger.info(
-                            f"Auto-removing duplicate example in sense (HVO: {dupe.Hvo}) "
-                            f"keeping master (HVO: {master.Hvo})"
-                        )
-                        # Simply remove the duplicate (don't merge content since they're identical)
-                        with self._TransactionCM("Remove duplicate example"):
-                            dupe.OwningList.Remove(dupe)
-                        merged_count += 1
-                    except Exception as e:
-                        logger.warning(f"Could not remove duplicate example (HVO: {dupe.Hvo}): {e}")
+        # Find and remove duplicate groups. sense.ExamplesOS.Remove() is the
+        # correct member here (not dupe.OwningList, which does not exist on
+        # ILexExampleSentence -- see issue #318): it is an
+        # ILcmOwningSequence, and .Remove() on an owning sequence *is* the
+        # deletion path (owned objects cannot be orphaned), so no separate
+        # Delete()/DeleteUnderlyingObject() call is made or wanted.
+        #
+        # No inner try/except around .Remove(): no genuinely benign LCM-side
+        # failure mode is identifiable for removing an owned example, so
+        # AttributeError/TypeError/anything else propagates immediately per
+        # issue #318 (precedent: FLExInit.py narrowing, issue #249).
+        found_count = 0
+        merged_count = 0
+        for master, dupes in duplicates:
+            found_count += len(dupes)
+            for dupe in dupes:
+                logger.info(
+                    f"Auto-removing duplicate example in sense (HVO: {dupe.Hvo}) "
+                    f"keeping master (HVO: {master.Hvo})"
+                )
+                # Simply remove the duplicate (don't merge content since they're identical)
+                with self._TransactionCM("Remove duplicate example"):
+                    sense.ExamplesOS.Remove(dupe)
+                # Verify the removal actually took effect rather than
+                # assuming success just because .Remove() didn't raise
+                # (issue #291's collapse: "0 removed because 0 duplicates
+                # existed" and "0 removed because removal failed" must be
+                # distinguishable).
+                if dupe not in sense.ExamplesOS:
+                    merged_count += 1
 
-            if merged_count > 0:
-                logger.info(f"Auto-deduplicated {merged_count} duplicate example(s) in sense (HVO: {sense.Hvo})")
-
-        except Exception as e:
-            logger.warning(f"Error during example deduplication: {e}")
+        if found_count > 0:
+            if merged_count < found_count:
+                # Duplicates were detected but not all removed -- must not
+                # collapse into the same silent outcome as "0 duplicates
+                # existed" (issue #291's exact defect shape).
+                raise FP_DeduplicationError("examples", sense.Hvo, found_count, merged_count)
+            logger.info(f"Auto-deduplicated {merged_count} duplicate example(s) in sense (HVO: {sense.Hvo})")
 
     # --- Private Helper Methods ---
 

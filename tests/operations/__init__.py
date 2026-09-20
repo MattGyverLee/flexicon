@@ -95,6 +95,14 @@ class MockOwningSequence:
         """Get count of items in sequence."""
         return len(self._items)
 
+    def __len__(self):
+        """Support len(sequence), matching the real ILcmOwningSequence."""
+        return len(self._items)
+
+    def __contains__(self, item):
+        """Support `in`/`not in`, matching the real ILcmOwningSequence."""
+        return item in self._items
+
     def __getitem__(self, index):
         """Get item at index."""
         return self._items[index]

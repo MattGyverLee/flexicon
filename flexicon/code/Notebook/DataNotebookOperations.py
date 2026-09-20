@@ -1300,10 +1300,7 @@ class DataNotebookOperations(BaseOperations):
         """
         record = self.__GetRecordObject(record_or_hvo)
 
-        if hasattr(record, "Researchers") and record.Researchers:
-            return list(record.Researchers)
-
-        return []
+        return list(record.ResearchersRC)
 
     @OperationsMethod
     def AddResearcher(self, record_or_hvo, person):
@@ -1354,10 +1351,9 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        if hasattr(record, "Researchers"):
-            if person not in record.Researchers:
-                with self._TransactionCM("Add researcher to notebook record"):
-                    record.Researchers.Add(person)
+        if person not in record.ResearchersRC:
+            with self._TransactionCM("Add researcher to notebook record"):
+                record.ResearchersRC.Add(person)
 
     @OperationsMethod
     def RemoveResearcher(self, record_or_hvo, person):
@@ -1394,10 +1390,9 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        if hasattr(record, "Researchers"):
-            if person in record.Researchers:
-                with self._TransactionCM("Remove researcher from notebook record"):
-                    record.Researchers.Remove(person)
+        if person in record.ResearchersRC:
+            with self._TransactionCM("Remove researcher from notebook record"):
+                record.ResearchersRC.Remove(person)
 
     # --- Linking Operations: Participants ---
 
@@ -1409,11 +1404,21 @@ class DataNotebookOperations(BaseOperations):
         Participants are people (ICmPerson objects) who participated in the
         recorded event (e.g., consultants, speakers, informants).
 
+        Under the hood, a notebook record does not hold participants
+        directly. It owns a collection of role-participant groups
+        (``ParticipantsOC``, each an ``IRnRoledPartic``), and each group
+        references a set of people (``ParticipantsRC``) along with an
+        optional role (``RoleRA``, an ``ICmPossibility``). This method
+        flattens every group's people into a single de-duplicated list --
+        a person who appears in more than one role group is only returned
+        once.
+
         Args:
             record_or_hvo: The notebook record object (IRnGenericRec) or its HVO.
 
         Returns:
-            list: List of ICmPerson objects representing participants.
+            list: List of ICmPerson objects representing participants,
+                de-duplicated across all role groups.
 
         Raises:
             FP_NullParameterError: If record_or_hvo is None.
@@ -1435,16 +1440,27 @@ class DataNotebookOperations(BaseOperations):
             - Returns empty list if no participants assigned
             - Participants differ from researchers (subjects vs. investigators)
             - Multiple participants can be assigned to one record
+            - LIMITATION: role information (``RoleRA``) is not surfaced by
+              this method. If a person is a participant with a specific
+              role, that role is not distinguishable in the returned list --
+              this method only reports flat person membership. A future API
+              could add an optional role-aware return shape without
+              breaking this signature.
 
         See Also:
             AddParticipant, RemoveParticipant, GetResearchers
         """
         record = self.__GetRecordObject(record_or_hvo)
 
-        if hasattr(record, "Participants") and record.Participants:
-            return list(record.Participants)
+        seen_hvos = set()
+        participants = []
+        for group in record.ParticipantsOC:
+            for person in group.ParticipantsRC:
+                if person.Hvo not in seen_hvos:
+                    seen_hvos.add(person.Hvo)
+                    participants.append(person)
 
-        return []
+        return participants
 
     @OperationsMethod
     def AddParticipant(self, record_or_hvo, person):
@@ -1453,6 +1469,16 @@ class DataNotebookOperations(BaseOperations):
 
         Associates a person (consultant/speaker/informant) with the notebook
         record as a participant in the documented event.
+
+        A notebook record has no direct participant collection. Instead it
+        owns a collection of role-participant groups (``ParticipantsOC``,
+        each an ``IRnRoledPartic``), and this method targets the record's
+        *default* (no-specific-role) group, exposed read-only via
+        ``record.DefaultRoledParticipants``. If no roled-participant group
+        exists yet, one is created via ``record.MakeDefaultRoledParticipant()``
+        before the person is linked. This method has no ``role`` parameter,
+        so it can only ever target/create the default group -- a caller
+        who needs a role-specific group must do so via direct LCM access.
 
         Args:
             record_or_hvo: The notebook record object (IRnGenericRec) or its HVO.
@@ -1481,6 +1507,9 @@ class DataNotebookOperations(BaseOperations):
             - Adding same participant twice has no effect
             - Participants represent subjects/consultants
             - Use AddResearcher() for investigators/fieldworkers
+            - The first call for a record with no roled-participant group
+              creates one (an owned ``IRnRoledPartic`` object); subsequent
+              calls reuse that same default group
 
         See Also:
             GetParticipants, RemoveParticipant, AddResearcher
@@ -1491,10 +1520,20 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        if hasattr(record, "Participants"):
-            if person not in record.Participants:
-                with self._TransactionCM("Add participant to notebook record"):
-                    record.Participants.Add(person)
+        group = record.DefaultRoledParticipants
+        if group is not None and person in group.ParticipantsRC:
+            return
+
+        with self._TransactionCM("Add participant to notebook record"):
+            # Re-check inside the transaction: DefaultRoledParticipants is
+            # read-only and returns None until a group exists, so the only
+            # documented factory path is MakeDefaultRoledParticipant().
+            group = record.DefaultRoledParticipants
+            if group is None:
+                group = record.MakeDefaultRoledParticipant()
+
+            if person not in group.ParticipantsRC:
+                group.ParticipantsRC.Add(person)
 
     @OperationsMethod
     def RemoveParticipant(self, record_or_hvo, person):
@@ -1503,6 +1542,18 @@ class DataNotebookOperations(BaseOperations):
 
         Removes the association between a person and a notebook record. The
         person object itself is not deleted.
+
+        A person can appear in more than one role-participant group
+        (``IRnRoledPartic``, owned by the record via ``ParticipantsOC``).
+        This method searches every group owned by the record and unlinks
+        the person from each one that contains them (via that group's
+        ``ParticipantsRC``, a reference collection -- unlinking never
+        deletes the person or the group).
+
+        If removing the person leaves a role group empty, that empty
+        group is left in place; this method does not delete owned
+        ``IRnRoledPartic`` objects (removal from the owning ``ParticipantsOC``
+        collection would be destructive and is out of scope here).
 
         Args:
             record_or_hvo: The notebook record object (IRnGenericRec) or its HVO.
@@ -1521,6 +1572,9 @@ class DataNotebookOperations(BaseOperations):
         Notes:
             - Only removes the link, doesn't delete the person
             - No error if person wasn't linked to record
+            - Removes the person from every role group that contains them,
+              not just the default group
+            - Never deletes the role group itself, even if left empty
 
         See Also:
             AddParticipant, GetParticipants
@@ -1531,10 +1585,21 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        if hasattr(record, "Participants"):
-            if person in record.Participants:
-                with self._TransactionCM("Remove participant from notebook record"):
-                    record.Participants.Remove(person)
+        groups_with_person = [
+            group for group in record.ParticipantsOC if person in group.ParticipantsRC
+        ]
+
+        if not groups_with_person:
+            return
+
+        with self._TransactionCM("Remove participant from notebook record"):
+            for group in groups_with_person:
+                # Unlink from the reference collection only. Never touch
+                # record.ParticipantsOC -- that is the owning collection,
+                # and removing a group from it would delete the group
+                # (and orphan/destroy its participant links), not just
+                # unlink this one person.
+                group.ParticipantsRC.Remove(person)
 
     # --- Linking Operations: Locations ---
 

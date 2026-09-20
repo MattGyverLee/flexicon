@@ -32,6 +32,7 @@ from .exceptions import (
     FP_NullParameterError,
     FP_ParameterError,
     FP_TransactionError,
+    FP_DeduplicationError,
     FP_ConflictingSaveError,
 )
 from .lcm_casting import cast_to_concrete

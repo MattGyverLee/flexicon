@@ -89,6 +89,18 @@ class FP_TransactionError(FP_RuntimeError):
         super().__init__(message)
 
 
+class FP_DeduplicationError(FP_RuntimeError):
+    """Raised when duplicate items were detected but could not all be removed."""
+
+    def __init__(self, item_kind, entry_hvo, found, removed, cause=None):
+        message = (
+            f"Deduplication of {item_kind} in entry (HVO: {entry_hvo}) found "
+            f"{found} duplicate(s) but removed only {removed}"
+            + (f": {cause}" if cause else ".")
+        )
+        super().__init__(message)
+
+
 class FP_ConflictingSaveError(FP_RuntimeError):
     """
     Raised when LCM reports that another client saved changes which cannot be

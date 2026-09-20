@@ -306,11 +306,24 @@ class OverlayOperations(PossibilityItemOperations):
 
         overlay = self._PossibilityItemOperations__ResolveObject(overlay_or_hvo)
 
-        # Elements are typically in a sequence
-        if hasattr(overlay, "InstancesOS"):
-            return list(overlay.InstancesOS)
-        elif hasattr(overlay, "Elements"):
-            return list(overlay.Elements)
+        # ICmOverlay's complete own-declared property surface is
+        # Name, PossItemsRC, PossListRA (confirmed by live reflection,
+        # 2026-09-09; see specs/277-nonexistent-property-reads/
+        # evidence/live-277-overlays.md, and re-confirmed for this issue:
+        # whole-index grep for "InstancesOS"/"Elements" on ICmOverlay
+        # returns zero hits). Neither InstancesOS nor Elements exists on
+        # any indexed LCM 11 type, so both hasattr branches below were
+        # always False -- GetElements/AddElement/RemoveElement were
+        # unconditional no-ops (issue #320). PossItemsRC is a reference
+        # COLLECTION (ILcmReferenceCollection<ICmPossibility>), not a
+        # sequence, but it is iterable/materialisable the same way -- see
+        # GetPossItems (below) and AllomorphOperations.GetPhoneEnv's
+        # `list(allomorph.PhoneEnvRC)` for the established house pattern
+        # with an RC property. The dead hasattr branches are deleted
+        # entirely, not kept as fallbacks, since dead code that can never
+        # be true is what hid this bug.
+        if hasattr(overlay, "PossItemsRC"):
+            return list(overlay.PossItemsRC)
         return []
 
     @OperationsMethod
@@ -340,16 +353,57 @@ class OverlayOperations(PossibilityItemOperations):
 
         overlay = self._PossibilityItemOperations__ResolveObject(overlay_or_hvo)
 
-        # Add element to sequence. The membership tests stay outside the
-        # transaction so an already-present element is a true no-op.
-        if hasattr(overlay, "InstancesOS"):
-            if element not in overlay.InstancesOS:
-                with self._TransactionCM("Add overlay element"):
-                    overlay.InstancesOS.Add(element)
-        elif hasattr(overlay, "Elements"):
-            if element not in overlay.Elements:
-                with self._TransactionCM("Add overlay element"):
-                    overlay.Elements.Add(element)
+        # --- Membership guard (issue #320, team lead ruling, cycle 3) ---
+        # PossItemsRC is a reference collection: Add/Remove are pure
+        # link/unlink, never a lifetime change on the ICmPossibility
+        # itself.
+        #
+        # Cycle 2 live-verified this against the LCM layer directly (raw
+        # SIL.LCModel factories/repositories, no flexicon Operations
+        # involved): adding a possibility (HVO 34) that is NOT a member of
+        # overlay.PossListRA's 859-item tree raised nothing and PERSISTED
+        # on a fresh re-fetch (859 -> 860). See
+        # specs/318-321-nonexistent-member-mutations/evidence/
+        # live-cycle2-business-rules.md. So the LCM data layer itself does
+        # not enforce list-membership as an invariant on PossItemsRC.
+        #
+        # That said, "LCM allows it" and "FLEx accepts it" are different
+        # claims, and only the first was tested -- whether FLEx's UI
+        # itself treats an overlay containing a possibility outside its
+        # own PossListRA as valid/renderable data is UNTESTED. An overlay
+        # is a filter over a specific list, so such a member may be
+        # meaningless in the UI even though LCM happily stores it. We will
+        # not invent a hard constraint we cannot cite, but we will not
+        # stay silent either -- so we keep the membership check, but on
+        # failure we warn and proceed rather than raise.
+        #
+        # This does NOT contradict the Original Author's ruling that
+        # logger.warning is the wrong level for "the advertised operation
+        # did not happen" (reviews/cycle1-author.md Q4) -- that ruling
+        # governs NO-OPS. Here the add genuinely succeeds (it is durably
+        # persisted, per the live evidence above); the warning is flagging
+        # a possibly-meaningless-in-the-UI-but-successfully-stored write,
+        # not a silently-skipped one.
+        if overlay.PossListRA is not None:
+            owning_list = getattr(element, "OwningList", None)
+            if owning_list is None or owning_list.Hvo != overlay.PossListRA.Hvo:
+                logger.warning(
+                    "Element (HVO %s) is not a member of the possibility "
+                    "list associated with this overlay's PossListRA; "
+                    "adding it anyway (LCM does not enforce this as an "
+                    "invariant -- see issue #320 evidence).",
+                    getattr(element, "Hvo", "?"),
+                )
+        # --- End membership guard ---
+
+        # Add element to the reference collection. PossItemsRC is the only
+        # element-holding property on ICmOverlay (see GetElements above for
+        # the InstancesOS/Elements dead-code evidence); the membership test
+        # stays outside the transaction so an already-present element is a
+        # true no-op.
+        if element not in overlay.PossItemsRC:
+            with self._TransactionCM("Add overlay element"):
+                overlay.PossItemsRC.Add(element)
 
     @OperationsMethod
     def RemoveElement(self, overlay_or_hvo, element):
@@ -379,16 +433,15 @@ class OverlayOperations(PossibilityItemOperations):
 
         overlay = self._PossibilityItemOperations__ResolveObject(overlay_or_hvo)
 
-        # Remove element from sequence. The membership tests stay outside the
+        # Remove element from the reference collection. PossItemsRC is the
+        # only element-holding property on ICmOverlay (see GetElements above
+        # for the InstancesOS/Elements dead-code evidence). Remove on a
+        # reference collection is pure unlink -- it never deletes the
+        # underlying ICmPossibility. The membership test stays outside the
         # transaction so an absent element is a true no-op.
-        if hasattr(overlay, "InstancesOS"):
-            if element in overlay.InstancesOS:
-                with self._TransactionCM("Remove overlay element"):
-                    overlay.InstancesOS.Remove(element)
-        elif hasattr(overlay, "Elements"):
-            if element in overlay.Elements:
-                with self._TransactionCM("Remove overlay element"):
-                    overlay.Elements.Remove(element)
+        if element in overlay.PossItemsRC:
+            with self._TransactionCM("Remove overlay element"):
+                overlay.PossItemsRC.Remove(element)
 
     # --- Chart Association Operations ---
 

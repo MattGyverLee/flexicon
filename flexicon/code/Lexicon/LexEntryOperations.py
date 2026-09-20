@@ -42,6 +42,7 @@ from SIL.LCModel.Core.Text import TsStringUtils
 # Import flexlibs exceptions
 from ..FLExProject import (
     FP_ParameterError,
+    FP_DeduplicationError,
 )
 
 # Import string utilities
@@ -3101,50 +3102,67 @@ class LexEntryOperations(BaseOperations):
         if not entry.PronunciationsOS or len(entry.PronunciationsOS) < 2:
             return  # No duplicates possible
 
-        try:
-            # Build signature map for all pronunciations in entry
-            sig_map = {}
-            for pron in entry.PronunciationsOS:
-                # Get pronunciation form across all writing systems
-                pron_dict = {}
-                try:
-                    for ws in self.project.project.WritingSystemManager.AllWritingSystems:
-                        ws_handle = ws.Handle
-                        pron_text = ITsString(pron.Form.get_String(ws_handle)).Text if pron.Form else ""
-                        if pron_text:
-                            pron_dict[ws_handle] = pron_text
-                except Exception as e:
-                    logger.debug(f"Could not get pronunciation form: {e}")
-                    continue
+        # Build signature map for all pronunciations in entry
+        sig_map = {}
+        for pron in entry.PronunciationsOS:
+            # Get pronunciation form across all writing systems
+            pron_dict = {}
+            try:
+                for ws in self.project.project.WritingSystemManager.AllWritingSystems:
+                    ws_handle = ws.Handle
+                    pron_text = ITsString(pron.Form.get_String(ws_handle)).Text if pron.Form else ""
+                    if pron_text:
+                        pron_dict[ws_handle] = pron_text
+            except Exception as e:
+                logger.debug(f"Could not get pronunciation form: {e}")
+                continue
 
-                if pron_dict:
-                    sig = frozenset(pron_dict.items())
-                    if sig not in sig_map:
-                        sig_map[sig] = []
-                    sig_map[sig].append(pron)
+            if pron_dict:
+                sig = frozenset(pron_dict.items())
+                if sig not in sig_map:
+                    sig_map[sig] = []
+                sig_map[sig].append(pron)
 
-            # Find and remove duplicate groups
-            removed_count = 0
-            for sig, prons in sig_map.items():
-                if len(prons) > 1:
-                    # Keep first, remove rest
-                    for dupe in prons[1:]:
-                        try:
-                            logger.info(
-                                f"Auto-removing duplicate pronunciation in entry (HVO: {dupe.Hvo}) "
-                                f"keeping master (HVO: {prons[0].Hvo})"
-                            )
-                            with self._TransactionCM("Remove duplicate pronunciation"):
-                                dupe.OwningList.Remove(dupe)
-                            removed_count += 1
-                        except Exception as e:
-                            logger.warning(f"Could not remove duplicate pronunciation (HVO: {dupe.Hvo}): {e}")
+        # Find and remove duplicate groups. entry.PronunciationsOS.Remove() is
+        # the correct member here (not dupe.OwningList, which does not exist
+        # on ILexPronunciation -- see issue #318): it is an
+        # ILcmOwningSequence, and .Remove() on an owning sequence *is* the
+        # deletion path (owned objects cannot be orphaned), so no separate
+        # Delete()/DeleteUnderlyingObject() call is made or wanted.
+        #
+        # No inner try/except around .Remove(): no genuinely benign LCM-side
+        # failure mode is identifiable for removing an owned pronunciation,
+        # so AttributeError/TypeError/anything else propagates immediately
+        # per issue #318 (precedent: FLExInit.py narrowing, issue #249).
+        found_count = 0
+        removed_count = 0
+        for sig, prons in sig_map.items():
+            if len(prons) > 1:
+                found_count += len(prons) - 1
+                # Keep first, remove rest
+                for dupe in prons[1:]:
+                    logger.info(
+                        f"Auto-removing duplicate pronunciation in entry (HVO: {dupe.Hvo}) "
+                        f"keeping master (HVO: {prons[0].Hvo})"
+                    )
+                    with self._TransactionCM("Remove duplicate pronunciation"):
+                        entry.PronunciationsOS.Remove(dupe)
+                    # Verify the removal actually took effect rather than
+                    # assuming success just because .Remove() didn't raise
+                    # -- a benign LCM-side "can't remove, still referenced"
+                    # condition could return normally without removing
+                    # anything, and that must be distinguishable from a
+                    # real removal (issue #291's collapse).
+                    if dupe not in entry.PronunciationsOS:
+                        removed_count += 1
 
-            if removed_count > 0:
-                logger.info(f"Auto-deduplicated {removed_count} duplicate pronunciation(s) in entry (HVO: {entry.Hvo})")
-
-        except Exception as e:
-            logger.warning(f"Error during pronunciation deduplication: {e}")
+        if found_count > 0:
+            if removed_count < found_count:
+                # Duplicates were detected but not all removed -- must not
+                # collapse into the same silent outcome as "0 duplicates
+                # existed" (issue #291's exact defect shape).
+                raise FP_DeduplicationError("pronunciations", entry.Hvo, found_count, removed_count)
+            logger.info(f"Auto-deduplicated {removed_count} duplicate pronunciation(s) in entry (HVO: {entry.Hvo})")
 
     def __DeduplicateAllomorphsInEntry(self, entry):
         """
@@ -3165,57 +3183,64 @@ class LexEntryOperations(BaseOperations):
         if not entry.AlternateFormsOS or len(entry.AlternateFormsOS) < 2:
             return  # No duplicates possible
 
-        try:
-            # Build signature map for all allomorphs in entry
-            sig_map = {}
-            for allomorph in entry.AlternateFormsOS:
-                # Get allomorph form and morph type
-                allomorph_dict = {}
-                morph_type_guid = ""
+        # Build signature map for all allomorphs in entry
+        sig_map = {}
+        for allomorph in entry.AlternateFormsOS:
+            # Get allomorph form and morph type
+            allomorph_dict = {}
+            morph_type_guid = ""
 
-                try:
-                    # Get form across all writing systems
-                    for ws in self.project.project.WritingSystemManager.AllWritingSystems:
-                        ws_handle = ws.Handle
-                        form_text = ITsString(allomorph.Form.get_String(ws_handle)).Text if allomorph.Form else ""
-                        if form_text:
-                            allomorph_dict[ws_handle] = form_text
+            try:
+                # Get form across all writing systems
+                for ws in self.project.project.WritingSystemManager.AllWritingSystems:
+                    ws_handle = ws.Handle
+                    form_text = ITsString(allomorph.Form.get_String(ws_handle)).Text if allomorph.Form else ""
+                    if form_text:
+                        allomorph_dict[ws_handle] = form_text
 
-                    # Get morph type
-                    if hasattr(allomorph, "MorphTypeRA") and allomorph.MorphTypeRA:
-                        morph_type_guid = str(allomorph.MorphTypeRA.Guid)
-                except Exception as e:
-                    logger.debug(f"Could not get allomorph form/type: {e}")
-                    continue
+                # Get morph type
+                if hasattr(allomorph, "MorphTypeRA") and allomorph.MorphTypeRA:
+                    morph_type_guid = str(allomorph.MorphTypeRA.Guid)
+            except Exception as e:
+                logger.debug(f"Could not get allomorph form/type: {e}")
+                continue
 
-                if allomorph_dict:
-                    sig = (frozenset(allomorph_dict.items()), morph_type_guid)
-                    if sig not in sig_map:
-                        sig_map[sig] = []
-                    sig_map[sig].append(allomorph)
+            if allomorph_dict:
+                sig = (frozenset(allomorph_dict.items()), morph_type_guid)
+                if sig not in sig_map:
+                    sig_map[sig] = []
+                sig_map[sig].append(allomorph)
 
-            # Find and remove duplicate groups
-            removed_count = 0
-            for sig, allomorphs in sig_map.items():
-                if len(allomorphs) > 1:
-                    # Keep first, remove rest
-                    for dupe in allomorphs[1:]:
-                        try:
-                            logger.info(
-                                f"Auto-removing duplicate allomorph in entry (HVO: {dupe.Hvo}) "
-                                f"keeping master (HVO: {allomorphs[0].Hvo})"
-                            )
-                            with self._TransactionCM("Remove duplicate allomorph"):
-                                dupe.OwningList.Remove(dupe)
-                            removed_count += 1
-                        except Exception as e:
-                            logger.warning(f"Could not remove duplicate allomorph (HVO: {dupe.Hvo}): {e}")
+        # Find and remove duplicate groups. entry.AlternateFormsOS.Remove()
+        # is the correct member (not dupe.OwningList, which does not exist
+        # on IMoForm -- see issue #318); see the pronunciation dedup helper
+        # above for the full rationale (owning-sequence Remove is the
+        # deletion path; no inner catch since no benign failure is
+        # identifiable).
+        found_count = 0
+        removed_count = 0
+        for sig, allomorphs in sig_map.items():
+            if len(allomorphs) > 1:
+                found_count += len(allomorphs) - 1
+                # Keep first, remove rest
+                for dupe in allomorphs[1:]:
+                    logger.info(
+                        f"Auto-removing duplicate allomorph in entry (HVO: {dupe.Hvo}) "
+                        f"keeping master (HVO: {allomorphs[0].Hvo})"
+                    )
+                    with self._TransactionCM("Remove duplicate allomorph"):
+                        entry.AlternateFormsOS.Remove(dupe)
+                    # See __DeduplicatePronunciationsInEntry above: verify
+                    # the removal actually took effect rather than
+                    # assuming success just because .Remove() didn't
+                    # raise (issue #291's collapse).
+                    if dupe not in entry.AlternateFormsOS:
+                        removed_count += 1
 
-            if removed_count > 0:
-                logger.info(f"Auto-deduplicated {removed_count} duplicate allomorph(s) in entry (HVO: {entry.Hvo})")
-
-        except Exception as e:
-            logger.warning(f"Error during allomorph deduplication: {e}")
+        if found_count > 0:
+            if removed_count < found_count:
+                raise FP_DeduplicationError("allomorphs", entry.Hvo, found_count, removed_count)
+            logger.info(f"Auto-deduplicated {removed_count} duplicate allomorph(s) in entry (HVO: {entry.Hvo})")
 
     # --- Private Helper Methods ---
 

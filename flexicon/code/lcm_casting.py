@@ -880,6 +880,20 @@ def set_inflection_class_on_msa(msa, infl_class):
     return True
 
 
+
+# LCM naming convention suffixes that denote a genuine backing-store
+# collection/atomic member (as opposed to a derived, rebuilt-per-access
+# property). See clone_properties() below (issue #321) for how this is used
+# to structurally exclude derived members like AllSenses/MorphTypes/
+# PublishIn/ShowMainEntryIn/MinimalLexReferences/ReferringObjects from the
+# collection-clone branch, instead of relying on Count/Add duck-typing alone.
+#   OS/OC/OA -> owned sequence/collection/atomic (safe to Clear()+Add())
+#   RS/RC/RA -> reference sequence/collection/atomic (shared, not owned;
+#               already routed through the same branch prior to this fix,
+#               so kept here to avoid narrowing existing behaviour)
+_OWNED_OR_REFERENCE_SUFFIXES = ("OS", "OC", "OA", "RS", "RC", "RA")
+
+
 def clone_properties(source_obj, dest_obj, project=None):
     """
     Deep clone all properties from source object to destination object.
@@ -945,8 +959,31 @@ def clone_properties(source_obj, dest_obj, project=None):
             # Try to set the property on destination
             if hasattr(dest, attr_name):
                 try:
-                    # Check if it's a collection (OS/OC) - these need special handling
-                    if hasattr(attr_value, "Count") and hasattr(attr_value, "Add"):
+                    # Check if it's a genuine LCM-owned/reference collection (OS/OC/OA/
+                    # RS/RC/RA) - these need special Clear()+Add() handling.
+                    #
+                    # Issue #321: the old predicate was pure duck-typing --
+                    # `hasattr(attr_value, "Count") and hasattr(attr_value, "Add")` --
+                    # which also matches DERIVED, rebuilt-per-access properties such as
+                    # ILexEntry.AllSenses, .MorphTypes, .PublishIn, .ShowMainEntryIn,
+                    # .MinimalLexReferences, and the universal ICmObject.ReferringObjects.
+                    # Those expose Count/Add but are recomputed on every access, so
+                    # `dest_collection.Clear()` silently no-ops against them (confirmed
+                    # live on Sena 3, see
+                    # specs/318-321-nonexistent-member-mutations/evidence/live-321-derived-lists.md).
+                    #
+                    # LCM's naming convention encodes real backing-store membership in
+                    # the attribute name's suffix: OS/OC/OA = owned (sequence/collection/
+                    # atomic), RS/RC/RA = reference (sequence/collection/atomic). Members
+                    # without one of these suffixes are derived/computed views and must
+                    # NOT be routed through the collection-clone branch. Gating on the
+                    # suffix *in addition to* the existing Count/Add duck-type check
+                    # keeps every genuine OS/OC/RS/RC/RA member clone_properties already
+                    # clones today (see cycle2-programmer-321.md for the before/after
+                    # member comparison) while structurally excluding the derived ones.
+                    if attr_name.endswith(_OWNED_OR_REFERENCE_SUFFIXES) and hasattr(
+                        attr_value, "Count"
+                    ) and hasattr(attr_value, "Add"):
                         # This is a collection - clone each item
                         dest_collection = getattr(dest, attr_name)
                         try:
