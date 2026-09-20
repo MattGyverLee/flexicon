@@ -1,15 +1,111 @@
 #
 #   test_datanotebook_duplicate.py
 #
-#   Class: TestDataNotebookDuplicate
-#          Regression coverage for issue #158 Pattern I:
-#          DataNotebookOperations.Duplicate(insert_after=True) on a
-#          top-level record called RecordsOC.IndexOf() + RecordsOC.Insert()
-#          on an ILcmOwningCollection (OC), which has no Insert() method.
+#   Class: TestDataNotebookOwnershipFormAndHvoEntryPathLive /
+#          TestDataNotebookDuplicateTopLevelLive /
+#          TestDataNotebookDuplicateSubRecordOwnerDetectionLive /
+#          TestDataNotebookRecordsOCHasNoInsertLive /
+#          TestDataNotebookInvalidHvoLive /
+#          TestDataNotebookAttributeErrorNotRelabelledLive
 #
-#          Fix: Duplicate always uses Add() on RecordsOC; insert_after is
-#          silently ignored at the top level. SubRecordsOS (OS) branch
-#          continues to support positional Insert() unchanged.
+#          Live regression coverage for issue #158 Pattern I
+#          (DataNotebookOperations.Duplicate(insert_after=True) on a
+#          top-level record must use RecordsOC.Add(), never
+#          RecordsOC.Insert() -- an ILcmOwningCollection (OC) has no
+#          Insert() method), AND for rulings C1/C6 (#302/#261) landed
+#          under T2.2/T2.3, which this file is the first live coverage
+#          of.
+#
+#   DELETED AND REWRITTEN under ruling C4 (spec.md
+#   specs/lcm-member-truth-sweep/spec.md, section 3). The file this
+#   replaces never imported DataNotebookOperations at all: it hand-
+#   re-typed the Duplicate() top-level/sub-record branching logic
+#   against a `_MockRepository` that DEFINED a `RecordsOC` attribute --
+#   a member the real `IRnResearchNbkRepository` does not have (ruling
+#   C2/C3, ground truth #302). Because the mock invented the very
+#   member whose absence is the production bug, the old file's 9 tests
+#   passed unconditionally, before and after any production fix, and
+#   would keep passing no matter what DataNotebookOperations actually
+#   does. That is C4's "non-test": it verified a hand-rolled simulation
+#   of the logic, never the module.
+#
+#   NEW LIVE FINDINGS SURFACED WHILE WRITING THIS FILE (all out of
+#   scope for T2.4/T2.5, reported separately in
+#   specs/lcm-member-truth-sweep/reviews/cycle2-programmer-T2.4-T2.5.md,
+#   NONE fixed here). Once T2.2's ownership-form fix let Create() get
+#   PAST the #302 RecordsOC crash for the first time ever, three more,
+#   independent, previously-masked defects became reachable:
+#
+#     1. IRnGenericRec.Title is a bare ITsString (settable only by
+#        direct assignment, e.g. `record.Title = mkstr`) -- NOT an
+#        IMultiString/IMultiUnicode with .get_String()/.set_String()/
+#        .CopyAlternatives(). IRnGenericRec has NO `Text` member at
+#        all. Create(), CreateSubRecord(), SetTitle(), SetContent(),
+#        and Duplicate()'s Title/Text copy lines all crash
+#        unconditionally. GetTitle()/GetContent() do NOT crash: their
+#        own try/except (AttributeError, TypeError) silently returns
+#        "" every time instead -- a silent-failure defect in the same
+#        family this campaign is chartered against, but not one of
+#        its six issues.
+#     2. IRnGenericRec's Status/Type/Confidence members are actually
+#        named StatusRA/TypeRA/ConfidenceRA. GetStatus()/GetRecordType()
+#        read the wrong bare name and silently return None always;
+#        SetStatus()/SetRecordType() write that same wrong bare name,
+#        which pythonnet accepts as a throwaway Python-side instance
+#        attribute instead of raising, so the write silently never
+#        reaches the LCM at all.
+#     3. IRnGenericRec.DateOfEvent is CLR-typed as GenDate, not
+#        System.DateTime -- SetDateOfEvent() crashes with TypeError on
+#        every call (it always constructs/receives a .NET DateTime).
+#     4. Duplicate()'s (and GetParentRecord()'s) sub-record detection
+#        -- `isinstance(owner, IRnGenericRec)` on the raw, uncast
+#        `source.Owner` -- is always False live, because pythonnet
+#        types `.Owner` as the base ICmObject interface. Every
+#        Duplicate() call, top-level OR sub-record, takes the
+#        top-level branch and appends into
+#        ResearchNotebookOA.RecordsOC. Delete() in this SAME file
+#        already fixed the identical class of bug under issue #133 via
+#        `self._GetTypedOwner(record)`; Duplicate()/GetParentRecord
+#        were never updated to match.
+#
+#   Fixing any of this is outside T2.4/T2.5's mandate (T2.4 is a
+#   test-file rewrite; T2.5 is explicitly production-edit-free). This
+#   file therefore ROUTES AROUND Create()/CreateSubRecord()'s
+#   title-writing lines for SETUP purposes only (raw
+#   IRnGenericRecFactory + direct collection Add() + direct `.Title =`
+#   assignment), exactly the precedent already established in
+#   tests/operations/test_cycle2_live_299_300_290.py
+#   (TestIssue300DataNotebookGetSequence) for the pre-T2.2 RecordsOC
+#   crash, and uses only genuinely-correct methods (Delete,
+#   GetSubRecords, GetLocations/AddLocation/RemoveLocation,
+#   GetParentRecord for the top-level case) for the positive int-HVO
+#   coverage. Duplicate() itself IS still called directly (not routed
+#   around) in both the top-level and sub-record classes below: it
+#   partially succeeds before hitting the Title-copy crash, and the
+#   placement side effect is inspected afterward from the live LCM --
+#   genuine coverage of what actually happens today, including finding
+#   4 above for the sub-record case.
+#
+#   This file:
+#     - imports and calls the real DataNotebookOperations methods
+#       (Duplicate, Delete, GetSubRecords, GetParentRecord, GetLocations,
+#       AddLocation, RemoveLocation, GetTitle) through
+#       project.DataNotebook, live, against target_sandbox (a tempdir
+#       copy of the Target .fwbackup; nothing leaks into the real
+#       Target);
+#     - re-reads every asserted value BACK FROM THE LCM by HVO after
+#       the write, never asserting on the value just passed in;
+#     - exercises the __GetRecordObject int-HVO entry path (ruling C6 /
+#       issue #261) directly by calling six of its 38 routed public
+#       methods with a bare Python int, not a wrapped object -- an
+#       entry path this suite had ZERO coverage of before, and the
+#       exact path that was broken (self.project.project.GetObject(hvo)
+#       on the raw LcmCache, which has no GetObject member);
+#     - asserts the negative both ways: a genuinely invalid HVO still
+#       raises FP_ParameterError, and a genuine AttributeError raised
+#       from inside the resolution path is no longer laundered into
+#       that same FP_ParameterError message (the mask C6 required
+#       removed).
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+
@@ -17,228 +113,379 @@
 #   Copyright 2026
 #
 
-import warnings
 import pytest
 
+from flexicon.code.Notebook.DataNotebookOperations import DataNotebookOperations
+from flexicon.code.FLExProject import FP_ParameterError
 
-# ---------------------------------------------------------------------------
-# Minimal mock objects -- no LCM / FieldWorks required
-# ---------------------------------------------------------------------------
+pytestmark = pytest.mark.requires_live_project
+
+TEST_PREFIX = "TEST_DND_"
 
 
-class _MockOC:
+def _make_toplevel_record(project, title):
     """
-    Stand-in for ILcmOwningCollection<IRnGenericRec> (RecordsOC).
-
-    Mirrors the real contract: Add() works; Insert() does NOT exist;
-    Clear() cascade-deletes all members.
+    Build a real IRnGenericRec directly, via the raw factory + the
+    SAME owning collection Create() uses (ResearchNotebookOA.RecordsOC,
+    ruling C1) -- bypassing DataNotebookOperations.Create() only
+    because Create() unconditionally crashes on the separate,
+    newly-discovered Title bug documented at the top of this file (not
+    #302/#261). Title is set by direct assignment, which live
+    reflection in this session confirms is the real, correct way to
+    write it (`record.Title = mkstr`, not `.set_String(...)`).
     """
+    from SIL.LCModel import IRnGenericRecFactory
+    from SIL.LCModel.Core.Text import TsStringUtils
 
-    def __init__(self, items=None):
-        self._items = list(items) if items else []
-        self._deleted = []
-        self.clear_called = False
+    factory = project.project.ServiceLocator.GetService(IRnGenericRecFactory)
+    ws = project.project.DefaultAnalWs
 
-    def __iter__(self):
-        return iter(list(self._items))
-
-    def __len__(self):
-        return len(self._items)
-
-    def Add(self, obj):
-        self._items.append(obj)
-
-    def Clear(self):
-        self.clear_called = True
-        self._deleted.extend(self._items)
-        self._items.clear()
-
-    # NOTE: No Insert() method -- matches real ILcmOwningCollection contract.
+    record = factory.Create()
+    project.lp.ResearchNotebookOA.RecordsOC.Add(record)
+    record.Title = TsStringUtils.MakeString(title, ws)
+    return record
 
 
-class _MockOS:
+def _make_subrecord(project, parent, title):
+    """Same as _make_toplevel_record, but owned by parent.SubRecordsOS."""
+    from SIL.LCModel import IRnGenericRecFactory
+    from SIL.LCModel.Core.Text import TsStringUtils
+
+    factory = project.project.ServiceLocator.GetService(IRnGenericRecFactory)
+    ws = project.project.DefaultAnalWs
+
+    subrecord = factory.Create()
+    parent.SubRecordsOS.Add(subrecord)
+    subrecord.Title = TsStringUtils.MakeString(title, ws)
+    return subrecord
+
+
+class TestDataNotebookOwnershipFormAndHvoEntryPathLive:
     """
-    Stand-in for ILcmOwningSequence<IRnGenericRec> (SubRecordsOS).
-
-    Ordered sequence: supports IndexOf and Insert.
-    """
-
-    def __init__(self, items=None):
-        self._items = list(items) if items else []
-
-    def __iter__(self):
-        return iter(list(self._items))
-
-    def __len__(self):
-        return len(self._items)
-
-    def Add(self, obj):
-        self._items.append(obj)
-
-    def IndexOf(self, obj):
-        return self._items.index(obj)
-
-    def Insert(self, index, obj):
-        self._items.insert(index, obj)
-
-    @property
-    def Count(self):
-        return len(self._items)
-
-
-class _MockRecord:
-    """Minimal stand-in for IRnGenericRec."""
-
-    def __init__(self, title):
-        self.title = title
-        self.SubRecordsOS = _MockOS()
-
-    def __repr__(self):
-        return f"<MockRecord {self.title!r}>"
-
-
-class _MockRepository:
-    """Minimal stand-in for IRnResearchNbkRepository."""
-
-    def __init__(self, records=None):
-        self.RecordsOC = _MockOC(records or [])
-
-
-# ---------------------------------------------------------------------------
-# Helpers that mimic the relevant code paths from DataNotebookOperations
-# ---------------------------------------------------------------------------
-
-
-def _simulate_duplicate_toplevel(source_rec, repos):
-    """
-    Simulate Duplicate() for a top-level record. RecordsOC is unordered,
-    so insert_after is ignored and the duplicate is always appended via Add().
-    """
-    duplicate = _MockRecord(source_rec.title + "_copy")
-    repos.RecordsOC.Add(duplicate)
-    return duplicate
-
-
-def _simulate_duplicate_subrecord_insert_after(source_sub, parent_rec):
-    """
-    Simulate Duplicate(item, insert_after=True) for a sub-record.
-    SubRecordsOS is an OS (ordered sequence); positional Insert is valid.
-    No DeprecationWarning expected.
-    """
-    duplicate = _MockRecord(source_sub.title + "_copy")
-    idx = parent_rec.SubRecordsOS.IndexOf(source_sub)
-    parent_rec.SubRecordsOS.Insert(idx + 1, duplicate)
-    return duplicate
-
-
-# ---------------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------------
-
-
-class TestDataNotebookDuplicateTopLevel:
-    """
-    Regression tests for issue #158 Pattern I -- Duplicate() top-level path
-    (RecordsOC is unordered OC).
+    T2.4 core coverage: create a notebook record in the SAME owning
+    collection Create()/Delete() use (ResearchNotebookOA.RecordsOC,
+    ruling C1), re-read it BY HVO (never the in-hand handle), exercise
+    at least three (this test uses six) of the 38 __GetRecordObject-
+    routed public methods with a bare Python int HVO -- the entry path
+    ruling C6 fixed and this suite had zero prior coverage of -- and
+    delete it, confirming removal from the same live collection.
     """
 
-    def test_uses_add_not_insert(self):
-        """
-        Duplicate() must call Add() and must NOT raise AttributeError from
-        a missing Insert().
-        """
-        r1 = _MockRecord("Interview 1")
-        repos = _MockRepository([r1])
-        assert len(repos.RecordsOC) == 1
+    @pytest.mark.live_phase("DataNotebookOperations", "delete")
+    def test_ownership_form_reread_hvo_entry_methods_delete(self, target_sandbox):
+        notebook = target_sandbox.DataNotebook
+        assert isinstance(notebook, DataNotebookOperations)
 
-        dup = _simulate_duplicate_toplevel(r1, repos)
+        record = _make_toplevel_record(
+            target_sandbox, f"{TEST_PREFIX}ownership_hvo_entry"
+        )
+        hvo = int(record.Hvo)  # plain Python int -- NOT the wrapped object
+        assert type(hvo) is int
 
-        assert len(repos.RecordsOC) == 2
-        assert dup in repos.RecordsOC._items
+        # Re-read from the LCM by HVO, from RecordsOC itself (not the
+        # in-hand `record` reference), and assert on that re-read value.
+        owner_records = list(target_sandbox.lp.ResearchNotebookOA.RecordsOC)
+        owner_hvos = {r.Hvo for r in owner_records}
+        assert hvo in owner_hvos
+        reread_source = next(r for r in owner_records if r.Hvo == hvo)
+        assert reread_source.Title.Text == f"{TEST_PREFIX}ownership_hvo_entry"
 
-    def test_emits_no_deprecation_warning(self):
-        """
-        Duplicate() of a top-level record must not emit any
-        DeprecationWarning, regardless of insert_after.
-        """
-        r1 = _MockRecord("Interview 1")
-        repos = _MockRepository([r1])
+        location = None
+        try:
+            # -- Six of the 38 __GetRecordObject-routed methods, called
+            # with the bare int HVO. GetTitle/SetTitle,
+            # GetRecordType/SetRecordType, GetStatus/SetStatus, and
+            # GetDateOfEvent/SetDateOfEvent are deliberately NOT used
+            # here: live probing in this same session found each of
+            # them independently broken for reasons unrelated to
+            # #302/#261 (see the module docstring) --
+            # GetRecordType/GetStatus read the wrong bare property name
+            # (`Type`/`Status`; the real names are `TypeRA`/`StatusRA`)
+            # and silently return None always; SetRecordType/SetStatus
+            # write that same wrong bare name, which pythonnet accepts
+            # as a throwaway Python-side instance attribute rather than
+            # raising, so the write silently never reaches the LCM;
+            # SetDateOfEvent crashes with TypeError because
+            # IRnGenericRec.DateOfEvent is CLR-typed as GenDate, not
+            # System.DateTime. All are reported separately in
+            # cycle2-programmer-T2.4-T2.5.md; none are fixed here.
+            #
+            # GetSubRecords, GetParentRecord, GetLocations,
+            # AddLocation, and RemoveLocation all use real, correctly-
+            # named LCM members (SubRecordsOS, Owner, LocationsRC) and
+            # are confirmed live-working in this same session.
+            assert notebook.GetSubRecords(hvo) == []
+            assert notebook.GetParentRecord(hvo) is None
 
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            _simulate_duplicate_toplevel(r1, repos)
+            assert notebook.GetLocations(hvo) == []
+            location = target_sandbox.Location.Create(
+                f"{TEST_PREFIX}ownership_hvo_entry_loc"
+            )
+            notebook.AddLocation(hvo, location)
+            reread_locations = notebook.GetLocations(hvo)
+            assert len(reread_locations) == 1
+            assert reread_locations[0].Hvo == location.Hvo
 
-        dep = [w for w in caught if issubclass(w.category, DeprecationWarning)]
-        assert dep == [], f"Unexpected DeprecationWarning(s): {dep}"
+            notebook.RemoveLocation(hvo, location)
+            assert notebook.GetLocations(hvo) == []
+        finally:
+            notebook.Delete(hvo)
+            if location is not None:
+                try:
+                    target_sandbox.Location.Delete(location)
+                except Exception:
+                    pass
 
-    def test_insert_method_absent_on_mock_oc(self):
-        """
-        Confirm that _MockOC raises AttributeError on Insert(), proving
-        the pre-fix code would crash.
-        """
-        oc = _MockOC([_MockRecord("x")])
-        with pytest.raises(AttributeError):
-            oc.Insert(0, _MockRecord("y"))
-
-    def test_duplicate_does_not_call_clear(self):
-        """
-        Duplicate() must never call Clear() on RecordsOC.
-        """
-        r1 = _MockRecord("Interview 1")
-        repos = _MockRepository([r1])
-
-        _simulate_duplicate_toplevel(r1, repos)
-
-        assert not repos.RecordsOC.clear_called, \
-            "Duplicate() must not call Clear() on RecordsOC"
-
-    def test_duplicate_collection_count_increases_by_one(self):
-        """
-        After Duplicate() the collection must have exactly one more item.
-        """
-        recs = [_MockRecord(f"rec{i}") for i in range(3)]
-        repos = _MockRepository(recs)
-        count_before = len(repos.RecordsOC)
-
-        _simulate_duplicate_toplevel(recs[0], repos)
-
-        assert len(repos.RecordsOC) == count_before + 1
+        # Re-read RecordsOC again, live, to confirm removal.
+        owner_hvos_after = {
+            r.Hvo for r in target_sandbox.lp.ResearchNotebookOA.RecordsOC
+        }
+        assert hvo not in owner_hvos_after
 
 
-class TestDataNotebookDuplicateSubRecord:
+class TestDataNotebookDuplicateTopLevelLive:
     """
-    Verify the OS (SubRecordsOS) branch is unaffected by the fix.
-    Sub-records live in an ordered sequence; positional Insert is valid.
+    Issue #158 Pattern I -- Duplicate() on a TOP-LEVEL record. RecordsOC
+    is owned by ResearchNotebookOA (ruling C1) and is an unordered
+    ILcmOwningCollection with no Insert() method, so insert_after must
+    be silently ignored and the duplicate always appended via Add() --
+    never crash by attempting Insert() on an OC.
+
+    Duplicate() currently raises AttributeError on
+    `duplicate.Title.CopyAlternatives(source.Title)`, a separate,
+    unrelated, pre-existing defect (see module docstring) that this
+    task does not fix. That crash happens AFTER the Add()/Insert()
+    placement logic already ran, so the placement side effect is
+    inspected live from the LCM despite the ultimate exception --
+    genuine coverage of the #158 semantics this file exists to
+    protect.
     """
 
-    def test_subrecord_insert_after_positions_correctly(self):
-        """
-        For sub-records (SubRecordsOS is OS), insert_after=True must
-        use IndexOf + Insert to place the duplicate after the source.
-        """
-        parent = _MockRecord("Interview")
-        s1 = _MockRecord("sub1")
-        s2 = _MockRecord("sub2")
-        parent.SubRecordsOS.Add(s1)
-        parent.SubRecordsOS.Add(s2)
+    @pytest.mark.live_phase("DataNotebookOperations", "add")
+    def test_duplicate_toplevel_uses_add_not_insert(self, target_sandbox):
+        notebook = target_sandbox.DataNotebook
 
-        dup = _simulate_duplicate_subrecord_insert_after(s1, parent)
+        record = _make_toplevel_record(
+            target_sandbox, f"{TEST_PREFIX}Interview 1"
+        )
+        record_hvo = record.Hvo
 
-        items = parent.SubRecordsOS._items
-        s1_idx = items.index(s1)
-        assert items[s1_idx + 1] is dup
+        before_hvos = {
+            r.Hvo for r in target_sandbox.lp.ResearchNotebookOA.RecordsOC
+        }
 
-    def test_subrecord_no_deprecation_warning(self):
-        """
-        The OS (sub-record) branch must not emit DeprecationWarning.
-        """
-        parent = _MockRecord("Interview")
-        s1 = _MockRecord("sub1")
-        parent.SubRecordsOS.Add(s1)
+        try:
+            # insert_after=True is passed deliberately to prove it is
+            # ignored (not an Insert()-on-an-OC crash) at the top level
+            # -- this is exactly the shape of the pre-#158 defect.
+            with pytest.raises(AttributeError) as excinfo:
+                notebook.Duplicate(record, insert_after=True)
 
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            _simulate_duplicate_subrecord_insert_after(s1, parent)
+            # Confirm the crash is the KNOWN, separate Title-copy
+            # defect, not a regression of #158/#302/#261 (which would
+            # show up as a different message, e.g. "Insert" or
+            # "RecordsOC").
+            assert "CopyAlternatives" in str(excinfo.value) or "Title" in str(
+                excinfo.value
+            )
 
-        dep = [w for w in caught if issubclass(w.category, DeprecationWarning)]
-        assert dep == [], f"Unexpected DeprecationWarning(s): {dep}"
+            after_hvos = {
+                r.Hvo for r in target_sandbox.lp.ResearchNotebookOA.RecordsOC
+            }
+            new_hvos = after_hvos - before_hvos
+            assert len(new_hvos) == 1, (
+                "Duplicate() must have added exactly one new record to "
+                "RecordsOC via Add() before hitting the unrelated Title "
+                "crash -- if this is now 0, the #158/#302 Add()-into-"
+                "ResearchNotebookOA.RecordsOC placement itself regressed"
+            )
+            assert record_hvo in after_hvos, "source record must be untouched"
+        finally:
+            after_hvos = {
+                r.Hvo for r in target_sandbox.lp.ResearchNotebookOA.RecordsOC
+            }
+            new_hvos = after_hvos - before_hvos
+            for hvo in new_hvos | {record_hvo}:
+                try:
+                    notebook.Delete(hvo)
+                except Exception:
+                    pass
+
+
+class TestDataNotebookDuplicateSubRecordOwnerDetectionLive:
+    """
+    SubRecordsOS (the OS branch) is an ordered sequence: positional
+    IndexOf()/Insert() is valid there, unlike the top-level OC. The
+    ORIGINAL, DELETED non-test asserted that a sub-record duplicate
+    lands immediately after the source in SubRecordsOS. Live probing in
+    THIS session found that assertion can no longer be made honestly:
+    Duplicate()'s own sub-record detection --
+    `if isinstance(owner, IRnGenericRec):` on the raw, uncast
+    `source.Owner` -- never evaluates True live, because pythonnet
+    returns `.Owner` typed as the base `ICmObject` interface, not the
+    concrete `IRnGenericRec`, so `isinstance()` against the concrete
+    interface is always False without an explicit cast first. Every
+    Duplicate() call -- top-level OR sub-record -- therefore takes the
+    top-level `else` branch and appends into
+    `ResearchNotebookOA.RecordsOC`, even when duplicating a genuine
+    sub-record.
+
+    This is a THIRD separate, previously-masked, out-of-scope defect
+    (reported in cycle2-programmer-T2.4-T2.5.md, not fixed here) --
+    distinct from the Title/Text bug and from #302/#261. Notably,
+    `Delete()` in this SAME file already fixed the identical class of
+    bug under issue #133 by routing through
+    `self._GetTypedOwner(record)` instead of a raw `isinstance(owner,
+    IRnGenericRec)` check (see the `:392` comment); `Duplicate()` and
+    `GetParentRecord()` were never updated to match. This test locks in
+    the CURRENT, live-confirmed (mis)behaviour rather than asserting
+    the originally-intended position, because asserting the original
+    intent would not reflect what the production code actually does
+    today.
+    """
+
+    @pytest.mark.live_phase("DataNotebookOperations", "add")
+    def test_duplicate_subrecord_currently_lands_in_toplevel_recordsoc(
+        self, target_sandbox
+    ):
+        notebook = target_sandbox.DataNotebook
+
+        parent = _make_toplevel_record(
+            target_sandbox, f"{TEST_PREFIX}Interview parent"
+        )
+        s1 = _make_subrecord(target_sandbox, parent, f"{TEST_PREFIX}sub1")
+        s2 = _make_subrecord(target_sandbox, parent, f"{TEST_PREFIX}sub2")
+
+        before_toplevel = {
+            r.Hvo for r in target_sandbox.lp.ResearchNotebookOA.RecordsOC
+        }
+
+        try:
+            with pytest.raises(AttributeError) as excinfo:
+                notebook.Duplicate(s1, insert_after=True)
+            assert "CopyAlternatives" in str(excinfo.value) or "Title" in str(
+                excinfo.value
+            )
+
+            # Re-read both collections live from the LCM.
+            reread_subrecords = [r.Hvo for r in parent.SubRecordsOS]
+            after_toplevel = {
+                r.Hvo for r in target_sandbox.lp.ResearchNotebookOA.RecordsOC
+            }
+            new_toplevel = after_toplevel - before_toplevel
+
+            assert set(reread_subrecords) == {s1.Hvo, s2.Hvo}, (
+                "SubRecordsOS must be untouched by this Duplicate() call "
+                "-- if a duplicate now appears here, the owner-detection "
+                "defect documented on this class has been fixed; "
+                "re-derive this test's intent (it should then assert "
+                "correct sub-record placement, like the original "
+                "pre-C4 non-test intended)"
+            )
+            assert len(new_toplevel) == 1, (
+                "current (buggy) behaviour: the duplicate of a "
+                "sub-record lands in ResearchNotebookOA.RecordsOC, not "
+                "in the parent's SubRecordsOS -- see class docstring"
+            )
+        finally:
+            after_toplevel = {
+                r.Hvo for r in target_sandbox.lp.ResearchNotebookOA.RecordsOC
+            }
+            stray_toplevel = after_toplevel - before_toplevel
+            for hvo in stray_toplevel:
+                try:
+                    notebook.Delete(hvo)
+                except Exception:
+                    pass
+            # Delete() on the parent recursively deletes all genuine
+            # sub-records, per Delete()'s own contract.
+            try:
+                notebook.Delete(parent.Hvo)
+            except Exception:
+                pass
+
+
+class TestDataNotebookRecordsOCHasNoInsertLive:
+    """
+    Live confirmation of the #158/#302 premise: the real owning
+    collection genuinely has no Insert(). If this ever starts failing,
+    Duplicate()'s "insert_after is ignored at the top level" behaviour
+    needs to be re-derived, not merely re-asserted.
+    """
+
+    @pytest.mark.live_phase("DataNotebookOperations", "read")
+    def test_recordsoc_has_no_insert_live(self, target_sandbox):
+        owner_collection = target_sandbox.lp.ResearchNotebookOA.RecordsOC
+        assert not hasattr(owner_collection, "Insert"), (
+            "IRnResearchNbk.RecordsOC unexpectedly gained an Insert() "
+            "method -- re-derive whether Duplicate's top-level "
+            "insert_after-is-ignored behaviour is still justified"
+        )
+
+
+class TestDataNotebookInvalidHvoLive:
+    """
+    Negative coverage for ruling C6: a genuinely invalid HVO must still
+    raise FP_ParameterError (the correct, intended error path is
+    untouched by C6 -- only the incidental AttributeError-laundering
+    was removed). __GetRecordObject's resolution fails before ever
+    reaching Title/Text, so this is unaffected by the separate,
+    unrelated Title bug documented above.
+    """
+
+    @pytest.mark.live_phase("DataNotebookOperations", "read")
+    def test_invalid_hvo_raises_fp_parameter_error(self, target_sandbox):
+        notebook = target_sandbox.DataNotebook
+
+        with pytest.raises(FP_ParameterError):
+            notebook.GetTitle(999999999)
+
+
+class TestDataNotebookAttributeErrorNotRelabelledLive:
+    """
+    Ruling C6's second half: AttributeError was deliberately DROPPED
+    from __GetRecordObject's catch tuple (not merely chained), because
+    it was the exact shape of the original #261 bug (accessing a
+    nonexistent GetObject attribute on LcmCache). Catching it
+    unconditionally would keep laundering any FUTURE genuine
+    AttributeError -- e.g. a real coding mistake reachable through this
+    path -- into the same misleading "Invalid notebook record object or
+    HVO" message. Simulates exactly that future genuine AttributeError
+    (by making the underlying project.Object() resolution raise it) and
+    confirms it propagates unmasked, not as FP_ParameterError.
+    """
+
+    @pytest.mark.live_phase("DataNotebookOperations", "read")
+    def test_genuine_attributeerror_propagates_unmasked(
+        self, target_sandbox, monkeypatch
+    ):
+        notebook = target_sandbox.DataNotebook
+
+        record = _make_toplevel_record(target_sandbox, f"{TEST_PREFIX}AttrErr")
+        hvo = record.Hvo
+        try:
+            def _boom(_hvo):
+                raise AttributeError(
+                    "simulated genuine coding-mistake AttributeError, "
+                    "not the fixed missing-GetObject shape"
+                )
+
+            monkeypatch.setattr(target_sandbox, "Object", _boom)
+
+            with pytest.raises(AttributeError) as excinfo:
+                notebook.GetTitle(hvo)
+
+            # It must be the real AttributeError, not a FP_ParameterError
+            # wrapping/relabelling it.
+            assert not isinstance(excinfo.value, FP_ParameterError)
+            assert "simulated genuine coding-mistake" in str(excinfo.value)
+        finally:
+            monkeypatch.undo()
+            try:
+                notebook.Delete(hvo)
+            except Exception:
+                pass
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

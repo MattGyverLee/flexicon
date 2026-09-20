@@ -28,7 +28,7 @@ Mark a task done only when its evidence file exists.
 
 ---
 
-## Checkpoint 2 -- #302 + #261, `DataNotebookOperations.py` (NEXT)
+## Checkpoint 2 -- #302 + #261, `DataNotebookOperations.py` (DONE, spurt 2)
 
 Both issues live in one file and total four executable lines. Do them in
 one spurt; they share a live evidence run.
@@ -95,12 +95,12 @@ one spurt; they share a live evidence run.
       `gh repo set-default MattGyverLee/flexicon` before any future `gh`
       issue call.
 
-- [ ] **T2.8** Live verification of T2.2-T2.4 against `target_sandbox`,
+- [x] **T2.8** Live verification of T2.2-T2.4 against `target_sandbox`,
       with pre/post state **re-read by HVO**. -> `evidence/live-T2-notebook.md`.
       Plus the offline regression run (`-m "not requires_live_project"`) with
       the pass count recorded and compared to the `598f41e` baseline.
 
-- [ ] **T2.9** Commit and push. Suggested subject:
+- [x] **T2.9** Commit and push. Suggested subject:
       `fix(notebook): route record resolution through project.Object and own RecordsOC (#302, #261)`.
       Note the close-keyword hazard in `spec.md` gate 7.
 
@@ -109,45 +109,59 @@ a real one, Catalogue 2 made durable and drafted for filing.
 
 ---
 
-## Checkpoint 3 -- #283, `Grammar/EnvironmentOperations.py`
+## Checkpoint 3 -- #283, `Grammar/EnvironmentOperations.py` (DONE, spurt 3)
 
-- [ ] **T3.1 (C7)** Rename `LeftContextOA`/`RightContextOA` ->
+- [x] **T3.1 (C7)** Rename `LeftContextOA`/`RightContextOA` ->
       `LeftContextRA`/`RightContextRA` at `:494,495,550,551` (the two
       `Get*ContextPattern` readers).
-- [ ] **T3.2 (C7)** In `Duplicate`, replace the whole `if deep:` context
+- [x] **T3.2 (C7)** In `Duplicate`, replace the whole `if deep:` context
       block (`:633-653`) with unconditional reference assignment
       (`duplicate.LeftContextRA = source.LeftContextRA`, likewise Right),
       deleting the `clone_properties` / `NewObject(ClassID)` machinery and
       **both bare `except Exception: pass` swallows**.
-- [ ] **T3.3 (C7)** Keep `deep` in the signature (pinned at
-      `EnvironmentOperations.pyi:19`); document it as inert for this method
+- [x] **T3.3 (C7)** Keep `deep` in the signature (pinned at
+      `EnvironmentOperations.pyi:18`); document it as inert for this method
       in the docstring `Args`/`Notes` (currently `:564-565`, `:591`) and add
       a CHANGELOG entry.
-- [ ] **T3.4 (Q4)** Grep `flexicon/`, `examples/`, `tests/` for
+- [x] **T3.4 (Q4)** Grep `flexicon/`, `examples/`, `tests/` for
       `deep=False` against this method; record the answer in the evidence
       file. If a real caller exists, state its expectation explicitly before
       T3.2 lands.
-- [ ] **T3.5 (C8)** Invert `test_260_environment_resolver_gate.py:311-317`
+- [x] **T3.5 (C8)** Invert `test_260_environment_resolver_gate.py:311-317`
       in the **same commit**; keep the class and its narrative docstring,
       add a pointer to this spec. Do the same for the `test_2a_*`/`test_2d_*`
       anchors in `test_lcm_member_truth_sweep.py`.
-- [ ] **T3.6 (C9)** Explicitly confirm in the evidence file that
+- [x] **T3.6 (C9)** Explicitly confirm in the evidence file that
       `Grammar/compound_rule.py:220,244` was NOT touched, and that the
       `IPhSegRuleRHS` sites in `PhonologicalRuleOperations.py` (`:639-1145`)
       and `tests/operations/test_phon_rules.py` were NOT touched -- those
       `...OA` names are correct on that type.
-- [ ] **T3.7** Live verification: seed contexts in `target_sandbox`,
+- [x] **T3.7** Live verification: seed contexts in `target_sandbox`,
       `Duplicate`, re-read both source and duplicate **by HVO**, assert the
       duplicate's contexts are non-null and are the **same objects** (HVO
       equality) as the source's. -> `evidence/live-T3-environment.md`.
-- [ ] **T3.8** Commit and push.
+- [x] **T3.8** Commit and push.
 
 **Checkpoint:** environment contexts survive `Duplicate`, proven by HVO
 identity, with the two bug-asserting anchors flipped in the same commit.
+**MET** (spurt 3) -- source `152223`/`152224`, duplicate re-read by its own
+HVO `152223`/`152224`, identical and non-null, `run_mode: live`.
+
+Two recorded deviations, both authorized by the lead at the cycle-3 gate:
+
+- **Fixture:** T3.5(a)'s new seeded test and all of T3.7 ran on
+  `sena3_sandbox`, not T3.7's nominal `target_sandbox`. Building a legal
+  `IPhSimpleContextSeg` needs an existing `IPhPhoneme` for
+  `FeatureStructureRA`, and Target is "mostly blank scratch" with no
+  guaranteed phoneme inventory. Sandbox-only either way, so the standing
+  gate-1 requirement (tempdir copy, nothing touches a real project) is
+  fully met.
+- **Deferred coverage:** the delete-survival path is not exercised --
+  tracked as **T8.6**, see checkpoint 8.
 
 ---
 
-## Checkpoint 4 -- #259, morph bundle inflection class
+## Checkpoint 4 -- #259, morph bundle inflection class (NEXT)
 
 - [ ] **T4.1 (C10)** Implement the navigation helper once
       (`bundle.MsaRA` -> null check -> `cast_to_concrete` -> narrow to
@@ -255,3 +269,14 @@ Follow `reviews/cycle1-domain.md` sections 2-5 verbatim.
       (`needs_human`); file on approval with `gh`.
 - [ ] **T8.5** Final crew gate: verification + QC + domain on the whole
       campaign diff, then the lead's approval report.
+- [ ] **T8.6 (#283 follow-up, from the cycle-3 domain ruling Q-B)**
+      Delete-survival regression test: `Duplicate` an environment that has
+      a `LeftContextRA`, then `envs.Delete(duplicate)`, then re-read the
+      **source** by HVO and assert its `LeftContextRA` still resolves
+      non-null. Live, `sena3_sandbox` (same phoneme-inventory reason as
+      T3.5(a)). Rationale for deferring rather than folding into spurt 3:
+      the risk is unrealized in the shipped diff -- `Delete` (`:195-233`)
+      only calls `phon_data.EnvironmentsOS.Remove(env)` and never touches
+      `ContextsOS`, so it cannot cascade-delete a still-referenced context.
+      The gap is missing *coverage* of the highest-risk regression path,
+      not a live defect. Do not let checkpoint 8 close with T8.6 open.

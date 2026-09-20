@@ -1,57 +1,15 @@
 # Flexicon Claude Code Guidelines
 
-This document outlines conventions and best practices for Claude Code when working on this project.
+Conventions and binding rules for this project. Reference material that
+used to live here now sits in `docs/` -- this file is the checklist, those
+are the explanations. Pointers are given inline.
 
 ## Project Overview
 
-Flexicon is a Python library for accessing FieldWorks Language Explorer (FLEx) projects via the Language and Culture Model (LCM) API. It provides comprehensive CRUD operations for FLEx data types across Grammar, Lexicon, Texts & Words, Notebook, Lists, and System modules.
-
-## Code Style & Standards
-
-### File Headers
-All Python files should include a header with:
-- Module name
-- Brief description
-- Class/Component information
-- Platform info (Python, FieldWorks version)
-- Copyright notice
-
-Example:
-```python
-#
-#   LexEntryOperations.py
-#
-#   Class: LexEntryOperations
-#          Lexical entry operations for FieldWorks Language Explorer
-#          projects via SIL Language and Culture Model (LCM) API.
-#
-#   Platform: Python.NET
-#             FieldWorks Version 9+
-#
-#   Copyright 2025
-#
-```
-
-### Module Documentation
-- Use docstrings with description, usage examples, and Args/Returns sections
-- Include usage examples showing how to access classes via `FLExProject`
-- Document important module-level constants
-
-### Operations Classes
-- All operations inherit from `BaseOperations`
-- Follow the naming pattern: `[Domain]Operations.py` (e.g., `LexEntryOperations.py`)
-- Organize by FLEx domain: Grammar, Lexicon, Texts & Words, Notebook, Lists, System
-- Implement CRUD methods: Create, Read, Update, Delete patterns
-- Use BaseOperations validation methods for consistency
-
-### String Handling
-- Use `normalize_text()` from `Shared.string_utils` for FLEx null marker ('***') handling
-- Normalize empty multilingual string fields to empty strings
-- Use `best_analysis_text()` and `best_vernacular_text()` utilities for language analysis
-
-### Logging
-- Use logging module with pattern: `logger = logging.getLogger(__name__)`
-- Keep logging statements focused on debugging and issue diagnosis
+Flexicon is a Python library for accessing FieldWorks Language Explorer
+(FLEx) projects via the Language and Culture Model (LCM) API. It provides
+CRUD operations for FLEx data types across Grammar, Lexicon, Texts &
+Words, Notebook, Lists, and System modules.
 
 ## Project Structure
 
@@ -70,153 +28,86 @@ flexicon/
 │   │   └── Shared/                    # Utilities (string_utils, filters, etc.)
 │   └── sync/                          # Sync engine and related utilities
 ├── tests/                             # Test suites
-│   ├── operations/                    # Operation-specific tests
-│   └── test_*.py                      # Integration and feature tests
 └── docs/                              # API documentation and guides
 ```
+
+## Code Style
+
+### File headers
+
+All Python files carry a header with module name, brief description,
+class/component info, platform (Python.NET, FieldWorks 9+), and copyright.
+Copy the shape from any existing Operations file.
+
+### Operations classes
+
+- Inherit from `BaseOperations`; use its validation methods
+- Name as `[Domain]Operations.py` (e.g. `LexEntryOperations.py`)
+- Organize by FLEx domain (Grammar, Lexicon, TextsWords, Notebook, Lists,
+  System)
+- Implement Create / Read / Update / Delete patterns
+- Docstrings carry a description, a usage example showing access via
+  `FLExProject`, and Args/Returns
+
+### String handling
+
+- Use `normalize_text()` from `Shared.string_utils` for the FLEx null
+  marker (`'***'`)
+- Normalize empty multilingual string fields to empty strings
+- Use `best_analysis_text()` / `best_vernacular_text()` for language
+  analysis
+
+### Logging
+
+`logger = logging.getLogger(__name__)`. Keep statements focused on
+debugging and issue diagnosis.
 
 ### The `flexlibs2` name is a deprecated alias -- never write it in new code
 
 The library was formerly published as `flexlibs2`; it is now **`flexicon`**
-(distribution name `pyflexicon`). A `flexlibs2/` package still exists, but it
-is an **inbound-only compatibility shim** for external callers (FlexTools /
-FlexTrans scripts on disk), and it is **removed in flexicon v5.0.0**.
+(distribution name `pyflexicon`). A `flexlibs2/` package still exists, but
+it is an **inbound-only compatibility shim** for external callers
+(FlexTools / FlexTrans scripts on disk), and it is **removed in flexicon
+v5.0.0**.
 
-Nothing internal may reference it -- not library code, not example scripts,
-not docstrings, not tests. This is enforced by
+Nothing internal may reference it -- not library code, not example
+scripts, not docstrings, not tests. Enforced by
 `tests/test_flexlibs2_alias_ratchet.py` (issue #240); every internal
-reference would become a hard break at the v5.0.0 boundary. Use `flexicon`
-in everything you write.
-
-## Testing
-
-### Test Organization
-- Use `tests/operations/` for operation-specific unit tests
-- Use `tests/test_*.py` for integration tests
-- Test files follow pattern: `test_[feature]_[aspect].py` or `test_[module].py`
-- Tests in `flexicon/sync/tests/` for sync engine functionality
-
-### Test Naming
-- Test classes: `Test[FeatureName]`
-- Test methods: `test_[what_is_being_tested]_[expected_result]`
-
-### Testing Framework
-- Use pytest for test execution
-- Maintain `.coverage` for coverage tracking
-- Check `.pytest_cache/` behavior before modifying test infrastructure
-
-## Git Conventions
-
-### Branches
-- `main` - production-ready code, **and the repository's default branch**
-- Feature branches should reference issues when applicable
-
-### Commits
-- Keep commits focused and logical
-- Reference relevant changes and fixes
-- Include `Co-Authored-By:` footer when appropriate
-
-#### NEVER write close/fix/resolve immediately before an issue number
-unless you actually intend GitHub to close that issue.
-
-`closes #N` is the intended convention when a commit genuinely resolves an
-issue, and is used that way in 100+ commits on `main`. The hazard is using
-one of those verbs in **prose about** an issue. GitHub does not read your
-intent, and a possessive or descriptive phrasing still fires:
-
-```
-BAD:   test(243): pin the fail-open branch; close #243's crew review (T9)
-       -> GitHub parsed "close #243" and CLOSED issue #243, against an
-          explicit ruling that it stay open. This really happened
-          (commit b0e3d14); see specs/242-paragraph-whitespace/spec.md
-          section 6 and evidence/n7-issue-state.md.
-BAD:   fix(x): Fixes #242's P8 anomaly
-GOOD:  test(243): pin the fail-open branch; close the crew review for #243
-GOOD:  fix(x): fix the P8 anomaly reported in #242
-```
-
-The keyword fires only when the commit reaches the default branch, so it
-can lie dormant on a feature branch and trigger on merge. If a crew or
-campaign record says an issue is to be left open, that is binding: phrase
-around the verb.
-
-This is now enforced by a `commit-msg` hook, so the mistake is caught while
-the commit is still cheap to amend rather than after it reaches GitHub.
-
-**Enable it once per clone** (`core.hooksPath` is local config, not
-something a checkout can carry):
-
-```
-git config core.hooksPath .githooks
-```
-
-The guard is `.githooks/commit_msg_guard.py`, covered by
-`tests/test_commit_msg_guard.py`. It blocks only the four hazard shapes --
-a **negation** ("do NOT close #250"), a **possessive** ("close #243's crew
-review"), a **quotation** (`said "partially closes #151"`), and
-**narration** of a close that already happened. The genuine convention is
-deliberately untouched: a close keyword in a footer (`Closes #N.`) or a
-subject parenthetical (`feat(x): y (closes #N)`) always passes, and a
-negation elsewhere on such a line does not trigger the guard. Backtested
-against all 801 commits on `main`: 136 contain a close keyword, 130 pass,
-and the 6 it blocks are all genuine hazards -- the three that actually
-fired (#242, #243, #250), two `does not close #237` bodies, and one quoted
-directive.
-
-If a prose form is genuinely intended, say so explicitly rather than
-disabling the hook:
-
-```
-Close-Keyword-Override: <why this should genuinely close the issue>
-```
-
-#### Confirm which repo `gh` is talking to before trusting an issue result
-
-This repo has two remotes -- `origin` (`MattGyverLee/flexicon`) and
-`upstream` (`cdfarrow/flexlibs`, the fork parent). With no default set,
-`gh` prefers `upstream`, whose issue numbering tops out near #17, so every
-issue this project cites returns "Could not resolve to an issue" -- which
-reads exactly like "the issue does not exist." Run
-`gh repo set-default MattGyverLee/flexicon` on a fresh checkout, or pass
-`--repo` explicitly.
-
-### Before Committing
-- Verify code follows project style
-- Check that operations use BaseOperations validation
-- Ensure proper error handling with FLEx-specific exceptions
+reference would become a hard break at the v5.0.0 boundary.
 
 ## FLEx-Specific Conventions
 
-### Exception Handling
-- Import custom exceptions from `FLExProject`:
-  - `FP_ReadOnlyError` - Read-only project operations
-  - `FP_NullParameterError` - Null/None parameters
-  - `FP_ParameterError` - Invalid parameters
+### Exception handling
 
-### LCM Imports
+Import from `FLExProject`: `FP_ReadOnlyError`, `FP_NullParameterError`,
+`FP_ParameterError`. See `docs/EXCEPTION_HANDLING.md`.
+
+### LCM imports
+
 - Import FLEx types from `SIL.LCModel`
 - Use factory and repository interfaces for object creation
-- Handle ITsString properly for multilingual text
-- **Same-name fields can have different LCM types across object types --
-  or not exist at all on the type you'd expect.** For example, `Source`
-  is `ITsString` on `ILexSense`, but `ILexEtymology` has **no `Source`
-  field whatsoever** (confirmed by live reflection, 2026-08-18; the
-  free-text "source language" data now lives on `LanguageNotes`, an
-  `IMultiString`), and `ICmBaseAnnotation` likewise has no `Source` field
-  (that access pattern actually belongs to `IStText.Source`, reached via
-  a helper that navigates from the annotation to its owning text).
-  Copying a working pattern from one Operations class to another without
-  checking the field's type -- or existence -- on the *target* LCM
-  interface is the root cause of issues #36/#39/#40. See
-  `docs/API_ISSUES_CATEGORIZED.md` "Category 8: Same-name fields with
-  different LCM types" for the current table and the correct access
-  patterns.
+- Handle `ITsString` properly for multilingual text
 
-### Write Operations
-- Only perform write operations if `project.writeEnabled` is True
-  (lowercase `w` -- the attribute is `writeEnabled`, not `WriteEnabled`)
-- Check write permissions before attempting Create/Update/Delete operations
-- Use appropriate factories for object creation
+### Same-name fields can have different LCM types across object types
+
+...or not exist at all on the type you'd expect. `Source` is `ITsString`
+on `ILexSense`, but `ILexEtymology` has **no `Source` field whatsoever**
+(confirmed by live reflection, 2026-08-18; the free-text "source language"
+data now lives on `LanguageNotes`, an `IMultiString`), and
+`ICmBaseAnnotation` likewise has no `Source` field (that access pattern
+belongs to `IStText.Source`, reached via a helper that navigates from the
+annotation to its owning text).
+
+Copying a working pattern from one Operations class to another without
+checking the field's type -- or existence -- on the *target* LCM interface
+is the root cause of issues #36/#39/#40. Current table and correct access
+patterns: `docs/API_ISSUES_CATEGORIZED.md`, "Category 8".
+
+### Write operations
+
+Only write if `project.writeEnabled` is True -- lowercase `w`, the
+attribute is `writeEnabled`, not `WriteEnabled`. Check write permission
+before any Create/Update/Delete. Use the appropriate factory for creation.
 
 ## Live LCM Verification (REQUIRED)
 
@@ -226,9 +117,9 @@ verification and must never be presented as one. "No live LCM testing was
 performed" is a FAILED verification, not a safety feature -- report it as
 `FAIL: unverified`, never as a clean result.
 
-This applies to every change that touches an Operations class, a factory
-call, a property setter, `FLExProject`, or the transaction/write path. It
-does not apply to pure-docs, pure-typing, or pure-test-scaffolding changes.
+Applies to every change touching an Operations class, a factory call, a
+property setter, `FLExProject`, or the transaction/write path. Does not
+apply to pure-docs, pure-typing, or pure-test-scaffolding changes.
 
 ### The two live projects
 
@@ -249,12 +140,10 @@ the test genuinely needs pre-existing data to read or modify.
   the real Target is locked by an open FieldWorks.
 - `sena3_sandbox` -- same, for Sena 3.
 
-The canonical template is `tests/operations/test_target_live_smoke.py`.
-Copy its structure.
+Canonical template: `tests/operations/test_target_live_smoke.py`. Copy its
+structure.
 
 ### The required invocation
-
-Live verification runs with the fail-loud flag set:
 
 ```
 $env:FLEXLIBS_REQUIRE_LIVE = "1"
@@ -263,9 +152,9 @@ python -m pytest <your live test file> -m requires_live_project -q
 
 `FLEXLIBS_REQUIRE_LIVE=1` converts every silent degradation into a hard
 failure: FLEx init falling back to mocks, a locked Target, a missing
-fixture. Without it, `tests/flex_plugin.py` prints `[WARN] MOCK MODE` and the
-session still passes green -- which is exactly how unverified write-path
-changes have been reported as done.
+fixture. Without it, `tests/flex_plugin.py` prints `[WARN] MOCK MODE` and
+the session still passes green -- which is exactly how unverified
+write-path changes have been reported as done.
 
 **Never run bare `pytest` or `pytest --ignore=tests/contract`.** Neither
 applies an `-m` filter, so both collect and EXECUTE the ~322
@@ -290,310 +179,132 @@ Say so explicitly and stop; do not substitute a mock pass. Report the
 blocker (locked project, missing FieldWorks, needs a human decision) and
 escalate. Per the LEX crew protocol, that is a `needs_human` handoff.
 
-## Documentation
+## Testing
 
-### API Documentation
-- HTML API documentation is generated and accessible via `flexicon.APIHelpFile`
-- Keep docstrings accurate with parameter descriptions
-- Update API_ISSUES_CATEGORIZED.md when API changes are made
-- Document breaking changes in migration guides
+- `tests/operations/` for operation-specific unit tests; `tests/test_*.py`
+  for integration tests; `flexicon/sync/tests/` for sync engine
+- File names: `test_[feature]_[aspect].py` or `test_[module].py`
+- Test classes `Test[FeatureName]`; methods
+  `test_[what_is_being_tested]_[expected_result]`
+- pytest for execution; maintain `.coverage`; check `.pytest_cache/`
+  behavior before modifying test infrastructure
 
-### Code Comments
-- Document non-obvious FLEx behavior
-- Explain workarounds for LCM quirks (e.g., null marker handling)
-- Include examples showing correct usage patterns
+## Git Conventions
 
-## Windows Environment
+### Branches
 
-### No Emojis in Terminal Output
-- Use `[OK]`, `[DONE]`, `[PASS]` instead of ✓ or ✅
-- Use `[ERROR]`, `[FAIL]` instead of ✗ or ❌
-- Use `[INFO]`, `[NOTE]` instead of ℹ️
-- Use `[WARN]` instead of ⚠️
-- Use asterisks or dashes for bullet points, not Unicode bullets
+`main` is production-ready code **and the repository's default branch**.
+Feature branches reference issues where applicable.
+
+### Commits
+
+Keep commits focused and logical. Include a `Co-Authored-By:` footer when
+appropriate.
+
+#### NEVER write close/fix/resolve immediately before an issue number
+unless you actually intend GitHub to close that issue.
+
+`closes #N` is the intended convention when a commit genuinely resolves an
+issue. The hazard is using one of those verbs in **prose about** an issue
+-- GitHub does not read intent, and a possessive or descriptive phrasing
+still fires:
+
+```
+BAD:   close #243's crew review (T9)      -> actually closed #243
+BAD:   fix(x): Fixes #242's P8 anomaly
+GOOD:  close the crew review for #243
+GOOD:  fix(x): fix the P8 anomaly reported in #242
+```
+
+The keyword fires only when the commit reaches the default branch, so it
+can lie dormant on a feature branch and trigger on merge. If a crew or
+campaign record says an issue is to be left open, that is binding.
+
+Enforced by a `commit-msg` hook. **Enable it once per clone:**
+
+```
+git config core.hooksPath .githooks
+```
+
+Hazard shapes, the deliberate non-triggers, the backtest against all 801
+commits on `main`, and the `Close-Keyword-Override:` escape hatch are
+documented in `.githooks/README.md`.
+
+#### Confirm which repo `gh` is talking to before trusting an issue result
+
+Two remotes exist -- `origin` (`MattGyverLee/flexicon`) and `upstream`
+(`cdfarrow/flexlibs`, the fork parent). With no default set, `gh` prefers
+`upstream`, whose issue numbering tops out near #17, so every issue this
+project cites returns "Could not resolve to an issue" -- which reads
+exactly like "the issue does not exist." Run
+`gh repo set-default MattGyverLee/flexicon` on a fresh checkout, or pass
+`--repo` explicitly.
+
+### Before committing
+
+Verify style, confirm operations use BaseOperations validation, ensure
+error handling uses the FLEx-specific exceptions.
 
 ## API Design Philosophy
 
-### Core Principle: User-Centric Not Technology-Centric
+Core principle: **user-centric, not technology-centric.** The API should
+match how users think about objects, hiding LCM/pythonnet complexity while
+maximizing functionality.
 
-The Flexicon API should match how users naturally think about objects, hiding LCM/pythonnet complexity while maximizing functionality.
+The six binding rules, each with worked before/after examples, the wrapper
+and smart-collection patterns, and the casting standards are in
+**`docs/API_DESIGN_PHILOSOPHY.md`**. In short:
 
-**Users think in two ways simultaneously:**
-- **Abstractly:** "phonological rules", "merge entries", "filter by name"
-- **Concretely:** "these rules have different properties", "some types don't have outputs"
+1. **Hide interface/ClassName/casting complexity.** Operations classes
+   cast internally. `cast_to_concrete()` is public (issue #271) but is the
+   escape hatch, not the primary remedy.
+2. **Maximize functionality in simple queries.** `GetAll()` returns
+   everything with type diversity visible.
+3. **Unify operations across types.** One `filter()` across all concrete
+   types, not one per type.
+4. **Provide smart properties and capability checks** (`has_output_specs`)
+   instead of `ClassName` tests and manual casts.
+5. **Don't add a flag for behaviour that should be unconditional.** A
+   keyword whose `False` default preserves a bug is the anti-pattern; a
+   genuinely call-site-dependent flag is fine.
+6. **Warn on type mismatch, don't block.** Show the consequences and let
+   the user decide.
 
-The API must support both levels without forcing users to consciously manage the complexity.
+Before changing `BaseOperations` validation, `FLExProject` core, module
+structure, the API surface, wrapper/collection patterns, or the casting
+architecture, read the relevant doc first:
 
-### Key Design Rules
+- `docs/ARCHITECTURE.md` -- wrapper + collection overview
+- `docs/ARCHITECTURE_WRAPPERS.md` -- wrapper classes guide
+- `docs/ARCHITECTURE_COLLECTIONS.md` -- smart collections guide
+- `docs/API_DESIGN_PHILOSOPHY.md` -- design rules and casting standards
 
-#### 1. Hide Interface/ClassName/Casting Complexity
-- Users should NEVER *have to* see `IPhSegmentRule`, `ClassName`, or casting
-  logic in the normal course of using an Operations class -- the Operations
-  classes cast internally (in `__ResolveObject` and in collection getters)
-  so that objects returned from operations work transparently across
-  concrete types
-- `validate_merge_compatibility()` is for internal use only
-- `cast_to_concrete()` is **public** (`from flexicon import cast_to_concrete`,
-  issue #271). It is the documented *escape hatch*, not the primary remedy:
-  reach for it when a caller has left the wrapper API and holds raw LCM
-  objects, or for collections that stay legitimately polymorphic (e.g.
-  `ComponentLexemesRS` / `TargetsRS`, which legally mix `ILexEntry` and
-  `ILexSense`). Being total -- an unrecognised `ClassName` returns the object
-  unchanged -- it is strictly safer than the `ILexEntry(x)` workaround users
-  otherwise land on, which throws on a legitimately-`ILexSense` element.
+## Documentation
 
-#### 2. Maximize Functionality in Simple Queries
-```python
-# Good: GetAll() returns everything with type diversity visible
-rules = phonRuleOps.GetAll()
-print(rules)  # Shows: PhRegularRule (7), PhMetathesisRule (3), etc.
+- HTML API docs are generated and reachable via `flexicon.APIHelpFile`
+- Keep docstrings accurate with parameter descriptions
+- Update `docs/API_ISSUES_CATEGORIZED.md` when API behaviour changes
+- Document breaking changes in the migration guide
+- Comment non-obvious FLEx behaviour and LCM workarounds (e.g. null marker
+  handling)
 
-# Avoid: Forcing users to query per type
-regular = phonRuleOps.GetAll(class_type='PhRegularRule')
-metathesis = phonRuleOps.GetAll(class_type='PhMetathesisRule')
-```
+## Key Files
 
-#### 3. Unify Operations Across Types
-```python
-# Good: Filter works across all phonological rule types
-voicing_rules = phonRuleOps.GetAll().filter(name_contains='voicing')
+- `flexicon/code/BaseOperations.py` -- parent class, shared validation
+- `flexicon/code/FLExProject.py` -- main project interface
+- `flexicon/code/Shared/wrapper_base.py` -- `LCMObjectWrapper` base
+- `flexicon/code/Shared/smart_collection.py` -- `SmartCollection` base
+- `flexicon/code/Shared/string_utils.py` -- text normalization
+- `flexicon/code/lcm_casting.py` -- casting utilities. `cast_to_concrete`
+  is exported from the package top level and is public (issue #271); the
+  rest (`clone_properties`, `validate_merge_compatibility`, the interface
+  cache) is internal.
+- `flexicon/code/PythonicWrapper.py` -- suffix-free property access
+- `README.rst` -- user-facing documentation
 
-# Avoid: Separate filters per type
-regular_voicing = [r for r in regular_rules if 'voicing' in r.name]
-metathesis_voicing = [r for r in metathesis_rules if 'voicing' in r.name]
-```
+## Don'ts
 
-#### 4. Provide Smart Properties and Capability Checks
-```python
-# Good: Works for any rule type
-for rule in all_rules:
-    if rule.has_output_specs:
-        print(rule.output_segments)
-    if rule.has_metathesis_parts:
-        print("This is a metathesis rule")
-
-# Avoid: Checking ClassName or manual casting
-if rule.ClassName == 'PhRegularRule':
-    concrete = IPhRegularRule(rule)
-    print(concrete.RightHandSidesOS)
-```
-
-#### 5. Don't Add a Flag for Behaviour That Should Be Unconditional
-
-**The caller-managed-flag anti-pattern:** do not add a keyword argument
-that makes the caller opt in to *correct* behaviour, when the rest of the
-library already provides that behaviour for free.
-
-```python
-# Avoid: correctness becomes the caller's problem, and the sites that
-# needed fixing get to stay wrong by default.
-def SetText(self, para, content, preserve_whitespace=False): ...
-
-# Good: fix the behaviour unconditionally.
-def SetText(self, para, content): ...   # always preserves the payload
-```
-
-The test is whether a house convention already exists. If most of the
-library already does the right thing and a handful of sites do not, those
-sites are **outliers to be conformed**, and a flag merely licenses them to
-stay outliers. `specs/242-paragraph-whitespace/spec.md` C8 rejected a
-`preserve_whitespace=` kwarg on exactly this ground: 82 sibling writer
-sites already persisted the caller's value unmodified while only 12 did
-not.
-
-This does **not** forbid every behavioural keyword. A flag is legitimate
-when correct behaviour is genuinely call-site-dependent -- for example
-`normalize_match_key(text, casefold=...)`
-(`flexicon/code/Shared/string_utils.py:50`), where case sensitivity really
-does differ per lookup and both branches are exercised in earnest. The
-anti-pattern is specifically a flag whose `False` default preserves a bug.
-
-#### 6. Warn on Type Mismatch, Don't Block
-```python
-# Good: Warn user, show consequences, let them decide
-result = phonRuleOps.MergeObject(rule1, rule2)
-# ⚠️  WARNING: Merging different rule types
-# Shows what will merge, what will be lost
-# Continue? (y/n):
-
-# Avoid: Hard error that crashes
-# FP_ParameterError: Cannot merge different classes
-```
-
-### Wrapper Classes Pattern
-
-For types with multiple concrete implementations (phonological rules, MSAs, contexts), implement wrapper classes:
-
-```python
-class PhonologicalRule:
-    """
-    Wrapper around IPhSegmentRule that provides unified interface.
-
-    Handles casting transparently so users don't see interface complexity.
-    """
-    def __init__(self, lcm_obj):
-        self._obj = lcm_obj
-        self._concrete = cast_to_concrete(lcm_obj)
-
-    def __getattr__(self, name):
-        # Try concrete type first (more specific)
-        try:
-            return getattr(self._concrete, name)
-        except AttributeError:
-            # Fall back to base interface
-            return getattr(self._obj, name)
-
-    # Convenience properties that work across all types
-    @property
-    def input_contexts(self):
-        return list(self._concrete.StrucDescOS)
-
-    # Smart properties that return what exists
-    @property
-    def output_segments(self):
-        if hasattr(self._concrete, 'RightHandSidesOS'):
-            return list(self._concrete.RightHandSidesOS)
-        return []
-
-    # Capability checks instead of type checking
-    @property
-    def has_output_specs(self):
-        return hasattr(self._concrete, 'RightHandSidesOS')
-```
-
-### Smart Collections Pattern
-
-Collections returned from GetAll() should show type diversity and support unified filtering:
-
-```python
-class RuleCollection:
-    """
-    Smart collection that manages type diversity transparently.
-    """
-    def __str__(self):
-        # Show type summary on display
-        return "Phonological Rules Summary (12 rules)\n" + \
-               "  PhRegularRule: 7 (58%)\n" + \
-               "  PhMetathesisRule: 3 (25%)\n" + \
-               "  PhReduplicationRule: 2 (17%)"
-
-    def filter(self, **criteria):
-        # Filter works across all types
-        return RuleCollection(
-            [r for r in self.rules if self._matches(r, criteria)]
-        )
-
-    def by_type(self, class_type):
-        # Optional type filtering if user wants it
-        return RuleCollection([r for r in self.rules if r.ClassName == class_type])
-```
-
-## Casting Architecture Standards
-
-### Casting is Mostly an Implementation Detail
-
-Users should not need to cast when going through an Operations class.
-The casting utilities are:
-
-- `cast_to_concrete()` - Convert base interface to concrete type. **Public**
-  (`from flexicon import cast_to_concrete`, issue #271); used internally
-  throughout, and exported as the documented escape hatch for direct-LCM
-  work and legitimately-polymorphic collections. Total: an unrecognised
-  `ClassName`, a missing `ClassName`, or a failed CLR cast all return the
-  object unchanged, so guard derived-member access with `hasattr`.
-- `validate_merge_compatibility()` - Check if objects can merge safely
-  (internal only)
-- `clone_properties()` - Deep clone with automatic casting (internal only)
-
-### Cloning Always Uses clone_properties()
-
-```python
-# Standard pattern for all deep cloning operations
-from ..lcm_casting import clone_properties
-
-def Duplicate(self, item_or_hvo, deep=True):
-    source = self.__ResolveObject(item_or_hvo)
-    destination = factory.Create()
-
-    if deep:
-        # clone_properties handles casting internally
-        clone_properties(source, destination, self.project)
-
-    return destination
-```
-
-### Merging Always Validates Type Safety
-
-```python
-# Standard pattern for all merge operations
-from ..lcm_casting import validate_merge_compatibility
-
-def MergeObject(self, survivor, victim):
-    is_compatible, error_msg = validate_merge_compatibility(survivor, victim)
-    if not is_compatible:
-        # Warn but allow user to proceed if they choose
-        print(f"WARNING: {error_msg}")
-```
-
-## When to Consult Claude
-
-Before implementing changes that affect:
-- BaseOperations validation methods (affects all operations)
-- FLExProject core functionality (central interface)
-- Module structure or organization
-- API surface changes
-- **Wrapper classes or collection patterns** - See `docs/ARCHITECTURE_WRAPPERS.md` and `docs/ARCHITECTURE_COLLECTIONS.md` for patterns first
-- **Type-safe merge/clone operations** (casting architecture)
-
-### Creating New Wrapper Classes
-
-When implementing a wrapper for a new domain:
-
-1. **Review** `docs/ARCHITECTURE_WRAPPERS.md` - "Creating Domain-Specific Wrappers" section
-2. **Identify** the base interface and concrete types
-3. **Follow** the pattern from `flexicon/code/Shared/wrapper_base.py`
-4. **Add** type capability checks and convenience properties
-5. **Consult** if wrapper needs special handling beyond standard pattern
-
-**Reference:** `docs/ARCHITECTURE_WRAPPERS.md`
-
-### Creating New Collection Subclasses
-
-When implementing a collection for filtering and display:
-
-1. **Review** `docs/ARCHITECTURE_COLLECTIONS.md` - "Creating Domain-Specific Collections" section
-2. **Inherit** from `SmartCollection` (base class)
-3. **Implement** the `filter()` method with domain-specific criteria
-4. **Add** convenience methods for common patterns (e.g., `by_type()` variants)
-5. **Consult** if collection needs complex filtering or analysis
-
-**Reference:** `docs/ARCHITECTURE_COLLECTIONS.md`
-
-## Key Files to Know
-
-### Architecture & Design
-- `docs/ARCHITECTURE.md` - High-level overview of wrapper + collection pattern
-- `docs/ARCHITECTURE_WRAPPERS.md` - Comprehensive wrapper classes guide
-- `docs/ARCHITECTURE_COLLECTIONS.md` - Comprehensive smart collections guide
-- `CLAUDE.md` (this file) - Design philosophy and conventions
-
-### Core Infrastructure
-- `flexicon/code/BaseOperations.py` - Parent class with shared validation
-- `flexicon/code/FLExProject.py` - Main project interface
-- `flexicon/code/Shared/wrapper_base.py` - LCMObjectWrapper base class
-- `flexicon/code/Shared/smart_collection.py` - SmartCollection base class
-- `flexicon/code/lcm_casting.py` - Casting utilities. `cast_to_concrete` is
-  exported from the package top level and is public (issue #271); the rest of
-  the module (`clone_properties`, `validate_merge_compatibility`, the
-  interface cache) is internal.
-
-### Utilities & Documentation
-- `flexicon/code/Shared/string_utils.py` - Text normalization utilities
-- `flexicon/code/PythonicWrapper.py` - Suffix-free property access wrapper
-- `docs/API_ISSUES_CATEGORIZED.md` - Known API issues and workarounds
-- `docs/EXCEPTION_HANDLING.md` - Error handling patterns
-- `README.rst` - User-facing documentation
-
-## Don'ts:
-- This is a Windows system; don't use emojis in console messages.
-- Call Python with `python` instead of `python3`.
+- This is a Windows system; no emojis in console messages. Use `[OK]`,
+  `[DONE]`, `[PASS]`, `[ERROR]`, `[FAIL]`, `[INFO]`, `[NOTE]`, `[WARN]`,
+  and dashes or asterisks for bullets.
+- Call Python with `python`, not `python3`.

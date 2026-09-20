@@ -53,10 +53,35 @@ SIL_PREFIXES = (
     "SIL.Core",
 )
 
+# Namespaces that live under a SIL_PREFIX but are NOT part of the contract
+# this file describes.
+#
+# The contract is a promise that every type flexicon imports can be resolved
+# out of the libraries flexicon requires -- TestLiveContractVerification
+# reflects each one and fails if it is missing. That promise only makes sense
+# for a REQUIRED library.
+#
+# ParserCore is an OPTIONAL component, and its optionality is a requirement
+# rather than an accident: flexicon/code/Parser/ imports it function-locally
+# precisely so that `import flexicon` keeps working on a machine where the
+# component is missing, renamed or relocated, degrading to "parser
+# unavailable" instead of failing to import (FR-003). Letting HCParser into
+# the contract would invert that: the snapshot generator does not load
+# ParserCore.dll, so the type reports as missing, and "fixing" it by loading
+# the assembly would make a contract test require the very component the
+# package promises to work without.
+#
+# Whether the parser surface exists is checked where it belongs -- against
+# the real installed component, by tests/test_parser_reflective.py (tier A2)
+# and at runtime by ParserOperations.GetAvailability().
+NON_CONTRACT_PREFIXES = ("SIL.FieldWorks.WordWorks.Parser",)
+
 
 def _is_sil_module(module_name):
     """Check if a module name is from the SIL/LCM ecosystem."""
     if module_name is None:
+        return False
+    if any(module_name.startswith(p) for p in NON_CONTRACT_PREFIXES):
         return False
     return any(module_name.startswith(p) for p in SIL_PREFIXES)
 

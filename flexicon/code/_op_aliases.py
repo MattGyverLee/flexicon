@@ -81,6 +81,7 @@ OP_NAMESPACE_ALIASES = {
     "MSAs": "MSA",
     "Etymologies": "Etymology",
     "GramCats": "GramCat",
+    "Parsers": "Parser",
 }
 
 

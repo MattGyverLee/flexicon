@@ -167,7 +167,7 @@ behaviour that should be unconditional" anti-pattern (compare C8 of
 `specs/242-paragraph-whitespace/spec.md`). The `clone_properties` /
 `NewObject(ClassID)` machinery in those blocks is deleted, and so are the two
 bare `except Exception: pass` swallows. **`deep` stays in the signature** --
-it is pinned in `EnvironmentOperations.pyi:19` (`deep: bool = True`) -- but
+it is pinned in `EnvironmentOperations.pyi:18` (`deep: bool = True`) -- but
 becomes inert for this method and must be documented as such in the docstring
 and CHANGELOG. See Q4.
 
@@ -339,7 +339,7 @@ still small enough to review cheaply.
 Recorded so later readers trust the reports with the right caveats.
 
 - **`cycle1-explore.md` (c), `.pyi` claim -- PARTLY WRONG.**
-  `EnvironmentOperations.pyi:19` **does** pin
+  `EnvironmentOperations.pyi:18` **does** pin
   `Duplicate(item_or_hvo, insert_after=True, deep=True)`. Explore's "no stub
   edit required" holds only for `GetLeftContextPattern`/
   `GetRightContextPattern`, which are indeed absent from the stub. The `deep`

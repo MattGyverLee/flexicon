@@ -31,6 +31,11 @@ from ..FLExProject import (
     FP_ParameterError,
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
+from ..lcm_casting import (
+    get_inflection_class_from_msa,
+    set_inflection_class_on_msa,
+    INFLECTION_CLASS_BEARING_MSA_CLASSES,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -286,7 +291,11 @@ class WfiMorphBundleOperations(BaseOperations):
             - Factory.Create() automatically generates a new GUID
             - insert_after=True preserves the original bundle's position in sequence
             - Simple properties copied: Form, Gloss (MultiStrings)
-            - Reference properties copied: SenseRA, MsaRA, MorphRA, InflClassRA
+            - Reference properties copied: SenseRA, MsaRA, MorphRA
+            - IWfiMorphBundle has no InflClassRA member of its own; the
+              inflection class lives on the MSA (IMoStemMsa.InflectionClassRA)
+              and rides along automatically because MsaRA is copied by
+              reference, not cloned. See GetInflectionClass.
             - WfiMorphBundle has no owned objects, so deep parameter has no effect
             - Useful for creating similar morpheme analyses or templates
 
@@ -332,8 +341,18 @@ class WfiMorphBundleOperations(BaseOperations):
                 duplicate.MsaRA = source.MsaRA
             if hasattr(source, "MorphRA") and source.MorphRA:
                 duplicate.MorphRA = source.MorphRA
-            if hasattr(source, "InflClassRA") and source.InflClassRA:
-                duplicate.InflClassRA = source.InflClassRA
+
+            # No separate inflection-class copy is needed: IWfiMorphBundle
+            # has no InflClassRA member (the "hasattr(source, 'InflClassRA')"
+            # guard that used to gate this block was always False, and the
+            # dead body underneath it wrote a nonexistent
+            # `duplicate.InflClassRA`). The inflection class lives on the
+            # MSA (IMoStemMsa.InflectionClassRA), and the MsaRA assignment
+            # just above already copies that MSA REFERENCE (not a clone),
+            # so the duplicate bundle automatically sees the same
+            # inflection class its source sees, via the same MSA object.
+            # See get_inflection_class_from_msa() in lcm_casting.py for the
+            # read path (issue #259 / lcm-member-truth-sweep C10/T4.2).
 
             # Note: WfiMorphBundle has no owned objects (OS collections), so deep has no effect
 
@@ -364,7 +383,13 @@ class WfiMorphBundleOperations(BaseOperations):
               (IWfiMorphBundle has no Gloss field of its own; the
               displayed gloss is derived from SenseRA.Gloss -- see
               GetGloss for the read path.)
-            - Reference Atomic properties: SenseRA, MsaRA, MorphRA, InflClassRA (GUIDs)
+            - Reference Atomic properties: SenseRA, MsaRA, MorphRA (GUIDs)
+            - InflClassRA (GUID) is also included, but IWfiMorphBundle has
+              no InflClassRA member of its own -- the value is read from
+              the linked MSA (IMoStemMsa.InflectionClassRA) via
+              get_inflection_class_from_msa(). The "InflClassRA" key name
+              is kept for sync-format stability even though the LCM
+              navigation path has changed.
         """
         props = {}
 
@@ -382,8 +407,18 @@ class WfiMorphBundleOperations(BaseOperations):
         if hasattr(item, "MorphRA") and item.MorphRA:
             props["MorphRA"] = str(item.MorphRA.Guid)
 
-        if hasattr(item, "InflClassRA") and item.InflClassRA:
-            props["InflClassRA"] = str(item.InflClassRA.Guid)
+        # IWfiMorphBundle has no InflClassRA member of its own -- the
+        # inflection class lives on the linked MSA
+        # (IMoStemMsa.InflectionClassRA). The "InflClassRA" key name is
+        # kept for sync-format stability: existing sync payloads/diff tools
+        # already key on it, and the field's *meaning* to a sync consumer
+        # (the bundle's effective inflection class) is unchanged -- only
+        # the LCM navigation path used to compute the value has changed.
+        # See get_inflection_class_from_msa() (issue #259 /
+        # lcm-member-truth-sweep C10/T4.3).
+        infl_class = get_inflection_class_from_msa(getattr(item, "MsaRA", None))
+        if infl_class is not None:
+            props["InflClassRA"] = str(infl_class.Guid)
 
         return props
 
@@ -1245,7 +1280,16 @@ class WfiMorphBundleOperations(BaseOperations):
             Inflection class: strong verb
 
         Notes:
-            - Returns None if inflection class not set
+            - IWfiMorphBundle has no InflClassRA member of its own. The
+              inflection class actually lives on the bundle's MSA
+              (IMoStemMsa.InflectionClassRA), and this method navigates
+              bundle.MsaRA -> cast_to_concrete() -> IMoStemMsa ->
+              InflectionClassRA on the caller's behalf (see
+              get_inflection_class_from_msa() in lcm_casting.py).
+            - Returns None if the bundle's MsaRA is null, if the MSA is a
+              non-stem subtype (MoDerivAffMsa, MoInflAffMsa,
+              MoUnclassifiedAffixMsa -- none of which carry a plain
+              InflectionClassRA), or if the stem MSA has no class set.
             - Inflection classes categorize inflectional paradigms
             - Examples: strong verb, weak verb, irregular, etc.
             - Relevant mainly for inflectional morphology
@@ -1258,7 +1302,13 @@ class WfiMorphBundleOperations(BaseOperations):
         self._ValidateParam(bundle_or_hvo, "bundle_or_hvo")
 
         bundle = self.__GetBundleObject(bundle_or_hvo)
-        return bundle.InflClassRA if bundle.InflClassRA else None
+        # IWfiMorphBundle has no InflClassRA member of its own (issue #259
+        # / lcm-member-truth-sweep C10). The inflection class lives on the
+        # bundle's MSA (IMoStemMsa.InflectionClassRA); get_inflection_class_from_msa()
+        # navigates MsaRA -> cast -> narrow to IMoStemMsa -> InflectionClassRA,
+        # returning None for a null MsaRA or a non-stem MSA subtype without
+        # ever raising.
+        return get_inflection_class_from_msa(bundle.MsaRA)
 
     @OperationsMethod
     def SetInflectionClass(self, bundle_or_hvo, infl_class_or_hvo):
@@ -1272,6 +1322,9 @@ class WfiMorphBundleOperations(BaseOperations):
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If bundle_or_hvo is None.
+            FP_ParameterError: If the bundle's MSA is null, or is not a
+                MoStemMsa (the only MSA subtype with a plain
+                InflectionClassRA) -- there is no writable target.
 
         Example:
             >>> morphBundleOps = WfiMorphBundleOperations(project)
@@ -1287,6 +1340,33 @@ class WfiMorphBundleOperations(BaseOperations):
             >>> morphBundleOps.SetInflectionClass(bundles[0], None)
 
         Notes:
+            - IWfiMorphBundle has no InflClassRA member of its own (issue
+              #259 / lcm-member-truth-sweep C10/C11). The inflection class
+              actually lives on the bundle's MSA
+              (IMoStemMsa.InflectionClassRA), reached via bundle.MsaRA --
+              this method navigates MsaRA -> cast_to_concrete() ->
+              IMoStemMsa -> InflectionClassRA on the caller's behalf (see
+              set_inflection_class_on_msa() in lcm_casting.py, and
+              GetInflectionClass for the read side of the same
+              navigation).
+            - IMPORTANT -- this is a per-MSA write, not a per-bundle write:
+              MoStemMsa is owned by the ILexEntry and is exactly what
+              LexSense.MorphoSyntaxAnalysisRA points to as "Grammatical
+              Info." WfiMorphBundle.MsaRA is a pure reference into that
+              *same* MSA object. Calling this method therefore changes the
+              inflection class for the shared MSA, and the new value is
+              immediately visible to every other morph bundle and lex
+              sense that references it -- not just bundle_or_hvo. This
+              matches FLEx's own UI behaviour (editing Inflection Class on
+              a sense's Grammatical Info Details is a lexicon-level edit),
+              and a print()-style NOTE is emitted each call to make the
+              fan-out visible to the caller.
+            - Raises FP_ParameterError rather than silently no-op'ing when
+              there is no writable target: a null MsaRA, or an MSA that is
+              not a MoStemMsa (MoInflAffMsa, MoUnclassifiedAffixMsa have no
+              inflection-class member at all; MoDerivAffMsa instead carries
+              From/ToInflectionClassRA -- a different pair of properties
+              this method deliberately does not touch).
             - Inflection class specifies paradigm membership
             - Setting to None clears the class reference
             - Relevant for stems with inflectional variants
@@ -1309,8 +1389,40 @@ class WfiMorphBundleOperations(BaseOperations):
         else:
             infl_class = self.__GetInflectionClassObject(infl_class_or_hvo)
 
+        # IWfiMorphBundle has no InflClassRA member of its own (issue #259
+        # / lcm-member-truth-sweep C10/C11). Validate the write target
+        # OUTSIDE the transaction, same as the reference-resolution above,
+        # so an unwritable MSA raises without opening an empty undo task.
+        msa = bundle.MsaRA
+        msa_class_name = getattr(msa, "ClassName", None)
+        if msa is None or msa_class_name not in INFLECTION_CLASS_BEARING_MSA_CLASSES:
+            msa_desc = "null" if msa is None else f"ClassName={msa_class_name}"
+            message = (
+                f"Cannot set inflection class: bundle's MSA is {msa_desc}; "
+                f"only MoStemMsa carries InflectionClassRA."
+            )
+            if msa_class_name == "MoDerivAffMsa":
+                message += (
+                    " MoDerivAffMsa carries From/ToInflectionClassRA "
+                    "instead (a different pair of properties this method "
+                    "deliberately does not touch)."
+                )
+            raise FP_ParameterError(message)
+
+        # QUALITATIVE warning only -- deliberately not an exact fan-out
+        # count. Scanning IWfiMorphBundleRepository.AllInstances() per call
+        # would turn this per-object setter's O(n) usage into O(n^2) (issue
+        # #259 / lcm-member-truth-sweep C11 ruling, point 4). Uses the
+        # print()-style precedent (CLAUDE.md "Warn on Type Mismatch, Don't
+        # Block"), not warnings.warn().
+        print(
+            "NOTE: inflection class is stored on the shared MSA, not the "
+            "bundle; this change will be visible to every other morph "
+            "bundle and sense referencing the same MSA."
+        )
+
         with self._TransactionCM("Set morph bundle inflection class"):
-            bundle.InflClassRA = infl_class
+            set_inflection_class_on_msa(msa, infl_class)
 
     # ==================== UTILITY OPERATIONS ====================
 

@@ -11,6 +11,106 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+---
+
+## [4.9.0] - 2026-09-19
+
+> **Adds `project.Parser` -- a read-only view of the FieldWorks parser --
+> plus three read accessors and a new `"parser"` capability token.**
+> Everything here is additive: nothing is removed, no signature changes,
+> and no default changes meaning.
+>
+> Two things to know before you call the parser surface:
+>
+> 1. **`"parser" in flexicon.CAPABILITIES` does not mean a parser is
+>    reachable.** The token means *this build ships the surface*. Whether
+>    the machine running your code can actually reach a parser is a
+>    separate question, answered only by
+>    `project.Parser.GetAvailability()`. Inferring availability from the
+>    token is the one misreading that turns a graceful degrade into a
+>    crash.
+> 2. **Asking never raises; calling does.** On a machine with no parser
+>    component -- or a relocated or foreign one -- `GetAvailability()`
+>    returns `available=False` with a reason, and `import flexicon` still
+>    succeeds. Only calling an operation raises, and it carries that same
+>    reason.
+>
+> Also in this cut, and worth reading even if you never touch the parser
+> API directly: an unrestricted trace passed an *empty* restriction to the
+> parser component instead of a null, silently zeroing every later parse
+> of the same word. See **Fixed**.
+
+### Added
+
+- **`project.Parser` -- a read-only parser surface** (new package
+  `flexicon/code/Parser/`). `ParserOperations` exposes exactly six public
+  methods: `GetAvailability`, `ParseWord`, `ParseWordXml`, `TraceWordXml`,
+  `Reload` and `IsUpToDate`. The class is exported top-level as
+  `flexicon.ParserOperations`.
+
+  **No operation records, files or writes a parse result.** Parsing in
+  FLEx normally deposits analyses in the database; nothing here does. That
+  is enforced by a test asserting the public surface by *set equality*,
+  so a future write method cannot be added without the test failing --
+  a reviewer reading method names is not the guarantee.
+
+- **`ParserAvailability`** -- a value object with `available`, `reason`
+  and `version`, returned by `project.Parser.GetAvailability()`. This is
+  the package's first degrade-with-a-reason return: where the rest of
+  flexicon raises on a missing prerequisite, asking about the parser is
+  always safe and the reason travels with the negative answer.
+
+  The parser component is loaded **by use, never by import**, so
+  `import flexicon` works unchanged on a machine with no parser
+  component at all.
+
+  Availability is two checks, and **neither reads a version number**: the
+  component must resolve from the same directory the loaded data model
+  came from, and every member this class calls must be present on it. The
+  detected version is reported in `ParserAvailability.version` and never
+  compared against anything. Note the honest limit of the first check --
+  it is **directory equality only**. It catches two FieldWorks
+  installations accidentally mixed in one process; it does not detect a
+  substituted file in the right directory.
+
+- **`Reload()` is reset-then-update, in two steps.** The component's bare
+  update short-circuits when it believes nothing has changed, so a
+  one-step reload would have silently served the next parse from the very
+  grammar the caller asked to discard. Verified live: the bare update does
+  not replace the internal morpher; the two-step reload does.
+
+  At most one grammar is held at a time, for the project in use, and its
+  currency is asked of the parser before every reuse -- never cached in a
+  local flag that can drift from the component's own answer.
+
+- **`project.Texts.GetGenres(text)`** -- every genre assigned to a text,
+  as a list, empty when the text has none. The existing singular
+  `GetGenre` is unchanged.
+
+- **`project.Allomorphs.GetOwningEntry(allomorph_or_hvo)`** -- the owning
+  `ILexEntry`, or `None`. It resolves through the ownership chain with a
+  null guard rather than taking a single `.Owner` hop, which is what a
+  caller writing the hop by hand usually gets wrong.
+
+- **`project.MSA.GetAll(entry_or_hvo=None)`** -- reads
+  `MorphoSyntaxAnalyses` and returns the existing `MSACollection` of
+  `MorphosyntaxAnalysis` wrappers. Callers never see a `ClassName` or
+  write a cast.
+
+  These three accessors are plain LCM reads and work on any machine,
+  including one with no parser component.
+
+- **`flexicon.CAPABILITIES` gains `"parser"`.** The token is
+  **build-dependent, not machine-dependent**: it says this build ships
+  the parser surface, *not* that the process reading it can reach a
+  parser. Probe `project.Parser.GetAvailability()` for that; see the
+  release preamble above.
+
+### Deprecated
+
+- **`project.Parsers`** is a deprecated alias for **`project.Parser`**.
+  It still works; prefer the singular.
+
 ### Fixed
 
 - **`FLExProject.Object()` leaked a raw CLR exception for a stale id**
@@ -43,6 +143,21 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `docs/EXCEPTION_HANDLING.md`, which previously documented the raw CLR
   type as the contract, has been updated.
 
+- **An unrestricted trace poisoned every later parse of the same word**
+  -- found by live verification. `TraceWordXml` passed an *empty*
+  restriction to the parser component where it should have passed a null.
+  The component reads those as near-opposites: null means "no
+  restriction", empty means "admit nothing". Worse, the setting outlives
+  the call and a plain parse never resets it, so the failure was silent
+  and sticky -- a word that parsed with one analysis returned **zero**
+  analyses from then on, indefinitely, with no error anywhere.
+
+  Now: `None` passes a null; an empty sequence is **refused** with
+  `FP_ParameterError` rather than quietly widened into "no restriction",
+  because the two intents are not interchangeable and guessing is how
+  this bug happened; and a real restriction is cleared before the next
+  plain parse.
+
 - **`TextOperations.Delete()` never deleted anything** (#317). It called
   `lp.Texts.Remove(text_obj)`, but `ILangProject.Texts` is a derived
   read-only `IList<IText>` rebuilt on each access -- texts are *unowned*
@@ -60,6 +175,28 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   object -- and has been removed so it stops implying `lp.Texts` is
   writable. Issue #22 read the disappearance of `TextsOC` as a rename; it
   was an ownership-model change.
+
+- **`EnvironmentOperations` context accessors read a property name that
+  does not exist on `IPhEnvironment`** (#283). `GetLeftContextPattern()` /
+  `GetRightContextPattern()` read `LeftContextOA`/`RightContextOA`, and
+  `Duplicate()`'s deep-copy block wrote the same names -- but
+  `IPhEnvironment` has no Owning Atomic context member under either name;
+  the real properties are `LeftContextRA`/`RightContextRA` (Reference
+  Atomic). Every `hasattr()` guard against the old names was silently
+  `False`, so the getters always returned `None` and `Duplicate` silently
+  dropped both contexts on every call, for every environment, regardless
+  of the `deep` argument.
+
+  Now fixed to read/write the real names. `Duplicate()` copies
+  `LeftContextRA`/`RightContextRA` by **reference, unconditionally** --
+  under Reference Atomic there is nothing to clone, so the duplicate
+  environment points at the same `IPhPhonContext` objects as the source.
+  The `deep` parameter stays in the signature (it is pinned surface,
+  `EnvironmentOperations.pyi:18`) but is now **inert** for context
+  copying; no caller in this codebase ever passed `deep=False` to this
+  method (the only prior `deep=False` reference was a docstring example).
+  The `clone_properties`/`ObjectRepository.NewObject(ClassID)` machinery
+  and its two bare `except Exception: pass` swallows have been removed.
 
 ---
 
@@ -2557,4 +2694,3 @@ See CONTRIBUTING.md for guidelines on contributing to Flexicon.
 - **v2.1.x**: Legacy, security fixes only
 - **v2.0.x**: End of life
 - **v1.x**: End of life
-

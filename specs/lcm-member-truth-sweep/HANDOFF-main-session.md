@@ -26,9 +26,22 @@ arrived.
    `dispatch_plan` block the ENTIRE BODY of your hand-back report -- not a
    description of it, not a claim that it exists elsewhere."*
 2. If it still does not arrive, do **not** retry a fourth time and do not
-   reconstruct the prompts from lex-lead's prose summary. Extract the real
-   block from its transcript. The transcript is large (300KB+ of JSONL) --
-   never `cat`/`tail` it. Parse it:
+   reconstruct the prompts from lex-lead's prose summary.
+
+   **-- CHECK THIS BEFORE RELYING ON THE SNIPPET BELOW (spurt 4, 2026-09-18). --**
+   The transcript-extraction fallback **did not work** in the spurt-4 session.
+   It is not that the parse failed: every subagent `output_file` under
+   `.../tasks/*.output` was **0 bytes**, for all eleven agents of that
+   session, so there was nothing to parse. The block lex-lead believed it had
+   emitted was simply gone. Recovery there was a `SendMessage` back to the
+   same agent (which resumes it with its context intact, so it can re-emit the
+   block cheaply without re-deriving the plan) -- prefer that over a fresh
+   `Agent` call, which would re-plan from scratch.
+
+   Treat the snippet as conditional: `stat` the `output_file` first, and only
+   parse it if it is non-empty. When it is empty, fall back to `SendMessage`.
+   Where the transcript IS populated, it is large (300KB+ of JSONL) -- never
+   `cat`/`tail` it. Parse it:
 
 ```python
 # adapt the path; the agent's output_file is given in its spawn result
@@ -152,10 +165,16 @@ Stop and surface to the user -- do not let the loop proceed -- when:
 - The next step would be a **destructive live-LCM write** (e.g. writing to a
   target that must be `-restore`d first). The loop must never do this
   unattended.
-- **T2.7 / T8.4 -- the known upcoming gate.** Catalogue 2's sibling issues
-  are drafted by the crew into `proposed-issues.md` but **filing requires
-  the user's approval**. Before any `gh issue create`, run
-  `gh repo set-default MattGyverLee/flexicon` -- with no default, `gh`
+- **T2.7 / T8.4 -- gate LIFTED 2026-09-18.** The user authorized filing
+  directly ("you can file the issues. don't wait for me"), so the crew may
+  run `gh issue create` for the Catalogue 2 batch on
+  `MattGyverLee/flexicon` without pausing. `gh repo set-default
+  MattGyverLee/flexicon` has been run in this clone. The authorization
+  covers **filing only** -- it does not authorize closing #302/#261/#283/
+  #259/#303/#309, and it does not relax the destructive-live-write stop
+  condition. Catalogue 2's sibling issues are still drafted into
+  `proposed-issues.md` first, so the filed text is reviewable.
+  The `set-default` step is not optional: with no default, `gh`
   prefers `upstream` (`cdfarrow/flexlibs`), whose numbering tops out near
   #17, so every issue this project cites returns "Could not resolve to an
   issue", which reads exactly like "it does not exist."

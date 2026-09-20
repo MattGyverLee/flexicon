@@ -10,6 +10,58 @@ None
 
 ## History
 
+### 2026-09-19 - v4.9.0: the parser becomes reachable, read-only
+
+Makes the FieldWorks morphological parser addressable from a script as
+`project.Parser`, read-only. Three of its decisions are worth recording,
+because each was a judgement rather than a transcription of the
+component underneath.
+
+**It degrades instead of exploding.** The parser lives in a FieldWorks
+component this package does not install and deliberately does not
+require, so asking whether a parser is reachable never raises:
+`GetAvailability()` returns a `ParserAvailability` carrying `available`,
+a `reason`, and the detected version. That is the package's first
+degrade-with-a-reason return -- before it, flexicon had exactly two
+behaviours, raise or silently become `None`. The component is loaded by
+use and never by import, so `import flexicon` still works on a machine
+with no parser on it at all.
+
+**The reload is two steps, and that was the whole point.** `Reload()`
+resets and then updates. The component's own update is guarded by a
+condition that short-circuits when it believes the model has not
+changed, so a one-step reload would have returned having discarded
+nothing, and served the next parse from the very grammar the caller
+asked to throw away -- a guarantee that is fiction. The two-step binding
+was chosen from the component's source and then *witnessed* live: with
+nothing changed, a bare update does not replace the parser's internal
+morpher, and the reload does. The converse branch -- a genuinely stale
+grammar, where the reload has to pick a change up -- is NOT verified
+live. Provoking it needs a write, so it is deferred to a later
+checkpoint and should not be read as proven.
+
+**Live verification earned its keep.** The offline suite was green, all
+four structural ratchets were green, and the facade was still returning
+wrong answers. An unrestricted trace was passing an *empty* restriction
+to the component instead of a null, and the component reads those two as
+near-opposites: null means "no restriction", empty means "admit
+nothing". Worse, the setting outlives the call, and a plain parse never
+resets it -- so a word that parsed with one analysis returned zero
+afterwards, indefinitely, with no exception to notice. Only running it
+against a real grammar found it. That is the argument for the live tier
+in one sentence: structural tests confirm the shape of the code, not the
+meaning of its arguments.
+
+**Also in the release:** three read gaps closed that need no parser
+component at all -- all genres on a text (`Texts.GetGenres`), the entry
+owning an allomorph (`Allomorphs.GetOwningEntry`), and morpho-syntactic
+analyses as wrapped objects (`MSA.GetAll`).
+
+`CAPABILITIES` gains `"parser"`, which means *this build ships the
+surface* -- pointedly not *a parser is reachable here*. That stays a
+runtime question, and `GetAvailability()` is the only honest way to ask
+it.
+
 ### 2026-09-10 - v4.8.0 release cut: the silent-failure sweep
 
 Cuts v4.8.0 from `main`. Bumps `flexicon/__init__.py` to 4.8.0, promotes

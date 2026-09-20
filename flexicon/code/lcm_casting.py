@@ -738,6 +738,148 @@ def get_pos_from_msa(msa):
     return None
 
 
+# MSA ClassName -> the property that holds its Inflection Class reference.
+# Only MoStemMsa exposes a plain InflectionClassRA. MoDerivAffMsa instead
+# splits inflection-class information across FromInflectionClassRA /
+# ToInflectionClassRA (a different pair of properties, handled separately
+# by MSAOperations.ChangeAffixVariant), and MoInflAffMsa /
+# MoUnclassifiedAffixMsa have no inflection-class member at all. This is
+# the single source of truth for "does this MSA subtype carry a plain
+# InflectionClassRA" -- confirmed by live reflection against 1838 Sena 3
+# bundles (1144 non-stem MSAs raise AttributeError on unguarded
+# .InflectionClassRA); see issue #259 / lcm-member-truth-sweep ruling C10.
+_MSA_INFLECTION_CLASS_PROPERTY = {
+    "MoStemMsa": "InflectionClassRA",
+}
+
+# Public: exported for callers that need to know whether an MSA ClassName
+# carries a plain InflectionClassRA without re-literalizing the class name.
+INFLECTION_CLASS_BEARING_MSA_CLASSES = frozenset(_MSA_INFLECTION_CLASS_PROPERTY)
+
+
+def get_inflection_class_from_msa(msa):
+    """
+    Get the inflection class (IMoInflClass) from an MSA, if any.
+
+    ``IWfiMorphBundle`` has no ``InflClassRA`` member of its own -- the
+    inflection class lives on the bundle's linked MSA
+    (``IMoStemMsa.InflectionClassRA``), reached via ``bundle.MsaRA``. This
+    is the single navigation path for that lookup: callers should not
+    re-implement "MsaRA -> cast -> narrow to IMoStemMsa -> InflectionClassRA"
+    at each call site (issue #259 / lcm-member-truth-sweep C10).
+
+    Args:
+        msa: An MSA object (``IMoMorphSynAnalysis`` or a derived type), or
+            ``None``.
+
+    Returns:
+        IMoInflClass or None: The inflection class if ``msa`` is a
+        ``MoStemMsa`` with one set. Returns ``None`` for a ``None`` msa,
+        for any non-stem MSA subtype (``MoDerivAffMsa``, ``MoInflAffMsa``,
+        ``MoUnclassifiedAffixMsa``), and for a ``MoStemMsa`` with no
+        inflection class set. Never raises.
+
+    Example::
+
+        from flexicon.code.lcm_casting import get_inflection_class_from_msa
+
+        infl_class = get_inflection_class_from_msa(bundle.MsaRA)
+        if infl_class:
+            name = infl_class.Name.BestAnalysisAlternative.Text
+
+    Notes:
+        - Returns None rather than raising exceptions for robustness.
+        - Deliberately does NOT fall back to
+          MoDerivAffMsa.FromInflectionClassRA/ToInflectionClassRA -- those
+          are a different pair of properties with different semantics; use
+          cast_to_concrete() directly if you need one of them.
+    """
+    if msa is None:
+        return None
+
+    _ensure_interfaces()
+
+    if not hasattr(msa, "ClassName"):
+        return None
+
+    class_name = msa.ClassName
+
+    infl_class_property = _MSA_INFLECTION_CLASS_PROPERTY.get(class_name)
+    if infl_class_property is None:
+        # Not a stem MSA -- no plain InflectionClassRA on this subtype.
+        return None
+
+    try:
+        interface_type = _interface_cache.get(class_name)
+        if interface_type:
+            concrete = interface_type(msa)
+            return getattr(concrete, infl_class_property)
+
+    except Exception:
+        # If anything fails, return None rather than crashing
+        pass
+
+    return None
+
+
+def set_inflection_class_on_msa(msa, infl_class):
+    """
+    Set the inflection class (IMoInflClass) on an MSA's InflectionClassRA,
+    if that MSA subtype carries one.
+
+    Mirrors ``get_inflection_class_from_msa()``'s navigation for the write
+    side: ``msa`` -> ``cast_to_concrete()`` -> narrow to ``IMoStemMsa`` ->
+    set ``InflectionClassRA``. This is the single navigation path for that
+    write: callers should not re-implement it at each call site (issue #259
+    / lcm-member-truth-sweep C10/C11).
+
+    Args:
+        msa: An MSA object (``IMoMorphSynAnalysis`` or a derived type), or
+            ``None``.
+        infl_class: The ``IMoInflClass`` to assign, or ``None`` to clear it.
+
+    Returns:
+        bool: True if ``msa`` is a ``MoStemMsa`` and its
+        ``InflectionClassRA`` was set to ``infl_class``. False if ``msa``
+        is ``None`` or its ``ClassName`` is not ``MoStemMsa`` -- there was
+        no writable target, and nothing was changed.
+
+    Notes:
+        - Never raises for a ``None`` or non-stem ``msa``; returns False
+          instead so callers can build their own diagnostic naming the
+          actual MSA state (see
+          ``WfiMorphBundleOperations.SetInflectionClass``, which raises
+          ``FP_ParameterError`` with the bundle's MSA ``ClassName``).
+        - Deliberately does NOT fall back to
+          ``MoDerivAffMsa.FromInflectionClassRA``/``ToInflectionClassRA`` --
+          those are a different pair of properties with different
+          semantics; use ``cast_to_concrete()`` directly if you need one of
+          them.
+        - Because an MSA (``IMoStemMsa``) is typically shared -- referenced
+          by ``LexSense.MorphoSyntaxAnalysisRA`` and by every
+          ``WfiMorphBundle.MsaRA`` that points at it -- writing through
+          this helper changes the value for every bundle and sense that
+          shares the MSA. That fan-out is correct FLEx behaviour (the MSA
+          *is* the shared "Grammatical Info"), not a bug; see the #259
+          domain ruling.
+    """
+    if msa is None:
+        return False
+
+    _ensure_interfaces()
+
+    if not hasattr(msa, "ClassName"):
+        return False
+
+    if msa.ClassName not in _MSA_INFLECTION_CLASS_PROPERTY:
+        return False
+
+    infl_class_property = _MSA_INFLECTION_CLASS_PROPERTY[msa.ClassName]
+    concrete = cast_to_concrete(msa)
+    setattr(concrete, infl_class_property, infl_class)
+    return True
+
+
 def clone_properties(source_obj, dest_obj, project=None):
     """
     Deep clone all properties from source object to destination object.

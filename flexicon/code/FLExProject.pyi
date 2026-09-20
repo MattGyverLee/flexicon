@@ -55,6 +55,7 @@ from .System.CustomFieldOperations import CustomFieldOperations
 from .System.ProjectSettingsOperations import ProjectSettingsOperations
 from .System.AnnotationDefOperations import AnnotationDefOperations
 from .System.CheckOperations import CheckOperations
+from .Parser.ParserOperations import ParserOperations
 
 # Exception classes
 class FP_ProjectError(Exception):
@@ -197,6 +198,10 @@ class FLExProject:
     def AnnotationDefs(self) -> AnnotationDefOperations: ...
     @property
     def Checks(self) -> CheckOperations: ...
+
+    # Parser operations (read-only)
+    @property
+    def Parser(self) -> ParserOperations: ...
 
     # Lifecycle methods
     def OpenProject(self, projectName: str, writeEnabled: bool = False) -> None: ...

@@ -293,6 +293,11 @@ from .code.Discourse.ConstChartMovedTextOperations import (
     ConstChartMovedTextOperations,
 )
 
+# Parser Operations
+from .code.Parser.ParserOperations import (
+    ParserOperations,
+)
+
 # Pythonic Wrapper - suffix-free property access
 from .code.PythonicWrapper import (
     wrap,
@@ -371,6 +376,7 @@ __all__ = [
     "OverlayOperations",
     "POSOperations",
     "ParagraphOperations",
+    "ParserOperations",
     "PersonOperations",
     "PhonFeatureOperations",
     "PhonemeOperations",

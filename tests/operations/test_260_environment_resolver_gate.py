@@ -77,12 +77,16 @@
 #          `GetRightContextPattern` / `Duplicate`'s deep-copy block all
 #          read this same nonexistent property name and therefore return
 #          `None` / copy nothing for EVERY environment, unconditionally,
-#          regardless of any cast. This is a SEPARATE, pre-existing bug
+#          regardless of any cast. This WAS a SEPARATE, pre-existing bug
 #          (wrong property name), independent of the missing-cast defect
-#          this task fixes, and OUT OF SCOPE for T2 -- flagged for a new
-#          issue, not fixed here (see cycle2-programmer.md).
-#          TestP7DiscoveredWrongPropertyName below locks the DISCOVERY
-#          (the real property names), not a fix.
+#          this task fixes, and was OUT OF SCOPE for T2 -- flagged for a
+#          new issue, not fixed here (see cycle2-programmer.md).
+#          TestP7DiscoveredWrongPropertyName below locked the DISCOVERY
+#          (the real property names). The fix itself has since landed
+#          under #283 (specs/lcm-member-truth-sweep/spec.md C7/C8):
+#          production now reads/writes LeftContextRA/RightContextRA, and
+#          the class below carries a seeded case proving the getter
+#          returns the real context -- see that class's docstring.
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+
@@ -271,11 +275,20 @@ class TestP7DiscoveredWrongPropertyName:
     Atomic), NOT `LeftContextOA`/`RightContextOA` (Owning Atomic, which
     do not exist anywhere in the LCM API for this type).
     GetLeftContextPattern / GetRightContextPattern / Duplicate's deep-copy
-    block all read the nonexistent name, so they return None / copy
-    nothing for EVERY environment, cast or not. This is a separate,
-    pre-existing bug, out of scope for this cast-only task -- this class
-    locks the DISCOVERY, not a fix, so a future sweep has a live,
-    reproducible anchor instead of having to re-derive it.
+    block all read the nonexistent name, so they returned None / copied
+    nothing for EVERY environment, cast or not. This was a separate,
+    pre-existing bug, out of scope for the cast-only #260 task -- this
+    class originally locked the DISCOVERY, not a fix, so a future sweep
+    would have a live, reproducible anchor instead of having to re-derive
+    it.
+
+    INVERTED under specs/lcm-member-truth-sweep/spec.md C8/C7 (#283): the
+    discovery led directly to the fix, which now reads/writes
+    LeftContextRA/RightContextRA in Grammar/EnvironmentOperations.py. The
+    no-context assertion below is KEPT (it is still true, for a different
+    reason -- there is genuinely no context to find on a freshly-created
+    environment) and a new seeded case is ADDED to prove the getter now
+    returns the real, populated context.
     """
 
     @pytest.mark.live_phase("EnvironmentOperations", "read")
@@ -302,18 +315,107 @@ class TestP7DiscoveredWrongPropertyName:
             "this test to justify filing a new issue."
         )
 
-        # Confirm the ACTUAL production method returns None even on an
-        # already-typed object -- not because of the missing cast (this
-        # object needs no resolving), but because the property name it
-        # reads does not exist.
+        # NO-CONTEXT CASE (kept, not inverted -- see class docstring and
+        # specs/lcm-member-truth-sweep/spec.md C8). This still asserts
+        # None, but now for the genuine reason: a freshly-created
+        # environment has no context assigned at all. Before the #283
+        # fix it was ALSO None, but for the wrong reason (the property
+        # name being read did not exist). See
+        # test_left_context_returns_seeded_context_by_reference below
+        # for the case that proves the getter now works when a context
+        # IS assigned.
         env = sandbox.Environments.Create(f"{TEST_PREFIX}260_p7_wrongname")
         try:
             result = sandbox.Environments.GetLeftContextPattern(env)
             assert result is None, (
-                "GetLeftContextPattern returned non-None on an "
-                "already-typed object with no context ever set -- the "
-                "baseline this discovery rests on no longer holds; "
-                "re-derive before citing it."
+                "GetLeftContextPattern returned non-None on a freshly "
+                "created environment with no context ever set -- the "
+                "no-context baseline no longer holds; re-derive before "
+                "citing it."
             )
         finally:
             sandbox.Environments.Delete(env)
+
+    @pytest.mark.live_phase("EnvironmentOperations", "add")
+    def test_left_context_returns_seeded_context_by_reference(
+        self, sena3_sandbox
+    ):
+        """
+        Seeded inversion of the P7 discovery (specs/lcm-member-truth-sweep/
+        spec.md C7/C8, #283): once a real IPhPhonContext is assigned to
+        LeftContextRA, GetLeftContextPattern must return it -- proven by
+        HVO equality against a fresh re-read from the LCM, not against the
+        value just assigned.
+
+        Uses `sena3_sandbox` (not `target_sandbox`) because seeding a
+        legal IPhSimpleContextSeg requires an existing IPhPhoneme, and
+        Sena 3 is the populated project (target is "mostly blank
+        scratch" -- see CLAUDE.md's Live LCM Verification table); the
+        seeding mechanics below follow the exact pattern proven live in
+        test_lcm_member_truth_sweep.py::test_2d_seed_and_observe_
+        duplicate_reference_semantics.
+        """
+        from SIL.LCModel import (
+            IPhSimpleContextSegFactory,
+            IPhPhonemeRepository,
+            IPhEnvironment,
+        )
+
+        project = sena3_sandbox
+        envs = project.Environments
+
+        phonemes = list(project.ObjectsIn(IPhPhonemeRepository))
+        assert phonemes, (
+            "Sena 3 sandbox has no phonemes -- cannot build a legal "
+            "PhSimpleContextSeg to seed a populated context; escalate, "
+            "do not fabricate an illegal context object."
+        )
+        phoneme = phonemes[0]
+
+        env = envs.Create(f"{TEST_PREFIX}260_p7_seeded")
+        env_hvo = env.Hvo
+
+        ctx_factory = project.project.ServiceLocator.GetService(IPhSimpleContextSegFactory)
+        phon_data = project.lp.PhonologicalDataOA
+        left_ctx = None
+
+        try:
+            # IPhSimpleContextSeg is an OWNED object -- it must be added
+            # to PhonologicalDataOA.ContextsOS before it can legally be
+            # referenced from LeftContextRA (assigning it unowned raises
+            # LcmObjectUninitializedException). _TransactionCM is the
+            # house write pattern; a manual BeginUndoTask would nest
+            # illegally under the sandbox's undoable=False session.
+            with envs._TransactionCM("TEST_260_p7 seed left context"):
+                left_ctx = ctx_factory.Create()
+                phon_data.ContextsOS.Add(left_ctx)
+                left_ctx.FeatureStructureRA = phoneme
+                env.LeftContextRA = left_ctx
+
+            # Re-read by HVO, not the object just assigned -- proves the
+            # write actually persisted, not just that the in-memory
+            # reference is still alive.
+            reread = IPhEnvironment(project.Object(env_hvo))
+            result = envs.GetLeftContextPattern(reread)
+
+            assert result is not None, (
+                "GetLeftContextPattern returned None for an environment "
+                "with a seeded LeftContextRA -- the #283 fix has "
+                "regressed; re-derive against spec.md C7."
+            )
+            assert result.Hvo == left_ctx.Hvo, (
+                "GetLeftContextPattern returned a context with a "
+                "different HVO than the one assigned -- expected "
+                "reference identity."
+            )
+        finally:
+            try:
+                with envs._TransactionCM("TEST_260_p7 cleanup seeded context"):
+                    if left_ctx is not None and left_ctx in phon_data.ContextsOS:
+                        phon_data.ContextsOS.Remove(left_ctx)
+            except Exception:
+                pass
+            try:
+                envs.Delete(env)
+            except Exception:
+                pass
