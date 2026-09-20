@@ -3674,7 +3674,7 @@ class LexSenseOperations(BaseOperations):
         try:
             # Get gloss across all writing systems
             gloss_dict = {}
-            for ws in self.project.project.WritingSystemManager.AllWritingSystems:
+            for ws in self.project.project.ServiceLocator.WritingSystems.AllWritingSystems:
                 ws_handle = ws.Handle
                 gloss_text = ITsString(sense.Gloss.get_String(ws_handle)).Text if sense.Gloss else ""
                 if gloss_text:
@@ -3682,7 +3682,7 @@ class LexSenseOperations(BaseOperations):
 
             # Get definition across all writing systems
             definition_dict = {}
-            for ws in self.project.project.WritingSystemManager.AllWritingSystems:
+            for ws in self.project.project.ServiceLocator.WritingSystems.AllWritingSystems:
                 ws_handle = ws.Handle
                 def_text = ITsString(sense.Definition.get_String(ws_handle)).Text if sense.Definition else ""
                 if def_text:
@@ -3834,14 +3834,21 @@ class LexSenseOperations(BaseOperations):
         try:
             # Get example text across all writing systems
             example_dict = {}
-            for ws in self.project.project.WritingSystemManager.AllWritingSystems:
+            for ws in self.project.project.ServiceLocator.WritingSystems.AllWritingSystems:
                 ws_handle = ws.Handle
                 ex_text = ITsString(example.Example.get_String(ws_handle)).Text if example.Example else ""
                 if ex_text:
                     example_dict[ws_handle] = ex_text
 
             # Get reference
-            ref_text = ITsString(example.Reference.get_String(0)).Text if example.Reference else ""
+            # ILexExampleSentence.Reference is an ITsString, NOT an
+            # IMultiString -- it has no get_String(ws). Calling get_String(0)
+            # here raised AttributeError into the broad except below, so
+            # __GetExampleSignature returned None for EVERY example and
+            # example deduplication never found a single duplicate. See
+            # CLAUDE.md "Category 8: same-name fields with different LCM
+            # types"; contrast example.Example, which IS a multi-string.
+            ref_text = (ITsString(example.Reference).Text or "") if example.Reference else ""
 
             # Create signature tuple
             sig = (frozenset(example_dict.items()), ref_text)

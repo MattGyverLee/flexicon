@@ -3108,7 +3108,7 @@ class LexEntryOperations(BaseOperations):
             # Get pronunciation form across all writing systems
             pron_dict = {}
             try:
-                for ws in self.project.project.WritingSystemManager.AllWritingSystems:
+                for ws in self.project.project.ServiceLocator.WritingSystems.AllWritingSystems:
                     ws_handle = ws.Handle
                     pron_text = ITsString(pron.Form.get_String(ws_handle)).Text if pron.Form else ""
                     if pron_text:
@@ -3192,7 +3192,7 @@ class LexEntryOperations(BaseOperations):
 
             try:
                 # Get form across all writing systems
-                for ws in self.project.project.WritingSystemManager.AllWritingSystems:
+                for ws in self.project.project.ServiceLocator.WritingSystems.AllWritingSystems:
                     ws_handle = ws.Handle
                     form_text = ITsString(allomorph.Form.get_String(ws_handle)).Text if allomorph.Form else ""
                     if form_text:

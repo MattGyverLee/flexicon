@@ -34,25 +34,22 @@
 #             repos.Singleton.RecordsOC.Add(), bypassing Create()/Find()
 #             entirely.
 #
-#          2. `DataNotebookOperations.__GetRecordObject` (the private
-#             helper EVERY public method in this class -- including all
-#             six fixed for #319 -- calls to resolve `record_or_hvo`)
-#             calls `self.project.project.GetObject(hvo)`, but the real
-#             LCM 11 `LcmCache` object has no `GetObject` method (it lives
-#             on `LcmCache.ServiceLocator.GetObject(hvo)` instead). This
-#             raises `FP_ParameterError` for EVERY call into EVERY
-#             DataNotebookOperations method against a real LCM 11
-#             database, regardless of the object passed in (even a
-#             just-constructed live record fails). This means the six
-#             tests below that call through the public API
-#             (GetResearchers/AddResearcher/RemoveResearcher/
-#             GetParticipants/AddParticipant/RemoveParticipant) currently
-#             cannot pass against ANY real database until that helper is
-#             fixed -- a defect entirely independent of and pre-existing
-#             #319. They are marked `xfail` (not skipped) below so CI
-#             visibly tracks the moment `__GetRecordObject` gets fixed
-#             (at which point they should flip to passing and the xfail
-#             marker should be removed).
+#          2. RESOLVED 2026-09-20. `DataNotebookOperations.__GetRecordObject`
+#             (the private helper EVERY public method in this class --
+#             including all six fixed for #319 -- calls to resolve
+#             `record_or_hvo`) used to call `self.project.project.GetObject(hvo)`,
+#             but the real LCM 11 `LcmCache` has no `GetObject` method; it
+#             lives on `LcmCache.ServiceLocator.GetObject(hvo)`. That raised
+#             `FP_ParameterError` for EVERY call into EVERY
+#             DataNotebookOperations method against a real LCM 11 database,
+#             so the six tests below could not pass anywhere. They were
+#             marked `xfail(strict=True)` to make CI announce the moment the
+#             helper was fixed.
+#
+#             It has been: the lcm-member-truth-sweep work for #261/#302
+#             routed record resolution through `project.Object` and the
+#             owning `RecordsOC`. The strict markers duly XPASSed and have
+#             been removed; all six now pass live against "Sena 3".
 #
 #          The #319 fix itself (the six methods' actual LCM property
 #          usage: ResearchersRC, ParticipantsOC, DefaultRoledParticipants,
@@ -181,19 +178,6 @@ def temp_persons(writable_project):
 
 
 class TestResearchersLive:
-    @pytest.mark.xfail(reason=(
-        "blocked by pre-existing, unrelated bugs in DataNotebookOperations, "
-        "out of scope for #318-321 and awaiting a separate issue: "
-        "(1) __GetRecordObject calls LcmCache.GetObject(), which does not "
-        "exist on real LCM 11 (needs .ServiceLocator.GetObject); (2) "
-        "Create() calls repos.RecordsOC.Add() on the repository SERVICE "
-        "object rather than repos.Singleton.RecordsOC, and GetAll()/Find() "
-        "iterate repos.AllInstances(), which yields the singleton "
-        "IRnResearchNbk CONTAINER (Count == 1), not the records it owns. "
-        "strict=True: if either bug is ever fixed, this must XPASS and "
-        "fail the suite so someone removes the marker. See module "
-        "docstring and cycle2-programmer-319.md."
-    ), strict=True)
     @pytest.mark.live_phase("DataNotebookOperations", "add")
     def test_add_researcher_effect_pre_post(self, writable_project, temp_record, temp_persons):
         person_a, _ = temp_persons
@@ -206,19 +190,6 @@ class TestResearchersLive:
         after = writable_project.DataNotebook.GetResearchers(temp_record)
         assert person_a in after
 
-    @pytest.mark.xfail(reason=(
-        "blocked by pre-existing, unrelated bugs in DataNotebookOperations, "
-        "out of scope for #318-321 and awaiting a separate issue: "
-        "(1) __GetRecordObject calls LcmCache.GetObject(), which does not "
-        "exist on real LCM 11 (needs .ServiceLocator.GetObject); (2) "
-        "Create() calls repos.RecordsOC.Add() on the repository SERVICE "
-        "object rather than repos.Singleton.RecordsOC, and GetAll()/Find() "
-        "iterate repos.AllInstances(), which yields the singleton "
-        "IRnResearchNbk CONTAINER (Count == 1), not the records it owns. "
-        "strict=True: if either bug is ever fixed, this must XPASS and "
-        "fail the suite so someone removes the marker. See module "
-        "docstring and cycle2-programmer-319.md."
-    ), strict=True)
     @pytest.mark.live_phase("DataNotebookOperations", "remove")
     def test_remove_researcher_effect_pre_post(self, writable_project, temp_record, temp_persons):
         person_a, _ = temp_persons
@@ -237,19 +208,6 @@ class TestResearchersLive:
 
 
 class TestParticipantsLive:
-    @pytest.mark.xfail(reason=(
-        "blocked by pre-existing, unrelated bugs in DataNotebookOperations, "
-        "out of scope for #318-321 and awaiting a separate issue: "
-        "(1) __GetRecordObject calls LcmCache.GetObject(), which does not "
-        "exist on real LCM 11 (needs .ServiceLocator.GetObject); (2) "
-        "Create() calls repos.RecordsOC.Add() on the repository SERVICE "
-        "object rather than repos.Singleton.RecordsOC, and GetAll()/Find() "
-        "iterate repos.AllInstances(), which yields the singleton "
-        "IRnResearchNbk CONTAINER (Count == 1), not the records it owns. "
-        "strict=True: if either bug is ever fixed, this must XPASS and "
-        "fail the suite so someone removes the marker. See module "
-        "docstring and cycle2-programmer-319.md."
-    ), strict=True)
     @pytest.mark.live_phase("DataNotebookOperations", "add")
     def test_add_participant_creates_group_when_absent(
         self, writable_project, temp_record, temp_persons
@@ -270,19 +228,6 @@ class TestParticipantsLive:
         participants = writable_project.DataNotebook.GetParticipants(temp_record)
         assert person_a in participants
 
-    @pytest.mark.xfail(reason=(
-        "blocked by pre-existing, unrelated bugs in DataNotebookOperations, "
-        "out of scope for #318-321 and awaiting a separate issue: "
-        "(1) __GetRecordObject calls LcmCache.GetObject(), which does not "
-        "exist on real LCM 11 (needs .ServiceLocator.GetObject); (2) "
-        "Create() calls repos.RecordsOC.Add() on the repository SERVICE "
-        "object rather than repos.Singleton.RecordsOC, and GetAll()/Find() "
-        "iterate repos.AllInstances(), which yields the singleton "
-        "IRnResearchNbk CONTAINER (Count == 1), not the records it owns. "
-        "strict=True: if either bug is ever fixed, this must XPASS and "
-        "fail the suite so someone removes the marker. See module "
-        "docstring and cycle2-programmer-319.md."
-    ), strict=True)
     @pytest.mark.live_phase("DataNotebookOperations", "add")
     def test_add_participant_reuses_existing_group(
         self, writable_project, temp_record, temp_persons
@@ -302,19 +247,6 @@ class TestParticipantsLive:
         assert person_a in participants
         assert person_b in participants
 
-    @pytest.mark.xfail(reason=(
-        "blocked by pre-existing, unrelated bugs in DataNotebookOperations, "
-        "out of scope for #318-321 and awaiting a separate issue: "
-        "(1) __GetRecordObject calls LcmCache.GetObject(), which does not "
-        "exist on real LCM 11 (needs .ServiceLocator.GetObject); (2) "
-        "Create() calls repos.RecordsOC.Add() on the repository SERVICE "
-        "object rather than repos.Singleton.RecordsOC, and GetAll()/Find() "
-        "iterate repos.AllInstances(), which yields the singleton "
-        "IRnResearchNbk CONTAINER (Count == 1), not the records it owns. "
-        "strict=True: if either bug is ever fixed, this must XPASS and "
-        "fail the suite so someone removes the marker. See module "
-        "docstring and cycle2-programmer-319.md."
-    ), strict=True)
     @pytest.mark.live_phase("DataNotebookOperations", "remove")
     def test_remove_participant_unlinks_without_destroying_group(
         self, writable_project, temp_record, temp_persons
@@ -337,19 +269,6 @@ class TestParticipantsLive:
 
         assert person_a not in writable_project.DataNotebook.GetParticipants(temp_record)
 
-    @pytest.mark.xfail(reason=(
-        "blocked by pre-existing, unrelated bugs in DataNotebookOperations, "
-        "out of scope for #318-321 and awaiting a separate issue: "
-        "(1) __GetRecordObject calls LcmCache.GetObject(), which does not "
-        "exist on real LCM 11 (needs .ServiceLocator.GetObject); (2) "
-        "Create() calls repos.RecordsOC.Add() on the repository SERVICE "
-        "object rather than repos.Singleton.RecordsOC, and GetAll()/Find() "
-        "iterate repos.AllInstances(), which yields the singleton "
-        "IRnResearchNbk CONTAINER (Count == 1), not the records it owns. "
-        "strict=True: if either bug is ever fixed, this must XPASS and "
-        "fail the suite so someone removes the marker. See module "
-        "docstring and cycle2-programmer-319.md."
-    ), strict=True)
     @pytest.mark.live_phase("DataNotebookOperations", "remove")
     def test_remove_participant_from_multiple_groups(
         self, writable_project, temp_record, temp_persons

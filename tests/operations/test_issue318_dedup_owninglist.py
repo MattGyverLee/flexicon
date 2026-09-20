@@ -64,14 +64,29 @@ def _make_ws(handle):
 
 def _wire_writing_systems(project, handles):
     """
-    Wire self.project.project.WritingSystemManager.AllWritingSystems.
+    Wire self.project.project.ServiceLocator.WritingSystems.AllWritingSystems.
 
     The real LexEntryOperations/LexSenseOperations dedup helpers iterate
     this to build per-item signatures across every writing system.
+
+    This path matters, and an earlier version of this helper got it wrong.
+    It wired `project.project.WritingSystemManager`, which does not exist:
+    on a real LcmCache the manager hangs off `ServiceLocator`, and the
+    enumeration member is `ServiceLocator.WritingSystems.AllWritingSystems`
+    (see WritingSystemOperations.GetAll). Because `project.project` is a
+    bare Mock here, the wrong path auto-vivified happily and these tests
+    passed green against production code that raised AttributeError on
+    every real database -- the signature map stayed empty and dedup found
+    nothing, for every caller, forever. Keep this mirroring the real
+    member chain exactly; if production changes, change it here too rather
+    than letting Mock invent a path that cannot exist.
     """
     project.project = Mock()
-    project.project.WritingSystemManager = Mock()
-    project.project.WritingSystemManager.AllWritingSystems = [_make_ws(h) for h in handles]
+    project.project.ServiceLocator = Mock()
+    project.project.ServiceLocator.WritingSystems = Mock()
+    project.project.ServiceLocator.WritingSystems.AllWritingSystems = [
+        _make_ws(h) for h in handles
+    ]
 
 
 class _IdentityITsString:
