@@ -763,7 +763,13 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         with self._TransactionCM("Create feature value"):
             new_val = None
             if guid_str:
-                guid = System.Guid(guid_str)
+                try:
+                    guid = System.Guid(guid_str)
+                except (System.FormatException, System.ArgumentNullException) as e:
+                    raise FP_ParameterError(
+                        f"Invalid Guid value '{guid_str}' in props; "
+                        f"'Guid' must be a well-formed GUID string."
+                    ) from e
                 # Path A: 2-arg factory overload if pythonnet exposes it.
                 try:
                     new_val = factory.Create(guid, feature)
@@ -955,7 +961,14 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         )
         # Parsed outside the transaction: a malformed catalog GUID must raise
         # before any undo task is opened (mirrors the mixin's own ordering).
-        guid = System.Guid(value_entry.guid)
+        try:
+            guid = System.Guid(value_entry.guid)
+        except (System.FormatException, System.ArgumentNullException) as e:
+            raise FP_ParameterError(
+                f"Malformed catalog GUID '{value_entry.guid}' for feature "
+                f"value '{value_entry.id}'; the shipped catalog data is "
+                f"invalid."
+            ) from e
 
         # Create-and-populate is one unit: a Path-B create whose Add or
         # subsequent per-WS writes fail must not leave a half-built value.
