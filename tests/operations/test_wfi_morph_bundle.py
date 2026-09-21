@@ -21,6 +21,7 @@
 
 import inspect
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -202,6 +203,77 @@ class TestWfiMorphBundleDuplicate:
             "Duplicate references source.Gloss; IWfiMorphBundle has no "
             "Gloss field. Remove the line (#107 regression)."
         )
+
+
+class TestWfiMorphBundleHvoResolverCasts:
+    """Static-source guard for issue #333 HVO resolver cast contract."""
+
+    def test_private_bundle_resolver_casts_hvo_and_object_paths(self):
+        source_path = (
+            Path(__file__).resolve().parents[2]
+            / "flexicon/code/TextsWords/WfiMorphBundleOperations.py"
+        )
+        with open(source_path, "r", encoding="utf-8") as fh:
+            src = fh.read()
+
+        assert "def __GetBundleObject(self, bundle_or_hvo):" in src
+        assert (
+            "return cast_to_concrete(self.project.Object(bundle_or_hvo))"
+            in src
+        ), "HVO path must cast raw ICmObject to concrete interface"
+        assert (
+            "return cast_to_concrete(bundle_or_hvo)" in src
+        ), "Object path should be normalized through cast_to_concrete as well"
+
+    def test_sibling_resolvers_cast_hvo_and_object_paths(self):
+        """Issue #333 sweep: every __Get*Object resolver casts both paths."""
+        source_path = (
+            Path(__file__).resolve().parents[2]
+            / "flexicon/code/TextsWords/WfiMorphBundleOperations.py"
+        )
+        with open(source_path, "r", encoding="utf-8") as fh:
+            src = fh.read()
+
+        for resolver, param in [
+            ("__GetAnalysisObject", "analysis_or_hvo"),
+            ("__GetSenseObject", "sense_or_hvo"),
+            ("__GetMorphObject", "morph_or_hvo"),
+            ("__GetMSAObject", "msa_or_hvo"),
+            ("__GetInflectionClassObject", "infl_class_or_hvo"),
+        ]:
+            assert f"def {resolver}(self, {param}):" in src
+            assert (
+                f"return cast_to_concrete(self.project.Object({param}))"
+                in src
+            ), f"{resolver} HVO path must cast raw ICmObject"
+            assert (
+                f"return cast_to_concrete({param})" in src
+            ), f"{resolver} object path must normalize through cast_to_concrete"
+
+        # SetInflType's inline resolver has the same shape (no helper).
+        assert "infl_type = cast_to_concrete(" in src, (
+            "SetInflType must cast its inline infl_type_or_hvo resolution"
+        )
+        assert "return self.project.Object(" not in src, (
+            "No resolver may return a bare project.Object() result"
+        )
+
+    def test_cast_cache_registers_bundle_classes(self):
+        """Issue #333: cast_to_concrete() is a silent no-op for any
+        ClassName missing from lcm_casting._interface_cache, so the
+        resolver-side casts above only work when WfiMorphBundle (and its
+        WfiWordform / MoInflClass siblings) are registered there."""
+        source_path = (
+            Path(__file__).resolve().parents[2]
+            / "flexicon/code/lcm_casting.py"
+        )
+        with open(source_path, "r", encoding="utf-8") as fh:
+            src = fh.read()
+
+        for class_name in ("WfiMorphBundle", "WfiWordform", "MoInflClass"):
+            assert (
+                f'_interface_cache["{class_name}"]' in src
+            ), f"lcm_casting must register {class_name} for HVO casts"
 
 
 class TestWfiMorphBundleMorphTypeContract:

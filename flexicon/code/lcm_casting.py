@@ -226,6 +226,26 @@ def _ensure_interfaces() -> None:
     except ImportError:
         ILexEntryRef = None
 
+    # Interlinear bundle/wordform + inflection-class interfaces
+    # (issue #333). project.Object(hvo) returns a bare, gate-limited
+    # ICmObject; cast_to_concrete() can only recover the derived surface
+    # (MsaRA, MorphBundlesOS, ...) when the ClassName is registered in
+    # _interface_cache. WfiAnalysis was already registered below, but
+    # WfiMorphBundle / WfiWordform / MoInflClass were missing -- so a
+    # resolver-side cast_to_concrete() call returned the object unchanged
+    # (total-function miss) and the AttributeError survived the "fix".
+    # All three names are already in the LCM contract baseline
+    # (tests/contract/snapshots/expected_contract.json), so this import
+    # adds no new type dependency.
+    try:
+        from SIL.LCModel import (
+            IWfiMorphBundle,
+            IWfiWordform,
+            IMoInflClass,
+        )
+    except ImportError:
+        IWfiMorphBundle = IWfiWordform = IMoInflClass = None
+
     # Feature-structure owner interfaces (phonology) - spec
     # feature-structure-sync-gap, decision D3. IPhNCFeatures and
     # IPhPhoneme both declare FeaturesOA directly; IPhNCSegments does
@@ -361,6 +381,12 @@ def _ensure_interfaces() -> None:
         _interface_cache["StTxtPara"] = IStTxtPara
     if IWfiAnalysis is not None:
         _interface_cache["WfiAnalysis"] = IWfiAnalysis
+    if IWfiMorphBundle is not None:
+        _interface_cache["WfiMorphBundle"] = IWfiMorphBundle
+    if IWfiWordform is not None:
+        _interface_cache["WfiWordform"] = IWfiWordform
+    if IMoInflClass is not None:
+        _interface_cache["MoInflClass"] = IMoInflClass
     if ILangProject is not None:
         # LangProject is the sole owner of AnnotationsOC in this LCM
         # version -- no domain object (ILexEntry, ILexSense, IText, ...)
