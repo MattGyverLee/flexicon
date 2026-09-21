@@ -228,6 +228,7 @@ class LexSenseOperations(BaseOperations):
             # Set gloss
             mkstr = TsStringUtils.MakeString(gloss, wsHandle)
             new_sense.Gloss.set_String(wsHandle, mkstr)
+            self._DefaultExcludeFromAllPublications(new_sense)
 
             return new_sense
 
@@ -1892,6 +1893,7 @@ class LexSenseOperations(BaseOperations):
             # Set example text
             mkstr = TsStringUtils.MakeString(text, wsHandle)
             new_example.Example.set_String(wsHandle, mkstr)
+            self._DefaultExcludeFromAllPublications(new_example)
 
             return new_example
 
@@ -1996,6 +1998,7 @@ class LexSenseOperations(BaseOperations):
             # Set gloss
             mkstr = TsStringUtils.MakeString(gloss, wsHandle)
             new_subsense.Gloss.set_String(wsHandle, mkstr)
+            self._DefaultExcludeFromAllPublications(new_subsense)
 
             return new_subsense
 
