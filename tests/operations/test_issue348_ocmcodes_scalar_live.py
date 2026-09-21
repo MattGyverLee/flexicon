@@ -256,6 +256,9 @@ class TestOcmCodesLiveDuplicate:
 
         source.OcmCodes = f"{TEST_PREFIX}424"
 
+        # Target's catalog-imported domains may already carry CmDomainQ
+        # entries (pre-existing data), so snapshot the count AFTER
+        # seeding rather than assuming a clean domain.
         q_factory = target_sandbox.project.ServiceLocator.GetService(
             ICmDomainQFactory
         )
@@ -264,22 +267,27 @@ class TestOcmCodesLiveDuplicate:
         source_q.Question.set_String(
             ws, TsStringUtils.MakeString(q_text, ws)
         )
+        expected_count = len(source.QuestionsOS)
 
         duplicate = target_sandbox.SemanticDomains.Duplicate(
             source, insert_after=False, deep=False
         )
         try:
             assert duplicate.OcmCodes == f"{TEST_PREFIX}424"
-            assert len(duplicate.QuestionsOS) == 1, (
-                f"Expected one duplicated CmDomainQ entry, got "
-                f"{len(duplicate.QuestionsOS)}"
+            assert len(duplicate.QuestionsOS) == expected_count, (
+                f"Expected {expected_count} duplicated CmDomainQ entries, "
+                f"got {len(duplicate.QuestionsOS)}"
             )
-            dup_q = duplicate.QuestionsOS[0]
-            assert dup_q is not source_q
-            read_back = ITsString(dup_q.Question.get_String(ws)).Text
-            assert read_back == q_text, (
-                f"Duplicated question read back as {read_back!r}, expected "
-                f"{q_text!r}"
+            dup_texts = []
+            for dup_q in duplicate.QuestionsOS:
+                tss = dup_q.Question.get_String(ws)
+                dup_texts.append(ITsString(tss).Text if tss is not None else "")
+            assert q_text in dup_texts, (
+                f"Seeded question {q_text!r} missing from duplicated "
+                f"QuestionsOS texts {dup_texts!r}"
+            )
+            assert any(
+                dup_q is not source_q for dup_q in duplicate.QuestionsOS
             )
         finally:
             target_sandbox.SemanticDomains.Delete(duplicate)

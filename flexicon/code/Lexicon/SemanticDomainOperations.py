@@ -1077,7 +1077,8 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         Notes:
             - Factory.Create() automatically generates a new GUID
             - insert_after=True preserves the original domain's position
-            - Simple properties copied: Name, Description, Abbreviation, Questions, OcmCodes
+            - Simple properties copied: Name, Description, Abbreviation, OcmCodes
+            - Questions copied through QuestionsOS (owning sequence of CmDomainQ)
             - Owned objects (deep=True): SubPossibilitiesOS (subdomains), OccurrencesRS
             - Abbreviation (domain number) is copied but should typically be changed
             - ReferringObjects (senses) are not copied (back-references)
