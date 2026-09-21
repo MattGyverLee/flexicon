@@ -41,7 +41,11 @@ import logging
 import os
 import clr
 
-from .Shared.string_utils import normalize_ws_handle, best_multistring_alternative
+from .Shared.string_utils import (
+    normalize_ws_handle,
+    best_multistring_alternative,
+    normalize_text,
+)
 
 clr.AddReference("System")
 import System
@@ -3479,6 +3483,27 @@ class FLExProject(object):
             return stringObj
 
         return self.WritingSystems.GetBestString(stringObj)
+
+    def GetMultiStringDict(self, multiStringObj):
+        """
+        Return a multilingual string field as ``{ws_id: text}``.
+
+        Args:
+            multiStringObj: IMultiString/IMultiUnicode-like object supporting
+                ``get_String(ws_handle)``, or ``None``.
+
+        Returns:
+            dict: Writing-system Id to normalized text, excluding empty values.
+        """
+        if multiStringObj is None:
+            return {}
+
+        text_by_ws = {}
+        for ws_def in self.WritingSystems.GetAll():
+            text = normalize_text(ITsString(multiStringObj.get_String(ws_def.Handle)).Text)
+            if text:
+                text_by_ws[ws_def.Id] = text
+        return text_by_ws
 
     # --- LCM Utilities ---
 
