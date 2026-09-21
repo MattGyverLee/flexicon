@@ -2,7 +2,8 @@
 
 **Origin:** v4.3.1 hotfix to `AgentOperations.GetVersion` / `SetVersion` (`ICmAgent.Version`).
 **Date:** 2026-08-13
-**Status:** UNVERIFIED — see "Reliability caveat" before acting on any row.
+**Status:** SUPERSEDED by issue #352 (2026-09-21) — see "Resolution" at the
+bottom. The per-row tables below are historical; do not batch-fix from them.
 
 ## The defect shape
 
@@ -95,3 +96,42 @@ project that, for each receiver, reports `type(obj.Prop)` and whether `get_Strin
 exists. Promote only the rows that come back monolingual, then fix those with the
 `_MakeTsString` / `_ReadTsString` helpers and an AST regression test per site in the
 style of `tests/test_agent_version_unicode.py`.
+
+## Resolution (2026-09-21, issue #352)
+
+Superseded. Issue #352 re-audited every row against the 2026-09-08 reflected
+snapshot **plus live `hasattr`/type probes**, fixed the confirmed sites, and
+recorded per-batch evidence under `specs/352-copyalternatives-audit/evidence/`
+(`live-*.md`, all `run_mode: live`):
+
+- Scalar-as-multistring: SemDom `OcmCodes`, ScrDraft `Description`,
+  ScrBook `Title`→`Name`, DataNotebook `Title` (bare ITsString),
+  Person `Gender` (Int32).
+- Missing member: DataNotebook `Text`→`DescriptionOA` paragraphs,
+  Note `Source`→`SourceRA` agent, Person Email/Phone/notes (retired),
+  AnnoDef HelpString/Prompt→`Description`, Discourse cell Label/Comment
+  (shape dispatch), allomorph `StemName`→`StemNameRA` (+`AffixType`→
+  `MorphTypeRA` sibling), LexEntry etymology `Source`→`LanguageNotes`,
+  Text `Title` (dead branches removed), Filter title→`Name`,
+  ProjectSettings `Name`→read-only `ShortName`.
+- Audit corrections (rows that were wrong, not just unverified):
+  Media `Description`/`Copyright` are correct on **ICmFile** (the issue
+  checked `ICmMedia`); Text `Description` IS present live (the
+  declared-only snapshot missed the inherited member) -- only `Title`
+  was removed. Lesson: snapshot absence is not absence; every fix here
+  required a live probe, exactly as the caveat above demanded.
+- The caveat's `ILexEtymology.Source` counter-example is resolved the
+  other way: live `hasattr` is False, so the snapshot was right and the
+  old Category 8 claim was stale; `EtymologyOperations` already copies
+  `LanguageNotes`.
+- Adjacent bugs found live while verifying (same sessions, same evidence
+  files): DataNotebook `GetAll`/`Duplicate`/`GetParentRecord` owner
+  dispatch, Media `Duplicate` label order + `CompareTo`/`Delete`
+  (`_CompareValues`/`cache` members that do not exist -- 8 sibling
+  `CompareTo` call sites elsewhere noted as follow-up),
+  `ScrDraftFactory.Create(description)` signature, missing
+  `project.ScrDrafts`/`ScrBooks` accessors (now wired).
+- Open (needs a project this env lacks): set-valued allomorph
+  `stem_name` round-trip (no `IMoStemName` rows on Target; needs Sena 3).
+  Sena 3 itself would not open here (invalid project file) and its
+  `.fwbackup` is absent from `tests/fixtures/`.

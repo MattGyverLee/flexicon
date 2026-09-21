@@ -248,14 +248,10 @@ class TestDataNotebookDuplicateTopLevelLive:
     be silently ignored and the duplicate always appended via Add() --
     never crash by attempting Insert() on an OC.
 
-    Duplicate() currently raises AttributeError on
-    `duplicate.Title.CopyAlternatives(source.Title)`, a separate,
-    unrelated, pre-existing defect (see module docstring) that this
-    task does not fix. That crash happens AFTER the Add()/Insert()
-    placement logic already ran, so the placement side effect is
-    inspected live from the LCM despite the ultimate exception --
-    genuine coverage of the #158 semantics this file exists to
-    protect.
+    Issue #352 fixed the Title copy (`CopyAlternatives` on a bare
+    ITsString raised AttributeError after placement ran), so Duplicate()
+    now succeeds end to end: this test asserts the returned duplicate
+    lands in RecordsOC with the title conserved.
     """
 
     @pytest.mark.live_phase("DataNotebookOperations", "add")
@@ -275,16 +271,7 @@ class TestDataNotebookDuplicateTopLevelLive:
             # insert_after=True is passed deliberately to prove it is
             # ignored (not an Insert()-on-an-OC crash) at the top level
             # -- this is exactly the shape of the pre-#158 defect.
-            with pytest.raises(AttributeError) as excinfo:
-                notebook.Duplicate(record, insert_after=True)
-
-            # Confirm the crash is the KNOWN, separate Title-copy
-            # defect, not a regression of #158/#302/#261 (which would
-            # show up as a different message, e.g. "Insert" or
-            # "RecordsOC").
-            assert "CopyAlternatives" in str(excinfo.value) or "Title" in str(
-                excinfo.value
-            )
+            dup = notebook.Duplicate(record, insert_after=True)
 
             after_hvos = {
                 r.Hvo for r in target_sandbox.lp.ResearchNotebookOA.RecordsOC
@@ -292,11 +279,12 @@ class TestDataNotebookDuplicateTopLevelLive:
             new_hvos = after_hvos - before_hvos
             assert len(new_hvos) == 1, (
                 "Duplicate() must have added exactly one new record to "
-                "RecordsOC via Add() before hitting the unrelated Title "
-                "crash -- if this is now 0, the #158/#302 Add()-into-"
-                "ResearchNotebookOA.RecordsOC placement itself regressed"
+                "RecordsOC via Add() -- if this is now 0, the #158/#302 "
+                "Add()-into-ResearchNotebookOA.RecordsOC placement regressed"
             )
             assert record_hvo in after_hvos, "source record must be untouched"
+            assert dup.Hvo in after_hvos
+            assert notebook.GetTitle(dup) == notebook.GetTitle(record)
         finally:
             after_hvos = {
                 r.Hvo for r in target_sandbox.lp.ResearchNotebookOA.RecordsOC
@@ -336,11 +324,9 @@ class TestDataNotebookDuplicateSubRecordOwnerDetectionLive:
         }
 
         try:
-            with pytest.raises(AttributeError) as excinfo:
-                notebook.Duplicate(s1, insert_after=True)
-            assert "CopyAlternatives" in str(excinfo.value) or "Title" in str(
-                excinfo.value
-            )
+            # Issue #352 fixed the Title copy, so Duplicate() now returns
+            # the new sub-record instead of raising after placement.
+            dup = notebook.Duplicate(s1, insert_after=True)
 
             # Re-read both collections live from the LCM.
             reread_subrecords = [r.Hvo for r in parent.SubRecordsOS]
@@ -363,6 +349,8 @@ class TestDataNotebookDuplicateSubRecordOwnerDetectionLive:
                 "duplicating a sub-record must not create a stray top-level "
                 "record in ResearchNotebookOA.RecordsOC"
             )
+            assert reread_subrecords[1] == dup.Hvo
+            assert notebook.GetTitle(dup) == notebook.GetTitle(s1)
         finally:
             after_toplevel = {
                 r.Hvo for r in target_sandbox.lp.ResearchNotebookOA.RecordsOC
