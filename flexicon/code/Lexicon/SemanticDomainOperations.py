@@ -20,6 +20,8 @@ from ..Shared.catalog_backed import _LCMNativeCatalogImportMixin
 from SIL.LCModel import (
     ICmSemanticDomain,
     ICmSemanticDomainFactory,
+    ICmDomainQ,
+    ICmDomainQFactory,
     ILexSenseRepository,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
@@ -593,7 +595,7 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             - OCM is a standard anthropological classification system
             - Returns empty string if no OCM codes are assigned
             - Multiple codes may be separated by spaces or commas
-            - Uses default analysis writing system
+            - OcmCodes is a scalar string field (no writing-system variants)
 
         See Also:
             GetNumber, GetDescription
@@ -601,11 +603,11 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         self._ValidateParam(domain_or_hvo, "domain_or_hvo")
 
         domain = self.__ResolveObject(domain_or_hvo)
-        wsHandle = self.project.project.DefaultAnalWs
 
-        # OcmCodes is a MultiUnicode
-        ocm = ITsString(domain.OcmCodes.get_String(wsHandle)).Text
-        return ocm or ""
+        # OcmCodes is a scalar String property on ICmSemanticDomain,
+        # not a MultiUnicode field, so a writing-system loop is wrong here.
+        ocm = domain.OcmCodes or ""
+        return ocm
 
     # --- Hierarchy Operations ---
 
@@ -1073,8 +1075,10 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         Notes:
             - Factory.Create() automatically generates a new GUID
             - insert_after=True preserves the original domain's position
-            - Simple properties copied: Name, Description, Abbreviation, Questions, OcmCodes
-            - Owned objects (deep=True): SubPossibilitiesOS (subdomains), OccurrencesRS
+            - Simple properties copied: Name, Description, Abbreviation, OcmCodes
+            - Questions (QuestionsOS, an owning sequence) and subdomains are copied
+              when deep=True; shallow duplicates (deep=False) drop them
+            - Owned objects (deep=True): SubPossibilitiesOS (subdomains)
             - Abbreviation (domain number) is copied but should typically be changed
             - ReferringObjects (senses) are not copied (back-references)
 
@@ -1119,18 +1123,23 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             duplicate.Name.CopyAlternatives(source.Name)
             duplicate.Description.CopyAlternatives(source.Description)
             duplicate.Abbreviation.CopyAlternatives(source.Abbreviation)
-            duplicate.Questions.CopyAlternatives(source.Questions)
-            duplicate.OcmCodes.CopyAlternatives(source.OcmCodes)
+
+            # OcmCodes is a scalar String property, not a multistring - assign directly
+            duplicate.OcmCodes = source.OcmCodes or ""
+
+            # Questions is an owning sequence of ICmDomainQ objects (QuestionsOS),
+            # each with a MultiUnicode Question field - duplicate them explicitly
+            q_factory = self.project.project.ServiceLocator.GetService(ICmDomainQFactory)
+            for domain_q in source.QuestionsOS:
+                new_q = q_factory.Create()
+                duplicate.QuestionsOS.Add(new_q)
+                new_q.Question.CopyAlternatives(domain_q.Question)
 
             # Handle owned objects if deep=True
             if deep:
                 # Duplicate subdomains recursively
                 for subdomain in source.SubPossibilitiesOS:
                     self.Duplicate(subdomain, insert_after=False, deep=True)
-
-                # Copy OccurrencesRS (references to examples in the semantic domain)
-                for occurrence in source.OccurrencesRS:
-                    duplicate.OccurrencesRS.Add(occurrence)
 
             return duplicate
 
@@ -1253,23 +1262,23 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                     abbreviation_dict[ws_def.Id] = text
         props["Abbreviation"] = abbreviation_dict
 
-        # Questions - elicitation questions
+        # Questions - elicitation questions; QuestionsOS is an owning sequence of
+        # ICmDomainQ objects, each with a MultiUnicode Question field. Aggregate
+        # per writing system (mirrors GetQuestions).
         questions_dict = {}
-        if hasattr(item, "Questions"):
+        if hasattr(item, "QuestionsOS"):
             for ws_def in self.project.WritingSystems.GetAll():
-                text = ITsString(item.Questions.get_String(ws_def.Handle)).Text
-                if text:
-                    questions_dict[ws_def.Id] = text
+                texts = []
+                for domain_q in item.QuestionsOS:
+                    q_text = ITsString(domain_q.Question.get_String(ws_def.Handle)).Text
+                    if q_text:
+                        texts.append(q_text)
+                if texts:
+                    questions_dict[ws_def.Id] = "\n".join(texts)
         props["Questions"] = questions_dict
 
-        # OcmCodes - OCM codes
-        ocm_dict = {}
-        if hasattr(item, "OcmCodes"):
-            for ws_def in self.project.WritingSystems.GetAll():
-                text = ITsString(item.OcmCodes.get_String(ws_def.Handle)).Text
-                if text:
-                    ocm_dict[ws_def.Id] = text
-        props["OcmCodes"] = ocm_dict
+        # OcmCodes - OCM codes (scalar String property, not a multistring)
+        props["OcmCodes"] = item.OcmCodes or ""
 
         # Note: SubPossibilitiesOS is an Owning Sequence (OS) - not included
         # Note: OccurrencesRS is a Reference Sequence (complex) - not included

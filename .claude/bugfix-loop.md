@@ -1,5 +1,21 @@
 # Autonomous bug-fix loop -- operating protocol
 
+> **PAUSED 2026-09-21.** The schedule is cancelled; no cron job is armed.
+> Do not re-arm it without being asked.
+>
+> Reason: `fix/348-ocmcodes-none` is parked unfinished (implemented and
+> mock-verified, not QC-reviewed, not live-verified) and is **blocked** by
+> `SemanticDomainOperations.py:1125`, which raises before the fix is
+> reached. Under section 0, the next run would pick that branch up and
+> carry on fixing rather than stopping. See
+> `specs/348-ocmcodes-none/HANDOFF.md` on that branch, plus #348 and the
+> pattern-audit inventory in #352.
+>
+> To resume: ask for the loop to be restarted. It is an in-memory,
+> session-only cron job, so it does not survive a session either way --
+> restarting means creating it again, at `23 */3 * * *`, with the prompt
+> that points here.
+
 Fired on a schedule. One issue per run. Bug fixes only.
 
 ## 0. Bail-out conditions (check first, stop quietly if any hold)
