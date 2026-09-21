@@ -18,6 +18,36 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`SemanticDomainOperations` treated `OcmCodes` as a multistring --
+  every semantic domain failed** (#348). `ICmSemanticDomain.OcmCodes` is
+  a scalar Unicode / `System.String`, not an `IMultiString`, so the
+  writing-system loop and `get_String()` / `CopyAlternatives()` calls in
+  `GetSyncableProperties`, `GetOcmCodes()` and `Duplicate()` raised
+  `AttributeError` on every domain -- measured **1792/1792** live. The
+  `hasattr(item, "OcmCodes")` guard passed (the property genuinely
+  exists) and was the false safety net that let this ship: it was the
+  **type** of the value, not its presence, that was wrong. All three
+  sites now read and write the scalar directly (`domain.OcmCodes or ""`),
+  matching the idiom already shipped for `AgentOperations.Version`.
+
+  **Behaviour change.** `GetSyncableProperties()` previously raised on
+  the first domain and `GetOcmCodes()` raised, so no caller could have
+  observed a shape here; code that somehow worked around the exception
+  will now see a bare `""`/str for `OcmCodes` instead of nothing. No
+  signature change.
+
+  Also fixed in the same pass, because it kept the `Duplicate()` fix
+  unreachable (#352 item A): `Duplicate()` copied questions via
+  `duplicate.Questions.CopyAlternatives(source.Questions)`, but
+  `ICmSemanticDomain` has **no scalar `Questions` member** -- the data
+  lives in `QuestionsOS`, an owning sequence of `CmDomainQ` objects each
+  carrying an `IMultiUnicode Question`. That unguarded `AttributeError` a
+  few lines above the `OcmCodes` copy meant `Duplicate()` could never be
+  exercised or verified. It now copies `QuestionsOS` entry-by-entry via
+  `ICmDomainQFactory`. `GetSyncableProperties` keeps
+  `props["Questions"] == {}` (its old `hasattr` guard was permanently
+  false); questions remain queryable via `GetQuestions()`.
+
 - **Four `System.Guid()` parses leaked a raw CLR exception for a
   malformed GUID** (#334). A malformed GUID string surfaced a bare
   `System.FormatException` out of a public method instead of an `FP_*`

@@ -1,11 +1,34 @@
 # Handoff -- #348 `SemanticDomainOperations` OcmCodes scalar/multistring
 
 **Branch:** `fix/348-ocmcodes-none`
-**Status:** implemented and mock-verified. **NOT QC-reviewed, NOT
-live-verified, and NOT ready for a PR** -- see section 4, which describes
-a blocker that makes part of the fix unreachable.
+**Status:** **RESOLVED** (2026-09-21). Implemented, QC-reviewed, and
+**live-verified** -- 8/8 live probes pass against `target_sandbox`
+(`run_mode: "live"`), count probe reports **1792/1792 domains passed**,
+matching the issue's pre-fix failing count. PR opened against `main`.
 **Baseline:** `ce7b96c` (main)
 **Written:** 2026-09-21
+
+## Resolution record
+
+The remaining work below was completed on this branch:
+
+- **Section 4's Questions blocker is fixed (folded in).** The unguarded
+  `duplicate.Questions.CopyAlternatives(source.Questions)` line (issue
+  #352 item A, and #352's suggested triage order item 1) was the reason
+  `Duplicate()` could not be exercised at all. `Duplicate()` now copies
+  `QuestionsOS` entry-by-entry via `ICmDomainQFactory`, and the parallel
+  dead `hasattr(item, "Questions")` block in `GetSyncableProperties` is
+  replaced with an explicit documented `props["Questions"] = {}`. The
+  rest of #352 stays open as an inventory.
+- **Lex-QC review** was run; record at
+  `specs/348-ocmcodes-none/reviews/lex-qc-review.md`. Verdict: PASS.
+- **Live verification** was run (section 3's full probe list) and the 8
+  probes pass; evidence at
+  `specs/348-ocmcodes-none/evidence/live-348.md`.
+- **CHANGELOG entry** added under `[Unreleased]`.
+- **Upstream parity** confirmed moot, as section 7.5 predicted.
+
+---
 
 Work was stopped deliberately part-way, at the user's request, to move the
 pattern-audit findings into the issue tracker rather than keep fixing.
