@@ -240,6 +240,9 @@ class LexEntryOperations(BaseOperations):
                 sense_factory = self.project.project.ServiceLocator.GetService(ILexSenseFactory)
                 blank_sense = sense_factory.Create()
                 new_entry.SensesOS.Add(blank_sense)
+                self._DefaultExcludeFromAllPublications(blank_sense)
+
+            self._DefaultExcludeFromAllPublications(new_entry)
 
             # Note: Factory.Create() automatically adds the entry to the repository
             # No explicit Add() call needed - the entry is already in the database
@@ -1860,6 +1863,7 @@ class LexEntryOperations(BaseOperations):
             # Set the gloss
             mkstr = TsStringUtils.MakeString(gloss, wsHandle)
             new_sense.Gloss.set_String(wsHandle, mkstr)
+            self._DefaultExcludeFromAllPublications(new_sense)
 
             return new_sense
 
