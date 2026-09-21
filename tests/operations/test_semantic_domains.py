@@ -361,6 +361,28 @@ class TestOcmCodesScalarType:
         assert props["OcmCodes"] is not None
         assert isinstance(props["OcmCodes"], str)
 
+    def test_get_syncable_properties_questions_has_no_dead_member(
+        self,
+    ):
+        """
+        ICmSemanticDomain has no scalar Questions member, so the old
+        hasattr-guarded block was dead code and props["Questions"] was
+        {} forever. The replacement emits {} unconditionally (no
+        AttributeError, no dependence on a member that does not exist);
+        questions remain reachable via GetQuestions()/QuestionsOS.
+        """
+        from flexicon.code.Lexicon.SemanticDomainOperations import (
+            SemanticDomainOperations,
+        )
+
+        project = _FakeProjectForOcmCodes()
+        ops = SemanticDomainOperations(project)
+        domain = _FakeOcmDomain(ocm_codes=None)
+
+        props = ops.GetSyncableProperties(domain)
+
+        assert props["Questions"] == {}
+
     # -- GetOcmCodes -------------------------------------------------------
 
     def test_get_ocm_codes_unset_returns_empty_string(self):
@@ -390,33 +412,54 @@ class TestOcmCodesScalarType:
     class _FakeMultiStringField:
         """
         Stand-in for the genuinely-multistring fields Duplicate() also
-        copies (Name, Description, Abbreviation, Questions) -- these DO
-        support CopyAlternatives(), unlike OcmCodes.
+        copies (Name, Description, Abbreviation, and CmDomainQ.Question)
+        -- these DO support CopyAlternatives(), unlike OcmCodes.
+        Captures the source so tests can assert a copy truly happened.
         """
 
+        def __init__(self):
+            self.copied_from = None
+
         def CopyAlternatives(self, other):
-            pass
+            self.copied_from = other
+
+    class _FakeDomainQ:
+        """
+        Minimal ICmDomainQ stand-in: Question is a genuine IMultiUnicode,
+        so it supports CopyAlternatives(). ICmSemanticDomain exposes
+        questions only through QuestionsOS (an owning sequence of these),
+        never through a scalar Questions member.
+        """
+
+        def __init__(self, question=None):
+            self.Question = question or TestOcmCodesScalarType._FakeMultiStringField()
+
+    class _FakeOwningList(list):
+        def Add(self, item):
+            self.append(item)
 
     class _FakeDuplicateTarget:
         """factory.Create() return value: a fresh domain with real
-        MultiString-shaped fields for Name/Description/Abbreviation/
-        Questions, and a plain scalar OcmCodes attribute."""
+        MultiString-shaped fields for Name/Description/Abbreviation
+        (CopyAlternatives), an owning-sequence QuestionsOS, and a plain
+        scalar OcmCodes attribute. No scalar Questions member, matching
+        reality."""
 
         def __init__(self):
             self.Name = TestOcmCodesScalarType._FakeMultiStringField()
             self.Description = TestOcmCodesScalarType._FakeMultiStringField()
             self.Abbreviation = TestOcmCodesScalarType._FakeMultiStringField()
-            self.Questions = TestOcmCodesScalarType._FakeMultiStringField()
+            self.QuestionsOS = TestOcmCodesScalarType._FakeOwningList()
             self.OcmCodes = None
             self.SubPossibilitiesOS = []
 
     class _FakeDuplicateSource(_FakeOcmDomain):
-        def __init__(self, ocm_codes=None):
+        def __init__(self, ocm_codes=None, questions=None):
             super().__init__(ocm_codes=ocm_codes)
             self.Name = TestOcmCodesScalarType._FakeMultiStringField()
             self.Description = TestOcmCodesScalarType._FakeMultiStringField()
             self.Abbreviation = TestOcmCodesScalarType._FakeMultiStringField()
-            self.Questions = TestOcmCodesScalarType._FakeMultiStringField()
+            self.QuestionsOS = list(questions) if questions else []
             self.SubPossibilitiesOS = []
             self.OccurrencesRS = []
 
@@ -435,8 +478,10 @@ class TestOcmCodesScalarType:
         Build a SemanticDomainOperations instance wired just enough to
         drive the Duplicate() body: write-enabled, a no-op transaction
         context manager (transaction plumbing is not what's under test
-        here), no parent (top-level insert path), and a factory that
-        hands back `duplicate_target`.
+        here), no parent (top-level insert path), a factory that hands
+        back `duplicate_target` for ICmSemanticDomainFactory, and a
+        factory that creates fresh _FakeDomainQ entries for
+        ICmDomainQFactory (used to copy QuestionsOS).
         """
         import contextlib
 
@@ -451,11 +496,19 @@ class TestOcmCodesScalarType:
             def Create(self):
                 return self._target
 
+        class _FakeQFactory:
+            def Create(self):
+                return TestOcmCodesScalarType._FakeDomainQ()
+
         class _FakeServiceLocator:
-            def __init__(self, factory):
+            def __init__(self, factory, q_factory):
                 self._factory = factory
+                self._q_factory = q_factory
 
             def GetService(self, iface):
+                name = getattr(iface, "__name__", None) or str(iface)
+                if "ICmDomainQFactory" in name:
+                    return self._q_factory
                 return self._factory
 
         class _FakeLp:
@@ -465,20 +518,21 @@ class TestOcmCodesScalarType:
             PossibilitiesOS = None  # set below
 
         class _FakeInnerProject:
-            def __init__(self, factory):
-                self.ServiceLocator = _FakeServiceLocator(factory)
+            def __init__(self, factory, q_factory):
+                self.ServiceLocator = _FakeServiceLocator(factory, q_factory)
 
         class _FakeProject:
-            def __init__(self, factory):
+            def __init__(self, factory, q_factory):
                 self.writeEnabled = True
-                self.project = _FakeInnerProject(factory)
+                self.project = _FakeInnerProject(factory, q_factory)
                 self.lp = _FakeLp()
                 self.lp.PossibilitiesOS = (
                     TestOcmCodesScalarType._FakePossibilitiesOS()
                 )
 
         factory = _FakeFactory(duplicate_target)
-        project = _FakeProject(factory)
+        q_factory = _FakeQFactory()
+        project = _FakeProject(factory, q_factory)
         ops = SemanticDomainOperations(project)
 
         monkeypatch.setattr(
@@ -506,3 +560,37 @@ class TestOcmCodesScalarType:
         result = ops.Duplicate(source, insert_after=False, deep=False)
 
         assert result.OcmCodes == ""
+
+    def test_duplicate_copies_questions_not_a_scalar_questions_member(
+        self, monkeypatch
+    ):
+        """
+        The pre-fix `duplicate.Questions.CopyAlternatives(source.Questions)`
+        raised on every domain (ICmSemanticDomain has no Questions member)
+        and hid the OcmCodes fix six lines below. The fix copies QuestionsOS,
+        creating a fresh CmDomainQ per source entry.
+        """
+        source_q = self._FakeDomainQ(
+            question=self._FakeMultiStringField()
+        )
+        target = self._FakeDuplicateTarget()
+        ops = self._make_duplicate_ops(monkeypatch, target)
+        source = self._FakeDuplicateSource(
+            ocm_codes=None, questions=[source_q]
+        )
+
+        result = ops.Duplicate(source, insert_after=False, deep=False)
+
+        assert len(result.QuestionsOS) == 1
+        new_q = result.QuestionsOS[0]
+        assert new_q is not source_q
+        assert new_q.Question.copied_from is source_q.Question
+
+    def test_duplicate_tolerates_a_domain_with_no_questions(self, monkeypatch):
+        target = self._FakeDuplicateTarget()
+        ops = self._make_duplicate_ops(monkeypatch, target)
+        source = self._FakeDuplicateSource(ocm_codes=None, questions=[])
+
+        result = ops.Duplicate(source, insert_after=False, deep=False)
+
+        assert result.QuestionsOS == []

@@ -12,9 +12,11 @@
 #   measured 1792/1792 domains failing) or a populated string (still
 #   raises: 'str' object has no attribute 'get_String').
 #
-#   This file is written but deliberately NOT executed as part of this
-#   task (per task instructions). Run it against a live Target sandbox
-#   with:
+#   This file covers the #348 write-path fix AND the Duplicate()
+#   QuestionsOS blocker that used to sit six lines above the OcmCodes
+#   fix and raised AttributeError on every domain, keeping the branch
+#   unverifiable (issue #352 item A). Run it against a live Target
+#   sandbox with:
 #
 #       $env:FLEXLIBS_REQUIRE_LIVE = "1"
 #       python -m pytest tests/operations/test_issue348_ocmcodes_scalar_live.py \
@@ -22,7 +24,9 @@
 #
 #   tests/fixtures/ here has a Target .fwbackup and no Sena 3 backup, so
 #   every test uses `target_sandbox` (function-scoped, tempdir copy,
-#   nothing can leak into the real Target).
+#   nothing can leak into the real Target); the seeded-question probe
+#   (direct assignment / factory-seeded Question multistring, not
+#   pre-existing data) is called out as such in its docstring.
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+
@@ -193,6 +197,7 @@ class TestOcmCodesLiveDuplicate:
                 f"Expected duplicate of an unset domain to carry an "
                 f"empty/None OcmCodes, got {duplicate.OcmCodes!r}"
             )
+            assert len(duplicate.QuestionsOS) == len(source.QuestionsOS)
         finally:
             target_sandbox.SemanticDomains.Delete(duplicate)
 
@@ -213,6 +218,68 @@ class TestOcmCodesLiveDuplicate:
             assert duplicate.OcmCodes == test_value, (
                 f"Expected duplicate to carry {test_value!r}, got "
                 f"{duplicate.OcmCodes!r}"
+            )
+            # Duplicate() used to raise on `duplicate.Questions.CopyAlternatives`
+            # before reaching this line (ICmSemanticDomain has no Questions
+            # member -- issue #352). The duplicate succeeding at all proves
+            # that blocker is gone; also confirm the QuestionsOS sequence
+            # was walked without error (0 == 0 on an unseeded Target).
+            assert len(duplicate.QuestionsOS) == len(source.QuestionsOS), (
+                f"Duplicate QuestionsOS length {len(duplicate.QuestionsOS)} "
+                f"!= source {len(source.QuestionsOS)}"
+            )
+        finally:
+            target_sandbox.SemanticDomains.Delete(duplicate)
+
+    @pytest.mark.live_phase("SemanticDomainOperations", "modify")
+    def test_duplicate_copies_seeded_questions_into_fresh_domain_q(
+        self, target_sandbox
+    ):
+        """
+        Seed one CmDomainQ (Question IMultiUnicode) into a source domain,
+        then Duplicate it and read the copy back from the LCM through the
+        fresh entry's own Question multistring. This exercises the
+        QuestionsOS branch that hid the OcmCodes Duplicate() fix behind an
+        AttributeError on every domain (issue #352), and proves the full
+        Duplicate() body -- Questions plus the #348 scalar OcmCodes copy.
+        """
+        from SIL.LCModel import ICmDomainQFactory
+        from SIL.LCModel.Core.KernelInterfaces import ITsString
+        from SIL.LCModel.Core.Text import TsStringUtils
+
+        domains = list(target_sandbox.SemanticDomains.GetAll())
+        assert domains, "Sandbox project has no semantic domains."
+
+        source = domains[0]
+        ws = target_sandbox.project.DefaultAnalWs
+        q_text = f"{TEST_PREFIX}What words refer to walking?"
+
+        source.OcmCodes = f"{TEST_PREFIX}424"
+
+        q_factory = target_sandbox.project.ServiceLocator.GetService(
+            ICmDomainQFactory
+        )
+        source_q = q_factory.Create()
+        source.QuestionsOS.Add(source_q)
+        source_q.Question.set_String(
+            ws, TsStringUtils.MakeString(q_text, ws)
+        )
+
+        duplicate = target_sandbox.SemanticDomains.Duplicate(
+            source, insert_after=False, deep=False
+        )
+        try:
+            assert duplicate.OcmCodes == f"{TEST_PREFIX}424"
+            assert len(duplicate.QuestionsOS) == 1, (
+                f"Expected one duplicated CmDomainQ entry, got "
+                f"{len(duplicate.QuestionsOS)}"
+            )
+            dup_q = duplicate.QuestionsOS[0]
+            assert dup_q is not source_q
+            read_back = ITsString(dup_q.Question.get_String(ws)).Text
+            assert read_back == q_text, (
+                f"Duplicated question read back as {read_back!r}, expected "
+                f"{q_text!r}"
             )
         finally:
             target_sandbox.SemanticDomains.Delete(duplicate)

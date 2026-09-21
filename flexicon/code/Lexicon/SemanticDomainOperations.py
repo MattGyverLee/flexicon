@@ -20,6 +20,7 @@ from ..Shared.catalog_backed import _LCMNativeCatalogImportMixin
 from SIL.LCModel import (
     ICmSemanticDomain,
     ICmSemanticDomainFactory,
+    ICmDomainQFactory,
     ILexSenseRepository,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
@@ -1122,7 +1123,20 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             duplicate.Name.CopyAlternatives(source.Name)
             duplicate.Description.CopyAlternatives(source.Description)
             duplicate.Abbreviation.CopyAlternatives(source.Abbreviation)
-            duplicate.Questions.CopyAlternatives(source.Questions)
+
+            # Questions - ICmSemanticDomain has NO scalar Questions
+            # member; the data lives on QuestionsOS, an owning sequence
+            # of CmDomainQ objects, each carrying a Question
+            # (IMultiUnicode). The old `duplicate.Questions.CopyAlternatives`
+            # raised AttributeError on every domain (nonexistent member,
+            # issue #352) and it raised BEFORE the OcmCodes line below,
+            # keeping the #348 fix unreachable. Copy by creating fresh
+            # CmDomainQ entries and copying their per-WS alternatives.
+            q_factory = self.project.project.ServiceLocator.GetService(ICmDomainQFactory)
+            for source_q in source.QuestionsOS:
+                new_q = q_factory.Create()
+                duplicate.QuestionsOS.Add(new_q)
+                new_q.Question.CopyAlternatives(source_q.Question)
 
             # OcmCodes is a scalar Unicode / System.String property, not an
             # IMultiString -- CopyAlternatives() is multistring-only and
@@ -1261,14 +1275,16 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                     abbreviation_dict[ws_def.Id] = text
         props["Abbreviation"] = abbreviation_dict
 
-        # Questions - elicitation questions
-        questions_dict = {}
-        if hasattr(item, "Questions"):
-            for ws_def in self.project.WritingSystems.GetAll():
-                text = ITsString(item.Questions.get_String(ws_def.Handle)).Text
-                if text:
-                    questions_dict[ws_def.Id] = text
-        props["Questions"] = questions_dict
+        # Questions - elicitation questions. ICmSemanticDomain has NO
+        # scalar Questions member (the old hasattr guard here was always
+        # False, so props["Questions"] has been {} forever -- issue #352).
+        # The data lives on QuestionsOS, an owning sequence of CmDomainQ
+        # objects each carrying a Question (IMultiUnicode); that is not a
+        # syncable scalar property -- _apply_props_loop can neither read
+        # nor write it -- and GetQuestions() is the query API for it.
+        # Keep emitting {} so the key stays present and CompareTo treats
+        # two identically-populated domains as equal.
+        props["Questions"] = {}
 
         # OcmCodes - OCM codes. ICmSemanticDomain.OcmCodes is a scalar
         # Unicode / System.String property (liblcm 11.0.0.0), NOT an
