@@ -503,7 +503,7 @@ class PhonemeOperations(BaseOperations):
 
         Example:
             >>> phoneme = project.Phonemes.Find("/p/")
-            >>> project.Phonemes.GetName(phoneme)
+            >>> print(project.Phonemes.GetName(phoneme))
             /p/
 
         See Also:
