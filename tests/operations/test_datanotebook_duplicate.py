@@ -58,15 +58,12 @@
 #        System.DateTime -- SetDateOfEvent() crashes with TypeError on
 #        every call (it always constructs/receives a .NET DateTime).
 #     4. Duplicate()'s (and GetParentRecord()'s) sub-record detection
-#        -- `isinstance(owner, IRnGenericRec)` on the raw, uncast
-#        `source.Owner` -- is always False live, because pythonnet
-#        types `.Owner` as the base ICmObject interface. Every
-#        Duplicate() call, top-level OR sub-record, takes the
-#        top-level branch and appends into
-#        ResearchNotebookOA.RecordsOC. Delete() in this SAME file
-#        already fixed the identical class of bug under issue #133 via
-#        `self._GetTypedOwner(record)`; Duplicate()/GetParentRecord
-#        were never updated to match.
+#        used to do `isinstance(owner, IRnGenericRec)` on the raw,
+#        uncast `source.Owner`, which is always False live because
+#        pythonnet types `.Owner` as the base ICmObject interface.
+#        Delete() in this SAME file already fixed the identical class
+#        of bug under issue #133 via `self._GetTypedOwner(record)`;
+#        Duplicate()/GetParentRecord now match that pattern.
 #
 #   Fixing any of this is outside T2.4/T2.5's mandate (T2.4 is a
 #   test-file rewrite; T2.5 is explicitly production-edit-free). This
@@ -315,39 +312,17 @@ class TestDataNotebookDuplicateTopLevelLive:
 class TestDataNotebookDuplicateSubRecordOwnerDetectionLive:
     """
     SubRecordsOS (the OS branch) is an ordered sequence: positional
-    IndexOf()/Insert() is valid there, unlike the top-level OC. The
-    ORIGINAL, DELETED non-test asserted that a sub-record duplicate
-    lands immediately after the source in SubRecordsOS. Live probing in
-    THIS session found that assertion can no longer be made honestly:
-    Duplicate()'s own sub-record detection --
-    `if isinstance(owner, IRnGenericRec):` on the raw, uncast
-    `source.Owner` -- never evaluates True live, because pythonnet
-    returns `.Owner` typed as the base `ICmObject` interface, not the
-    concrete `IRnGenericRec`, so `isinstance()` against the concrete
-    interface is always False without an explicit cast first. Every
-    Duplicate() call -- top-level OR sub-record -- therefore takes the
-    top-level `else` branch and appends into
-    `ResearchNotebookOA.RecordsOC`, even when duplicating a genuine
-    sub-record.
-
-    This is a THIRD separate, previously-masked, out-of-scope defect
-    (reported in cycle2-programmer-T2.4-T2.5.md, not fixed here) --
-    distinct from the Title/Text bug and from #302/#261. Notably,
-    `Delete()` in this SAME file already fixed the identical class of
-    bug under issue #133 by routing through
-    `self._GetTypedOwner(record)` instead of a raw `isinstance(owner,
-    IRnGenericRec)` check (see the `:392` comment); `Duplicate()` and
-    `GetParentRecord()` were never updated to match. This test locks in
-    the CURRENT, live-confirmed (mis)behaviour rather than asserting
-    the originally-intended position, because asserting the original
-    intent would not reflect what the production code actually does
-    today.
+    IndexOf()/Insert() is valid there, unlike the top-level OC. Issue
+    #331 fixed Duplicate()/GetParentRecord() to mirror Delete()'s owner
+    casting pattern from issue #133: route raw `.Owner` values through
+    `self._GetTypedOwner(record)` before deciding whether a record is a
+    true sub-record. Live, that restores the intended behavior: a
+    sub-record duplicate stays under the same parent, and
+    GetParentRecord() returns that parent instead of None.
     """
 
     @pytest.mark.live_phase("DataNotebookOperations", "add")
-    def test_duplicate_subrecord_currently_lands_in_toplevel_recordsoc(
-        self, target_sandbox
-    ):
+    def test_duplicate_subrecord_stays_in_parent_subrecords(self, target_sandbox):
         notebook = target_sandbox.DataNotebook
 
         parent = _make_toplevel_record(
@@ -374,18 +349,19 @@ class TestDataNotebookDuplicateSubRecordOwnerDetectionLive:
             }
             new_toplevel = after_toplevel - before_toplevel
 
-            assert set(reread_subrecords) == {s1.Hvo, s2.Hvo}, (
-                "SubRecordsOS must be untouched by this Duplicate() call "
-                "-- if a duplicate now appears here, the owner-detection "
-                "defect documented on this class has been fixed; "
-                "re-derive this test's intent (it should then assert "
-                "correct sub-record placement, like the original "
-                "pre-C4 non-test intended)"
+            assert len(reread_subrecords) == 3, (
+                "Duplicate() must insert a new sub-record under the same "
+                "parent instead of appending it into top-level RecordsOC"
             )
-            assert len(new_toplevel) == 1, (
-                "current (buggy) behaviour: the duplicate of a "
-                "sub-record lands in ResearchNotebookOA.RecordsOC, not "
-                "in the parent's SubRecordsOS -- see class docstring"
+            assert reread_subrecords[0] == s1.Hvo
+            assert reread_subrecords[1] not in {s1.Hvo, s2.Hvo}, (
+                "insert_after=True must place the duplicate immediately "
+                "after the source sub-record"
+            )
+            assert reread_subrecords[2] == s2.Hvo
+            assert len(new_toplevel) == 0, (
+                "duplicating a sub-record must not create a stray top-level "
+                "record in ResearchNotebookOA.RecordsOC"
             )
         finally:
             after_toplevel = {
@@ -397,6 +373,28 @@ class TestDataNotebookDuplicateSubRecordOwnerDetectionLive:
                     notebook.Delete(hvo)
                 except Exception:
                     pass
+            # Delete() on the parent recursively deletes all genuine
+            # sub-records, per Delete()'s own contract.
+            try:
+                notebook.Delete(parent.Hvo)
+            except Exception:
+                pass
+
+    @pytest.mark.live_phase("DataNotebookOperations", "read")
+    def test_getparentrecord_returns_parent_for_subrecord(self, target_sandbox):
+        notebook = target_sandbox.DataNotebook
+
+        parent = _make_toplevel_record(
+            target_sandbox, f"{TEST_PREFIX}Interview parent getparent"
+        )
+        child = _make_subrecord(target_sandbox, parent, f"{TEST_PREFIX}child")
+
+        try:
+            reread_child = next(r for r in parent.SubRecordsOS if r.Hvo == child.Hvo)
+            found_parent = notebook.GetParentRecord(reread_child.Hvo)
+            assert found_parent is not None
+            assert found_parent.Hvo == parent.Hvo
+        finally:
             # Delete() on the parent recursively deletes all genuine
             # sub-records, per Delete()'s own contract.
             try:
