@@ -123,6 +123,36 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   guard added because whether FLEx's UI enforces this is not derivable
   from static reflection.
 
+### Changed
+
+- **BREAKING (behavioural): `PhonemeOperations.__ApplyFeatures` now
+  defaults to `on_unresolved="raise"`.** Task T9 of
+  `specs/feature-structure-sync-gap`, closes #253. A feature or value
+  GUID that does not resolve to an object in the target project now
+  raises `FP_ParameterError` (naming the GUID) during
+  `PhonemeOperations.ApplySyncableProperties`, instead of being silently
+  skipped and leaving the synced `FeaturesOA` quietly incomplete. This
+  aligns phonemes with `NaturalClassOperations` (contract C7) and with
+  the policy T6/T7/T8 already shipped for MSAs, POSes and allomorphs;
+  `on_unresolved="skip"` remains available as an explicit opt-in for
+  callers that genuinely want best-effort application.
+
+  Shipped together with the two enablers the silent path depended on:
+  `__GetPhonemeObject` now casts the `project.Object(...)` result to
+  `IPhPhoneme` (a bare base-interface view has no `FeaturesOA`), and
+  `ApplySyncableProperties` gates on key presence of `Features`/
+  `FeaturesGuid` rather than truthiness -- threading `FeaturesGuid`
+  through so the newly-created structure preserves its identity.
+
+  **Behaviour change.** A sync run against a target whose feature
+  system lacks a referenced feature/value GUID now fails loudly instead
+  of writing a silently-incomplete feature structure. Callers relying
+  on the old silent-skip must pass `on_unresolved="skip"` explicitly,
+  or catch `FP_ParameterError`.
+
+  Live-verified on the Target sandbox in
+  `specs/feature-structure-sync-gap/evidence/live-T9.md`.
+
 ---
 
 ## [4.9.0] - 2026-09-19

@@ -1440,12 +1440,12 @@ class PhonemeOperations(BaseOperations):
             - ``BasicIPASymbol`` is applied via SetBasicIPASymbol so both the
               multistring and scalar LCM shapes are handled; the base loop's
               dict branch would raise on the scalar shape.
-            - A feature spec is skipped when its feature or value GUID does
-              not resolve in the target project (the feature system must be
-              synced first; ``on_unresolved="skip"`` is the default). The
-              policy flip to ``"raise"`` lands in T9's own commit (spec D1),
-              matching ``NaturalClassOperations``. Must run inside the
-              caller's unit of work.
+            - A feature spec RAISES ``FP_ParameterError`` when its feature or
+              value GUID does not resolve in the target project (C7); a native
+              data-fidelity loss is a loud error, matching
+              ``NaturalClassOperations``. ``on_unresolved="skip"`` remains an
+              explicit opt-in for callers wanting best-effort. Must run inside
+              the caller's unit of work.
         """
         if item is None:
             raise FP_ParameterError("ApplySyncableProperties: item is None")
@@ -1548,7 +1548,7 @@ class PhonemeOperations(BaseOperations):
             self.SetBasicIPASymbol(phoneme, text, tgt_handle)
 
     def __ApplyFeatures(
-        self, phoneme, features, features_guid, on_unresolved="skip",
+        self, phoneme, features, features_guid, on_unresolved="raise",
         label="phoneme",
     ):
         """
@@ -1563,10 +1563,13 @@ class PhonemeOperations(BaseOperations):
         a ``Create(Guid)`` overload. Specs are matched by (FeatureGuid,
         ValueGuid) so re-application is idempotent.
 
-        Unresolvable feature/value GUIDs are skipped (``on_unresolved="skip"``
-        is the default -- the feature system must be synced first). The C7
-        flip to ``"raise"``, matching ``NaturalClassOperations.__ApplyFeatures``,
-        lands in T9's own commit (spec D1) with its CHANGELOG entry.
+        Unresolvable feature/value GUIDs RAISE ``FP_ParameterError``
+        (``on_unresolved="raise"`` is the default, C7, closes issue #253) --
+        a silently-incomplete FeaturesOA is precisely the data-fidelity loss
+        this method exists to close, matching
+        ``NaturalClassOperations.__ApplyFeatures``. ``on_unresolved="skip"``
+        remains a supported explicit opt-in for callers that genuinely want
+        best-effort application.
 
         Args:
             phoneme: Target IPhPhoneme (already created + owned + GUID-assigned
@@ -1575,8 +1578,12 @@ class PhonemeOperations(BaseOperations):
                 dicts, as produced by GetSyncableProperties.
             features_guid: Optional ``str`` GUID of the source IFsFeatStruc,
                 used to preserve identity when a new struct must be created.
-            on_unresolved: ``"skip"`` (default) or ``"raise"``.
+            on_unresolved: ``"raise"`` (default) or ``"skip"``.
             label: Context label for diagnostic messages.
+
+        Raises:
+            FP_ParameterError: If a feature or value GUID does not resolve to
+                an object in the target project.
         """
         self._ApplyFeatureStruc(
             phoneme,
