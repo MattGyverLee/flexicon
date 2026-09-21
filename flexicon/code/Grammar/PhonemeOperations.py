@@ -1305,6 +1305,10 @@ class PhonemeOperations(BaseOperations):
         """
         Resolve HVO or object to IPhPhoneme.
 
+        An int HVO is resolved via ``project.Object()`` and then cast to the
+        concrete ``IPhPhoneme`` interface (C2): a bare base-interface view
+        has no ``FeaturesOA`` for the feature-sync path to write through.
+
         Args:
             phoneme_or_hvo: Either an IPhPhoneme object or an HVO (int).
 
@@ -1312,7 +1316,7 @@ class PhonemeOperations(BaseOperations):
             IPhPhoneme: The resolved phoneme object.
         """
         if isinstance(phoneme_or_hvo, int):
-            return self.project.Object(phoneme_or_hvo)
+            return IPhPhoneme(self.project.Object(phoneme_or_hvo))
         return phoneme_or_hvo
 
     def __GetCodeObject(self, code_or_hvo):
@@ -1438,7 +1442,10 @@ class PhonemeOperations(BaseOperations):
               dict branch would raise on the scalar shape.
             - A feature spec is skipped when its feature or value GUID does
               not resolve in the target project (the feature system must be
-              synced first). Must run inside the caller's unit of work.
+              synced first; ``on_unresolved="skip"`` is the default). The
+              policy flip to ``"raise"`` lands in T9's own commit (spec D1),
+              matching ``NaturalClassOperations``. Must run inside the
+              caller's unit of work.
         """
         if item is None:
             raise FP_ParameterError("ApplySyncableProperties: item is None")
@@ -1457,6 +1464,7 @@ class PhonemeOperations(BaseOperations):
         # the base loop. FeaturesGuid is identity-only and not re-applied.
         basic_ipa = props.get("BasicIPASymbol")
         features = props.get("Features")
+        features_guid = props.get("FeaturesGuid")
         base_props = {
             k: v
             for k, v in props.items()
@@ -1469,8 +1477,8 @@ class PhonemeOperations(BaseOperations):
         if isinstance(basic_ipa, dict) and basic_ipa:
             self.__ApplyBasicIPASymbol(phoneme, basic_ipa, ws_map, fill_gaps)
 
-        if features:
-            self.__ApplyFeatures(phoneme, features)
+        if features or features_guid:
+            self.__ApplyFeatures(phoneme, features, features_guid)
 
     def __ApplyBasicIPASymbol(self, item, ws_values, ws_map, fill_gaps):
         """
@@ -1539,47 +1547,44 @@ class PhonemeOperations(BaseOperations):
                 continue
             self.SetBasicIPASymbol(phoneme, text, tgt_handle)
 
-    def __ApplyFeatures(self, item, specs):
+    def __ApplyFeatures(
+        self, phoneme, features, features_guid, on_unresolved="skip",
+        label="phoneme",
+    ):
         """
         Thin call-through to ``BaseOperations._ApplyFeatureStruc`` (spec
-        feature-structure-sync-gap, T4): rewires a phoneme's FeaturesOA
+        feature-structure-sync-gap, T4/T9): rewires a phoneme's FeaturesOA
         feature-value specs from a list of ``{"FeatureGuid", "ValueGuid"}``
         dicts, resolving each feature/value against the target project by
         GUID.
 
-        A missing FeaturesOA is created (ownership-first). Specs are
-        matched by (FeatureGuid, ValueGuid) so re-application is
-        idempotent; specs whose feature/value GUID does not resolve in
-        the target are skipped (``on_unresolved="skip"`` -- unlike
-        ``NaturalClassOperations.__ApplyFeatures``, which raises; see T9
-        for the upcoming policy flip, D1).
+        A missing FeaturesOA is created (ownership-first), preserving
+        ``features_guid`` via ``_CreateWithGuid`` where the factory supports
+        a ``Create(Guid)`` overload. Specs are matched by (FeatureGuid,
+        ValueGuid) so re-application is idempotent.
 
-        Note: ``struct_guid`` is passed as ``None`` here, not a
-        ``FeaturesGuid`` read from ``props`` -- ``ApplySyncableProperties``
-        (above) has never extracted/threaded ``props.get("FeaturesGuid")``
-        through to this method, so there is no source GUID available to
-        preserve yet. This is the pre-existing "Phoneme struct-GUID not
-        preserved" gap (spec D2); T4 does not fix it (that lands in T9,
-        together with the ``:1351``/``:1431`` fixes that make a GUID
-        reach here in the first place) -- passing ``struct_guid=None``
-        keeps this call-through's behaviour identical to the pre-T4 bare
-        ``factory.Create()`` (``_CreateWithGuid(..., guid=None)`` is
-        defined to be exactly that).
+        Unresolvable feature/value GUIDs are skipped (``on_unresolved="skip"``
+        is the default -- the feature system must be synced first). The C7
+        flip to ``"raise"``, matching ``NaturalClassOperations.__ApplyFeatures``,
+        lands in T9's own commit (spec D1) with its CHANGELOG entry.
 
         Args:
-            item: Target IPhPhoneme (already created + owned + GUID-assigned
+            phoneme: Target IPhPhoneme (already created + owned + GUID-assigned
                 by the caller).
-            specs: list of ``{"FeatureGuid": str, "ValueGuid": str}`` dicts,
-                as produced by GetSyncableProperties.
+            features: list of ``{"FeatureGuid": str, "ValueGuid": str}``
+                dicts, as produced by GetSyncableProperties.
+            features_guid: Optional ``str`` GUID of the source IFsFeatStruc,
+                used to preserve identity when a new struct must be created.
+            on_unresolved: ``"skip"`` (default) or ``"raise"``.
+            label: Context label for diagnostic messages.
         """
-        phoneme = self.__GetPhonemeObject(item)
         self._ApplyFeatureStruc(
             phoneme,
             "FeaturesOA",
-            specs,
-            struct_guid=None,
-            on_unresolved="skip",
-            label="phoneme",
+            features,
+            struct_guid=features_guid,
+            on_unresolved=on_unresolved,
+            label=label,
         )
 
     def __ReadMultiString(self, obj, prop_name, all_ws):
