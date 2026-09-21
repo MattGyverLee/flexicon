@@ -482,6 +482,42 @@ class PhonemeOperations(BaseOperations):
         return None
 
     @OperationsMethod
+    def GetName(self, phoneme_or_hvo, wsHandle=None):
+        """
+        Get the name of a phoneme.
+
+        This is a sibling accessor alias for :meth:`GetRepresentation`.
+        FLEx stores the phoneme display string in ``IPhPhoneme.Name``,
+        and callers coming from other ``*Operations`` classes often look
+        for a ``GetName`` helper first.
+
+        Args:
+            phoneme_or_hvo: The IPhPhoneme object or HVO.
+            wsHandle: Optional writing system handle. Defaults to vernacular WS.
+
+        Returns:
+            str: The phoneme name/representation, or empty string if not set.
+
+        Raises:
+            FP_NullParameterError: If phoneme_or_hvo is None.
+
+        Example:
+            >>> phoneme = project.Phonemes.Find("/p/")
+            >>> project.Phonemes.GetName(phoneme)
+            /p/
+
+        See Also:
+            GetRepresentation, SetRepresentation
+        """
+        self._ValidateParam(phoneme_or_hvo, "phoneme_or_hvo")
+
+        phoneme = self.__GetPhonemeObject(phoneme_or_hvo)
+        wsHandle = self.__WSHandle(wsHandle)
+
+        name = normalize_text(ITsString(phoneme.Name.get_String(wsHandle)).Text)
+        return name or ""
+
+    @OperationsMethod
     def GetRepresentation(self, phoneme_or_hvo, wsHandle=None):
         """
         Get the representation of a phoneme.

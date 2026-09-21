@@ -1130,6 +1130,41 @@ class LexSenseOperations(BaseOperations):
     # --- Grammatical Information Operations ---
 
     @OperationsMethod
+    def GetMSA(self, sense_or_hvo):
+        """
+        Get the Morpho-Syntactic Analysis (MSA) object for a sense.
+
+        Args:
+            sense_or_hvo: The ILexSense object or HVO.
+
+        Returns:
+            IMoMorphSynAnalysis | None: The attached MSA object, or ``None``
+            if the sense has no ``MorphoSyntaxAnalysisRA``.
+
+        Raises:
+            FP_NullParameterError: If sense_or_hvo is None.
+
+        Example:
+            >>> entry = list(project.LexiconAllEntries())[0]
+            >>> senses = list(project.Senses.GetAll(entry))
+            >>> if senses:
+            ...     msa = project.Senses.GetMSA(senses[0])
+            ...     print(msa.ClassName if msa else "No MSA set")
+            MoStemMsa
+
+        See Also:
+            GetPartOfSpeech, SetPartOfSpeech
+        """
+        self._ValidateParam(sense_or_hvo, "sense_or_hvo")
+
+        sense = self.__GetSenseObject(sense_or_hvo)
+        return (
+            sense.MorphoSyntaxAnalysisRA
+            if sense.MorphoSyntaxAnalysisRA is not None
+            else None
+        )
+
+    @OperationsMethod
     def GetPartOfSpeech(self, sense_or_hvo):
         """
         Get the part of speech abbreviation for a sense.
