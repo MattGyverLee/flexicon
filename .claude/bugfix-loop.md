@@ -5,18 +5,17 @@
 > resolved and live-verified on main (`a9463d3`; evidence in
 > `specs/352-copyalternatives-audit/evidence/`).
 >
-> Section-0 state on restart (read-only triage, no branches touched):
-> - `fix/348-ocmcodes-none` has open PR #353 (head `4d432fd`, the older
->   mock-verified form; overlaps main `a9463d3`). Needs human disposition
->   (review/merge, or retire as superseded). Do not pick up #348 as new work.
-> - Unfinished branches with commits and NO open PR -- finish one of these
->   instead of picking a new issue: `fix/244-...` (1 ahead of main),
->   `fix/262-...` (2 ahead), `fix/297-...` (2 ahead), `fix/307-...`
->   (1 ahead). `fix/249-...` is 0 ahead (content already on main; stale
->   pointer).
-> - No cron is armed from this session. Re-arming needs a session with a
->   scheduler capability: create it again at `23 */3 * * *`, with the prompt
->   that points here.
+> Section-0 state on restart (read-only triage 2026-09-21, no branches touched):
+> - `fix/348-ocmcodes-none`: PR #353 closed as superseded by `a9463d3` at
+>   user request. Do not pick up #348 as new work.
+> - `fix/244`, `fix/262`, `fix/297`, `fix/307`: NO open work. Each has a
+>   MERGED PR (#312, #335, #311, #313), the linked issue is CLOSED, and the
+>   merge commits are on main. Local branch tips are stale pointers left by
+>   squash merges (not ancestors of main); deleting them is optional hygiene,
+>   not loop work. `fix/249` is likewise 0 ahead (stale pointer).
+> - Next run may pick a new issue per section 1. No cron is armed from this
+>   session: re-arming needs a session with a scheduler capability -- create
+>   it again at `23 */3 * * *`, with the prompt that points here.
 
 Fired on a schedule. One issue per run. Bug fixes only.
 
