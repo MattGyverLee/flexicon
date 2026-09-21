@@ -18,6 +18,36 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **Four `System.Guid()` parses leaked a raw CLR exception for a
+  malformed GUID** (#334). A malformed GUID string surfaced a bare
+  `System.FormatException` out of a public method instead of an `FP_*`
+  exception: `PhonFeatureOperations.__CreateValueWithGuid` (reached from
+  the public `ApplySyncableProperties`), the two near-duplicate
+  `_CreateValueFromEntry` catalog paths in `PhonFeatureOperations` and
+  `InflectionFeatureOperations`, and `catalog_backed._create_from_entry`
+  (reached from `ImportCatalog()` and `CreateFromCatalog()`).
+
+  All four now raise `FP_ParameterError`, preserving the original CLR
+  exception as `__cause__`. They catch `System.ArgumentNullException`
+  as well as `System.FormatException`: a live probe confirmed that a
+  malformed, empty, whitespace or truncated string raises
+  `FormatException` but `None` raises `ArgumentNullException`, which
+  would otherwise have leaked as the very bug being fixed.
+
+  The messages deliberately differ in framing, because the provenance
+  does. The props-dict site is caller error and says so. The three
+  catalog sites parse a GUID out of the shipped MGA catalog XML, where a
+  malformed value is a data or packaging defect rather than a bad
+  argument, so those messages name it as malformed catalog data and
+  identify the offending entry. All three keep their parse *before*
+  `_TransactionCM` opens, per the convention in `BaseOperations`, so a
+  bad catalog GUID still never marks the undo stack -- confirmed live.
+
+  **Behaviour change.** Code catching `System.FormatException` around
+  these four entry points will stop catching anything and must catch
+  `FP_ParameterError`. This is the carve-out from #262, which fixed the
+  same shape at the object-lookup boundary.
+
 - **`FLExProject.Object()` leaked a raw CLR exception for a stale id**
   (#262). A well-formed but stale or deleted Hvo/Guid surfaced a bare
   `System.Collections.Generic.KeyNotFoundException` through the wrapper

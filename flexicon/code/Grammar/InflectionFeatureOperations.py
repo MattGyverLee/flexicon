@@ -1493,7 +1493,14 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         )
         # Parsed outside the transaction: a malformed catalog GUID must raise
         # before any undo task is opened (mirrors the mixin's own ordering).
-        guid = System.Guid(value_entry.guid)
+        try:
+            guid = System.Guid(value_entry.guid)
+        except (System.FormatException, System.ArgumentNullException) as e:
+            raise FP_ParameterError(
+                f"Malformed catalog GUID '{value_entry.guid}' for feature "
+                f"value '{value_entry.id}'; the shipped catalog data is "
+                f"invalid."
+            ) from e
 
         # Create-and-populate is one unit: a Path-B create whose Add or
         # subsequent per-WS writes fail must not leave a half-built value.

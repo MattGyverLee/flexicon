@@ -476,7 +476,13 @@ class CatalogBackedMixin:
         """
         # Parsed outside the transaction: a malformed catalog GUID must raise
         # before any undo task is opened.
-        guid = System.Guid(entry.guid)
+        try:
+            guid = System.Guid(entry.guid)
+        except (System.FormatException, System.ArgumentNullException) as e:
+            raise FP_ParameterError(
+                f"Malformed catalog GUID '{entry.guid}' for {self.DOMAIN_LABEL} "
+                f"'{entry.id}'; the shipped catalog data is invalid."
+            ) from e
 
         with self._TransactionCM(
             f"Create {self.DOMAIN_LABEL} '{entry.id}' from catalog"
