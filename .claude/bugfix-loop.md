@@ -1,20 +1,22 @@
 # Autonomous bug-fix loop -- operating protocol
 
-> **PAUSED 2026-09-21.** The schedule is cancelled; no cron job is armed.
-> Do not re-arm it without being asked.
+> **RESTART TRIAGE 2026-09-21.** Pause lifted at user request. The cited
+> blocker (`SemanticDomainOperations.py:1125` raising before the fix) is
+> resolved and live-verified on main (`a9463d3`; evidence in
+> `specs/352-copyalternatives-audit/evidence/`).
 >
-> Reason: `fix/348-ocmcodes-none` is parked unfinished (implemented and
-> mock-verified, not QC-reviewed, not live-verified) and is **blocked** by
-> `SemanticDomainOperations.py:1125`, which raises before the fix is
-> reached. Under section 0, the next run would pick that branch up and
-> carry on fixing rather than stopping. See
-> `specs/348-ocmcodes-none/HANDOFF.md` on that branch, plus #348 and the
-> pattern-audit inventory in #352.
->
-> To resume: ask for the loop to be restarted. It is an in-memory,
-> session-only cron job, so it does not survive a session either way --
-> restarting means creating it again, at `23 */3 * * *`, with the prompt
-> that points here.
+> Section-0 state on restart (read-only triage, no branches touched):
+> - `fix/348-ocmcodes-none` has open PR #353 (head `4d432fd`, the older
+>   mock-verified form; overlaps main `a9463d3`). Needs human disposition
+>   (review/merge, or retire as superseded). Do not pick up #348 as new work.
+> - Unfinished branches with commits and NO open PR -- finish one of these
+>   instead of picking a new issue: `fix/244-...` (1 ahead of main),
+>   `fix/262-...` (2 ahead), `fix/297-...` (2 ahead), `fix/307-...`
+>   (1 ahead). `fix/249-...` is 0 ahead (content already on main; stale
+>   pointer).
+> - No cron is armed from this session. Re-arming needs a session with a
+>   scheduler capability: create it again at `23 */3 * * *`, with the prompt
+>   that points here.
 
 Fired on a schedule. One issue per run. Bug fixes only.
 
