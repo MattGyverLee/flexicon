@@ -1248,9 +1248,11 @@ class WfiMorphBundleOperations(BaseOperations):
         else:
             # Resolve to ICmPossibility object
             if isinstance(infl_type_or_hvo, int):
-                infl_type = self.project.Object(infl_type_or_hvo)
+                infl_type = cast_to_concrete(
+                    self.project.Object(infl_type_or_hvo)
+                )
             else:
-                infl_type = infl_type_or_hvo
+                infl_type = cast_to_concrete(infl_type_or_hvo)
 
         with self._TransactionCM("Set morph bundle inflection type"):
             bundle.InflTypeRA = infl_type
@@ -1530,8 +1532,8 @@ class WfiMorphBundleOperations(BaseOperations):
             IWfiAnalysis: The resolved analysis object.
         """
         if isinstance(analysis_or_hvo, int):
-            return self.project.Object(analysis_or_hvo)
-        return analysis_or_hvo
+            return cast_to_concrete(self.project.Object(analysis_or_hvo))
+        return cast_to_concrete(analysis_or_hvo)
 
     def __GetSenseObject(self, sense_or_hvo):
         """
@@ -1544,8 +1546,8 @@ class WfiMorphBundleOperations(BaseOperations):
             ILexSense: The resolved sense object.
         """
         if isinstance(sense_or_hvo, int):
-            return self.project.Object(sense_or_hvo)
-        return sense_or_hvo
+            return cast_to_concrete(self.project.Object(sense_or_hvo))
+        return cast_to_concrete(sense_or_hvo)
 
     def __GetMorphObject(self, morph_or_hvo):
         """
@@ -1564,8 +1566,8 @@ class WfiMorphBundleOperations(BaseOperations):
                 SetMorph performs the IMoForm guard after calling this).
         """
         if isinstance(morph_or_hvo, int):
-            return self.project.Object(morph_or_hvo)
-        return morph_or_hvo
+            return cast_to_concrete(self.project.Object(morph_or_hvo))
+        return cast_to_concrete(morph_or_hvo)
 
     def __GetMSAObject(self, msa_or_hvo):
         """
@@ -1578,8 +1580,8 @@ class WfiMorphBundleOperations(BaseOperations):
             IMoMorphSynAnalysis: The resolved MSA object.
         """
         if isinstance(msa_or_hvo, int):
-            return self.project.Object(msa_or_hvo)
-        return msa_or_hvo
+            return cast_to_concrete(self.project.Object(msa_or_hvo))
+        return cast_to_concrete(msa_or_hvo)
 
     def __GetInflectionClassObject(self, infl_class_or_hvo):
         """
@@ -1592,8 +1594,8 @@ class WfiMorphBundleOperations(BaseOperations):
             IMoInflClass: The resolved inflection class object.
         """
         if isinstance(infl_class_or_hvo, int):
-            return self.project.Object(infl_class_or_hvo)
-        return infl_class_or_hvo
+            return cast_to_concrete(self.project.Object(infl_class_or_hvo))
+        return cast_to_concrete(infl_class_or_hvo)
 
     def __WSHandleVern(self, wsHandle):
         """
