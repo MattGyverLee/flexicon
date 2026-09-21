@@ -398,10 +398,17 @@ class ParagraphOperations(BaseOperations):
         if hasattr(item, "Contents") and item.Contents:
             # Convert TsString to dict with WS keys
             ws_dict = {}
-            text = ITsString(item.Contents).Text
+            text = item.Contents.Text
             if text:
-                # Get the writing system of the TsString
-                ws = item.Contents.get_WritingSystemAt(0) if item.Contents.Length > 0 else None
+                # Get the writing system of run 0. IStTxtPara.Contents is a
+                # bare ITsString, which exposes no get_WritingSystemAt
+                # accessor -- the WS handle lives on the run's text props
+                # (ktpRunWs == 1, first alternative == 0). Mirrors
+                # SegmentOperations.GetSyncableProperties (issue #351).
+                ws = (
+                    item.Contents.get_Properties(0).GetIntPropValues(1, 0)[0]
+                    if item.Contents.Length > 0 else None
+                )
                 if ws:
                     # Find the WritingSystemDefinition with this handle to get its ID
                     ws_def = next((w for w in self.project.WritingSystems.GetAll() if w.Handle == ws), None)
