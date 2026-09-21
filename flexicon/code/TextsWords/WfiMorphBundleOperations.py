@@ -32,6 +32,7 @@ from ..FLExProject import (
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..lcm_casting import (
+    cast_to_concrete,
     get_inflection_class_from_msa,
     set_inflection_class_on_msa,
     INFLECTION_CLASS_BEARING_MSA_CLASSES,
@@ -1515,8 +1516,8 @@ class WfiMorphBundleOperations(BaseOperations):
             IWfiMorphBundle: The resolved bundle object.
         """
         if isinstance(bundle_or_hvo, int):
-            return self.project.Object(bundle_or_hvo)
-        return bundle_or_hvo
+            return cast_to_concrete(self.project.Object(bundle_or_hvo))
+        return cast_to_concrete(bundle_or_hvo)
 
     def __GetAnalysisObject(self, analysis_or_hvo):
         """

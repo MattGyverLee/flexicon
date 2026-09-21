@@ -21,6 +21,7 @@
 
 import inspect
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -202,6 +203,27 @@ class TestWfiMorphBundleDuplicate:
             "Duplicate references source.Gloss; IWfiMorphBundle has no "
             "Gloss field. Remove the line (#107 regression)."
         )
+
+
+class TestWfiMorphBundleHvoResolverCasts:
+    """Static-source guard for issue #333 HVO resolver cast contract."""
+
+    def test_private_bundle_resolver_casts_hvo_and_object_paths(self):
+        source_path = (
+            Path(__file__).resolve().parents[2]
+            / "flexicon/code/TextsWords/WfiMorphBundleOperations.py"
+        )
+        with open(source_path, "r", encoding="utf-8") as fh:
+            src = fh.read()
+
+        assert "def __GetBundleObject(self, bundle_or_hvo):" in src
+        assert (
+            "return cast_to_concrete(self.project.Object(bundle_or_hvo))"
+            in src
+        ), "HVO path must cast raw ICmObject to concrete interface"
+        assert (
+            "return cast_to_concrete(bundle_or_hvo)" in src
+        ), "Object path should be normalized through cast_to_concrete as well"
 
 
 class TestWfiMorphBundleMorphTypeContract:
