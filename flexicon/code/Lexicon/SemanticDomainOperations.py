@@ -593,7 +593,11 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             - OCM is a standard anthropological classification system
             - Returns empty string if no OCM codes are assigned
             - Multiple codes may be separated by spaces or commas
-            - Uses default analysis writing system
+            - ICmSemanticDomain.OcmCodes is a scalar Unicode /
+              System.String property (liblcm 11.0.0.0), not an
+              IMultiString: it carries a single value with no per-writing-
+              system alternatives, so there is no writing-system handling
+              here (issue #348)
 
         See Also:
             GetNumber, GetDescription
@@ -601,11 +605,10 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         self._ValidateParam(domain_or_hvo, "domain_or_hvo")
 
         domain = self.__ResolveObject(domain_or_hvo)
-        wsHandle = self.project.project.DefaultAnalWs
 
-        # OcmCodes is a MultiUnicode
-        ocm = ITsString(domain.OcmCodes.get_String(wsHandle)).Text
-        return ocm or ""
+        # OcmCodes is a scalar Unicode / System.String property, not a
+        # MultiUnicode -- read it directly, no get_String(wsHandle) call.
+        return domain.OcmCodes or ""
 
     # --- Hierarchy Operations ---
 
@@ -1120,7 +1123,12 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             duplicate.Description.CopyAlternatives(source.Description)
             duplicate.Abbreviation.CopyAlternatives(source.Abbreviation)
             duplicate.Questions.CopyAlternatives(source.Questions)
-            duplicate.OcmCodes.CopyAlternatives(source.OcmCodes)
+
+            # OcmCodes is a scalar Unicode / System.String property, not an
+            # IMultiString -- CopyAlternatives() is multistring-only and
+            # raises on every domain where source.OcmCodes is unset.
+            # (issue #348)
+            duplicate.OcmCodes = source.OcmCodes or ""
 
             # Handle owned objects if deep=True
             if deep:
@@ -1262,14 +1270,12 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                     questions_dict[ws_def.Id] = text
         props["Questions"] = questions_dict
 
-        # OcmCodes - OCM codes
-        ocm_dict = {}
-        if hasattr(item, "OcmCodes"):
-            for ws_def in self.project.WritingSystems.GetAll():
-                text = ITsString(item.OcmCodes.get_String(ws_def.Handle)).Text
-                if text:
-                    ocm_dict[ws_def.Id] = text
-        props["OcmCodes"] = ocm_dict
+        # OcmCodes - OCM codes. ICmSemanticDomain.OcmCodes is a scalar
+        # Unicode / System.String property (liblcm 11.0.0.0), NOT an
+        # IMultiString -- it carries a single value, not per-WS
+        # alternatives, so there is no writing-system loop and no
+        # get_String() call here. (issue #348)
+        props["OcmCodes"] = item.OcmCodes or ""
 
         # Note: SubPossibilitiesOS is an Owning Sequence (OS) - not included
         # Note: OccurrencesRS is a Reference Sequence (complex) - not included

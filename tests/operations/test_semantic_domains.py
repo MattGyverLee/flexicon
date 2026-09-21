@@ -43,11 +43,6 @@ import sys
 import pytest
 
 
-# Every test in this module opens a real .fwdata project via the
-# writable_project fixture.
-pytestmark = pytest.mark.requires_live_project
-
-
 # ---------------------------------------------------------------------------
 # Live-LCM project fixture (mirrors test_phon_features.py)
 # ---------------------------------------------------------------------------
@@ -122,6 +117,13 @@ class TestSemanticDomainsCatalog:
     test project is already polluted with duplicates from earlier
     unguarded runs). See the module docstring for full rationale.
     """
+
+    # Every test in this class opens a real .fwdata project via the
+    # writable_project fixture. Kept class-scoped (not module-level) so
+    # the pure-mock OcmCodes coverage below (TestOcmCodesScalarType) can
+    # run under `-m "not requires_live_project"` without being swept up
+    # by this mark.
+    pytestmark = pytest.mark.requires_live_project
 
     # -- New-contract tests ---------------------------------------------
 
@@ -250,3 +252,257 @@ class TestSemanticDomainsCatalog:
             f"Sky subdomain GUID {actual_guid!r} != canonical "
             f"{SKY_GUID!r}."
         )
+
+
+# ---------------------------------------------------------------------------
+# Mock coverage: ICmSemanticDomain.OcmCodes is a scalar Unicode /
+# System.String property, NOT an IMultiString (issue #348).
+#
+# GetSyncableProperties, GetOcmCodes, and Duplicate() all previously
+# treated OcmCodes as a MultiUnicode (calling .get_String(handle) /
+# .CopyAlternatives()), which raises on every real domain -- whether
+# OcmCodes is None (the common case; ~1792/1792 domains in the reported
+# project) or a set string (AttributeError either way, since a plain
+# `str` has neither method).
+#
+# Deliberately NOT under `pytestmark = requires_live_project`: these
+# tests use plain-Python fakes with `OcmCodes` modeled as a bare
+# `str`/`None` attribute, never as a Mock exposing `get_String` --
+# a mock offering `get_String` would pass against the broken
+# MultiUnicode-shaped code and is exactly the failure mode that let
+# issue #318's mock suite go green against production code that raised
+# on every real database. No SIL.LCModel/live project needed; run with:
+#     python -m pytest -m "not requires_live_project" \
+#         tests/operations/test_semantic_domains.py -q
+# ---------------------------------------------------------------------------
+
+
+class _FakeOcmDomain:
+    """
+    Minimal ICmSemanticDomain stand-in. OcmCodes is a bare attribute
+    (str or None) -- exactly the pythonnet-boundary shape of a scalar
+    Unicode / System.String property, never an object with get_String()
+    or CopyAlternatives().
+
+    No ClassName attribute, so SemanticDomainOperations.__ResolveObject
+    falls through to `return domain_or_hvo` unchanged (it only tries to
+    cast when ClassName == "CmSemanticDomain").
+    """
+
+    def __init__(self, ocm_codes=None):
+        self.OcmCodes = ocm_codes
+
+
+class _FakeProjectForOcmCodes:
+    """Bare-minimum FLExProject stand-in for read-only OcmCodes access."""
+
+    def __init__(self, write_enabled=True):
+        self.writeEnabled = write_enabled
+
+
+class TestOcmCodesScalarType:
+    """
+    Pure-mock regression coverage for issue #348: OcmCodes must be read
+    and written as a plain scalar string at all three call sites, never
+    via MultiUnicode-only APIs (get_String / CopyAlternatives).
+    """
+
+    # -- GetSyncableProperties --------------------------------------------
+
+    def test_get_syncable_properties_unset_ocm_codes_yields_empty_string(self):
+        """
+        An unset (None) OcmCodes must surface as "" in the props dict
+        without raising -- this is the exact shape of the reported bug
+        (1792/1792 domains failing because `.get_String()` was called
+        on None).
+        """
+        from flexicon.code.Lexicon.SemanticDomainOperations import (
+            SemanticDomainOperations,
+        )
+
+        project = _FakeProjectForOcmCodes()
+        ops = SemanticDomainOperations(project)
+        domain = _FakeOcmDomain(ocm_codes=None)
+
+        props = ops.GetSyncableProperties(domain)
+
+        assert props["OcmCodes"] == ""
+
+    def test_get_syncable_properties_set_ocm_codes_reads_back_the_string(self):
+        """A populated OcmCodes value must come back verbatim."""
+        from flexicon.code.Lexicon.SemanticDomainOperations import (
+            SemanticDomainOperations,
+        )
+
+        project = _FakeProjectForOcmCodes()
+        ops = SemanticDomainOperations(project)
+        domain = _FakeOcmDomain(ocm_codes="484")
+
+        props = ops.GetSyncableProperties(domain)
+
+        assert props["OcmCodes"] == "484"
+
+    def test_get_syncable_properties_never_emits_none_for_ocm_codes(self):
+        """
+        BaseOperations._apply_props_loop skips None values outright, so
+        emitting None here would silently drop the field on the apply
+        side. Belt-and-suspenders check that the key is always a str.
+        """
+        from flexicon.code.Lexicon.SemanticDomainOperations import (
+            SemanticDomainOperations,
+        )
+
+        project = _FakeProjectForOcmCodes()
+        ops = SemanticDomainOperations(project)
+        domain = _FakeOcmDomain(ocm_codes=None)
+
+        props = ops.GetSyncableProperties(domain)
+
+        assert props["OcmCodes"] is not None
+        assert isinstance(props["OcmCodes"], str)
+
+    # -- GetOcmCodes -------------------------------------------------------
+
+    def test_get_ocm_codes_unset_returns_empty_string(self):
+        from flexicon.code.Lexicon.SemanticDomainOperations import (
+            SemanticDomainOperations,
+        )
+
+        project = _FakeProjectForOcmCodes()
+        ops = SemanticDomainOperations(project)
+        domain = _FakeOcmDomain(ocm_codes=None)
+
+        assert ops.GetOcmCodes(domain) == ""
+
+    def test_get_ocm_codes_set_value_reads_back_correctly(self):
+        from flexicon.code.Lexicon.SemanticDomainOperations import (
+            SemanticDomainOperations,
+        )
+
+        project = _FakeProjectForOcmCodes()
+        ops = SemanticDomainOperations(project)
+        domain = _FakeOcmDomain(ocm_codes="484")
+
+        assert ops.GetOcmCodes(domain) == "484"
+
+    # -- Duplicate ----------------------------------------------------------
+
+    class _FakeMultiStringField:
+        """
+        Stand-in for the genuinely-multistring fields Duplicate() also
+        copies (Name, Description, Abbreviation, Questions) -- these DO
+        support CopyAlternatives(), unlike OcmCodes.
+        """
+
+        def CopyAlternatives(self, other):
+            pass
+
+    class _FakeDuplicateTarget:
+        """factory.Create() return value: a fresh domain with real
+        MultiString-shaped fields for Name/Description/Abbreviation/
+        Questions, and a plain scalar OcmCodes attribute."""
+
+        def __init__(self):
+            self.Name = TestOcmCodesScalarType._FakeMultiStringField()
+            self.Description = TestOcmCodesScalarType._FakeMultiStringField()
+            self.Abbreviation = TestOcmCodesScalarType._FakeMultiStringField()
+            self.Questions = TestOcmCodesScalarType._FakeMultiStringField()
+            self.OcmCodes = None
+            self.SubPossibilitiesOS = []
+
+    class _FakeDuplicateSource(_FakeOcmDomain):
+        def __init__(self, ocm_codes=None):
+            super().__init__(ocm_codes=ocm_codes)
+            self.Name = TestOcmCodesScalarType._FakeMultiStringField()
+            self.Description = TestOcmCodesScalarType._FakeMultiStringField()
+            self.Abbreviation = TestOcmCodesScalarType._FakeMultiStringField()
+            self.Questions = TestOcmCodesScalarType._FakeMultiStringField()
+            self.SubPossibilitiesOS = []
+            self.OccurrencesRS = []
+
+    class _FakePossibilitiesOS(list):
+        def IndexOf(self, item):
+            return self.index(item)
+
+        def Insert(self, index, item):
+            self.insert(index, item)
+
+        def Add(self, item):
+            self.append(item)
+
+    def _make_duplicate_ops(self, monkeypatch, duplicate_target):
+        """
+        Build a SemanticDomainOperations instance wired just enough to
+        drive the Duplicate() body: write-enabled, a no-op transaction
+        context manager (transaction plumbing is not what's under test
+        here), no parent (top-level insert path), and a factory that
+        hands back `duplicate_target`.
+        """
+        import contextlib
+
+        from flexicon.code.Lexicon.SemanticDomainOperations import (
+            SemanticDomainOperations,
+        )
+
+        class _FakeFactory:
+            def __init__(self, target):
+                self._target = target
+
+            def Create(self):
+                return self._target
+
+        class _FakeServiceLocator:
+            def __init__(self, factory):
+                self._factory = factory
+
+            def GetService(self, iface):
+                return self._factory
+
+        class _FakeLp:
+            def __init__(self):
+                self.SemanticDomainListOA = self
+
+            PossibilitiesOS = None  # set below
+
+        class _FakeInnerProject:
+            def __init__(self, factory):
+                self.ServiceLocator = _FakeServiceLocator(factory)
+
+        class _FakeProject:
+            def __init__(self, factory):
+                self.writeEnabled = True
+                self.project = _FakeInnerProject(factory)
+                self.lp = _FakeLp()
+                self.lp.PossibilitiesOS = (
+                    TestOcmCodesScalarType._FakePossibilitiesOS()
+                )
+
+        factory = _FakeFactory(duplicate_target)
+        project = _FakeProject(factory)
+        ops = SemanticDomainOperations(project)
+
+        monkeypatch.setattr(
+            ops, "_TransactionCM", lambda label: contextlib.nullcontext()
+        )
+        monkeypatch.setattr(ops, "GetParent", lambda domain: None)
+
+        return ops
+
+    def test_duplicate_copies_a_set_ocm_codes_value(self, monkeypatch):
+        target = self._FakeDuplicateTarget()
+        ops = self._make_duplicate_ops(monkeypatch, target)
+        source = self._FakeDuplicateSource(ocm_codes="484")
+
+        result = ops.Duplicate(source, insert_after=False, deep=False)
+
+        assert result.OcmCodes == "484"
+
+    def test_duplicate_tolerates_an_unset_ocm_codes_value(self, monkeypatch):
+        target = self._FakeDuplicateTarget()
+        ops = self._make_duplicate_ops(monkeypatch, target)
+        source = self._FakeDuplicateSource(ocm_codes=None)
+
+        # Must not raise (the pre-fix CopyAlternatives(None) call did).
+        result = ops.Duplicate(source, insert_after=False, deep=False)
+
+        assert result.OcmCodes == ""
