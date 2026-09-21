@@ -409,8 +409,7 @@ class AgentOperations(PossibilityItemOperations):
             ...     name = project.Agents.GetName(agent)
             ...     if project.Agents.IsHuman(agent):
             ...         person = project.Agents.GetHuman(agent)
-            ...         email = project.Person.GetEmail(person)
-            ...         print(f"Human: {name} ({email})")
+            ...         print(f"Human: {name} ({project.Person.GetName(person)})")
             ...     else:
             ...         version = project.Agents.GetVersion(agent)
             ...         print(f"Parser: {name} v{version}")
@@ -499,9 +498,8 @@ class AgentOperations(PossibilityItemOperations):
             >>> if project.Agents.IsHuman(agent):
             ...     person = project.Agents.GetHuman(agent)
             ...     name = project.Person.GetName(person)
-            ...     email = project.Person.GetEmail(person)
-            ...     print(f"{name}: {email}")
-            John Smith: john.smith@example.com
+            ...     print(name)
+            John Smith
 
             >>> # Parser agents return None
             >>> parser = project.Agents.Find("MyParser")
@@ -687,8 +685,7 @@ class AgentOperations(PossibilityItemOperations):
             >>> for agent in humans:
             ...     name = project.Agents.GetName(agent)
             ...     person = project.Agents.GetHuman(agent)
-            ...     email = project.Person.GetEmail(person)
-            ...     print(f"{name}: {email}")
+            ...     print(f"{name}: {project.Person.GetName(person)}")
 
             >>> # Get all parsers
             >>> parsers = project.Agents.FindByType(False)
@@ -732,8 +729,7 @@ class AgentOperations(PossibilityItemOperations):
             >>> for agent in humans:
             ...     name = project.Agents.GetName(agent)
             ...     person = project.Agents.GetHuman(agent)
-            ...     email = project.Person.GetEmail(person)
-            ...     print(f"Analyst: {name} ({email})")
+            ...     print(f"Analyst: {name} ({project.Person.GetName(person)})")
             Analyst: John Smith (john.smith@example.com)
             Analyst: Maria Garcia (maria.garcia@example.com)
             Analyst: Ahmed Hassan (ahmed.hassan@example.com)

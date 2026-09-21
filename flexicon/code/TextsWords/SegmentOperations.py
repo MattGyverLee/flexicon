@@ -1605,7 +1605,10 @@ class SegmentOperations(BaseOperations):
             val1 = props1.get(key)
             val2 = props2.get(key)
 
-            if self.project._CompareValues(val1, val2):
+            # Inline comparison: FLExProject has no _CompareValues member
+            # (calling it raised AttributeError on every compare; same
+            # fix as MediaOperations.CompareTo).
+            if val1 != val2:
                 differences[key] = (val1, val2)
 
         is_different = len(differences) > 0

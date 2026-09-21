@@ -15,6 +15,7 @@
 from SIL.LCModel import (
     IScrScriptureNote,
     IScrScriptureNoteFactory,
+    ICmAgent,
     ICmBaseAnnotation,
     ICmBaseAnnotationFactory,
     ICmAnnotationDefn,
@@ -23,6 +24,7 @@ from SIL.LCModel import (
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 from System import DateTime
+from ..Shared.string_utils import best_analysis_text
 
 # Import flexlibs exceptions
 from ..FLExProject import (
@@ -445,8 +447,13 @@ class NoteOperations(BaseOperations):
         # MultiString properties
         if hasattr(note, "Comment"):
             props["Comment"] = ITsString(note.Comment.get_String(wsHandle)).Text or ""
-        if hasattr(note, "Source"):
-            props["Source"] = ITsString(note.Source.get_String(wsHandle)).Text or ""
+        # Source is a reference (SourceRA) to the authoring agent, not a
+        # MultiString (live-proven: no Source member; issue #352). Sync
+        # the agent GUID like the other RA properties below.
+        if hasattr(note, "SourceRA") and note.SourceRA:
+            props["Source"] = str(note.SourceRA.Guid)
+        else:
+            props["Source"] = None
 
         # Reference Atomic (RA) property - return GUID as string
         if hasattr(note, "AnnotationTypeRA") and note.AnnotationTypeRA:
@@ -784,7 +791,7 @@ class NoteOperations(BaseOperations):
             note: The ICmBaseAnnotation (note) object.
 
         Returns:
-            str: The author name, or empty string if not set.
+            str: The authoring agent's name, or empty string if not set.
 
         Raises:
             FP_NullParameterError: If note is None.
@@ -804,7 +811,8 @@ class NoteOperations(BaseOperations):
 
         Notes:
             - Returns empty string if author not set
-            - Author is typically set from user preferences
+            - Author is the SourceRA agent reference (there is no Source
+              multistring; live-proven, issue #352)
             - Use for filtering and attribution
 
         See Also:
@@ -812,24 +820,26 @@ class NoteOperations(BaseOperations):
         """
         self._ValidateParam(note, "note")
 
-        if hasattr(note, "Source"):
-            ws = self.project.project.DefaultAnalWs
-            text = ITsString(note.Source.get_String(ws)).Text
-            return text or ""
-        return ""
+        source = note.SourceRA if hasattr(note, "SourceRA") else None
+        if source is None:
+            return ""
+        return best_analysis_text(source.Name) or ""
 
     @OperationsMethod
-    def SetAuthor(self, note, author_name):
+    def SetAuthor(self, note, author):
         """
         Set the author of a note.
 
         Args:
             note: The ICmBaseAnnotation (note) object.
-            author_name (str): The author name to set.
+            author: An ICmAgent object, an agent name string, or ""/None
+                to clear. A name string reuses the existing agent with
+                that name or creates one (find-or-create via Agents).
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled.
-            FP_NullParameterError: If note or author_name is None.
+            FP_NullParameterError: If note is None.
+            FP_ParameterError: If author is neither an agent nor a string.
 
         Example:
             >>> entry = project.LexEntry.Find("run")
@@ -839,8 +849,9 @@ class NoteOperations(BaseOperations):
             John Smith
 
         Notes:
-            - Empty string is allowed (clears the author)
-            - Author is stored as a string, not a user object reference
+            - Author is the SourceRA agent reference (there is no Source
+              multistring; live-proven, issue #352)
+            - Empty string or None clears the author
             - Use consistent naming for better filtering
 
         See Also:
@@ -849,13 +860,24 @@ class NoteOperations(BaseOperations):
         self._EnsureWriteEnabled()
 
         self._ValidateParam(note, "note")
-        self._ValidateParam(author_name, "author_name")
 
-        if hasattr(note, "Source"):
-            ws = self.project.project.DefaultAnalWs
-            mkstr = TsStringUtils.MakeString(author_name, ws)
-            with self._TransactionCM("Set note author"):
-                note.Source.set_String(ws, mkstr)
+        if author is None or (isinstance(author, str) and not author.strip()):
+            agent = None
+        elif isinstance(author, str):
+            agent = self.project.Agents.Find(author)
+            if agent is None:
+                agent = self.project.Agents.Create(author)
+        else:
+            try:
+                agent = ICmAgent(author)
+            except Exception:
+                raise FP_ParameterError(
+                    "author must be an ICmAgent object, an agent name "
+                    "string, or empty/None to clear"
+                )
+
+        with self._TransactionCM("Set note author"):
+            note.SourceRA = agent
 
     # --- Discussion/Threading Operations ---
 

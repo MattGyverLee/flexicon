@@ -178,11 +178,13 @@ class ScrBookOperations(BaseOperations):
             factory = self.project.project.ServiceLocator.GetService(IScrBookFactory)
             new_book = factory.Create(scripture.ScriptureBooksOS, canonical_num)
 
-            # Set title if provided
+            # Set title if provided. IScrBook has no Title member
+            # (live-proven: hasattr False); the book name is the Name
+            # MultiUnicode (sweep-doc follow-up to issue #352).
             if title:
                 wsHandle = self.project.project.DefaultVernWs
                 mkstr = TsStringUtils.MakeString(title, wsHandle)
-                new_book.Title.set_String(wsHandle, mkstr)
+                new_book.Name.set_String(wsHandle, mkstr)
 
             return new_book
 
@@ -320,9 +322,9 @@ class ScrBookOperations(BaseOperations):
         wsHandle = self.project.project.DefaultVernWs
         target = normalize_match_key(name, casefold=True)
 
-        # Search through all books
+        # Search through all books (book name is Name, not Title).
         for book in scripture.ScriptureBooksOS:
-            book_title = ITsString(book.Title.get_String(wsHandle)).Text
+            book_title = ITsString(book.Name.get_String(wsHandle)).Text
             if book_title and normalize_match_key(book_title, casefold=True) == target:
                 return book
 
@@ -393,7 +395,8 @@ class ScrBookOperations(BaseOperations):
 
         Notes:
             - Returns empty string if title not set
-            - Title can be in multiple writing systems
+            - Title is the book Name and can be in multiple writing systems
+            - IScrBook has no Title member (sweep-doc follow-up to #352)
 
         See Also:
             SetTitle, FindByName
@@ -403,7 +406,7 @@ class ScrBookOperations(BaseOperations):
         book = self.__ResolveObject(book_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        title = ITsString(book.Title.get_String(wsHandle)).Text
+        title = ITsString(book.Name.get_String(wsHandle)).Text
         return title or ""
 
     @OperationsMethod
@@ -429,8 +432,9 @@ class ScrBookOperations(BaseOperations):
             ...                            project.WSHandle('fr'))
 
         Notes:
-            - Title can be set in multiple writing systems
+            - Title is the book Name and can be set in multiple writing systems
             - Empty title is allowed
+            - IScrBook has no Title member (sweep-doc follow-up to #352)
 
         See Also:
             GetTitle, Create
@@ -445,7 +449,7 @@ class ScrBookOperations(BaseOperations):
 
         with self._TransactionCM(f"Set book title '{title}'"):
             mkstr = TsStringUtils.MakeString(title, wsHandle)
-            book.Title.set_String(wsHandle, mkstr)
+            book.Name.set_String(wsHandle, mkstr)
 
     # --- Section Management ---
 

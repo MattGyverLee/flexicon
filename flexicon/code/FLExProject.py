@@ -2830,9 +2830,9 @@ class FLExProject(object):
             >>> project.OpenProject("MyProject", writeEnabled=True)
             >>> # Create a person
             >>> consultant = project.Person.Create("Maria Garcia", "en")
-            >>> # Set properties
-            >>> project.Person.SetGender(consultant, "Female", "en")
-            >>> project.Person.SetEmail(consultant, "maria@example.com", "en")
+            >>> # Set properties (Gender is an int code; ICmPerson has no
+            >>> # email/phone fields, issue #352)
+            >>> project.Person.SetGender(consultant, 1)
             >>> project.Person.SetEducation(consultant, "PhD Linguistics", "en")
             >>> # Add residence
             >>> location = project.Location.Find("Lima")
@@ -2841,8 +2841,7 @@ class FLExProject(object):
             >>> # Get all people
             >>> for person in project.Person.GetAll():
             ...     name = project.Person.GetName(person)
-            ...     email = project.Person.GetEmail(person)
-            ...     print(f"{name}: {email}")
+            ...     print(name)
         """
         if "_person_ops" not in self.__dict__:
             from .Notebook.PersonOperations import PersonOperations
@@ -3147,6 +3146,57 @@ class FLExProject(object):
 
             self._check_ops = CheckOperations(self)
         return self._check_ops
+
+    @property
+    def ScrDrafts(self):
+        """
+        Access to Scripture draft operations for saved draft versions.
+
+        Returns:
+            ScrDraftOperations: Instance providing draft management methods
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("MyProject", writeEnabled=True)
+            >>> # Create a saved version
+            >>> draft = project.ScrDrafts.Create("First Draft - January 2025")
+            >>> print(project.ScrDrafts.GetDescription(draft))
+            First Draft - January 2025
+
+        Notes:
+            - Requires a project with Scripture (TranslatedScriptureOA);
+              GetAll() yields nothing otherwise
+        """
+        if "_scrdraft_ops" not in self.__dict__:
+            from .Scripture.ScrDraftOperations import ScrDraftOperations
+
+            self._scrdraft_ops = ScrDraftOperations(self)
+        return self._scrdraft_ops
+
+    @property
+    def ScrBooks(self):
+        """
+        Access to Scripture book operations.
+
+        Returns:
+            ScrBookOperations: Instance providing book management methods
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("MyProject", writeEnabled=True)
+            >>> matthew = project.ScrBooks.Find(40)
+            >>> print(project.ScrBooks.GetTitle(matthew))
+            Matthew
+
+        Notes:
+            - Requires a project with Scripture (TranslatedScriptureOA);
+              GetAll() yields nothing otherwise
+        """
+        if "_scrbook_ops" not in self.__dict__:
+            from .Scripture.ScrBookOperations import ScrBookOperations
+
+            self._scrbook_ops = ScrBookOperations(self)
+        return self._scrbook_ops
 
     @property
     def DataNotebook(self):

@@ -55,6 +55,8 @@ from .System.CustomFieldOperations import CustomFieldOperations
 from .System.ProjectSettingsOperations import ProjectSettingsOperations
 from .System.AnnotationDefOperations import AnnotationDefOperations
 from .System.CheckOperations import CheckOperations
+from .Scripture.ScrDraftOperations import ScrDraftOperations
+from .Scripture.ScrBookOperations import ScrBookOperations
 from .Parser.ParserOperations import ParserOperations
 
 # Exception classes
@@ -198,6 +200,10 @@ class FLExProject:
     def AnnotationDefs(self) -> AnnotationDefOperations: ...
     @property
     def Checks(self) -> CheckOperations: ...
+    @property
+    def ScrDrafts(self) -> ScrDraftOperations: ...
+    @property
+    def ScrBooks(self) -> ScrBookOperations: ...
 
     # Parser operations (read-only)
     @property

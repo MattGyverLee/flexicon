@@ -19,13 +19,15 @@ logger = logging.getLogger(__name__)
 from SIL.LCModel import (
     IRnGenericRec,
     IRnGenericRecFactory,
-    IRnResearchNbkRepository,
     ICmPossibility,
     ICmPossibilityRepository,
     ICmPerson,
     IText,
     ICmFile,
     ICmFileFactory,
+    IStTextFactory,
+    IStTxtPara,
+    IStTxtParaFactory,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
@@ -201,6 +203,73 @@ class DataNotebookOperations(BaseOperations):
         ) as e:
             raise FP_ParameterError(f"Invalid notebook record object or HVO: {record_or_hvo} - {e}") from e
 
+    def _ReadRecordContent(self, record):
+        """Read a record's body content as plain text.
+
+        Body content lives in ``DescriptionOA`` (an owned ``IStText``);
+        there is no ``Text`` member on ``IRnGenericRec`` (live-proven:
+        ``hasattr(record, "Text")`` is False, issue #352). Paragraph
+        contents are joined with newlines.
+        """
+        sttext = record.DescriptionOA
+        if sttext is None:
+            return ""
+        texts = []
+        for para in sttext.ParagraphsOS:
+            para_text = ITsString(IStTxtPara(para).Contents).Text
+            if para_text:
+                texts.append(para_text)
+        return normalize_text("\n".join(texts)) or ""
+
+    def _SetRecordContent(self, record, content, wsHandle):
+        """Replace a record's body content (call inside a transaction).
+
+        Rebuilds the ``DescriptionOA`` paragraphs from ``content``
+        (one paragraph per line). An empty ``content`` clears the
+        paragraphs.
+        """
+        if record.DescriptionOA is None:
+            text_factory = self.project.project.ServiceLocator.GetService(
+                IStTextFactory
+            )
+            record.DescriptionOA = text_factory.Create()
+        sttext = record.DescriptionOA
+        while sttext.ParagraphsOS.Count > 0:
+            sttext.ParagraphsOS.Remove(sttext.ParagraphsOS[0])
+        if content:
+            para_factory = self.project.project.ServiceLocator.GetService(
+                IStTxtParaFactory
+            )
+            for line in content.splitlines() or [content]:
+                new_para = para_factory.Create()
+                sttext.ParagraphsOS.Add(new_para)
+                new_para.Contents = TsStringUtils.MakeString(line, wsHandle)
+
+    def _CopyRecordContent(self, source, duplicate):
+        """Deep-copy body paragraphs (call inside a transaction).
+
+        Copies the full TsString per paragraph, preserving formatting
+        and all writing-system runs (same idiom as
+        ``TextOperations.Duplicate``).
+        """
+        source_st = source.DescriptionOA
+        if source_st is None or source_st.ParagraphsOS.Count == 0:
+            return
+        text_factory = self.project.project.ServiceLocator.GetService(
+            IStTextFactory
+        )
+        if duplicate.DescriptionOA is None:
+            duplicate.DescriptionOA = text_factory.Create()
+        para_factory = self.project.project.ServiceLocator.GetService(
+            IStTxtParaFactory
+        )
+        for para in source_st.ParagraphsOS:
+            contents = IStTxtPara(para).Contents
+            if contents:
+                new_para = para_factory.Create()
+                duplicate.DescriptionOA.ParagraphsOS.Add(new_para)
+                new_para.Contents = contents
+
     # --- Core CRUD Operations ---
 
     @wrap_enumerable
@@ -235,15 +304,15 @@ class DataNotebookOperations(BaseOperations):
         See Also:
             Create, Find, GetSubRecords, FindByDate
         """
-        repos = self.project.project.ServiceLocator.GetService(IRnResearchNbkRepository)
-        for record in repos.AllInstances():
-            # Only yield top-level records (those without an owner that's also a record)
-            try:
-                owner = record.Owner
-                if not isinstance(owner, IRnGenericRec):
-                    yield record
-            except (AttributeError, System.NullReferenceException) as e:
-                yield record
+        # Top-level records live in the project's single ResearchNotebookOA
+        # RecordsOC. The prior form enumerated IRnResearchNbkRepository
+        # AllInstances(), which yields the RnResearchNbk notebook itself --
+        # Find/GetTitle then failed on it with AttributeError (found live
+        # while verifying issue #352).
+        notebook = self.project.lp.ResearchNotebookOA
+        if notebook is None:
+            return iter([])
+        return iter(notebook.RecordsOC)
 
     @OperationsMethod
     def Create(self, title, content=None, wsHandle=None):
@@ -318,14 +387,15 @@ class DataNotebookOperations(BaseOperations):
             record = factory.Create()
             self.project.lp.ResearchNotebookOA.RecordsOC.Add(record)
 
-            # Set title
-            mkstr = TsStringUtils.MakeString(title, wsHandle)
-            record.Title.set_String(wsHandle, mkstr)
+            # Set title. IRnGenericRec.Title is a bare ITsString, not an
+            # IMultiString -- it has no set_String/get_String (live-proven,
+            # issue #352). Assign via the house _MakeTsString adapter.
+            record.Title = self._MakeTsString(title, wsHandle)
 
-            # Set content if provided
+            # Set content if provided (body lives in DescriptionOA; there
+            # is no Text member on IRnGenericRec, issue #352).
             if content:
-                mkstr = TsStringUtils.MakeString(content, wsHandle)
-                record.Text.set_String(wsHandle, mkstr)
+                self._SetRecordContent(record, content, wsHandle)
 
             return record
 
@@ -421,13 +491,10 @@ class DataNotebookOperations(BaseOperations):
             ...     print("Record already exists")
             Record already exists
 
-            >>> # Check multiple writing systems
-            >>> exists_en = project.DataNotebook.Exists("Interview", "en")
-            >>> exists_es = project.DataNotebook.Exists("Entrevista", "es")
-
         Notes:
             - Search is case-sensitive
-            - Searches in the specified writing system only
+            - Title is a single bare ITsString (no per-WS variants);
+              the wsHandle argument is accepted but ignored
             - Returns True if at least one record matches
             - Does not search content, only titles
 
@@ -443,12 +510,13 @@ class DataNotebookOperations(BaseOperations):
         """
         Find a notebook record by its title.
 
-        Searches for the first record that exactly matches the given title
-        in the specified writing system.
+        Searches for the first record that exactly matches the given title.
+        Title is a single bare ITsString (no per-WS variants, issue #352);
+        the wsHandle argument is accepted for compatibility but ignored.
 
         Args:
             title (str): The title to search for (case-sensitive).
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Accepted but ignored (titles have no WS variants).
 
         Returns:
             IRnGenericRec: The matching notebook record object, or None if not found.
@@ -466,12 +534,6 @@ class DataNotebookOperations(BaseOperations):
             ... else:
             ...     print("Record not found")
 
-            >>> # Find in specific writing system
-            >>> record = project.DataNotebook.Find(
-            ...     "Entrevista 1",
-            ...     wsHandle=project.WSHandle('es')
-            ... )
-
             >>> # Find and update
             >>> record = project.DataNotebook.Find("Old Title")
             >>> if record:
@@ -481,7 +543,6 @@ class DataNotebookOperations(BaseOperations):
             - Search is case-sensitive and exact match only
             - Returns first match if multiple records have same title
             - Returns None if no match found
-            - Searches only in specified writing system
             - Use FindBy* methods for more complex queries
 
         See Also:
@@ -493,7 +554,9 @@ class DataNotebookOperations(BaseOperations):
 
         target = normalize_match_key(title, casefold=False)
         for record in self.GetAll():
-            record_title = ITsString(record.Title.get_String(wsHandle)).Text
+            # Title is a single bare ITsString (no per-WS variants,
+            # issue #352); the wsHandle dimension does not apply.
+            record_title = self._ReadTsString(record.Title)
             if normalize_match_key(record_title, casefold=False) == target:
                 return record
 
@@ -523,29 +586,19 @@ class DataNotebookOperations(BaseOperations):
             >>> print(title)
             Interview 1
 
-            >>> # Get title in multiple languages
-            >>> title_en = project.DataNotebook.GetTitle(record, "en")
-            >>> title_es = project.DataNotebook.GetTitle(record, "es")
-            >>> print(f"EN: {title_en}, ES: {title_es}")
-            EN: Interview 1, ES: Entrevista 1
-
         Notes:
-            - Returns empty string if title not set in specified WS
-            - Titles are multi-lingual (can be set in multiple writing systems)
+            - Returns empty string if title not set
+            - Title is a single bare ITsString (one value, tagged with
+              the analysis WS at write time -- not per-WS variants)
             - Use SetTitle() to modify
 
         See Also:
             SetTitle, GetContent
         """
         record = self.__GetRecordObject(record_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
 
-        try:
-            text = ITsString(record.Title.get_String(wsHandle)).Text
-            return normalize_text(text) or ""
-        except (AttributeError, TypeError) as e:
-            logger.debug(f"Could not get record title: {e}")
-            return ""
+        # Title is a bare ITsString (no per-WS variants, issue #352).
+        return self._ReadTsString(record.Title)
 
     @OperationsMethod
     def SetTitle(self, record_or_hvo, title, wsHandle=None):
@@ -568,13 +621,11 @@ class DataNotebookOperations(BaseOperations):
             >>> print(project.DataNotebook.GetTitle(record))
             Interview with Speaker A
 
-            >>> # Set in multiple languages
-            >>> project.DataNotebook.SetTitle(record, "Interview 1", "en")
-            >>> project.DataNotebook.SetTitle(record, "Entrevista 1", "es")
-
         Notes:
             - Title must not be empty
-            - Titles support multiple writing systems
+            - Title is a single bare ITsString: each SetTitle call
+              overwrites the one stored value (the wsHandle only tags
+              the new value)
             - Previous title value is overwritten
 
         See Also:
@@ -590,10 +641,9 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(title, wsHandle)
-
         with self._TransactionCM(f"Set notebook record title '{title}'"):
-            record.Title.set_String(wsHandle, mkstr)
+            # Bare ITsString (issue #352) -- assign, no set_String.
+            record.Title = self._MakeTsString(title, wsHandle)
 
     # --- Property Operations: Content ---
 
@@ -628,21 +678,18 @@ class DataNotebookOperations(BaseOperations):
         Notes:
             - Returns empty string if content not set
             - Content can be lengthy (multiple paragraphs)
-            - Content is multi-lingual
+            - Content is stored as DescriptionOA paragraphs; paragraphs
+              are joined with newlines on read
             - May contain structured text markup
 
         See Also:
             SetContent, GetTitle
         """
         record = self.__GetRecordObject(record_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
 
-        try:
-            text = ITsString(record.Text.get_String(wsHandle)).Text
-            return normalize_text(text) or ""
-        except (AttributeError, TypeError) as e:
-            logger.debug(f"Could not get record content: {e}")
-            return ""
+        # Body content lives in DescriptionOA (no Text member on
+        # IRnGenericRec, issue #352).
+        return self._ReadRecordContent(record)
 
     @OperationsMethod
     def SetContent(self, record_or_hvo, content, wsHandle=None):
@@ -672,14 +719,11 @@ class DataNotebookOperations(BaseOperations):
             >>> new_content = existing + "\\n\\nAdditional observations..."
             >>> project.DataNotebook.SetContent(record, new_content)
 
-            >>> # Set in multiple languages
-            >>> project.DataNotebook.SetContent(record, "English notes", "en")
-            >>> project.DataNotebook.SetContent(record, "Notas en español", "es")
-
         Notes:
-            - Content can be empty string
+            - Content can be empty string (clears the paragraphs)
             - Previous content is completely replaced
-            - Supports multiple writing systems
+            - Content is stored as DescriptionOA paragraphs (one
+              paragraph per line); the wsHandle tags the new runs
             - No length limit on content
 
         See Also:
@@ -692,10 +736,8 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(content, wsHandle)
-
         with self._TransactionCM("Set notebook record content"):
-            record.Text.set_String(wsHandle, mkstr)
+            self._SetRecordContent(record, content, wsHandle)
 
     # --- Record Type Operations ---
 
@@ -1191,14 +1233,13 @@ class DataNotebookOperations(BaseOperations):
             subrecord = factory.Create()
             parent.SubRecordsOS.Add(subrecord)
 
-            # Set title
-            mkstr = TsStringUtils.MakeString(title, wsHandle)
-            subrecord.Title.set_String(wsHandle, mkstr)
+            # Set title (bare ITsString, issue #352)
+            subrecord.Title = self._MakeTsString(title, wsHandle)
 
-            # Set content if provided
+            # Set content if provided (DescriptionOA; no Text member,
+            # issue #352)
             if content:
-                mkstr = TsStringUtils.MakeString(content, wsHandle)
-                subrecord.Text.set_String(wsHandle, mkstr)
+                self._SetRecordContent(subrecord, content, wsHandle)
 
             return subrecord
 
@@ -1250,10 +1291,16 @@ class DataNotebookOperations(BaseOperations):
         """
         record = self.__GetRecordObject(record_or_hvo)
 
+        # Only a parent exposing SubRecordsOS is a record. A top-level
+        # record's owner is the RnResearchNbk notebook, which must map
+        # to None (found live: raw ICmObject owner returned instead of
+        # None). Same dispatch as Delete/Duplicate.
         try:
-            return self._GetTypedOwner(record)
-        except (AttributeError, TypeError, System.InvalidCastException) as e:
-            pass
+            parent = self._GetTypedOwner(record)
+        except (AttributeError, TypeError, System.InvalidCastException):
+            return None
+        if parent is not None and hasattr(parent, "SubRecordsOS"):
+            return parent
 
         return None
 
@@ -2579,9 +2626,13 @@ class DataNotebookOperations(BaseOperations):
             factory = self.project.project.ServiceLocator.GetService(IRnGenericRecFactory)
             duplicate = factory.Create()
 
-            # Determine insertion position and add to parent FIRST
+            # Determine insertion position and add to parent FIRST.
+            # Mirror Delete: only a parent exposing SubRecordsOS is a
+            # record (sub-record path). A top-level record's owner is the
+            # RnResearchNbk notebook, which has no SubRecordsOS (found
+            # live: raw ICmObject owner, AttributeError).
             parent_record = self._GetTypedOwner(source)
-            if parent_record is not None:
+            if parent_record is not None and hasattr(parent_record, "SubRecordsOS"):
                 # Parent is another notebook record (sub-record)
                 if insert_after:
                     source_index = parent_record.SubRecordsOS.IndexOf(source)
@@ -2597,9 +2648,10 @@ class DataNotebookOperations(BaseOperations):
                 # via Add().
                 self.project.lp.ResearchNotebookOA.RecordsOC.Add(duplicate)
 
-            # Copy simple MultiString properties
-            duplicate.Title.CopyAlternatives(source.Title)
-            duplicate.Text.CopyAlternatives(source.Text)
+            # Copy title (bare ITsString: direct assignment, issue #352)
+            # and body content (DescriptionOA paragraphs).
+            duplicate.Title = source.Title
+            self._CopyRecordContent(source, duplicate)
 
             # Copy Reference Atomic (RA) properties
             if hasattr(source, "Type") and source.Type:
@@ -2634,9 +2686,10 @@ class DataNotebookOperations(BaseOperations):
             dup_rec = factory.Create()
             parent_dup.SubRecordsOS.Add(dup_rec)
 
-            # Copy properties
-            dup_rec.Title.CopyAlternatives(source_rec.Title)
-            dup_rec.Text.CopyAlternatives(source_rec.Text)
+            # Copy title (bare ITsString) and body content
+            # (DescriptionOA paragraphs); see Duplicate above.
+            dup_rec.Title = source_rec.Title
+            self._CopyRecordContent(source_rec, dup_rec)
 
             if hasattr(source_rec, "Type") and source_rec.Type:
                 dup_rec.Type = source_rec.Type
@@ -2660,12 +2713,11 @@ class DataNotebookOperations(BaseOperations):
         """Get syncable properties for cross-project synchronization."""
         self._ValidateParam(item, "item")
 
-        record = self.__ResolveObject(item)
-        wsHandle = self.project.project.DefaultAnalWs
+        record = self.__GetRecordObject(item)
 
         props = {}
-        props["Title"] = ITsString(record.Title.get_String(wsHandle)).Text or ""
-        props["Text"] = ITsString(record.Text.get_String(wsHandle)).Text or ""
+        props["Title"] = self._ReadTsString(record.Title)
+        props["Text"] = self._ReadRecordContent(record)
 
         if hasattr(record, "Type") and record.Type:
             props["Type"] = str(record.Type.Guid)

@@ -58,17 +58,13 @@ class PersonOperations(BaseOperations):
         # Create a new person
         person = project.Person.Create("John Smith")
 
-        # Set properties
-        project.Person.SetEmail(person, "john.smith@example.com")
+        # Set properties (Gender is an int code; ICmPerson has no
+        # email/phone fields, issue #352)
         project.Person.SetDateOfBirth(person, "1985-03-15")
-        project.Person.SetGender(person, "Male")
+        project.Person.SetGender(person, 1)
 
         # Add contact information
-        project.Person.SetPhone(person, "+1-555-123-4567")
         project.Person.SetAddress(person, "123 Main St, City, Country")
-
-        # Add notes
-        project.Person.AddNote(person, "Primary consultant for dialect study")
 
         project.CloseProject()
     """
@@ -99,11 +95,10 @@ class PersonOperations(BaseOperations):
         Example:
             >>> for person in project.Person.GetAll():
             ...     name = project.Person.GetName(person)
-            ...     email = project.Person.GetEmail(person)
-            ...     print(f"{name}: {email}")
-            John Smith: john.smith@example.com
-            Maria Garcia: maria.garcia@example.com
-            Ahmed Hassan: ahmed.hassan@example.com
+            ...     print(name)
+            John Smith
+            Maria Garcia
+            Ahmed Hassan
 
         Notes:
             - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
@@ -145,8 +140,7 @@ class PersonOperations(BaseOperations):
 
             >>> # Create and set additional properties
             >>> consultant = project.Person.Create("Ahmed Hassan")
-            >>> project.Person.SetEmail(consultant, "ahmed@example.com")
-            >>> project.Person.SetGender(consultant, "Male")
+            >>> project.Person.SetGender(consultant, 1)
 
         Notes:
             - The person is added to the project's people collection
@@ -284,9 +278,8 @@ class PersonOperations(BaseOperations):
         Example:
             >>> person = project.Person.Find("John Smith")
             >>> if person:
-            ...     email = project.Person.GetEmail(person)
-            ...     print(f"Found: {email}")
-            Found: john.smith@example.com
+            ...     print(f"Found: {project.Person.GetName(person)}")
+            Found: John Smith
 
             >>> # Search in specific writing system
             >>> person = project.Person.Find("María García",
@@ -417,24 +410,25 @@ class PersonOperations(BaseOperations):
 
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Accepted for compatibility but ignored (gender is
+                not a writing-system field).
 
         Returns:
-            str: The gender (empty string if not set)
+            int: The LCM gender code (0 for new persons)
 
         Raises:
             FP_NullParameterError: If person_or_hvo is None
 
         Example:
             >>> person = project.Person.Find("John Smith")
-            >>> gender = project.Person.GetGender(person)
-            >>> print(gender)
-            Male
+            >>> project.Person.SetGender(person, 1)
+            >>> print(project.Person.GetGender(person))
+            1
 
         Notes:
-            - Returns empty string if gender not set
-            - Gender is stored as a string field
-            - Common values: "Male", "Female", "Other", but can be any text
+            - Gender is an Int32 field on ICmPerson, not a string
+              (live-proven, issue #352); code meanings are defined by
+              FieldWorks
 
         See Also:
             SetGender
@@ -442,10 +436,8 @@ class PersonOperations(BaseOperations):
         self._ValidateParam(person_or_hvo, "person_or_hvo")
 
         person = self.__ResolveObject(person_or_hvo)
-        wsHandle = self.__WSHandleAnalysis(wsHandle)
 
-        gender = ITsString(person.Gender.get_String(wsHandle)).Text
-        return gender or ""
+        return person.Gender if person.Gender is not None else 0
 
     @OperationsMethod
     def SetGender(self, person_or_hvo, gender, wsHandle=None):
@@ -454,24 +446,25 @@ class PersonOperations(BaseOperations):
 
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
-            gender (str): The gender to set
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            gender (int): The LCM gender code to set
+            wsHandle: Accepted for compatibility but ignored (gender is
+                not a writing-system field).
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
             FP_NullParameterError: If person_or_hvo or gender is None
+            FP_ParameterError: If gender is not an int
 
         Example:
             >>> person = project.Person.Find("John Smith")
-            >>> project.Person.SetGender(person, "Male")
-
-            >>> # Clear gender
-            >>> project.Person.SetGender(person, "")
+            >>> project.Person.SetGender(person, 1)
+            >>> print(project.Person.GetGender(person))
+            1
 
         Notes:
-            - Gender can be any text value
-            - Common values: "Male", "Female", "Other"
-            - Can be empty string to clear
+            - Gender is an Int32 field on ICmPerson, not a string
+              (live-proven, issue #352); code meanings are defined by
+              FieldWorks
 
         See Also:
             GetGender
@@ -481,12 +474,13 @@ class PersonOperations(BaseOperations):
         self._ValidateParam(person_or_hvo, "person_or_hvo")
         self._ValidateParam(gender, "gender")
 
-        person = self.__ResolveObject(person_or_hvo)
-        wsHandle = self.__WSHandleAnalysis(wsHandle)
+        if isinstance(gender, bool) or not isinstance(gender, int):
+            raise FP_ParameterError("gender must be an int (ICmPerson.Gender is Int32)")
 
-        mkstr = TsStringUtils.MakeString(gender, wsHandle)
+        person = self.__ResolveObject(person_or_hvo)
+
         with self._TransactionCM("Set person gender"):
-            person.Gender.set_String(wsHandle, mkstr)
+            person.Gender = gender
 
     # --- Date of Birth ---
 
@@ -591,20 +585,18 @@ class PersonOperations(BaseOperations):
             john.smith@example.com
 
         Notes:
-            - Returns empty string if email not set
-            - No email validation is performed
-            - Can store multiple emails as comma-separated values
+            - ICmPerson has no Email field (live-proven: hasattr is
+              False, issue #352), so this method always raises. It is
+              kept only to fail with an actionable message instead of
+              a bare AttributeError.
 
         See Also:
             SetEmail, GetPhone
         """
-        self._ValidateParam(person_or_hvo, "person_or_hvo")
-
-        person = self.__ResolveObject(person_or_hvo)
-        wsHandle = self.__WSHandleAnalysis(wsHandle)
-
-        email = ITsString(person.Email.get_String(wsHandle)).Text
-        return email or ""
+        raise FP_ParameterError(
+            "ICmPerson has no Email field (issue #352); "
+            "GetEmail cannot return a value"
+        )
 
     @OperationsMethod
     def SetEmail(self, person_or_hvo, email, wsHandle=None):
@@ -632,24 +624,18 @@ class PersonOperations(BaseOperations):
             >>> project.Person.SetEmail(person, "")
 
         Notes:
-            - No email validation is performed
-            - Can be empty string to clear
-            - Multiple emails can be comma-separated
+            - ICmPerson has no Email field (live-proven: hasattr is
+              False, issue #352), so this method always raises. It is
+              kept only to fail with an actionable message instead of
+              a bare AttributeError.
 
         See Also:
             GetEmail, SetPhone
         """
-        self._EnsureWriteEnabled()
-
-        self._ValidateParam(person_or_hvo, "person_or_hvo")
-        self._ValidateParam(email, "email")
-
-        person = self.__ResolveObject(person_or_hvo)
-        wsHandle = self.__WSHandleAnalysis(wsHandle)
-
-        mkstr = TsStringUtils.MakeString(email, wsHandle)
-        with self._TransactionCM("Set person email"):
-            person.Email.set_String(wsHandle, mkstr)
+        raise FP_ParameterError(
+            "ICmPerson has no Email field (issue #352); "
+            "SetEmail cannot store a value"
+        )
 
     @OperationsMethod
     def GetPhone(self, person_or_hvo, wsHandle=None):
@@ -673,20 +659,20 @@ class PersonOperations(BaseOperations):
             +1-555-123-4567
 
         Notes:
-            - Returns empty string if phone not set
-            - No phone number validation or formatting is performed
-            - Can store multiple numbers
+            - ICmPerson has no phone field: the old code read a
+              multistring off PlaceOfBirth, which does not exist either
+              (only PlaceOfBirthRA, an ICmLocation reference;
+              live-proven, issue #352). This method always raises and is
+              kept only to fail with an actionable message instead of
+              a bare AttributeError.
 
         See Also:
             SetPhone, GetEmail
         """
-        self._ValidateParam(person_or_hvo, "person_or_hvo")
-
-        person = self.__ResolveObject(person_or_hvo)
-        wsHandle = self.__WSHandleAnalysis(wsHandle)
-
-        phone = ITsString(person.PlaceOfBirth.get_String(wsHandle)).Text
-        return phone or ""
+        raise FP_ParameterError(
+            "ICmPerson has no phone field (issue #352); "
+            "GetPhone cannot return a value"
+        )
 
     @OperationsMethod
     def SetPhone(self, person_or_hvo, phone, wsHandle=None):
@@ -714,24 +700,20 @@ class PersonOperations(BaseOperations):
             >>> project.Person.SetPhone(person, "")
 
         Notes:
-            - No phone validation or formatting is performed
-            - Can be empty string to clear
-            - Multiple numbers can be listed
+            - ICmPerson has no phone field: the old code wrote a
+              multistring to PlaceOfBirth, which does not exist either
+              (only PlaceOfBirthRA, an ICmLocation reference;
+              live-proven, issue #352). This method always raises and is
+              kept only to fail with an actionable message instead of
+              a bare AttributeError.
 
         See Also:
             GetPhone, SetEmail
         """
-        self._EnsureWriteEnabled()
-
-        self._ValidateParam(person_or_hvo, "person_or_hvo")
-        self._ValidateParam(phone, "phone")
-
-        person = self.__ResolveObject(person_or_hvo)
-        wsHandle = self.__WSHandleAnalysis(wsHandle)
-
-        mkstr = TsStringUtils.MakeString(phone, wsHandle)
-        with self._TransactionCM("Set person phone"):
-            person.PlaceOfBirth.set_String(wsHandle, mkstr)
+        raise FP_ParameterError(
+            "ICmPerson has no phone field (issue #352); "
+            "SetPhone cannot store a value"
+        )
 
     @OperationsMethod
     def GetAddress(self, person_or_hvo, wsHandle=None):
@@ -1007,16 +989,18 @@ class PersonOperations(BaseOperations):
             Duplicate: 87654321-4321-4321-4321-cba987654321
 
             >>> # Verify properties copied
-            >>> print(project.Person.GetEmail(dup))
-            john.smith@example.com
+            >>> print(project.Person.GetGender(dup))
+            1
 
         Notes:
             - Factory.Create() automatically generates a new GUID
             - insert_after=True preserves the original person's position
-            - Simple properties copied: Name, Gender, Email, DateOfBirth
-            - MultiString properties copied: Abbreviation (address), Description (education),
-              Comment (notes), PlaceOfBirth (phone)
-            - Reference collections copied: PositionsRC, PlacesOfResidenceRC, LanguagesRC
+            - Copied: Name, Gender (int), DateOfBirth, Abbreviation
+              (address), Description (education), PlaceOfBirthRA
+              (reference)
+            - Email/phone have no backing field and are not copied
+              (issue #352)
+            - Reference collections copied: PositionsRC, PlacesOfResidenceRC
             - DateCreated and DateModified are NOT copied (set automatically)
             - deep parameter has no effect (persons have no owned objects)
 
@@ -1042,14 +1026,15 @@ class PersonOperations(BaseOperations):
             else:
                 self.project.lp.PeopleOA.PossibilitiesOS.Add(duplicate)
 
-            # Copy simple MultiString properties
+            # Copy MultiString/MultiUnicode properties. Gender is Int32
+            # (direct assignment, issue #352); Email/PlaceOfBirth/Comment
+            # do not exist on ICmPerson (live-proven) and are not copied.
             duplicate.Name.CopyAlternatives(source.Name)
-            duplicate.Gender.CopyAlternatives(source.Gender)
-            duplicate.Email.CopyAlternatives(source.Email)
+            duplicate.Gender = source.Gender
             duplicate.Abbreviation.CopyAlternatives(source.Abbreviation)  # Address
             duplicate.Description.CopyAlternatives(source.Description)  # Education
-            duplicate.Comment.CopyAlternatives(source.Comment)  # Notes
-            duplicate.PlaceOfBirth.CopyAlternatives(source.PlaceOfBirth)  # Phone
+            if source.PlaceOfBirthRA is not None:
+                duplicate.PlaceOfBirthRA = source.PlaceOfBirthRA
 
             # Copy DateOfBirth (GenDate field)
             if hasattr(source, "DateOfBirth") and source.DateOfBirth:
@@ -1064,9 +1049,8 @@ class PersonOperations(BaseOperations):
                 for residence in source.PlacesOfResidenceRC:
                     duplicate.PlacesOfResidenceRC.Add(residence)
 
-            if hasattr(source, "LanguagesRC"):
-                for language in source.LanguagesRC:
-                    duplicate.LanguagesRC.Add(language)
+            # Email, phone, notes and LanguagesRC have no backing field
+            # on ICmPerson (live-proven, issue #352) and are not copied.
 
             # Note: deep parameter has no effect for persons (no owned objects)
 
@@ -1091,7 +1075,7 @@ class PersonOperations(BaseOperations):
         Example:
             >>> props = project.Person.GetSyncableProperties(person)
             >>> print(props)
-            {'Name': 'John Smith', 'Gender': 'Male', 'Email': 'john@...', ...}
+            {'Name': 'John Smith', 'Gender': 1, ...}
         """
         self._ValidateParam(item, "item")
 
@@ -1100,14 +1084,16 @@ class PersonOperations(BaseOperations):
 
         props = {}
 
-        # MultiString properties
+        # MultiString properties. Gender is Int32 (issue #352); Email,
+        # phone and Comment have no backing field and are not synced.
         props["Name"] = ITsString(person.Name.get_String(wsHandle)).Text or ""
-        props["Gender"] = ITsString(person.Gender.get_String(wsHandle)).Text or ""
-        props["Email"] = ITsString(person.Email.get_String(wsHandle)).Text or ""
+        props["Gender"] = person.Gender if person.Gender is not None else 0
         props["Abbreviation"] = ITsString(person.Abbreviation.get_String(wsHandle)).Text or ""  # Address
         props["Description"] = ITsString(person.Description.get_String(wsHandle)).Text or ""  # Education
-        props["Comment"] = ITsString(person.Comment.get_String(wsHandle)).Text or ""  # Notes
-        props["PlaceOfBirth"] = ITsString(person.PlaceOfBirth.get_String(wsHandle)).Text or ""  # Phone
+        if person.PlaceOfBirthRA is not None:
+            props["PlaceOfBirthRA"] = str(person.PlaceOfBirthRA.Guid)
+        else:
+            props["PlaceOfBirthRA"] = None
 
         # GenDate field
         if hasattr(person, "DateOfBirth") and person.DateOfBirth:
@@ -1478,21 +1464,21 @@ class PersonOperations(BaseOperations):
             Primary consultant for dialect study. Available weekdays.
 
         Notes:
-            - Returns empty string if no notes
-            - Can be multi-line text
-            - Useful for storing additional information
+            - ICmPerson has no notes field: the old code used Comment,
+              which does not exist (live-proven: hasattr is False,
+              issue #352). NotesOA belongs to ICmAgent, and ICmPerson
+              implements ICmPossibility, not ICmAgent, so the StText
+              is not reachable either. This method always raises and is
+              kept only to fail with an actionable message instead of
+              a bare AttributeError.
 
         See Also:
             AddNote, SetEducation
         """
-        self._ValidateParam(person_or_hvo, "person_or_hvo")
-
-        person = self.__ResolveObject(person_or_hvo)
-        wsHandle = self.__WSHandleAnalysis(wsHandle)
-
-        # Use Comment field for notes
-        notes = ITsString(person.Comment.get_String(wsHandle)).Text
-        return notes or ""
+        raise FP_ParameterError(
+            "ICmPerson has no notes field (issue #352); "
+            "GetNotes cannot return a value"
+        )
 
     @OperationsMethod
     def AddNote(self, person_or_hvo, note, wsHandle=None):
@@ -1517,8 +1503,7 @@ class PersonOperations(BaseOperations):
             Available weekdays
 
         Notes:
-            - Appends to existing notes with newline separator
-            - Use GetNotes() and SetNotes() for replacing all notes
+            - Appends to existing notes as a new NotesOA paragraph
             - Empty note text is ignored
 
         See Also:
@@ -1529,24 +1514,12 @@ class PersonOperations(BaseOperations):
         self._ValidateParam(person_or_hvo, "person_or_hvo")
         self._ValidateParam(note, "note")
 
-        if not note or not note.strip():
-            return  # Ignore empty notes
-
-        person = self.__ResolveObject(person_or_hvo)
-        wsHandle = self.__WSHandleAnalysis(wsHandle)
-
-        # Get existing notes
-        existing = ITsString(person.Comment.get_String(wsHandle)).Text or ""
-
-        # Append new note
-        if existing:
-            new_notes = existing + "\n" + note
-        else:
-            new_notes = note
-
-        mkstr = TsStringUtils.MakeString(new_notes, wsHandle)
-        with self._TransactionCM("Add note to person"):
-            person.Comment.set_String(wsHandle, mkstr)
+        # No backing field (see GetNotes): ICmPerson has no Comment
+        # member and NotesOA is ICmAgent-only (issue #352).
+        raise FP_ParameterError(
+            "ICmPerson has no notes field (issue #352); "
+            "AddNote cannot store a value"
+        )
 
     # --- Private Helper Methods ---
 

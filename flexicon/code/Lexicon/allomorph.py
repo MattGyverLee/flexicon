@@ -16,8 +16,8 @@ Wrapper class for allomorph objects with unified interface.
 
 This module provides Allomorph, a wrapper class that transparently
 handles the two concrete types of allomorphs:
-- MoStemAllomorph: Allomorphs of stems (StemName property)
-- MoAffixAllomorph: Allomorphs of affixes (AffixType property)
+- MoStemAllomorph: Allomorphs of stems (StemNameRA property)
+- MoAffixAllomorph: Allomorphs of affixes (MorphTypeRA property)
 
 The wrapper exposes a unified interface for accessing common properties
 and provides convenience methods for checking type-specific capabilities
@@ -25,8 +25,8 @@ without exposing the underlying ClassName or casting complexity.
 
 Problem:
     Allomorphs have different properties depending on their concrete type:
-    - MoStemAllomorph has StemName property
-    - MoAffixAllomorph has AffixType property
+    - MoStemAllomorph has StemNameRA property
+    - MoAffixAllomorph has MorphTypeRA property
 
     Both have Form (ITsString), PhEnvironmentRC, Gloss, etc.
 
@@ -264,21 +264,24 @@ class Allomorph(LCMObjectWrapper):
         Notes:
             - Only available on MoStemAllomorph
             - Returns empty string for MoAffixAllomorph
-            - StemName is a multistring property
+            - StemNameRA is a reference to the MoStemName object (there
+              is no StemName multistring; live-proven, issue #352);
+              returns its best-analysis name
         """
         if not self.is_stem_allomorph:
             return ""
 
         try:
-            from SIL.LCModel.Core.KernelInterfaces import ITsString
-            from ..Shared.string_utils import normalize_text
+            from ..Shared.string_utils import best_analysis_text
 
-            if hasattr(self._concrete, "StemName") and self._concrete.StemName:
-                # Get from default analysis writing system
-                default_ws = self._obj.Cache.DefaultAnalWs
-                stem_name_text = ITsString(self._concrete.StemName.get_String(default_ws)).Text
-                return normalize_text(stem_name_text)
-            return ""
+            stem_name_ref = (
+                self._concrete.StemNameRA
+                if hasattr(self._concrete, "StemNameRA")
+                else None
+            )
+            if stem_name_ref is None:
+                return ""
+            return best_analysis_text(getattr(stem_name_ref, "Name", None))
         except Exception:
             return ""
 
@@ -299,14 +302,16 @@ class Allomorph(LCMObjectWrapper):
         Notes:
             - Only available on MoAffixAllomorph
             - Returns None for MoStemAllomorph
-            - AffixType indicates prefix, suffix, infix, etc.
+            - MorphTypeRA indicates prefix, suffix, infix, etc. (there
+              is no AffixType member; same bug class as StemName,
+              issue #352)
         """
         if not self.is_affix_allomorph:
             return None
 
         try:
-            if hasattr(self._concrete, "AffixType"):
-                return self._concrete.AffixType
+            if hasattr(self._concrete, "MorphTypeRA"):
+                return self._concrete.MorphTypeRA
             return None
         except Exception:
             return None
@@ -329,7 +334,7 @@ class Allomorph(LCMObjectWrapper):
             if allomorph_obj.as_stem_allomorph():
                 concrete = allomorph_obj.as_stem_allomorph()
                 # Can now access IMoStemAllomorph-specific methods/properties
-                stem_name = concrete.StemName
+                stem_name = concrete.StemNameRA
                 # Advanced operations...
 
         Notes:
@@ -358,9 +363,8 @@ class Allomorph(LCMObjectWrapper):
 
             if allomorph_obj.as_affix_allomorph():
                 concrete = allomorph_obj.as_affix_allomorph()
-                # Can now access IMoAffixAllomorph-specific methods/properties
-                affix_type = concrete.AffixType
                 # Advanced operations...
+                affix_type = concrete.MorphTypeRA
 
         Notes:
             - For users who know C# interfaces and want advanced control
@@ -387,7 +391,7 @@ class Allomorph(LCMObjectWrapper):
 
             # Direct access to concrete interface
             concrete = allomorph_obj.concrete
-            stem_name = concrete.StemName  # MoStemAllomorph property
+            stem_name = concrete.StemNameRA  # MoStemAllomorph property
 
         Notes:
             - For power users only

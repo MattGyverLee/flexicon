@@ -113,16 +113,16 @@ class ProjectSettingsOperations(BaseOperations):
             Project name: Kalaba Documentation
 
         Notes:
-            - Returns the display name of the project
-            - This is different from the project filename
+            - Returns the project ShortName (there is no Name member on
+              the LangProject; live-proven, issue #352)
+            - This matches the project filename stem
             - Empty string if no name is set
 
         See Also:
             SetProjectName, GetDescription
         """
-        if hasattr(self.project.lp, "Name") and self.project.lp.Name:
-            ts = ITsString(self.project.lp.Name)
-            return ts.Text if ts else ""
+        if hasattr(self.project.lp, "ShortName") and self.project.lp.ShortName:
+            return self.project.lp.ShortName or ""
         return ""
 
     @OperationsMethod
@@ -145,24 +145,20 @@ class ProjectSettingsOperations(BaseOperations):
             Kalaba Documentation
 
         Notes:
-            - Sets the display name of the project
-            - Does not change the project filename
-            - Name should be descriptive and meaningful
+            - The project name (ShortName) is read-only in the LCM --
+              renaming a project means renaming its files, which the API
+              does not do. There is no Name member on the LangProject
+              (live-proven, issue #352), so this method always raises.
+              It is kept only to fail with an actionable message instead
+              of a bare AttributeError.
 
         See Also:
             GetProjectName, SetDescription
         """
-        self._EnsureWriteEnabled()
-
-        self._ValidateParam(name, "name")
-
-        if not name or not name.strip():
-            raise FP_ParameterError("Project name cannot be empty")
-
-        # Get default analysis writing system for the name
-        ws_handle = self.project.project.DefaultAnalWs
-        ts = TsStringUtils.MakeString(name, ws_handle)
-        self.project.lp.Name = ts
+        raise FP_ParameterError(
+            "Project name is read-only (ShortName; issue #352); "
+            "SetProjectName cannot rename a project"
+        )
 
     @OperationsMethod
     def GetDescription(self, ws_handle_or_tag=None):

@@ -431,8 +431,10 @@ class WfiAnalysisOperations(BaseOperations):
             val1 = props1.get(key)
             val2 = props2.get(key)
 
-            # Compare values
-            if self.project._CompareValues(val1, val2):
+            # Compare values inline: FLExProject has no _CompareValues
+            # member (calling it raised AttributeError on every compare;
+            # same fix as MediaOperations.CompareTo).
+            if val1 != val2:
                 # Values are different
                 differences[key] = (val1, val2)
 

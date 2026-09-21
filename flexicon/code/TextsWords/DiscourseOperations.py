@@ -882,10 +882,15 @@ class DiscourseOperations(BaseOperations):
         # Both capability checks stay OUTSIDE the transaction so a cell that
         # supports neither property raises without opening an empty undo task.
         if hasattr(cell, "Label"):
-            # Some cells have a Label property
+            # Some cells have a Label property. Chart-cell types declare
+            # no Label at all (issue #352), but chart rows carry a bare
+            # ITsString Label (no set_String) -- handle both shapes.
             with self._TransactionCM("Set chart cell content"):
                 content_str = TsStringUtils.MakeString(content, wsHandle)
-                cell.Label.set_String(wsHandle, content_str)
+                if hasattr(cell.Label, "set_String"):
+                    cell.Label.set_String(wsHandle, content_str)
+                else:
+                    cell.Label = self._MakeTsString(content, wsHandle)
         elif hasattr(cell, "Comment"):
             # Some cells have a Comment property
             with self._TransactionCM("Set chart cell content"):
@@ -944,14 +949,22 @@ class DiscourseOperations(BaseOperations):
         # Try different properties based on cell type
         content = ""
 
-        # Try Label property (for markers, annotations)
+        # Try Label property (for markers, annotations). Chart-cell
+        # types declare no Label (issue #352); chart rows carry a bare
+        # ITsString Label, which the get_String read below cannot parse
+        # -- fall back to a direct ITsString read in that case.
         if hasattr(cell, "Label"):
             try:
                 label_str = ITsString(cell.Label.get_String(wsHandle)).Text
                 if label_str:
                     content = label_str
-            except (AttributeError, System.NullReferenceException, TypeError) as e:
-                pass
+            except (AttributeError, System.NullReferenceException, TypeError):
+                try:
+                    label_str = self._ReadTsString(cell.Label)
+                    if label_str:
+                        content = label_str
+                except (AttributeError, System.NullReferenceException, TypeError):
+                    pass
 
         # Try Comment property
         if not content and hasattr(cell, "Comment"):
@@ -1228,8 +1241,10 @@ class DiscourseOperations(BaseOperations):
             val1 = props1.get(key)
             val2 = props2.get(key)
 
-            # Compare values
-            if self.project._CompareValues(val1, val2):
+            # Compare values inline: FLExProject has no _CompareValues
+            # member (calling it raised AttributeError on every compare;
+            # same fix as MediaOperations.CompareTo).
+            if val1 != val2:
                 # Values are different
                 differences[key] = (val1, val2)
 

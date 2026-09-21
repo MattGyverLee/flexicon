@@ -320,11 +320,12 @@ class TextOperations(BaseOperations):
             # Create the new text (sets Name and Genre via Create helper)
             new_text = self.Create(new_name, genre=source_genre)
 
-            # Copy remaining MultiString properties (all writing systems)
+            # Copy remaining MultiString properties (all writing systems).
+            # IText declares no Title (issue #352) -- that guarded copy
+            # was dead code and is removed. Description IS present live
+            # (inherited multistring) and stays.
             if hasattr(text_obj, "Abbreviation") and text_obj.Abbreviation:
                 new_text.Abbreviation.CopyAlternatives(text_obj.Abbreviation)
-            if hasattr(text_obj, "Title") and text_obj.Title:
-                new_text.Title.CopyAlternatives(text_obj.Title)
             if hasattr(text_obj, "Description") and text_obj.Description:
                 new_text.Description.CopyAlternatives(text_obj.Description)
             if hasattr(text_obj, "Source") and text_obj.Source:
@@ -358,23 +359,21 @@ class TextOperations(BaseOperations):
 
         Example:
             >>> props = project.Texts.GetSyncableProperties(text)
-            >>> print(props['Title'])
-            {'en': 'Genesis'}
             >>> print(props['Description'])
             {'en': 'First book of the Bible'}
 
         Notes:
-            - MultiString properties: Title, Description, Source
+            - MultiString properties: Description, Source (IText has no
+              Title; issue #352)
             - DateTime properties: DateCreated, DateModified
             - Reference Collection properties: GenresRC, MediaFilesRC (GUIDs)
             - Does NOT include owned sequences (paragraphs) - those are children
         """
         props = {}
 
-        # MultiString properties
-        if hasattr(item, "Title") and item.Title:
-            props["Title"] = self.project.GetMultiStringDict(item.Title)
-
+        # MultiString properties (IText has no Title -- issue #352;
+        # that guarded branch never executed. Description is present
+        # live and stays).
         if hasattr(item, "Description") and item.Description:
             props["Description"] = self.project.GetMultiStringDict(item.Description)
 
@@ -442,8 +441,10 @@ class TextOperations(BaseOperations):
             val1 = props1.get(key)
             val2 = props2.get(key)
 
-            # Compare values
-            if self.project._CompareValues(val1, val2):
+            # Compare values inline: FLExProject has no _CompareValues
+            # member (calling it raised AttributeError on every compare;
+            # same fix as MediaOperations.CompareTo).
+            if val1 != val2:
                 # Values are different
                 differences[key] = (val1, val2)
 

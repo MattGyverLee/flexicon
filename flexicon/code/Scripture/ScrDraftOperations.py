@@ -21,8 +21,6 @@ from SIL.LCModel import (
     IScrDraftFactory,
     IScripture,
 )
-from SIL.LCModel.Core.KernelInterfaces import ITsString
-from SIL.LCModel.Core.Text import TsStringUtils
 
 # Import flexlibs exceptions
 from ..FLExProject import (
@@ -158,22 +156,28 @@ class ScrDraftOperations(BaseOperations):
             raise FP_ParameterError("Project does not have Scripture enabled")
 
         with self._TransactionCM("Create draft"):
-            # Create the new draft using the factory
+            # IScrDraftFactory exposes no no-arg Create() -- only
+            # Create(description[, ...]) (live-proven TypeError; issue
+            # #352 follow-up). The factory parents the new draft into
+            # ArchivedDraftsOC itself, so only Add when it did not
+            # (compare by HVO: proxies have no stable identity).
             factory = self.project.project.ServiceLocator.GetService(IScrDraftFactory)
-            new_draft = factory.Create()
+            new_draft = factory.Create(description)
 
-            # Add to Scripture's archived drafts
-            scripture.ArchivedDraftsOC.Add(new_draft)
+            if new_draft.Hvo not in {d.Hvo for d in scripture.ArchivedDraftsOC}:
+                scripture.ArchivedDraftsOC.Add(new_draft)
 
-            # Set description
-            wsHandle = self.project.project.DefaultAnalWs
-            mkstr = TsStringUtils.MakeString(description, wsHandle)
-            new_draft.Description.set_String(wsHandle, mkstr)
+            # Description is a scalar String, not a multistring
+            # (live-proven: plain str; issue #352) -- assign directly,
+            # same as SemanticDomain OcmCodes. The factory already set
+            # it from the description argument; re-assert it so a later
+            # refactor of the factory call cannot silently drop it.
+            new_draft.Description = description
 
-            # Set type (stored as a string property for reference)
-            # Note: IScrDraft doesn't have a Type property in the schema,
-            # so this is stored in the description or as metadata
-            # For now, we just use description
+            # The `type` parameter is accepted for compatibility but not
+            # applied: mapping the "saved_version"/"consultant_check"/
+            # "back_translation" labels onto the ScrDraftType enum is out
+            # of scope (the LCM enum is not exposed via pythonnet here).
 
             return new_draft
 
@@ -263,12 +267,12 @@ class ScrDraftOperations(BaseOperations):
         if not scripture:
             return None
 
-        wsHandle = self.project.project.DefaultAnalWs
         target = normalize_match_key(description, casefold=True)
 
-        # Search through all drafts
+        # Search through all drafts. Description is a scalar String
+        # (issue #352), so there is no writing-system dimension.
         for draft in scripture.ArchivedDraftsOC:
-            draft_desc = ITsString(draft.Description.get_String(wsHandle)).Text
+            draft_desc = draft.Description or ""
             if target and target in normalize_match_key(draft_desc, casefold=True):
                 return draft
 
@@ -298,7 +302,8 @@ class ScrDraftOperations(BaseOperations):
 
         Notes:
             - Returns empty string if description not set
-            - Description is in analysis writing system
+            - Description is a scalar String (no writing-system
+              variants; issue #352)
 
         See Also:
             SetDescription, Create
@@ -306,10 +311,8 @@ class ScrDraftOperations(BaseOperations):
         self._ValidateParam(draft_or_hvo, "draft_or_hvo")
 
         draft = self.__ResolveObject(draft_or_hvo)
-        wsHandle = self.project.project.DefaultAnalWs
 
-        desc = ITsString(draft.Description.get_String(wsHandle)).Text
-        return desc or ""
+        return draft.Description or ""
 
     @OperationsMethod
     def SetDescription(self, draft_or_hvo, text):
@@ -332,7 +335,8 @@ class ScrDraftOperations(BaseOperations):
             ... )
 
         Notes:
-            - Description is in analysis writing system
+            - Description is a scalar String (no writing-system
+              variants; issue #352)
             - Empty description is allowed but not recommended
 
         See Also:
@@ -344,11 +348,9 @@ class ScrDraftOperations(BaseOperations):
         self._ValidateParam(text, "text")
 
         draft = self.__ResolveObject(draft_or_hvo)
-        wsHandle = self.project.project.DefaultAnalWs
 
         with self._TransactionCM("Set draft description"):
-            mkstr = TsStringUtils.MakeString(text, wsHandle)
-            draft.Description.set_String(wsHandle, mkstr)
+            draft.Description = text
 
     @OperationsMethod
     def GetBooks(self, draft_or_hvo):

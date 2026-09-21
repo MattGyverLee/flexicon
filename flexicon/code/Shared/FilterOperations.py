@@ -1228,13 +1228,14 @@ class FilterOperations:
             except (TypeError, AttributeError, KeyError) as e:
                 return False
 
-        # Check title pattern (regex)
+        # Check title pattern (regex). IText has no Title member
+        # (issue #352) -- match against the text Name instead.
         if "title_pattern" in criteria:
             import re
 
             pattern = criteria["title_pattern"]
             try:
-                title = ITsString(text.Title.BestAnalysisAlternative).Text
+                title = ITsString(text.Name.BestAnalysisAlternative).Text
                 if title and not re.search(pattern, title):
                     return False
             except (TypeError, AttributeError, KeyError) as e:

@@ -332,7 +332,8 @@ class Annotation(LCMObjectWrapper):
         """
         Get the author of the annotation.
 
-        Returns the Source property text, which typically contains the author name.
+        Returns the SourceRA agent's name (there is no Source
+        multistring; live-proven, issue #352).
 
         Returns:
             str: The author name, or empty string if not set.
@@ -343,16 +344,15 @@ class Annotation(LCMObjectWrapper):
             # Author: John Smith
 
         Notes:
-            - Author is stored in Source property
-            - Returns in default analysis writing system
+            - Author is the SourceRA agent reference
             - Empty string if no author set
         """
         try:
-            if hasattr(self._obj, "Source"):
-                default_ws = self._get_default_ws()
-                source_text = ITsString(self._obj.Source.get_String(default_ws)).Text
-                return source_text or ""
-            return ""
+            source = getattr(self._obj, "SourceRA", None)
+            if source is None:
+                return ""
+            from ..Shared.string_utils import best_analysis_text
+            return best_analysis_text(source.Name) or ""
         except Exception:
             return ""
 

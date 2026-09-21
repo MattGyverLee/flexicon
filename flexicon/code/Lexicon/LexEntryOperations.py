@@ -471,7 +471,10 @@ class LexEntryOperations(BaseOperations):
                     etym_factory = self.project.project.ServiceLocator.GetService(ILexEtymologyFactory)
                     new_etym = etym_factory.Create()
                     new_entry.EtymologyOS.Add(new_etym)
-                    new_etym.Source.CopyAlternatives(etymology.Source)
+                    # ILexEtymology has no Source field (issue #352);
+                    # source-language text lives on LanguageNotes
+                    # (mirrors EtymologyOperations.Duplicate).
+                    new_etym.LanguageNotes.CopyAlternatives(etymology.LanguageNotes)
                     new_etym.Form.CopyAlternatives(etymology.Form)
                     new_etym.Gloss.CopyAlternatives(etymology.Gloss)
                     new_etym.Comment.CopyAlternatives(etymology.Comment)

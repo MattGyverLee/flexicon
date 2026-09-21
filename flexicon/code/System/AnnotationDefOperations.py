@@ -65,10 +65,11 @@ class AnnotationDefOperations(BaseOperations):
             print(f"Help: {help_text}")
             print(f"User creatable: {user_can_create}")
 
-        # Create a new annotation definition
+        # Create a new annotation definition (type passed as int: the
+        # CmAnnotationType enum is not exposed via pythonnet)
         custom_def = project.AnnotationDef.Create(
             "Review Required",
-            CmAnnotationType.katGeneralNote,
+            0,
             "en"
         )
         project.AnnotationDef.SetHelpString(custom_def,
@@ -76,8 +77,7 @@ class AnnotationDefOperations(BaseOperations):
         project.AnnotationDef.SetUserCanCreate(custom_def, True)
 
         # Get annotation definitions by type
-        for note_def in project.AnnotationDef.FindByType(
-                CmAnnotationType.katGeneralNote):
+        for note_def in project.AnnotationDef.FindByType(0):
             name = project.AnnotationDef.GetName(note_def)
             print(f"Note type: {name}")
 
@@ -136,7 +136,9 @@ class AnnotationDefOperations(BaseOperations):
 
         Args:
             name (str): The name of the annotation definition.
-            annotation_type (CmAnnotationType): The annotation type enumeration.
+            annotation_type (int): The annotation type code (the
+                CmAnnotationType enum is not exposed via pythonnet, so
+                pass its int value; currently recorded opportunistically).
             wsHandle: Optional writing system handle. Defaults to analysis WS.
             parent (ICmAnnotationDefn, optional): Parent definition for creating
                 a sub-type. If None, creates a top-level definition.
@@ -153,7 +155,7 @@ class AnnotationDefOperations(BaseOperations):
             >>> # Create a top-level annotation definition
             >>> custom_def = project.AnnotationDef.Create(
             ...     "Review Required",
-            ...     CmAnnotationType.katGeneralNote,
+            ...     0,
             ...     "en"
             ... )
             >>> print(project.AnnotationDef.GetName(custom_def))
@@ -163,7 +165,7 @@ class AnnotationDefOperations(BaseOperations):
             >>> todo_def = project.AnnotationDef.Find("To Do")
             >>> urgent_def = project.AnnotationDef.Create(
             ...     "Urgent",
-            ...     CmAnnotationType.katGeneralNote,
+            ...     0,
             ...     "en",
             ...     parent=todo_def
             ... )
@@ -311,7 +313,7 @@ class AnnotationDefOperations(BaseOperations):
             ...     # Create it
             ...     custom = project.AnnotationDef.Create(
             ...         "Custom Type",
-            ...         CmAnnotationType.katGeneralNote
+            ...         0
             ...     )
 
         Notes:
@@ -480,6 +482,8 @@ class AnnotationDefOperations(BaseOperations):
             - Help strings provide user guidance
             - Displayed as tooltips or help text in FLEx UI
             - Can be set in multiple writing systems
+            - Stored in the inherited Description field: ICmAnnotationDefn
+              has no HelpString member (live-proven, issue #352)
 
         See Also:
             SetHelpString, GetName
@@ -488,10 +492,8 @@ class AnnotationDefOperations(BaseOperations):
 
         wsHandle = self.__WSHandle(wsHandle)
 
-        if hasattr(anno_def, "HelpString"):
-            help_str = ITsString(anno_def.HelpString.get_String(wsHandle)).Text
-            return help_str or ""
-        return ""
+        help_str = ITsString(anno_def.Description.get_String(wsHandle)).Text
+        return help_str or ""
 
     @OperationsMethod
     def SetHelpString(self, anno_def, help_string, wsHandle=None):
@@ -510,7 +512,7 @@ class AnnotationDefOperations(BaseOperations):
         Example:
             >>> custom_def = project.AnnotationDef.Create(
             ...     "Review Required",
-            ...     CmAnnotationType.katGeneralNote
+            ...     0
             ... )
             >>> project.AnnotationDef.SetHelpString(
             ...     custom_def,
@@ -524,6 +526,7 @@ class AnnotationDefOperations(BaseOperations):
             - Empty string is allowed (clears the help string)
             - Help strings guide users on when to use this type
             - Can provide different help in different languages
+            - Stored in the inherited Description field (issue #352)
 
         See Also:
             GetHelpString, SetName
@@ -535,10 +538,9 @@ class AnnotationDefOperations(BaseOperations):
 
         wsHandle = self.__WSHandle(wsHandle)
 
-        if hasattr(anno_def, "HelpString"):
-            with self._TransactionCM("Set annotation definition help string"):
-                mkstr = TsStringUtils.MakeString(help_string, wsHandle)
-                anno_def.HelpString.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set annotation definition help string"):
+            mkstr = TsStringUtils.MakeString(help_string, wsHandle)
+            anno_def.Description.set_String(wsHandle, mkstr)
 
     # --- Type and Instance Information ---
 
@@ -551,27 +553,22 @@ class AnnotationDefOperations(BaseOperations):
             anno_def: The ICmAnnotationDefn object.
 
         Returns:
-            int: The annotation type enumeration value (CmAnnotationType).
+            int: The annotation type code (0 when unset).
 
         Raises:
             FP_NullParameterError: If anno_def is None.
 
         Example:
-            >>> from SIL.LCModel import CmAnnotationType
             >>> todo_def = project.AnnotationDef.Find("To Do")
             >>> if todo_def:
             ...     anno_type = project.AnnotationDef.GetAnnotationType(todo_def)
-            ...     if anno_type == int(CmAnnotationType.katGeneralNote):
-            ...         print("This is a general note type")
-            This is a general note type
+            ...     print(f"Type code: {anno_type}")
+            Type code: 0
 
         Notes:
-            - Returns integer value of CmAnnotationType enum
-            - Common types:
-              * katGeneralNote: General purpose notes
-              * katQuestionNote: Question annotations
-              * katResolvedNote: Resolved items
-              * katTranslationNote: Translation notes
+            - Returns the stored type code (0 when unset / unsupported)
+            - The CmAnnotationType enum itself is not exposed via
+              pythonnet, so callers pass and compare plain ints
             - Annotation type determines usage context
 
         See Also:
@@ -815,6 +812,8 @@ class AnnotationDefOperations(BaseOperations):
             - Prompt appears when user creates annotation of this type
             - Guides user on what information to enter
             - Can be localized in multiple writing systems
+            - Stored in the inherited Description field: ICmAnnotationDefn
+              has no Prompt member (live-proven, issue #352)
 
         See Also:
             SetPrompt, GetHelpString
@@ -823,10 +822,8 @@ class AnnotationDefOperations(BaseOperations):
 
         wsHandle = self.__WSHandle(wsHandle)
 
-        if hasattr(anno_def, "Prompt"):
-            prompt = ITsString(anno_def.Prompt.get_String(wsHandle)).Text
-            return prompt or ""
-        return ""
+        prompt = ITsString(anno_def.Description.get_String(wsHandle)).Text
+        return prompt or ""
 
     @OperationsMethod
     def SetPrompt(self, anno_def, prompt_text, wsHandle=None):
@@ -845,7 +842,7 @@ class AnnotationDefOperations(BaseOperations):
         Example:
             >>> custom_def = project.AnnotationDef.Create(
             ...     "Review",
-            ...     CmAnnotationType.katGeneralNote
+            ...     0
             ... )
             >>> project.AnnotationDef.SetPrompt(
             ...     custom_def,
@@ -857,6 +854,7 @@ class AnnotationDefOperations(BaseOperations):
             - Empty string is allowed (clears the prompt)
             - Prompt helps users understand what to enter
             - Can provide different prompts in different languages
+            - Stored in the inherited Description field (issue #352)
 
         See Also:
             GetPrompt, SetHelpString
@@ -868,10 +866,9 @@ class AnnotationDefOperations(BaseOperations):
 
         wsHandle = self.__WSHandle(wsHandle)
 
-        if hasattr(anno_def, "Prompt"):
-            with self._TransactionCM("Set annotation definition prompt"):
-                mkstr = TsStringUtils.MakeString(prompt_text, wsHandle)
-                anno_def.Prompt.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set annotation definition prompt"):
+            mkstr = TsStringUtils.MakeString(prompt_text, wsHandle)
+            anno_def.Description.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetCopyCutPasteAllowed(self, anno_def):
@@ -917,7 +914,7 @@ class AnnotationDefOperations(BaseOperations):
         Find all annotation definitions of a specific type.
 
         Args:
-            annotation_type (CmAnnotationType): The annotation type to search for.
+            annotation_type (int): The annotation type code to search for.
 
         Yields:
             ICmAnnotationDefn: Each annotation definition matching the type.
@@ -926,26 +923,20 @@ class AnnotationDefOperations(BaseOperations):
             FP_NullParameterError: If annotation_type is None.
 
         Example:
-            >>> from SIL.LCModel import CmAnnotationType
-            >>> # Get all general note types
-            >>> for note_def in project.AnnotationDef.FindByType(
-            ...         CmAnnotationType.katGeneralNote):
+            >>> # Get all general note types (type code 0)
+            >>> for note_def in project.AnnotationDef.FindByType(0):
             ...     name = project.AnnotationDef.GetName(note_def)
             ...     print(f"Note type: {name}")
             Note type: To Do
             Note type: Question
             Note type: Review Required
 
-            >>> # Count question types
-            >>> question_types = list(project.AnnotationDef.FindByType(
-            ...     CmAnnotationType.katQuestionNote))
-            >>> print(f"Found {len(question_types)} question types")
-
         Notes:
-            - Filters all definitions by annotation type
+            - Filters all definitions by annotation type code
             - Returns empty generator if no matches
             - Use to find related annotation definition groups
-            - Common types: katGeneralNote, katQuestionNote, katResolvedNote
+            - The CmAnnotationType enum is not exposed via pythonnet;
+              pass its int value directly
 
         See Also:
             GetAnnotationType, GetUserCreatableTypes
@@ -1094,7 +1085,8 @@ class AnnotationDefOperations(BaseOperations):
 
         Notes:
             - Factory.Create() automatically generates a new GUID
-            - MultiString properties: Name, HelpString, Prompt
+            - MultiString properties: Name, Description (surfaced as
+              HelpString and Prompt, which have no backing field)
             - Simple properties: AnnotationType, InstanceOf, UserCanCreate, AllowsMultiple
             - Sub-possibilities duplicated only if deep=True
 
@@ -1141,12 +1133,11 @@ class AnnotationDefOperations(BaseOperations):
                 elif hasattr(parent, "SubPossibilitiesOS"):
                     parent.SubPossibilitiesOS.Add(duplicate)
 
-            # Copy MultiString properties (AFTER adding to parent)
+            # Copy MultiString properties (AFTER adding to parent).
+            # HelpString/Prompt have no backing field; both live in the
+            # inherited Description (issue #352).
             duplicate.Name.CopyAlternatives(source.Name)
-            if hasattr(source, "HelpString") and source.HelpString:
-                duplicate.HelpString.CopyAlternatives(source.HelpString)
-            if hasattr(source, "Prompt") and source.Prompt:
-                duplicate.Prompt.CopyAlternatives(source.Prompt)
+            duplicate.Description.CopyAlternatives(source.Description)
 
             # Copy simple properties
             if hasattr(source, "AnnotationType"):
@@ -1172,12 +1163,10 @@ class AnnotationDefOperations(BaseOperations):
             dup_def = factory.Create()
             parent_dup.SubPossibilitiesOS.Add(dup_def)
 
-            # Copy properties
+            # Copy properties (HelpString/Prompt live in Description;
+            # see Duplicate above).
             dup_def.Name.CopyAlternatives(source_def.Name)
-            if hasattr(source_def, "HelpString") and source_def.HelpString:
-                dup_def.HelpString.CopyAlternatives(source_def.HelpString)
-            if hasattr(source_def, "Prompt") and source_def.Prompt:
-                dup_def.Prompt.CopyAlternatives(source_def.Prompt)
+            dup_def.Description.CopyAlternatives(source_def.Description)
 
             if hasattr(source_def, "AnnotationType"):
                 dup_def.AnnotationType = source_def.AnnotationType
@@ -1209,10 +1198,10 @@ class AnnotationDefOperations(BaseOperations):
         props = {}
         props["Name"] = ITsString(anno_def.Name.get_String(wsHandle)).Text or ""
 
-        if hasattr(anno_def, "HelpString"):
-            props["HelpString"] = ITsString(anno_def.HelpString.get_String(wsHandle)).Text or ""
-        if hasattr(anno_def, "Prompt"):
-            props["Prompt"] = ITsString(anno_def.Prompt.get_String(wsHandle)).Text or ""
+        # HelpString/Prompt have no backing field; both read the
+        # inherited Description (issue #352).
+        props["HelpString"] = ITsString(anno_def.Description.get_String(wsHandle)).Text or ""
+        props["Prompt"] = ITsString(anno_def.Description.get_String(wsHandle)).Text or ""
 
         if hasattr(anno_def, "AnnotationType"):
             props["AnnotationType"] = int(anno_def.AnnotationType)

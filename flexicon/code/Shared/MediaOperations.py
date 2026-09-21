@@ -315,9 +315,13 @@ class MediaOperations(BaseOperations):
                 except Exception:
                     pass
 
-        # Delete the object (this removes all references)
-        # Note: LCModel handles cascading deletion of references
-        self.project.cache.DomainDataByFlid.DeleteObj(media.Hvo)
+        # Delete the object (this removes all references).
+        # Note: LCModel handles cascading deletion of references.
+        # (Was self.project.cache... -- FLExProject exposes Cache,
+        # not cache; ICmObject.Delete() is the public deletion entry
+        # point. Found live while verifying issue #352.)
+        with self._TransactionCM("Delete media file"):
+            media.Delete()
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, deep=False, *, insert_after=True):
@@ -446,10 +450,15 @@ class MediaOperations(BaseOperations):
             # Create the new media reference
             new_media = self.Create(new_path, label=new_label, wsHandle=wsHandle)
 
-            # Copy full Description MultiString (all writing systems)
-            # Create() only sets a single-WS label; CopyAlternatives preserves all WS
+            # Copy full Description MultiString (all writing systems),
+            # then re-apply the " (copy)" label in the default WS: the
+            # copy must not silently revert to the source label (found
+            # live while verifying issue #352).
             if hasattr(source_media, "Description") and source_media.Description:
                 new_media.Description.CopyAlternatives(source_media.Description)
+            new_media.Description.set_String(
+                wsHandle, TsStringUtils.MakeString(new_label, wsHandle)
+            )
 
             return new_media
 
@@ -534,8 +543,11 @@ class MediaOperations(BaseOperations):
             val1 = props1.get(key)
             val2 = props2.get(key)
 
-            # Compare values
-            if self.project._CompareValues(val1, val2):
+            # Compare values inline: FLExProject has no _CompareValues
+            # member (calling it raised AttributeError on every compare;
+            # found live while verifying issue #352). Same shape as the
+            # DataNotebook/Person/SemanticDomain CompareTo methods.
+            if val1 != val2:
                 # Values are different
                 differences[key] = (val1, val2)
 
