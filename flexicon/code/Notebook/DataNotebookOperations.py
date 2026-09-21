@@ -1251,9 +1251,7 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         try:
-            owner = record.Owner
-            if isinstance(owner, IRnGenericRec):
-                return IRnGenericRec(owner)
+            return self._GetTypedOwner(record)
         except (AttributeError, TypeError, System.InvalidCastException) as e:
             pass
 
@@ -2576,18 +2574,15 @@ class DataNotebookOperations(BaseOperations):
         # Get source record
         source = self.__GetRecordObject(record_or_hvo)
 
-        # Determine parent (owner)
-        owner = source.Owner
-
         # Create new record using factory (auto-generates new GUID)
         with self._TransactionCM("Duplicate notebook record"):
             factory = self.project.project.ServiceLocator.GetService(IRnGenericRecFactory)
             duplicate = factory.Create()
 
             # Determine insertion position and add to parent FIRST
-            if isinstance(owner, IRnGenericRec):
+            parent_record = self._GetTypedOwner(source)
+            if parent_record is not None:
                 # Parent is another notebook record (sub-record)
-                parent_record = IRnGenericRec(owner)
                 if insert_after:
                     source_index = parent_record.SubRecordsOS.IndexOf(source)
                     parent_record.SubRecordsOS.Insert(source_index + 1, duplicate)
