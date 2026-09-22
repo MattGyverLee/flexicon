@@ -621,3 +621,79 @@ hasattr(FLExProject, "FromOpenProject")   # the only reliable probe
 ```
 
 ---
+
+## Breaking Change: EtymologyOperations -- GetLanguage / SetLanguage deprecated (issue #325)
+
+- `project.Etymology.GetLanguage(etym)` is deprecated. It now emits a
+  `[WARN]` logger message and returns `project.Etymology.GetLanguages(etym)[0]`
+  or `None`. Use `GetLanguages()` for the full ordered list.
+- `project.Etymology.SetLanguage(etym, lang)` is deprecated. It now emits a
+  `[WARN]` logger message and calls `SetLanguages([lang])`, replacing any
+  existing sequence with a single-element list. Use `SetLanguages()` to set
+  multiple languages.
+- **NOTE: Prior to this fix, both methods were silently non-functional**
+  (`LanguageRA` does not exist on the LCM). Any code that relied on
+  `GetLanguage()` always returning `None`, or on `SetLanguage()` being a
+  safe no-op, should be reviewed. The methods now operate correctly through
+  `LanguageRS`.
+- New methods: `GetLanguages(etym)` -> `list[ICmPossibility]` (ordered),
+  `SetLanguages(etym, langs)` -> replaces entire `LanguageRS` sequence.
+
+---
+
+## Breaking Change: Sync payload key renames (issue #325)
+
+Code that directly inspects dicts from `GetSyncableProperties` or constructs
+dicts for `ApplySyncableProperties` must be updated:
+
+- **EtymologyOperations**: Key `"LanguageRA"` replaced by `"language_rs"`.
+  Old value: `str` GUID or `None`. New value: `list[str]` of GUID strings (empty
+  list if no languages set). Update any equality checks or dict constructors
+  targeting `"LanguageRA"`.
+
+- **EtymologyOperations**: Key `"LanguageNotesRA"` removed. It was always
+  `None`; remove any code that referenced it. The `"Source"` key (backed by
+  `LanguageNotes` IMultiString) is unchanged.
+
+- **LexReferenceOperations**: Key `"ReferenceTypeRA"` replaced by
+  `"owner_guid"` (str GUID of the owning `ILexRefType`). New key `"targets_rs"`
+  added (list of GUID strings, ordered). Note: providing a different
+  `owner_guid` in an `ApplySyncableProperties` call is a structural change
+  (delete old reference, create under new type) -- not an in-place update.
+
+- **TextOperations**: Key `"MediaFilesRC"` replaced by `"media_uris"`
+  (list of dicts: `{"uri": str, "file_guid": str|null}`). The old key was never
+  populated; this is a functional replacement. Live verification of populated
+  media requires a project with configured media files.
+
+---
+
+## Change: Sync payload key removal (issue #325)
+
+- **LexSenseOperations**: Key `"DoNotShowMainEntryInRC"` removed from
+  `GetSyncableProperties` output. It was always `frozenset()` (absent LCM
+  field on `ILexSense`). Remove any code that branched on this key in sense
+  sync dicts. Entry-level `DoNotShowMainEntryInRC` handling in
+  `LexEntryOperations` is unchanged.
+
+---
+
+## Change: Sync payload addition (issue #325)
+
+- **TextOperations**: Key `"Name"` added to `GetSyncableProperties` output
+  (MultiString dict, same structure as `"Description"`). Sync comparisons and
+  merges for texts now include the text title. Purely additive; no existing
+  payload key is removed or renamed.
+
+---
+
+## Change: ConstChartMovedText Create model (issue #325)
+
+- `IConstChartMovedTextMarker` must be created through
+  `project.ConstChartMovedText.Create(word_group, preposed=...)`, which inserts
+  the marker into `row.CellsOS` before setting properties. Do not instantiate
+  via the factory and set `Preposed` on an unowned marker (raises
+  `NullReferenceException`). `IConstChartWordGroup.MovedTextMarkerOA` does not
+  exist; use `GetWordGroup(marker)` or read `WordGroupRA` on the marker.
+
+---

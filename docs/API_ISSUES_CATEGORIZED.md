@@ -468,9 +468,69 @@ The free-text "source language" concept this field used to carry now lives on a 
 | Object | Old (never existed) | Correct field | LCM type |
 |---|---|---|---|
 | `ILexEtymology` | ~~`Source`~~ | `LanguageNotes` | `IMultiString` (per-WS; same access pattern the stale entry described: `.get_String(ws)` / `.set_String(ws, ts_string)`) |
-| `ILexEtymology` | *(n/a -- new field, not a rename)* | `LanguageRS` | `ILcmReferenceSequence<ICmPossibility>` (reference sequence onto the Languages list; not yet wired up by `EtymologyOperations.GetLanguage`/`SetLanguage`, which still assume a nonexistent atomic `LanguageRA` -- tracked separately, deliberately left unfixed alongside this correction) |
+| `ILexEtymology` | *(n/a -- new field, not a rename)* | `LanguageRS` | `ILcmReferenceSequence<ICmPossibility>` (reference **sequence** onto the Languages list; see below) |
 
 `EtymologyOperations.Create(source=...)`, `GetSource()`, `SetSource()`, `GetSyncableProperties()`, and `ApplySyncableProperties()` have all been repaired to read/write `LanguageNotes` under the hood; the public `source=` parameter and `GetSource`/`SetSource` method names, and the `"Source"` key in the syncable-properties dict, are kept as-is for API stability -- only the LCM-facing field they resolve to has changed.
+
+### CORRECTED 2026-09-22: `LanguageRS` is a sequence, not `LanguageRA` (issue #325)
+
+Live reflection (T0, issue #325) confirms there is **no** `LanguageRA` on `ILexEtymology` or its concrete impl -- the name was a mistaken atomic alias copied from other types. The real field is `LanguageRS` (RS suffix = ordered reference **sequence** onto the project's Languages list).
+
+| Trap | Fact | Correct access |
+|---|---|---|
+| `item.LanguageRA = lang` | Field does not exist; permanent no-op under `hasattr` guards | Use `LanguageRS` on the **concrete** `LexEtymology` impl (`ILexEtymology` static dir omits it; live instances have it) |
+| Single-language mental model | Sequence can hold multiple `ICmPossibility` entries in order | `GetLanguages()` / `SetLanguages()` (replace entire sequence); sync key `"language_rs"` is `list[str]` of GUIDs |
+| `GetLanguage()` / `SetLanguage()` | Were silently broken (read/wrote nonexistent `LanguageRA`) | Deprecated with `[WARN]`; delegate to index-0 of `LanguageRS` via `GetLanguages()` / `SetLanguages()` |
+
+Sync: `"language_rs"` replaces the removed `"LanguageRA"` key (atomic GUID or `None`). `"LanguageNotesRA"` never existed on the LCM and must not appear in payloads; free-text source language notes remain under the stable `"Source"` key backed by `LanguageNotes` (`IMultiString`).
+
+Evidence: `specs/325-syncable-properties/evidence/live-T0-etymology-raw.json`, `live-T3-syncable-properties.md` (section a).
+
+### CORRECTED 2026-09-22: `ILexReference` type identity via `Owner`, not `ReferenceTypeRA` (issue #325)
+
+| Trap | Fact | Correct access |
+|---|---|---|
+| `ReferenceTypeRA` | Does not exist on `ILexReference` (static or live dir) | Relation type = owning `ILexRefType`; sync key `"owner_guid"` = `str(item.Owner.Guid)` |
+| Confusing with settable `Name` | `Name` is an optional multi-string label on the reference instance | Do **not** use `"name"` as the type discriminator in sync dicts |
+| Target list omitted | `TargetsRS` is the ordered sequence of related objects | Sync key `"targets_rs"` = ordered `list[str]` GUIDs; apply replaces the sequence (warn-and-skip unresolved GUIDs) |
+| Re-parenting | FLEx does not support changing structural owner by assignment | Different incoming `owner_guid` => delete old `ILexReference`, create new under target `ILexRefType` |
+
+Evidence: `specs/325-syncable-properties/evidence/live-T0-lexref-raw.json`, `live-T3-syncable-properties.md` (section b).
+
+### CORRECTED 2026-09-22: `IText` media path (`MediaFilesRC` vs owning atomic) (issue #325)
+
+| Trap | Fact | Correct access |
+|---|---|---|
+| `MediaFilesRC` | Not on `IText`; sync code that guarded on it never emitted media | Removed; sync key `"media_uris"` |
+| `MediaFilesOA` on interface | Not on `IText` static interface; on concrete `DomainImpl.Text` | `cast_to_concrete(text)` then `MediaFilesOA` (may be `None`) |
+| Container collection | `ICmMediaContainer` holds `MediaURIsOC` of `ICmMediaURI` | Each URI: `MediaURI` (string), optional `MediaFileRA` (file GUID) |
+| `GetMediaFiles()` | Historically used `MediaFilesOC` on the container | `MediaURIsOC` confirmed by T0; `GetMediaFiles`/`AddMediaFile` discrepancy remains **needs_human** until verified on a project with populated media |
+
+Sync shape: `"media_uris": [{"uri": str, "file_guid": str|null}, ...]`. Live read-back of populated media was **not** verified in T3 (no media-bearing project available).
+
+Evidence: `specs/325-syncable-properties/evidence/live-T0-media-raw.json`, `live-T3-syncable-properties.md` (section c, R4 FAIL: unverified).
+
+### CORRECTED 2026-09-22: `IConstChartMovedTextMarker` ownership (issue #325 / #290)
+
+| Trap | Fact | Correct access |
+|---|---|---|
+| `IConstChartWordGroup.MovedTextMarkerOA` | Does not exist; always `None` | Navigate **from** marker: `WordGroupRA` points at the word group |
+| Raw factory + setters | `Preposed` setter raises `NullReferenceException` without ownership context | Factory create -> insert into `row.CellsOS` (`IConstChartRow` owning sequence) **before** property sets |
+| Setter order | Same pattern as `IConstChartWordGroup` (#290) | Set `WordGroupRA` and `ColumnRA`, then `Preposed` |
+
+Evidence: `specs/325-syncable-properties/evidence/live-T0-discourse-raw.json`, `live-T3-syncable-properties.md` (section d).
+
+### CORRECTED 2026-09-22: `DoNotShowMainEntryInRC` on `ILexSense` (issue #325)
+
+| Object | Field | Status |
+|---|---|---|
+| `ILexSense` | `DoNotShowMainEntryInRC` | **Absent** from interface and concrete impl (FieldWorks 9+); removed from `LexSenseOperations` sync payload |
+| `ILexSense` | `DoNotPublishInRC` | Present; distinct concept -- keep in sync as frozenset of publication GUIDs |
+| `ILexEntry` | `DoNotShowMainEntryInRC` | **Not verified** by issue #325 T0; entry-level sync/duplicate paths may still reference it until a separate reflection pass rules otherwise |
+
+Do not copy the sense-level removal to `LexEntryOperations` based on R7 alone.
+
+Evidence: `specs/325-syncable-properties/evidence/live-T0-lexsense-raw.json`, `live-T3-syncable-properties.md` (section e).
 
 ### The `BaselineText` field
 
