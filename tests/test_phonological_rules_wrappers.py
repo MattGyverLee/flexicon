@@ -2,20 +2,24 @@
 Tests for phonological rule wrappers and smart collection.
 
 This module tests the PhonologicalRule wrapper class and RuleCollection
-smart collection, verifying that they transparently handle the three
-concrete types of phonological rules without exposing ClassName or casting.
+smart collection, verifying that they transparently handle the concrete
+phonological rule types that exist in this LCM (PhRegularRule and
+PhMetathesisRule) without exposing ClassName or casting.
 
 Tests verify:
 - RuleCollection creation and type breakdown display
 - Filtering by name, direction, type, and custom predicates
-- Convenience filters (regular_rules(), metathesis_rules(), redup_rules())
+- Convenience filters (regular_rules(), metathesis_rules())
 - Chaining filters
-- Backward compatibility with existing code
+- Deprecation warnings for the PhReduplicationRule public surface
+  (issue #326, T4)
 
 Note: PhonologicalRule wrapper tests are limited here because they require
 FLEx initialization (casting to concrete interfaces). Full tests should be
 run in integration tests with a real FLEx project.
 """
+
+import warnings
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
@@ -29,7 +33,7 @@ class MockPhonologicalRule:
         Create a mock PhonologicalRule.
 
         Args:
-            class_type: The ClassName (PhRegularRule, etc.)
+            class_type: The ClassName (PhRegularRule, PhMetathesisRule)
             name: Rule name
             direction: Direction value (0=LTR, 1=RTL, 2=simultaneous)
         """
@@ -70,13 +74,11 @@ class MockPhonologicalRule:
 
     @property
     def has_redup_parts(self):
-        return self.class_type == "PhReduplicationRule"
+        return False
 
     @property
     def redup_parts(self):
-        if self.class_type != "PhReduplicationRule":
-            return [], []
-        return [Mock()], [Mock()]
+        return [], []
 
     def as_regular_rule(self):
         return Mock() if self.class_type == "PhRegularRule" else None
@@ -85,7 +87,7 @@ class MockPhonologicalRule:
         return Mock() if self.class_type == "PhMetathesisRule" else None
 
     def as_reduplication_rule(self):
-        return Mock() if self.class_type == "PhReduplicationRule" else None
+        return None
 
     @property
     def concrete(self):
@@ -159,6 +161,7 @@ class TestRuleCollection:
         assert "3 total" in str_repr
         assert "PhRegularRule: 2" in str_repr
         assert "PhMetathesisRule: 1" in str_repr
+        assert "PhReduplicationRule" not in str_repr
 
     def test_collection_str_empty(self):
         """Test __str__ on empty collection."""
@@ -244,21 +247,21 @@ class TestRuleCollection:
         for rule in metathesis:
             assert rule.class_type == "PhMetathesisRule"
 
-    def test_redup_rules_convenience_filter(self):
-        """Test redup_rules() convenience method."""
+    def test_redup_rules_emits_deprecation_warning_and_returns_empty(self):
+        """redup_rules() is deprecated and returns an empty collection."""
         from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [
             MockPhonologicalRule("PhRegularRule"),
-            MockPhonologicalRule("PhReduplicationRule"),
-            MockPhonologicalRule("PhReduplicationRule"),
+            MockPhonologicalRule("PhMetathesisRule"),
         ]
         collection = RuleCollection(rules)
 
-        redup = collection.redup_rules()
-        assert len(redup) == 2
-        for rule in redup:
-            assert rule.class_type == "PhReduplicationRule"
+        with pytest.warns(DeprecationWarning, match=r"redup_rules.*deprecated.*v5\.0\.0"):
+            redup = collection.redup_rules()
+
+        assert len(redup) == 0
+        assert isinstance(redup, RuleCollection)
 
     def test_filter_chaining(self):
         """Test chaining multiple filters."""
@@ -349,6 +352,197 @@ class TestRuleCollection:
         assert len(voicing_ltr) == 1
         assert voicing_ltr[0].name == "Voicing"
         assert voicing_ltr[0].direction == 0
+
+
+class TestPhonologicalRuleDeprecation:
+    """Offline deprecation tests for the PhonologicalRule public surface."""
+
+    @pytest.fixture
+    def mock_lcm_rule(self):
+        """Return a mock LCM rule object with ClassName PhRegularRule."""
+        rule = Mock()
+        rule.ClassName = "PhRegularRule"
+        return rule
+
+    def _make_wrapper(self, mock_lcm_rule):
+        """Build a PhonologicalRule with cast_to_concrete patched to identity."""
+        from flexicon.code.Grammar.phonological_rule import PhonologicalRule
+
+        with patch(
+            "flexicon.code.Shared.wrapper_base.cast_to_concrete",
+            return_value=mock_lcm_rule,
+        ):
+            return PhonologicalRule(mock_lcm_rule)
+
+    def test_has_redup_parts_warns_and_returns_false(self, mock_lcm_rule):
+        """has_redup_parts emits DeprecationWarning and returns False."""
+        wrapped = self._make_wrapper(mock_lcm_rule)
+        with pytest.warns(DeprecationWarning, match=r"has_redup_parts.*deprecated.*v5\.0\.0"):
+            result = wrapped.has_redup_parts
+        assert result is False
+
+    def test_redup_parts_warns_and_returns_empty_collections(self, mock_lcm_rule):
+        """redup_parts emits DeprecationWarning and returns two empty collections."""
+        from flexicon.code.System.context_collection import ContextCollection
+
+        wrapped = self._make_wrapper(mock_lcm_rule)
+        with pytest.warns(DeprecationWarning, match=r"redup_parts.*deprecated.*v5\.0\.0"):
+            left, right = wrapped.redup_parts
+        assert isinstance(left, ContextCollection)
+        assert isinstance(right, ContextCollection)
+        assert len(left) == 0
+        assert len(right) == 0
+
+    def test_as_reduplication_rule_warns_and_returns_none(self, mock_lcm_rule):
+        """as_reduplication_rule emits DeprecationWarning and returns None."""
+        wrapped = self._make_wrapper(mock_lcm_rule)
+        with pytest.warns(DeprecationWarning, match=r"as_reduplication_rule.*deprecated.*v5\.0\.0"):
+            result = wrapped.as_reduplication_rule()
+        assert result is None
+
+
+class TestPhonologicalRuleMetathesisParts:
+    """Offline tests for metathesis_parts derived from StrucDescOS indices."""
+
+    def _make_metathesis_rule(self, contexts, left_index, left_limit, right_index, right_limit):
+        """Build a mock IPhMetathesisRule with the given StrucDescOS and indices."""
+        concrete = Mock()
+        concrete.ClassName = "PhMetathesisRule"
+        concrete.StrucDescOS = contexts
+        concrete.LeftSwitchIndex = left_index
+        concrete.LeftSwitchLimit = left_limit
+        concrete.RightSwitchIndex = right_index
+        concrete.RightSwitchLimit = right_limit
+
+        base = Mock()
+        base.ClassName = "PhMetathesisRule"
+
+        from flexicon.code.Grammar.phonological_rule import PhonologicalRule
+
+        def _fake_cast(obj):
+            return concrete if getattr(obj, "ClassName", None) == "PhMetathesisRule" else obj
+
+        with patch(
+            "flexicon.code.Shared.wrapper_base.cast_to_concrete",
+            side_effect=_fake_cast,
+        ):
+            return PhonologicalRule(base), concrete
+
+    def test_metathesis_parts_slices_struc_desc(self):
+        """metathesis_parts returns ContextCollections sliced by switch ranges."""
+        contexts = [Mock() for _ in range(4)]
+        for ctx in contexts:
+            ctx.ClassName = "PhSimpleContextSeg"
+
+        wrapped, _ = self._make_metathesis_rule(
+            contexts, left_index=1, left_limit=2, right_index=2, right_limit=4
+        )
+
+        assert wrapped.has_metathesis_parts is True
+        left, right = wrapped.metathesis_parts
+        assert len(left) == 1
+        assert len(right) == 2
+
+    def test_metathesis_parts_empty_for_unset_indices(self):
+        """Unset/-1 indices produce empty collections gracefully."""
+        contexts = []
+        wrapped, _ = self._make_metathesis_rule(
+            contexts, left_index=-1, left_limit=0, right_index=-1, right_limit=0
+        )
+
+        assert wrapped.has_metathesis_parts is False
+        left, right = wrapped.metathesis_parts
+        assert len(left) == 0
+        assert len(right) == 0
+
+    def test_metathesis_parts_empty_for_invalid_range(self):
+        """Out-of-order switch indices produce empty collections."""
+        contexts = [Mock(), Mock()]
+        for ctx in contexts:
+            ctx.ClassName = "PhSimpleContextSeg"
+
+        wrapped, _ = self._make_metathesis_rule(
+            contexts, left_index=2, left_limit=1, right_index=0, right_limit=2
+        )
+
+        assert wrapped.has_metathesis_parts is False
+
+
+class TestPhonologicalContext:
+    """Offline tests for PhonologicalContext segment/natural_class links."""
+
+    @pytest.fixture
+    def sil_module(self):
+        """Provide a fake SIL.LCModel module with phonology interfaces."""
+        import sys
+        import types
+
+        mod = types.ModuleType("SIL.LCModel")
+        mod.IPhPhoneme = lambda obj: obj
+        mod.IPhNaturalClass = lambda obj: obj
+        sys.modules["SIL.LCModel"] = mod
+        yield mod
+        del sys.modules["SIL.LCModel"]
+
+    def _make_context_wrapper(self, class_name, fsra=None):
+        """Build a PhonologicalContext with cast_to_concrete patched."""
+        from flexicon.code.System.phonological_context import PhonologicalContext
+
+        concrete = Mock()
+        concrete.ClassName = class_name
+        if fsra is not None:
+            concrete.FeatureStructureRA = fsra
+        else:
+            del concrete.FeatureStructureRA
+
+        base = Mock()
+        base.ClassName = class_name
+
+        with patch(
+            "flexicon.code.Shared.wrapper_base.cast_to_concrete",
+            return_value=concrete,
+        ):
+            return PhonologicalContext(base), concrete
+
+    def test_segment_returns_phoneme_via_feature_structure_ra(self, sil_module):
+        """PhSimpleContextSeg.segment casts FeatureStructureRA to IPhPhoneme."""
+        fsra = Mock()
+        wrapped, concrete = self._make_context_wrapper("PhSimpleContextSeg", fsra=fsra)
+
+        result = wrapped.segment
+
+        assert result is fsra
+        assert concrete.FeatureStructureRA is fsra
+
+    def test_segment_returns_none_for_non_segment_context(self, sil_module):
+        """segment is only meaningful on PhSimpleContextSeg."""
+        wrapped, _ = self._make_context_wrapper("PhSimpleContextNC", fsra=Mock())
+        assert wrapped.segment is None
+
+    def test_segment_returns_none_when_feature_structure_ra_missing(self, sil_module):
+        """segment returns None if FeatureStructureRA is absent."""
+        wrapped, _ = self._make_context_wrapper("PhSimpleContextSeg", fsra=None)
+        assert wrapped.segment is None
+
+    def test_natural_class_returns_natural_class_via_feature_structure_ra(self, sil_module):
+        """PhSimpleContextNC.natural_class casts FeatureStructureRA to IPhNaturalClass."""
+        fsra = Mock()
+        wrapped, concrete = self._make_context_wrapper("PhSimpleContextNC", fsra=fsra)
+
+        result = wrapped.natural_class
+
+        assert result is fsra
+        assert concrete.FeatureStructureRA is fsra
+
+    def test_natural_class_returns_none_for_non_nc_context(self, sil_module):
+        """natural_class is only meaningful on PhSimpleContextNC."""
+        wrapped, _ = self._make_context_wrapper("PhSimpleContextSeg", fsra=Mock())
+        assert wrapped.natural_class is None
+
+    def test_natural_class_returns_none_when_feature_structure_ra_missing(self, sil_module):
+        """natural_class returns None if FeatureStructureRA is absent."""
+        wrapped, _ = self._make_context_wrapper("PhSimpleContextNC", fsra=None)
+        assert wrapped.natural_class is None
 
 
 if __name__ == "__main__":

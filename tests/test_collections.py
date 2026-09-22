@@ -78,21 +78,6 @@ def mock_wrapped_rule_metathesis():
 
 
 @pytest.fixture
-def mock_wrapped_rule_reduplication():
-    """
-    Fixture: Mock wrapped reduplication rule (PhReduplicationRule type).
-
-    Simulates a third concrete type.
-    """
-    item = Mock()
-    item.class_type = "PhReduplicationRule"
-    item.ClassName = "PhReduplicationRule"
-    item.Name = "reduplication_rule"
-    item.Direction = "RTL"
-    return item
-
-
-@pytest.fixture
 def mock_wrapped_msa_stem():
     """Fixture: Mock wrapped MSA object (MoStemMsa type)."""
     item = Mock()
@@ -113,13 +98,13 @@ def mock_wrapped_msa_inflaf():
 
 
 @pytest.fixture
-def sample_mixed_collection(mock_wrapped_rule_regular, mock_wrapped_rule_metathesis, mock_wrapped_rule_reduplication):
+def sample_mixed_collection(mock_wrapped_rule_regular, mock_wrapped_rule_metathesis):
     """
     Fixture: SmartCollection with mixed phonological rule types.
 
-    Contains 7 regular rules, 3 metathesis rules, and 2 reduplication rules.
+    Contains 7 regular rules and 3 metathesis rules.
     """
-    items = [mock_wrapped_rule_regular] * 7 + [mock_wrapped_rule_metathesis] * 3 + [mock_wrapped_rule_reduplication] * 2
+    items = [mock_wrapped_rule_regular] * 7 + [mock_wrapped_rule_metathesis] * 3
     return SmartCollection(items)
 
 
@@ -185,7 +170,7 @@ class TestSmartCollectionLen:
 
     def test_len_multiple_items(self, sample_mixed_collection):
         """Test __len__() with multiple items."""
-        assert len(sample_mixed_collection) == 12
+        assert len(sample_mixed_collection) == 10
 
     def test_len_after_append(self, mock_wrapped_rule_regular, mock_wrapped_rule_metathesis):
         """Test __len__() after appending items."""
@@ -202,7 +187,7 @@ class TestSmartCollectionLen:
 
     def test_len_after_clear(self, sample_mixed_collection):
         """Test __len__() after clearing collection."""
-        assert len(sample_mixed_collection) == 12
+        assert len(sample_mixed_collection) == 10
         sample_mixed_collection.clear()
         assert len(sample_mixed_collection) == 0
 
@@ -233,24 +218,24 @@ class TestSmartCollectionIter:
         count = 0
         for item in sample_mixed_collection:
             count += 1
-        assert count == 12
+        assert count == 10
 
     def test_iter_unpacking(
-        self, mock_wrapped_rule_regular, mock_wrapped_rule_metathesis, mock_wrapped_rule_reduplication
+        self, mock_wrapped_rule_regular, mock_wrapped_rule_metathesis
     ):
         """Test unpacking items using iteration."""
-        items = [mock_wrapped_rule_regular, mock_wrapped_rule_metathesis, mock_wrapped_rule_reduplication]
+        items = [mock_wrapped_rule_regular, mock_wrapped_rule_metathesis, mock_wrapped_rule_regular]
         collection = SmartCollection(items)
         first, second, third = collection
         assert first == mock_wrapped_rule_regular
         assert second == mock_wrapped_rule_metathesis
-        assert third == mock_wrapped_rule_reduplication
+        assert third == mock_wrapped_rule_regular
 
     def test_iter_multiple_iterations(self, sample_mixed_collection):
         """Test that collection can be iterated multiple times."""
         count1 = sum(1 for _ in sample_mixed_collection)
         count2 = sum(1 for _ in sample_mixed_collection)
-        assert count1 == count2 == 12
+        assert count1 == count2 == 10
 
     def test_iter_is_iterable(self):
         """Test that SmartCollection is an Iterable."""
@@ -273,10 +258,10 @@ class TestSmartCollectionGetItem:
         assert collection[0] == mock_wrapped_rule_regular
 
     def test_getitem_middle_item(
-        self, mock_wrapped_rule_regular, mock_wrapped_rule_metathesis, mock_wrapped_rule_reduplication
+        self, mock_wrapped_rule_regular, mock_wrapped_rule_metathesis
     ):
         """Test indexing to get item in middle."""
-        items = [mock_wrapped_rule_regular, mock_wrapped_rule_metathesis, mock_wrapped_rule_reduplication]
+        items = [mock_wrapped_rule_regular, mock_wrapped_rule_metathesis, mock_wrapped_rule_regular]
         collection = SmartCollection(items)
         assert collection[1] == mock_wrapped_rule_metathesis
 
@@ -314,7 +299,7 @@ class TestSmartCollectionGetItem:
         """Test slicing with step."""
         sliced = sample_mixed_collection[::2]
         assert isinstance(sliced, SmartCollection)
-        assert len(sliced) == 6
+        assert len(sliced) == 5
 
     def test_getitem_full_slice(self, sample_mixed_collection):
         """Test full slice [:] returns new collection."""
@@ -357,17 +342,17 @@ class TestSmartCollectionStr:
         result = str(sample_mixed_collection)
 
         # Should show total count
-        assert "12" in result or "total" in result.lower()
+        assert "10" in result or "total" in result.lower()
         # Should show each type
         assert "PhRegularRule" in result
         assert "PhMetathesisRule" in result
-        assert "PhReduplicationRule" in result
+        assert "PhReduplicationRule" not in result
 
     def test_str_shows_percentage(self, sample_mixed_collection):
         """Test __str__() includes percentage for each type."""
         result = str(sample_mixed_collection)
-        # PhRegularRule is 7/12 = 58%
-        assert "58%" in result
+        # PhRegularRule is 7/10 = 70%
+        assert "70%" in result
 
     def test_str_sorted_by_count(self, sample_mixed_collection):
         """Test __str__() sorts types by count (descending)."""
@@ -422,7 +407,7 @@ class TestSmartCollectionRepr:
     def test_repr_format(self, sample_mixed_collection):
         """Test __repr__() format."""
         result = repr(sample_mixed_collection)
-        assert result == "SmartCollection(12 items)"
+        assert result == "SmartCollection(10 items)"
 
 
 # =============================================================================
@@ -458,8 +443,10 @@ class TestSmartCollectionByType:
         metathesis = sample_mixed_collection.by_type("PhMetathesisRule")
         assert len(metathesis) == 3
 
+        # PhReduplicationRule is not a live LCM type; by_type falls through to
+        # an empty collection without warning (issue #326).
         reduplication = sample_mixed_collection.by_type("PhReduplicationRule")
-        assert len(reduplication) == 2
+        assert len(reduplication) == 0
 
     def test_by_type_no_matches_returns_empty(self, sample_mixed_collection):
         """Test by_type() returns empty collection when no matches."""
@@ -593,7 +580,7 @@ class TestSmartCollectionClear:
 
     def test_clear_populated_collection(self, sample_mixed_collection):
         """Test clear() removes all items."""
-        assert len(sample_mixed_collection) == 12
+        assert len(sample_mixed_collection) == 10
         sample_mixed_collection.clear()
         assert len(sample_mixed_collection) == 0
 
@@ -674,12 +661,12 @@ class TestSmartCollectionIntegration:
         count = sum(1 for rule in regular_rules)
         assert count == 7
 
-    def test_workflow_modify_and_refilter(self, sample_mixed_collection, mock_wrapped_rule_reduplication):
+    def test_workflow_modify_and_refilter(self, sample_mixed_collection, mock_wrapped_rule_metathesis):
         """Test modifying collection and re-filtering."""
-        initial_redup = len(sample_mixed_collection.by_type("PhReduplicationRule"))
-        sample_mixed_collection.append(mock_wrapped_rule_reduplication)
-        updated_redup = len(sample_mixed_collection.by_type("PhReduplicationRule"))
-        assert updated_redup == initial_redup + 1
+        initial_metathesis = len(sample_mixed_collection.by_type("PhMetathesisRule"))
+        sample_mixed_collection.append(mock_wrapped_rule_metathesis)
+        updated_metathesis = len(sample_mixed_collection.by_type("PhMetathesisRule"))
+        assert updated_metathesis == initial_metathesis + 1
 
     def test_workflow_slice_then_filter(self, sample_mixed_collection):
         """Test slicing result then filtering."""

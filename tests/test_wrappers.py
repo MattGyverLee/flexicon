@@ -252,12 +252,12 @@ class TestLCMObjectWrapperClassType:
         wrapper = LCMObjectWrapper(obj)
         assert wrapper.class_type == "PhMetathesisRule"
 
-        # Test with ReduplicationRule
+        # Test with a non-phonological concrete type
         obj2 = Mock()
-        obj2.ClassName = "PhReduplicationRule"
+        obj2.ClassName = "MoStemMsa"
         mock_cast_to_concrete(obj2)
         wrapper2 = LCMObjectWrapper(obj2)
-        assert wrapper2.class_type == "PhReduplicationRule"
+        assert wrapper2.class_type == "MoStemMsa"
 
     def test_class_type_is_read_only(self, wrapped_object):
         """Test that class_type property is read-only."""
