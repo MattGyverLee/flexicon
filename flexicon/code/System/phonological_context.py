@@ -68,8 +68,11 @@ Example::
         # Use concrete interface for advanced operations
 """
 
+import logging
+
 from ..Shared.wrapper_base import LCMObjectWrapper
-from ..lcm_casting import cast_to_concrete
+
+logger = logging.getLogger(__name__)
 
 
 class PhonologicalContext(LCMObjectWrapper):
@@ -327,10 +330,16 @@ class PhonologicalContext(LCMObjectWrapper):
             return None
 
         try:
-            if hasattr(self._concrete, "SegmentRA"):
-                return self._concrete.SegmentRA
-            return None
+            fsra = getattr(self._concrete, "FeatureStructureRA", None)
+            if fsra is None:
+                return None
+            # Live LCM uses FeatureStructureRA as the link to the phoneme
+            # (despite the name; SegmentRA does not exist).
+            from SIL.LCModel import IPhPhoneme
+
+            return IPhPhoneme(fsra)
         except Exception:
+            logger.debug("segment: failed to cast FeatureStructureRA to IPhPhoneme", exc_info=True)
             return None
 
     @property
@@ -356,10 +365,16 @@ class PhonologicalContext(LCMObjectWrapper):
             return None
 
         try:
-            if hasattr(self._concrete, "NaturalClassRA"):
-                return self._concrete.NaturalClassRA
-            return None
+            fsra = getattr(self._concrete, "FeatureStructureRA", None)
+            if fsra is None:
+                return None
+            # Live LCM uses FeatureStructureRA as the link to the natural
+            # class (despite the name; NaturalClassRA does not exist).
+            from SIL.LCModel import IPhNaturalClass
+
+            return IPhNaturalClass(fsra)
         except Exception:
+            logger.debug("natural_class: failed to cast FeatureStructureRA to IPhNaturalClass", exc_info=True)
             return None
 
     @property
@@ -407,8 +422,11 @@ class PhonologicalContext(LCMObjectWrapper):
 
             if context_obj.as_simple_context_seg():
                 concrete = context_obj.as_simple_context_seg()
-                # Can now access IPhSimpleContextSeg-specific methods/properties
-                segment = concrete.SegmentRA
+                # Can now access IPhSimpleContextSeg-specific methods/properties.
+                # The phoneme link lives on FeatureStructureRA, not SegmentRA.
+                from SIL.LCModel import IPhPhoneme
+
+                segment = IPhPhoneme(concrete.FeatureStructureRA)
                 # Advanced operations...
 
         Notes:
@@ -537,7 +555,11 @@ class PhonologicalContext(LCMObjectWrapper):
 
             # Direct access to concrete interface
             concrete = context_obj.concrete
-            segment = concrete.SegmentRA  # PhSimpleContextSeg property
+            # PhSimpleContextSeg links to its phoneme via FeatureStructureRA,
+            # not SegmentRA (SegmentRA does not exist in this LCM).
+            from SIL.LCModel import IPhPhoneme
+
+            segment = IPhPhoneme(concrete.FeatureStructureRA)
 
         Notes:
             - For power users only
