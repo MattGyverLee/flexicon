@@ -291,16 +291,15 @@ if __name__ == "__main__":
 
 
 class TestIssue290MovedTextMarkerDirectFactoryReflection:
-    # Supplementary to Q4: ConstChartMovedTextOperations.Create raised a
-    # System.NullReferenceException on the Preposed setter (an unrelated
-    # defect, not part of #290) when reached through the documented
-    # Operations path, which blocked getting a live
-    # ConstChartMovedTextMarker instance for the Q4 dir() reflection.
-    # This diagnostic bypasses only the Preposed setter (raw factory +
-    # MovedTextMarkerOA assignment, matching lines 124-128 of
-    # ConstChartMovedTextOperations.py) purely to obtain a live instance
-    # for reflection. It asserts nothing about the Preposed bug and does
-    # not fix it.
+    # Supplementary to Q4: ConstChartMovedTextOperations.Create previously
+    # raised a System.NullReferenceException on the Preposed setter.
+    # This diagnostic was originally written to bypass that bug via a raw
+    # factory + word_group.MovedTextMarkerOA assignment.
+    #
+    # Updated for R5 choice (a): The phantom MovedTextMarkerOA assignment
+    # has been replaced with the correct ownership path:
+    #   factory.Create() -> row.CellsOS.Add() -> WordGroupRA -> ColumnRA
+    # matching the #290 model. Preposed is tested after the above are set.
 
     @pytest.mark.live_phase("DiscourseOperations", "read")
     def test_movedtextmarker_label_reflection_bypassing_preposed_bug(
@@ -341,7 +340,14 @@ class TestIssue290MovedTextMarkerDirectFactoryReflection:
             # needs no extra UnitOfWork wrapper -- UndoableOperation()
             # would raise FP_TransactionError on this fixture.
             new_marker = factory.Create()
-            word_group.MovedTextMarkerOA = new_marker
+
+            # R5 choice (a): insert into row.CellsOS first (not
+            # word_group.MovedTextMarkerOA), then set WordGroupRA and
+            # ColumnRA before Preposed (#290 model).
+            row.CellsOS.Add(new_marker)
+            new_marker.WordGroupRA = word_group
+            if hasattr(word_group, "ColumnRA") and word_group.ColumnRA is not None:
+                new_marker.ColumnRA = word_group.ColumnRA
 
             evidence["movedtext_direct_classname"] = new_marker.ClassName
             evidence["movedtext_direct_has_label"] = hasattr(new_marker, "Label")
@@ -349,8 +355,9 @@ class TestIssue290MovedTextMarkerDirectFactoryReflection:
             evidence["movedtext_direct_dir_members"] = sorted(
                 n for n in dir(new_marker) if not n.startswith("_")
             )
-            # Confirm the Preposed-setter NullReferenceException reproduces
-            # in isolation, independent of the rest of Create().
+            # Test Preposed after WordGroupRA/ColumnRA are set (R5 ordering).
+            # VERIFY in T3: expect success via #290 analogy; NRE if ordering is
+            # still insufficient.
             try:
                 new_marker.Preposed = True
                 evidence["movedtext_preposed_setter_outcome"] = "success"

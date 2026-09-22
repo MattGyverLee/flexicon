@@ -669,14 +669,6 @@ class LexSenseOperations(BaseOperations):
         else:
             props["DoNotPublishInRC"] = frozenset()
 
-        # DoNotShowMainEntryInRC - main entry display exclusion reference collection.
-        if hasattr(item, "DoNotShowMainEntryInRC"):
-            props["DoNotShowMainEntryInRC"] = frozenset(
-                str(pub.Guid) for pub in item.DoNotShowMainEntryInRC
-            )
-        else:
-            props["DoNotShowMainEntryInRC"] = frozenset()
-
         return props
 
     @OperationsMethod
@@ -687,29 +679,32 @@ class LexSenseOperations(BaseOperations):
         Extends the base implementation to handle:
         - SenseTypeRA: atomic reference, resolved by GUID in the target project's
           sense type list (LangProject.LexDbOA.SenseTypesOA).
-        - DoNotPublishInRC / DoNotShowMainEntryInRC: reference collections of
-          ICmPossibility, serialized as frozensets of GUID strings.
+        - DoNotPublishInRC: reference collection of ICmPossibility,
+          serialized as frozenset of GUID strings.
 
-        Domain ruling: under fill_gaps=True the RC fields are skipped entirely
+        Domain ruling: under fill_gaps=True the RC field is skipped entirely
         because an empty frozenset is a complete intended value ("publish
         everywhere"), not a gap. Under fill_gaps=False the existing
         clear-and-rebuild behavior is unchanged. SenseTypeRA is always applied
         regardless (domain has not ruled on it).
 
+        Note: DoNotShowMainEntryInRC is absent from ILexSense on FieldWorks 9+
+        (confirmed by T0 live reflection, issue #325 R7). It is not included
+        in the sync payload.
+
         Args:
             item: Target ILexSense object (must already exist in target project).
             props: dict produced by GetSyncableProperties on a source sense.
             ws_map: Optional source->target writing-system Id mapping.
-            fill_gaps (bool): When True, skip DoNotPublishInRC and
-                DoNotShowMainEntryInRC; pass through to BaseOperations for all
-                other fields.
+            fill_gaps (bool): When True, skip DoNotPublishInRC; pass through
+                to BaseOperations for all other fields.
         """
         import logging as _logging
         _log = _logging.getLogger(__name__)
 
         self._EnsureWriteEnabled()
 
-        _special_fields = ("SenseTypeRA", "DoNotPublishInRC", "DoNotShowMainEntryInRC")
+        _special_fields = ("SenseTypeRA", "DoNotPublishInRC")
         remaining_props = {}
         special_props = {}
         for k, v in props.items():
@@ -753,7 +748,7 @@ class LexSenseOperations(BaseOperations):
                 return pub_map
 
             pub_guid_map = None
-            for field_name in ("DoNotPublishInRC", "DoNotShowMainEntryInRC"):
+            for field_name in ("DoNotPublishInRC",):
                 if field_name not in special_props:
                     continue
                 # Domain ruling: an empty frozenset means "publish everywhere" --

@@ -1301,6 +1301,10 @@ class LexReferenceOperations(BaseOperations):
         """
         Get all syncable properties of a lexical reference for comparison.
 
+        MultiString keys: Name, Comment. Relation identity: ``owner_guid`` (GUID of
+        the owning ``ILexRefType``), ``targets_rs`` (ordered target GUIDs from
+        ``TargetsRS``). ``ReferenceTypeRA`` is not emitted (field absent on LCM).
+
         Args:
             item: The ILexReference object.
 
@@ -1334,14 +1338,126 @@ class LexReferenceOperations(BaseOperations):
                     comment_dict[ws_tag] = text
         props["Comment"] = comment_dict
 
-        # Reference Atomic (RA) properties
-        # ReferenceTypeRA - the type of reference relationship
-        if hasattr(item, "ReferenceTypeRA") and item.ReferenceTypeRA:
-            props["ReferenceTypeRA"] = str(item.ReferenceTypeRA.Guid)
-        else:
-            props["ReferenceTypeRA"] = None
+        # owner_guid -- GUID of the owning ILexRefType that identifies the
+        # relation type. ILexReference is always owned by ILexRefType.
+        # Same ILexRefType cast as GetType() (~line 1046) is used here so
+        # pythonnet surfaces ILexRefType.Guid reliably via the typed interface.
+        # NOTE: ReferenceTypeRA does NOT exist on ILexReference (confirmed by
+        # live reflection 2026-09-22, live-T0-lexref-raw.json); owner navigation
+        # is the correct and only path to the relation-type identity.
+        props["owner_guid"] = str(ILexRefType(item.Owner).Guid)
+
+        # targets_rs -- ordered GUID list from TargetsRS.
+        # Elements observed as LexSense in Ejagham Full; Guid is on ICmObject.
+        props["targets_rs"] = [str(t.Guid) for t in item.TargetsRS]
 
         return props
+
+    @OperationsMethod
+    def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
+        """
+        Apply a syncable-properties dict onto an ILexReference item.
+
+        Extends the base implementation to handle:
+
+        - ``owner_guid``: verifies the owning ILexRefType matches the
+          incoming GUID. If the GUIDs differ (re-parenting case), logs a
+          ``[WARN]`` and skips the owner change -- callers must Delete the
+          old ILexReference and Create a new one under the new ILexRefType.
+          Re-parenting by Owner property assignment is not supported by the
+          LCM (structural ownership cannot be changed in place).
+        - ``targets_rs``: replaces the entire TargetsRS ordered sequence
+          with the resolved target objects. Unresolved GUIDs are warned and
+          skipped (same policy as R1/LanguageRS).
+
+        Args:
+            item: Target ILexReference (must already exist in target project).
+            props: dict produced by GetSyncableProperties on a source reference.
+            ws_map: Optional source->target writing-system Id mapping.
+            fill_gaps (bool): When True, only write Name/Comment writing-system
+                alts whose current target value is empty; targets_rs is always
+                replaced regardless of fill_gaps (replace strategy applies to
+                the sequence as a unit).
+
+        Example:
+            >>> src_ref = project.LexReferences.GetAll()[0]
+            >>> props = project.LexReferences.GetSyncableProperties(src_ref)
+            >>> # Create new reference under same ILexRefType, then:
+            >>> target_project.LexReferences.ApplySyncableProperties(new_ref, props)
+        """
+        import logging as _logging
+        import System as _System
+
+        _log = _logging.getLogger(__name__)
+
+        self._EnsureWriteEnabled()
+
+        # Partition: pull keys this override handles; pass the rest to base.
+        owner_guid_val = props.get("owner_guid")
+        targets_rs_val = props.get("targets_rs")
+        remaining_props = {
+            k: v for k, v in props.items()
+            if k not in ("owner_guid", "targets_rs")
+        }
+
+        with self._TransactionCM("Apply lexical reference properties"):
+            # Apply Name / Comment (multistring) via base class.
+            super().ApplySyncableProperties(
+                item, remaining_props, ws_map=ws_map, fill_gaps=fill_gaps
+            )
+
+            # owner_guid: verify match; warn on mismatch (re-parent = delete+create).
+            if owner_guid_val is not None:
+                try:
+                    current_owner_guid = str(ILexRefType(item.Owner).Guid)
+                except Exception:
+                    current_owner_guid = None
+                if current_owner_guid != owner_guid_val:
+                    _log.warning(
+                        "[WARN] ApplySyncableProperties: owner_guid mismatch "
+                        "on ILexReference Hvo=%s -- current owner %s, "
+                        "incoming %s. Re-parenting requires Delete + Create "
+                        "under the new ILexRefType; Owner assignment is not "
+                        "supported by the LCM. Skipping owner change.",
+                        getattr(item, "Hvo", "?"),
+                        current_owner_guid,
+                        owner_guid_val,
+                    )
+
+            # targets_rs: replace the ordered TargetsRS sequence.
+            if targets_rs_val is not None:
+                # Resolve incoming GUIDs -> LCM objects.
+                resolved = []
+                for guid_str in targets_rs_val:
+                    try:
+                        obj = self.project.Object(_System.Guid(guid_str))
+                        resolved.append(obj)
+                    except Exception as exc:
+                        _log.warning(
+                            "[WARN] ApplySyncableProperties: targets_rs GUID %s "
+                            "not found in target project -- skipped (%s)",
+                            guid_str,
+                            exc,
+                        )
+
+                incoming_guids = [str(g) for g in targets_rs_val]
+                current_guids = []
+                try:
+                    current_guids = [str(t.Guid) for t in item.TargetsRS]
+                except Exception:
+                    current_guids = []
+
+                if current_guids == incoming_guids:
+                    pass
+                else:
+                    # Replace the sequence: clear all existing targets, then
+                    # add resolved targets in order.  Use Clear() not Remove():
+                    # iterating and calling Remove() on a live IFdoReferenceSequence
+                    # raises a NullReferenceException at get_TargetsRS() inside
+                    # the LCM DomainImpl (confirmed T3 live run, 2026-09-22).
+                    item.TargetsRS.Clear()
+                    for obj in resolved:
+                        item.TargetsRS.Add(obj)
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):

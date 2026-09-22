@@ -223,9 +223,9 @@ class EtymologyOperations(BaseOperations):
             # "source language" slot users expect from `source=` is now
             # LanguageNotes (IMultiString, UI label "Source Language
             # Notes"); the separate controlled-vocabulary field is
-            # LanguageRS (a reference SEQUENCE onto the Languages list,
-            # exposed via GetLanguage/SetLanguage -- out of scope here,
-            # see docs/API_ISSUES_CATEGORIZED.md Category 8).
+            # LanguageRS (reference SEQUENCE onto the Languages list) is
+            # not set here; use SetLanguages() after Create, or sync
+            # language_rs -- see docs/API_ISSUES_CATEGORIZED.md Category 8.
             if source:
                 mkstr = TsStringUtils.MakeString(source, wsHandle)
                 new_etymology.LanguageNotes.set_String(wsHandle, mkstr)
@@ -331,7 +331,8 @@ class EtymologyOperations(BaseOperations):
             - insert_after=True preserves the original etymology's position
             - Simple properties copied: LanguageNotes (source language notes),
               Form, Gloss, Comment, Bibliography
-            - Reference properties copied: LanguageNotesRA
+            - LanguageRS (controlled-vocabulary language sequence) is not copied
+              by Duplicate; use SetLanguages() after duplicating if needed.
             - Etymology has no owned objects, so deep parameter has no effect
 
         See Also:
@@ -375,17 +376,13 @@ class EtymologyOperations(BaseOperations):
             # Duplicate() does not silently drop it (docs/
             # API_ISSUES_CATEGORIZED.md Category 8 has been corrected to
             # match). The separate controlled-vocabulary reference
-            # sequence, LanguageRS, is left uncopied -- out of scope,
-            # same as GetLanguage/SetLanguage.
+            # sequence LanguageRS is left uncopied by Duplicate; call
+            # SetLanguages() afterward if needed (Category 8, issue #325).
             duplicate.LanguageNotes.CopyAlternatives(source.LanguageNotes)
             duplicate.Form.CopyAlternatives(source.Form)
             duplicate.Gloss.CopyAlternatives(source.Gloss)
             duplicate.Comment.CopyAlternatives(source.Comment)
             duplicate.Bibliography.CopyAlternatives(source.Bibliography)
-
-            # Copy Reference Atomic (RA) properties
-            if hasattr(source, "LanguageNotesRA") and source.LanguageNotesRA:
-                duplicate.LanguageNotesRA = source.LanguageNotesRA
 
             # Note: Etymology has no owned objects (OS collections), so deep has no effect
 
@@ -397,6 +394,11 @@ class EtymologyOperations(BaseOperations):
     def GetSyncableProperties(self, item):
         """
         Get all syncable properties of an etymology for comparison.
+
+        MultiString keys: Form, Gloss, Source (backed by LanguageNotes IMultiString),
+        Comment, Bibliography. Reference sequence: ``language_rs`` (ordered language
+        GUID list from ``LanguageRS`` on the concrete impl). Keys ``LanguageRA`` and
+        ``LanguageNotesRA`` are not emitted (issue #325).
 
         Args:
             item: The ILexEtymology object.
@@ -472,26 +474,15 @@ class EtymologyOperations(BaseOperations):
                     bibliography_dict[ws_tag] = text
         props["Bibliography"] = bibliography_dict
 
-        # Reference Atomic (RA) properties
-        # LanguageRA - source language (ICmPossibility from LangProject.AnalysisWSs
-        # or the languages list). Serialize as GUID string.
-        if hasattr(item, "LanguageRA") and item.LanguageRA:
-            props["LanguageRA"] = str(item.LanguageRA.Guid)
+        # language_rs - source language sequence (ordered ICmPossibility list).
+        # LanguageRS is on the concrete LexEtymology implementation, not on the
+        # ILexEtymology interface; hasattr guard on the live object is required
+        # (R1, live-T0-etymology-raw.json: ILexEtymology_live_has_LanguageRS=True,
+        # ILexEtymology_static_has_LanguageRS=False).
+        if hasattr(item, "LanguageRS"):
+            props["language_rs"] = [str(lang.Guid) for lang in item.LanguageRS]
         else:
-            props["LanguageRA"] = None
-
-        # LanguageNotesRA - language notes reference (ICmPossibility). (P2)
-        # This is an atomic reference, same serialization pattern as LanguageRA.
-        # [JUDGMENT CALL] The LCM field name is LanguageNotesRA on ILexEtymology;
-        # this resolves against the same general possibility list as LanguageRA.
-        # Verification requested: confirm LanguageNotesRA is the correct field name
-        # on ILexEtymology and that its possibility list is LangProject.AnthroListOA
-        # or similar (not AnalysisWSs). If the field does not exist at runtime,
-        # the hasattr guard makes this a no-op.
-        if hasattr(item, "LanguageNotesRA") and item.LanguageNotesRA:
-            props["LanguageNotesRA"] = str(item.LanguageNotesRA.Guid)
-        else:
-            props["LanguageNotesRA"] = None
+            props["language_rs"] = []
 
         return props
 
@@ -500,10 +491,9 @@ class EtymologyOperations(BaseOperations):
         """
         Apply a syncable-properties dict onto an ILexEtymology item.
 
-        Extends the base implementation to handle atomic reference fields
-        (LanguageRA, LanguageNotesRA) which are serialized as GUID strings.
-        Resolution uses the generic project.Object(Guid) lookup which works
-        for any LCM object whose GUID is known.
+        Extends the base implementation to handle the Source key (mapped to
+        LanguageNotes) and the language_rs sequence field, which requires a
+        concrete-impl hasattr guard and replace-whole-sequence semantics.
 
         Args:
             item: Target ILexEtymology (must already exist in target project).
@@ -511,20 +501,20 @@ class EtymologyOperations(BaseOperations):
             ws_map: Optional source->target writing-system Id mapping.
             fill_gaps (bool): When True, only write fields whose current target
                 value is empty/absent; passed through to BaseOperations.
-                Atomic-ref fields (LanguageRA, LanguageNotesRA) are always
-                applied regardless (domain has not ruled on them).
+                For language_rs the fill_gaps unit is the whole sequence: if
+                the target already has any LanguageRS entries, the replace is
+                skipped (consistent with other RS field semantics).
         """
         import logging as _logging
         _log = _logging.getLogger(__name__)
 
         self._EnsureWriteEnabled()
 
-        _ra_fields = ("LanguageRA", "LanguageNotesRA")
         remaining_props = {}
-        ra_props = {}
+        language_rs_guids = None
         for k, v in props.items():
-            if k in _ra_fields:
-                ra_props[k] = v
+            if k == "language_rs":
+                language_rs_guids = v
             elif k == "Source":
                 # ILexEtymology has no "Source" field (live-reflection,
                 # 2026-08-18) -- "Source" is kept as the syncable-
@@ -541,23 +531,25 @@ class EtymologyOperations(BaseOperations):
             # Apply plain / multistring fields via base class.
             super().ApplySyncableProperties(item, remaining_props, ws_map=ws_map, fill_gaps=fill_gaps)
 
-            # Resolve atomic reference fields by GUID.
-            for field_name, guid_str in ra_props.items():
-                if not hasattr(item, field_name):
-                    continue
-                if not guid_str:
-                    setattr(item, field_name, None)
-                    continue
-                try:
-                    import System
-                    obj = self.project.Object(System.Guid(guid_str))
-                    setattr(item, field_name, obj)
-                except Exception as exc:
-                    _log.warning(
-                        "[WARN] ApplySyncableProperties: %s GUID %s not found "
-                        "in target project -- skipped (%s)",
-                        field_name, guid_str, exc
-                    )
+            # Apply language_rs: replace-whole-sequence.
+            # LanguageRS is not on the ILexEtymology interface; use hasattr on live object.
+            if language_rs_guids is not None and hasattr(item, "LanguageRS"):
+                # fill_gaps semantics for the sequence: skip if target already populated.
+                if fill_gaps and item.LanguageRS.Count > 0:
+                    pass
+                else:
+                    import System as _System
+                    item.LanguageRS.Clear()
+                    for guid_str in language_rs_guids:
+                        try:
+                            obj = self.project.Object(_System.Guid(guid_str))
+                            item.LanguageRS.Add(obj)
+                        except Exception as exc:
+                            _log.warning(
+                                "[WARN] ApplySyncableProperties: language_rs GUID %s "
+                                "not found in target project -- skipped (%s)",
+                                guid_str, exc
+                            )
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):
@@ -1224,15 +1216,97 @@ class EtymologyOperations(BaseOperations):
     # --- Additional Properties ---
 
     @OperationsMethod
+    def GetLanguages(self, etymology_or_hvo):
+        """
+        Get the ordered list of source languages for an etymology.
+
+        Args:
+            etymology_or_hvo: Either an ILexEtymology object or its HVO.
+
+        Returns:
+            list[ICmPossibility]: Ordered list of language possibility objects.
+                Returns empty list if no languages are set.
+
+        Notes:
+            LanguageRS is on the concrete LexEtymology implementation, not on
+            the ILexEtymology interface. Access uses a hasattr guard on the
+            live object (R1, live-T0-etymology-raw.json:
+            ILexEtymology_live_has_LanguageRS=True).
+
+        Example:
+            >>> entry = project.LexEntry.Find("loanword")
+            >>> etymologies = project.Etymology.GetAll(entry)
+            >>> if etymologies:
+            ...     langs = project.Etymology.GetLanguages(etymologies[0])
+            ...     for lang in langs:
+            ...         print(lang.Name.BestAnalysisAlternative.Text)
+        """
+        self._ValidateParam(etymology_or_hvo, "etymology_or_hvo")
+
+        etymology = self.__GetEtymologyObject(etymology_or_hvo)
+        if hasattr(etymology, "LanguageRS"):
+            return list(etymology.LanguageRS)
+        return []
+
+    @OperationsMethod
+    def SetLanguages(self, etymology_or_hvo, languages):
+        """
+        Set the source languages of an etymology, replacing the entire sequence.
+
+        Args:
+            etymology_or_hvo: Either an ILexEtymology object or its HVO.
+            languages: Ordered list of ICmPossibility objects. Pass an empty
+                list to clear all languages.
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with write enabled.
+            FP_NullParameterError: If etymology_or_hvo is None.
+
+        Notes:
+            Replaces the entire LanguageRS sequence. LanguageRS is on the
+            concrete LexEtymology implementation; a hasattr guard is used.
+
+        Example:
+            >>> entry = project.LexEntry.Find("loanword")
+            >>> etymologies = project.Etymology.GetAll(entry)
+            >>> if etymologies:
+            ...     # lang_list = [lang1, lang2]  (ICmPossibility objects)
+            ...     project.Etymology.SetLanguages(etymologies[0], lang_list)
+        """
+        import logging as _lg
+        self._EnsureWriteEnabled()
+        self._ValidateParam(etymology_or_hvo, "etymology_or_hvo")
+
+        etymology = self.__GetEtymologyObject(etymology_or_hvo)
+
+        if not hasattr(etymology, "LanguageRS"):
+            _lg.getLogger(__name__).warning(
+                "[WARN] SetLanguages: LanguageRS not found on this etymology object; "
+                "no change made."
+            )
+            return
+
+        with self._TransactionCM("Set etymology languages"):
+            etymology.LanguageRS.Clear()
+            for lang in (languages or []):
+                etymology.LanguageRS.Add(lang)
+
+    @OperationsMethod
     def GetLanguage(self, etymology_or_hvo):
         """
         Get the source language of an etymology.
 
+        .. deprecated::
+            Use GetLanguages() for the full ordered list. GetLanguage() returns
+            only the first element of LanguageRS and emits a deprecation warning.
+            Prior to this fix, GetLanguage() was silently non-functional
+            (LanguageRA does not exist on the LCM).
+
         Args:
-            etymology_or_hvo: Either an ILexEtymology object or its HVO
+            etymology_or_hvo: Either an ILexEtymology object or its HVO.
 
         Returns:
-            ICmPossibility: The language possibility object, or None
+            ICmPossibility: The first language possibility object, or None.
 
         Example:
             >>> entry = project.LexEntry.Find("loanword")
@@ -1242,40 +1316,47 @@ class EtymologyOperations(BaseOperations):
             ...     if lang:
             ...         print(lang.Name.BestAnalysisAlternative.Text)
         """
-        self._ValidateParam(etymology_or_hvo, "etymology_or_hvo")
-
-        etymology = self.__GetEtymologyObject(etymology_or_hvo)
-        return etymology.LanguageRA
+        import logging as _lg
+        _lg.getLogger(__name__).warning(
+            "[WARN] GetLanguage reads index 0 of LanguageRS (a sequence); "
+            "use GetLanguages() for the full list."
+        )
+        langs = self.GetLanguages(etymology_or_hvo)
+        return langs[0] if langs else None
 
     @OperationsMethod
     def SetLanguage(self, etymology_or_hvo, language):
         """
         Set the source language of an etymology.
 
+        .. deprecated::
+            Use SetLanguages() to set the full ordered sequence. SetLanguage()
+            replaces the entire LanguageRS sequence with a single element and
+            emits a deprecation warning. Prior to this fix, SetLanguage() was
+            silently non-functional (LanguageRA does not exist on the LCM).
+
         Args:
-            etymology_or_hvo: Either an ILexEtymology object or its HVO
-            language: ICmPossibility object (language) or None
+            etymology_or_hvo: Either an ILexEtymology object or its HVO.
+            language: ICmPossibility object (language) or None. Pass None
+                to clear all languages (calls SetLanguages([])).
 
         Raises:
-            FP_ReadOnlyError: If project is not opened with write enabled
-            FP_NullParameterError: If etymology_or_hvo is None
+            FP_ReadOnlyError: If project is not opened with write enabled.
+            FP_NullParameterError: If etymology_or_hvo is None.
 
         Example:
             >>> entry = project.LexEntry.Find("loanword")
             >>> etymologies = project.Etymology.GetAll(entry)
             >>> if etymologies:
-            ...     # Find language possibility (implementation depends on your project structure)
-            ...     # language_obj = ... (get from languages list)
             ...     # project.Etymology.SetLanguage(etymologies[0], language_obj)
             ...     pass
         """
-        self._EnsureWriteEnabled()
-        self._ValidateParam(etymology_or_hvo, "etymology_or_hvo")
-
-        etymology = self.__GetEtymologyObject(etymology_or_hvo)
-
-        with self._TransactionCM("Set etymology language"):
-            etymology.LanguageRA = language
+        import logging as _lg
+        _lg.getLogger(__name__).warning(
+            "[WARN] SetLanguage sets only index 0 of LanguageRS (a sequence, not atomic); "
+            "use SetLanguages() to set the full sequence."
+        )
+        self.SetLanguages(etymology_or_hvo, [language] if language is not None else [])
 
     # --- Private Helper Methods ---
 

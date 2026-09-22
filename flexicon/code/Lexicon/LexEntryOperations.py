@@ -479,8 +479,6 @@ class LexEntryOperations(BaseOperations):
                     new_etym.Gloss.CopyAlternatives(etymology.Gloss)
                     new_etym.Comment.CopyAlternatives(etymology.Comment)
                     new_etym.Bibliography.CopyAlternatives(etymology.Bibliography)
-                    if hasattr(etymology, "LanguageNotesRA") and etymology.LanguageNotesRA:
-                        new_etym.LanguageNotesRA = etymology.LanguageNotesRA
 
                 # Note: EntryRefsOS (variant/complex form references) are NOT copied.
                 # These describe relationships between entries (variant-of, complex-form-of)

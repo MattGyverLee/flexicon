@@ -18,6 +18,23 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`GetSyncableProperties` / `ApplySyncableProperties` used phantom or
+  wrong-suffix LCM members** (#325). Sync and duplicate paths guarded on
+  members that do not exist on the typed interface (always-false `hasattr`,
+  permanently empty keys) or used the wrong collection name. Wave-1 fixes:
+  etymology `language_rs` from `LanguageRS` (replacing `LanguageRA`);
+  removal of dead `LanguageNotesRA` sync/duplicate blocks; lexical reference
+  `owner_guid` and `targets_rs` (replacing `ReferenceTypeRA`); text
+  `media_uris` via concrete `MediaFilesOA` to `MediaURIsOC` (replacing
+  `MediaFilesRC`); text `Name` in the sync payload; removal of
+  `DoNotShowMainEntryInRC` from sense sync; moved-text marker create via
+  `row.CellsOS` and `WordGroupRA` navigation; deprecated etymology
+  `GetLanguage` / `SetLanguage` in favour of `GetLanguages` / `SetLanguages`.
+  Live verification for `media_uris` round-trip remains blocked pending a
+  project with populated media (R4 `needs_human`). Migration notes in
+  `docs/MIGRATION_GUIDE.md` and Category 8 in
+  `docs/API_ISSUES_CATEGORIZED.md`.
+
 - **Four `System.Guid()` parses leaked a raw CLR exception for a
   malformed GUID** (#334). A malformed GUID string surfaced a bare
   `System.FormatException` out of a public method instead of an `FP_*`

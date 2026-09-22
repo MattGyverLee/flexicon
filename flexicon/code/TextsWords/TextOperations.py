@@ -363,17 +363,29 @@ class TextOperations(BaseOperations):
             {'en': 'First book of the Bible'}
 
         Notes:
-            - MultiString properties: Description, Source (IText has no
-              Title; issue #352)
+            - MultiString properties: Name, Description, Source
             - DateTime properties: DateCreated, DateModified
-            - Reference Collection properties: GenresRC, MediaFilesRC (GUIDs)
+            - Reference Collection properties: GenresRC (GUIDs)
+            - Owned-container properties: media_uris (list of
+              {"uri": str, "file_guid": str|None} dicts, R4)
             - Does NOT include owned sequences (paragraphs) - those are children
+
+        R4 note: MediaFilesOA is on the concrete DomainImpl.Text, NOT on the
+        IText interface; cast_to_concrete() is required to access it.
+        MediaFilesOC (used in GetMediaFiles) vs MediaURIsOC discrepancy is an
+        open needs_human item; this method uses MediaURIsOC per T0 reflection.
+        GetMediaFiles/AddMediaFile are out of scope for this fix.
         """
+        from ..lcm_casting import cast_to_concrete
+
         props = {}
 
-        # MultiString properties (IText has no Title -- issue #352;
-        # that guarded branch never executed. Description is present
-        # live and stays).
+        # MultiString properties.
+        # Name (IText.Name) is the user-facing title; present on IText
+        # interface (R8, issue #325).
+        if hasattr(item, "Name") and item.Name:
+            props["Name"] = self.project.GetMultiStringDict(item.Name)
+
         if hasattr(item, "Description") and item.Description:
             props["Description"] = self.project.GetMultiStringDict(item.Description)
 
@@ -391,10 +403,137 @@ class TextOperations(BaseOperations):
         if hasattr(item, "GenresRC") and item.GenresRC:
             props["GenresRC"] = [str(g.Guid) for g in item.GenresRC]
 
-        if hasattr(item, "MediaFilesRC") and item.MediaFilesRC:
-            props["MediaFilesRC"] = [str(m.Guid) for m in item.MediaFilesRC]
+        # Media URIs (R4): MediaFilesOA is on the concrete impl, not IText
+        # interface. cast_to_concrete() is required; hasattr guard is still
+        # needed because MediaFilesOA itself may be None (no container).
+        # Access path: concrete_text -> MediaFilesOA (None-safe) ->
+        # MediaURIsOC -> iterate ICmMediaURI elements.
+        concrete = cast_to_concrete(item)
+        if concrete is not None and hasattr(concrete, "MediaFilesOA"):
+            container = concrete.MediaFilesOA
+            if container is not None and hasattr(container, "MediaURIsOC"):
+                media_uris = []
+                for uri_obj in container.MediaURIsOC:
+                    file_guid = None
+                    if getattr(uri_obj, "MediaFileRA", None) is not None:
+                        try:
+                            file_guid = str(uri_obj.MediaFileRA.Guid)
+                        except Exception:
+                            pass
+                    media_uris.append({
+                        "uri": str(uri_obj.MediaURI) if uri_obj.MediaURI else "",
+                        "file_guid": file_guid,
+                    })
+                if media_uris:
+                    props["media_uris"] = media_uris
 
         return props
+
+    @OperationsMethod
+    def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
+        """
+        Apply a syncable-properties dict onto an IText item.
+
+        Extends the base implementation to handle the Text-specific fields
+        that are not plain MultiString or plain string attributes.
+
+        Args:
+            item: Target IText object (must already exist in target project).
+            props: dict produced by GetSyncableProperties on a source text.
+            ws_map: Optional source->target writing-system Id mapping.
+            fill_gaps (bool): When True, only write fields whose current
+                target value is empty/absent; passed through to BaseOperations.
+                media_uris is always applied regardless (reconcile-by-URI
+                semantics; missing entries are added, existing ones kept).
+
+        Notes:
+            - MultiString fields (Name, Description, Source) are handled by
+              the base class loop.
+            - media_uris: if the key is absent or the list is empty the
+              container is left as-is (don't destroy existing media per R4
+              apply strategy). If populated, reconcile by URI string -- add
+              missing URIs; do not delete extras without an explicit delete
+              call (R4). Requires write-enabled project.
+            - GenresRC, DateCreated, DateModified: not applied here (read-only
+              or cross-project resolution not yet implemented).
+
+        Example:
+            >>> props = source.Texts.GetSyncableProperties(src_text)
+            >>> target.Texts.ApplySyncableProperties(tgt_text, props)
+        """
+        import logging as _logging
+        _log = _logging.getLogger(__name__)
+
+        self._EnsureWriteEnabled()
+
+        _special_fields = ("media_uris", "GenresRC", "DateCreated", "DateModified")
+        remaining_props = {}
+        special_props = {}
+        for k, v in props.items():
+            if k in _special_fields:
+                special_props[k] = v
+            else:
+                remaining_props[k] = v
+
+        with self._TransactionCM("Apply text sync properties"):
+            # Apply Name, Description, Source (MultiString) via base class.
+            super().ApplySyncableProperties(
+                item, remaining_props, ws_map=ws_map, fill_gaps=fill_gaps
+            )
+
+            # --- media_uris (R4) ---
+            # Reconcile by URI: add missing entries; leave extras untouched.
+            # An absent or empty media_uris key means do-nothing (R4 apply
+            # strategy: do not destroy existing media).
+            media_uris_data = special_props.get("media_uris")
+            if media_uris_data:
+                from ..lcm_casting import cast_to_concrete
+                from SIL.LCModel import ICmMediaFactory, ICmFolderFactory
+
+                concrete = cast_to_concrete(item)
+                if concrete is None or not hasattr(concrete, "MediaFilesOA"):
+                    _log.warning(
+                        "[WARN] ApplySyncableProperties: media_uris present but "
+                        "MediaFilesOA not accessible on concrete text -- skipping"
+                    )
+                else:
+                    # Ensure container exists.
+                    if concrete.MediaFilesOA is None:
+                        container_factory = (
+                            self.project.project.ServiceLocator
+                            .GetService(ICmFolderFactory)
+                        )
+                        container = container_factory.Create()
+                        concrete.MediaFilesOA = container
+                    container = concrete.MediaFilesOA
+
+                    # Build set of existing URIs to avoid duplicates.
+                    existing_uris = set()
+                    if hasattr(container, "MediaURIsOC"):
+                        for uri_obj in container.MediaURIsOC:
+                            if uri_obj.MediaURI:
+                                existing_uris.add(str(uri_obj.MediaURI))
+
+                    # Add missing entries.
+                    for entry in media_uris_data:
+                        uri_str = entry.get("uri", "")
+                        if not uri_str or uri_str in existing_uris:
+                            continue
+                        try:
+                            media_factory = (
+                                self.project.project.ServiceLocator
+                                .GetService(ICmMediaFactory)
+                            )
+                            new_uri = media_factory.Create()
+                            new_uri.MediaURI = uri_str
+                            if hasattr(container, "MediaURIsOC"):
+                                container.MediaURIsOC.Add(new_uri)
+                            existing_uris.add(uri_str)
+                        except Exception as exc:
+                            _log.warning(
+                                "[WARN] ApplySyncableProperties: could not add "
+                                "media URI %r -- %s", uri_str, exc
+                            )
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):

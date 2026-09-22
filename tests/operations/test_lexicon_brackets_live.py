@@ -389,38 +389,48 @@ class TestEtymologyBrackets:
         finally:
             target_sandbox.LexEntry.Delete(entry)
 
-    @pytest.mark.xfail(
-        reason="PRE-EXISTING (not B2), and the worst of the three: "
-        "ILexEtymology has no 'LanguageRA' attribute (the interface exposes "
-        "LanguageNotes instead), but `etymology.LanguageRA = language` does "
-        "NOT raise -- pythonnet accepts it as a plain Python attribute on the "
-        "wrapper object. So SetLanguage silently discards the write: hasattr "
-        "flips False->True on that one handle, while a freshly-fetched LCM "
-        "handle for the same Hvo still has no such field. Silent data loss, "
-        "not an error. Unrelated to the bracket (which does open and commit "
-        "correctly around a write that goes nowhere). Left unfixed to keep "
-        "batch 11 mechanical; see .spec-context.json concerns.\n"
-        "This test asserts the CORRECT behaviour, so it xfails today and "
-        "XPASSes the moment the bug is fixed -- strict=True then fails the "
-        "run, which is the signal to delete this marker.",
-        strict=True,
-    )
     @pytest.mark.live_phase("EtymologyOperations", "modify")
     def test_setlanguage_persists_to_the_lcm(self, target_sandbox):
+        """
+        Issue #325 R6: SetLanguage/SetLanguages write LanguageRS (sequence),
+        not the nonexistent LanguageRA atomic field. Re-fetch by HVO before assert.
+        """
         ops = target_sandbox.Etymology
         entry = _make_entry(target_sandbox, "etym_lang")
 
+        lang_possibilities = []
+        try:
+            lex_db = target_sandbox.project.LangProject.LexDbOA
+            if hasattr(lex_db, "LanguagesOA") and lex_db.LanguagesOA is not None:
+                lang_possibilities = list(lex_db.LanguagesOA.PossibilitiesOS)
+        except Exception:
+            pass
+
         try:
             etym = ops.Create(entry)
-            ops.SetLanguage(etym, None)
+            hvo = etym.Hvo
 
-            # Re-fetch a FRESH handle: asserting on the object we just wrote
-            # through would pass on the stale Python-side attribute.
-            fresh = target_sandbox.project.ServiceLocator.GetObject(etym.Hvo)
-            assert hasattr(fresh, "LanguageRA"), (
-                "SetLanguage wrote to a field that does not exist on "
-                "ILexEtymology -- the value never reached the LCM."
-            )
+            if lang_possibilities:
+                lang = lang_possibilities[0]
+                ops.SetLanguages(etym, [lang])
+                fresh = target_sandbox.project.ServiceLocator.GetObject(hvo)
+                langs = ops.GetLanguages(fresh)
+                assert len(langs) == 1, (
+                    "SetLanguages did not persist a single LanguageRS entry to the LCM."
+                )
+                assert str(langs[0].Guid) == str(lang.Guid), (
+                    "Re-read LanguageRS GUID does not match the seeded language."
+                )
+            else:
+                ops.SetLanguage(etym, None)
+                fresh = target_sandbox.project.ServiceLocator.GetObject(hvo)
+                assert ops.GetLanguages(fresh) == [], (
+                    "SetLanguage(None) must clear LanguageRS via SetLanguages([])."
+                )
+                assert not hasattr(fresh, "LanguageRA"), (
+                    "LanguageRA must not appear on a fresh LCM handle "
+                    "(writes go to LanguageRS only)."
+                )
         finally:
             target_sandbox.LexEntry.Delete(entry)
 

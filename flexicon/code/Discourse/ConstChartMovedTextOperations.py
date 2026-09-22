@@ -18,6 +18,7 @@ from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from SIL.LCModel import (
     IConstChartMovedTextMarker,
     IConstChartMovedTextMarkerFactory,
+    IConstChartRow,
     IConstChartWordGroup,
     IDsConstChart,
 )
@@ -107,8 +108,10 @@ class ConstChartMovedTextOperations(BaseOperations):
         Notes:
             - Preposed text appears earlier than its canonical position
             - Postposed text appears later than its canonical position
-            - Factory.Create() automatically adds marker to repository
-            - Word group can have only one moved text marker
+            - Marker is inserted into row.CellsOS (the row that owns the word
+              group); WordGroupRA and ColumnRA are set before Preposed to avoid
+              NullReferenceException (R5, #290 model).
+            - Word group can reference at most one moved text marker.
 
         See Also:
             Delete, Find, IsPreposed, SetPreposed
@@ -119,15 +122,27 @@ class ConstChartMovedTextOperations(BaseOperations):
 
         word_group = self.__ResolveWordGroup(word_group_or_hvo)
 
+        row = self.__RowFromWordGroup(word_group)
+        if row is None:
+            raise FP_ParameterError("word_group has no owning row (Owner is None)")
+
         with self._TransactionCM("Create moved text marker"):
-            # Create the new moved text marker using the factory
+            # Create the new moved text marker using the factory.
             factory = self.project.project.ServiceLocator.GetService(IConstChartMovedTextMarkerFactory)
             new_marker = factory.Create()
 
-            # Set as owned by the word group
-            word_group.MovedTextMarkerOA = new_marker
+            # Step 1: insert into row.CellsOS BEFORE setting any property
+            # setters (avoids NullReferenceException -- R5, issue #290 model).
+            row.CellsOS.Add(new_marker)
 
-            # Set preposed flag
+            # Step 2: set WordGroupRA and ColumnRA before Preposed.
+            new_marker.WordGroupRA = word_group
+            if hasattr(word_group, "ColumnRA") and word_group.ColumnRA is not None:
+                new_marker.ColumnRA = word_group.ColumnRA
+
+            # Step 3: set Preposed after the above.
+            # VERIFY in T3: full path with live segments needed to confirm
+            # NRE is resolved (analogical basis: #290 resolution).
             new_marker.Preposed = bool(preposed)
 
             return new_marker
@@ -191,8 +206,10 @@ class ConstChartMovedTextOperations(BaseOperations):
             ...         print("Text is preposed")
 
         Notes:
-            - Returns None if word group has no moved text marker
-            - Each word group can have at most one marker
+            - Returns None if no marker in the row references this word group.
+            - Navigates from the word group's owning row through row.CellsOS
+              and matches on WordGroupRA (R5/#290 model -- the marker is a peer
+              cell in the row, not an owned child of the word group).
 
         See Also:
             Create, GetAll
@@ -201,7 +218,25 @@ class ConstChartMovedTextOperations(BaseOperations):
 
         word_group = self.__ResolveWordGroup(word_group_or_hvo)
 
-        return word_group.MovedTextMarkerOA if hasattr(word_group, "MovedTextMarkerOA") else None
+        row = self.__RowFromWordGroup(word_group)
+        if row is None:
+            return None
+
+        for cell in row.CellsOS:
+            if getattr(cell, "ClassName", None) != "ConstChartMovedTextMarker":
+                if not isinstance(cell, IConstChartMovedTextMarker):
+                    continue
+            try:
+                marker = IConstChartMovedTextMarker(cell)
+            except Exception:
+                marker = cell
+            wgra = getattr(marker, "WordGroupRA", None)
+            if wgra is None:
+                continue
+            if wgra.Hvo == word_group.Hvo or str(wgra.Guid) == str(word_group.Guid):
+                return marker
+
+        return None
 
     @wrap_enumerable
     @OperationsMethod
@@ -226,9 +261,11 @@ class ConstChartMovedTextOperations(BaseOperations):
             >>> print(f"Found {preposed_count} preposed markers")
 
         Notes:
-            - Returns empty list if chart has no moved text markers
-            - Searches through all rows and word groups in chart
-            - Includes both preposed and postposed markers
+            - Returns empty list if chart has no moved text markers.
+            - Searches row.CellsOS directly for IConstChartMovedTextMarker
+              instances (R5/#290 model -- markers are peer cells, not word
+              group children).
+            - Includes both preposed and postposed markers.
 
         See Also:
             Find, Create
@@ -238,13 +275,16 @@ class ConstChartMovedTextOperations(BaseOperations):
         chart = self.__ResolveChart(chart_or_hvo)
 
         markers = []
-        # Iterate through all rows and word groups
+        # Iterate CellsOS directly; markers are peer cells in the row.
         for row in chart.RowsOS:
-            for word_group in row.CellsOS:
-                if isinstance(word_group, IConstChartWordGroup):
-                    marker = self.Find(word_group)
-                    if marker:
-                        markers.append(marker)
+            for cell in row.CellsOS:
+                if getattr(cell, "ClassName", None) != "ConstChartMovedTextMarker":
+                    if not isinstance(cell, IConstChartMovedTextMarker):
+                        continue
+                try:
+                    markers.append(IConstChartMovedTextMarker(cell))
+                except Exception:
+                    markers.append(cell)
 
         return markers
 
@@ -345,9 +385,10 @@ class ConstChartMovedTextOperations(BaseOperations):
             ...         print(f"Marker belongs to word group {word_group.Hvo}")
 
         Notes:
-            - Returns None if marker has no owner
-            - Word group owns the moved text marker
-            - Each marker is associated with exactly one word group
+            - Returns None if WordGroupRA is not set.
+            - Navigation is via WordGroupRA (R5/#290 model): the marker's owner
+              is the row (row.CellsOS), not the word group. The word group is
+              reached through the WordGroupRA reference attribute.
 
         See Also:
             Create, Find
@@ -356,17 +397,22 @@ class ConstChartMovedTextOperations(BaseOperations):
 
         marker = self.__ResolveObject(marker_or_hvo)
 
-        # Get owner (should be IConstChartWordGroup). .Owner is on every
-        # ICmObject; the truthiness check still discriminates orphans /
-        # detached markers. (issue #133 sweep)
-        if marker.Owner:
-            owner = marker.Owner
-            if isinstance(owner, IConstChartWordGroup):
-                return owner
-
-        return None
+        # Navigate via WordGroupRA: marker -> word group reference.
+        return marker.WordGroupRA if hasattr(marker, "WordGroupRA") else None
 
     # --- Private Helper Methods ---
+
+    def __RowFromWordGroup(self, word_group):
+        """Cast word_group.Owner to IConstChartRow (Owner is ICmObject at runtime)."""
+        row = word_group.Owner
+        if row is None:
+            return None
+        if isinstance(row, IConstChartRow):
+            return row
+        try:
+            return IConstChartRow(row)
+        except Exception:
+            return None
 
     def __ResolveObject(self, marker_or_hvo):
         """
@@ -462,12 +508,15 @@ class ConstChartMovedTextOperations(BaseOperations):
 
     def _GetSequence(self, parent):
         """
-        Not applicable for moved text markers (owned objects, not sequences).
+        Not applicable for moved text markers.
+
+        Moved text markers are cells in row.CellsOS (R5/#290 model). They do
+        not expose a reorderable sub-sequence of their own.
 
         Raises:
-            NotImplementedError: Moved text markers don't use sequences
+            NotImplementedError: Moved text markers don't use a sub-sequence.
         """
         raise NotImplementedError(
-            "Moved text markers are owned objects (OA), not owning sequences (OS). "
-            "Reordering methods are not applicable."
+            "Moved text markers live in row.CellsOS as peer cells. "
+            "Reordering methods are not applicable to this type."
         )
