@@ -153,6 +153,51 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   Live-verified on the Target sandbox in
   `specs/feature-structure-sync-gap/evidence/live-T9.md`.
 
+- **BREAKING (behavioural): `PhonologicalRule.metathesis_parts` now reads
+  the real LCM model** (#326). The property previously read nonexistent
+  `LeftPartOfMetathesisOS` / `RightPartOfMetathesisOS` fields and returned
+  `([], [])` unconditionally. Live reflection confirmed the real structure:
+  a single `StrucDescOS` sequence sliced by four switch index/limit fields
+  (`LeftSwitchIndex`, `LeftSwitchLimit`, `RightSwitchIndex`,
+  `RightSwitchLimit`). Now reads `StrucDescOS` and extracts the two parts
+  using those indices. Returns `(left_parts, right_parts)` tuple of
+  `ContextCollection` items. **No signature change; same-name property, new
+  return value.** Code relying on the property returning empty collections
+  will now receive populated ones. Code calling `has_metathesis_parts` and
+  then iterating `.metathesis_parts` will now see real contexts instead of
+  none.
+
+  Similarly, `PhonologicalContext.segment` and `.natural_class` now read
+  the real `FeatureStructureRA` field (instead of nonexistent `SegmentRA` /
+  `NaturalClassRA`) and cast/return `IPhPhoneme` / `IPhNaturalClass`
+  respectively. **No signature change.** Code using these properties will now
+  receive real phoneme and natural-class objects instead of `None`.
+
+  **Behaviour change, not a signature change;** ships as a minor bump per
+  the 4.4.0+ precedent. Live-verified on Target sandbox and installed FLEx
+  projects; evidence in `specs/326-phonological-wrapper-members/evidence/`.
+
+### Deprecated
+
+- **Four phonological rule symbols are deprecated and will be removed in
+  v5.0.0** (#326): `PhonologicalRule.has_redup_parts`, `.redup_parts`,
+  `.as_reduplication_rule()`, and `RuleCollection.redup_rules()`. Live
+  reflection across 89 FLEx projects found **zero** instances of
+  `PhReduplicationRule` -- the type does not exist in the supported LCM.
+  All four symbols return empty/`None` values unconditionally on live data.
+  
+  Using any of these four now raises a `DeprecationWarning` naming v5.0.0
+  removal. Code relying on them should be rewritten to check
+  `PhonologicalRule.has_output_specs` (for regular rules) or
+  `has_metathesis_parts` (for metathesis rules) instead.
+
+  The internal `IPhReduplicationRule` slot was removed from the LCM
+  interface cache in `lcm_casting`; it never resolved on this LCM.
+
+  Aliases and `cast_to_concrete()` exceptions referencing the nonexistent
+  type are similarly scheduled for removal at v5.0.0 but are tracked
+  separately in the main flexlibs2 alias removal.
+
 ---
 
 ## [4.9.0] - 2026-09-19
