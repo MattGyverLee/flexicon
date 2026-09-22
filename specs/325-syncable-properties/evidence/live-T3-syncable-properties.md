@@ -2,11 +2,11 @@
 
 ## (a) languages_seeded
 
-Languages list empty in Target sandbox; seeded 0
+2 GUIDs: ['67ca994e-5514-4319-851e-98cc1c8adcdc', '924ff1a7-c6aa-4a2f-94fb-0b04b108f9d7']
 
 ## (a) GetSyncableProperties language_rs
 
-[]
+['67ca994e-5514-4319-851e-98cc1c8adcdc', '924ff1a7-c6aa-4a2f-94fb-0b04b108f9d7']
 
 ## (a) LanguageNotesRA absent
 
@@ -14,7 +14,7 @@ True
 
 ## (a) LanguageRS after Apply (re-read)
 
-Skipped (no languages seeded; list was empty)
+['67ca994e-5514-4319-851e-98cc1c8adcdc', '924ff1a7-c6aa-4a2f-94fb-0b04b108f9d7']
 
 ## (a) Duplicate LanguageNotes preserved
 
@@ -56,6 +56,18 @@ PASS
 
 70906d23-7535-4134-b79e-01681015bd4d
 
+## (b) targets_rs before
+
+['9fb1606b-9db1-427d-b68f-dea0a2618c44', 'b9769a9c-a44e-411f-8a8a-cc9a43d6bd4e', 'ce75c167-9bd8-4258-9ff2-3561e4332754']
+
+## (b) targets_rs after mutating Apply (re-read)
+
+['ce75c167-9bd8-4258-9ff2-3561e4332754', 'b9769a9c-a44e-411f-8a8a-cc9a43d6bd4e', '9fb1606b-9db1-427d-b68f-dea0a2618c44']
+
+## (b) targets_rs mutating Apply
+
+PASS
+
 ## (c) Name in payload (R8)
 
 PASS
@@ -64,9 +76,17 @@ PASS
 
 ['en']
 
+## (c) media_uris GSP
+
+[{'uri': 'file:///TEST_325_media_roundtrip.mp3', 'file_guid': None}]
+
+## (c) media_uris after Apply (re-read)
+
+['file:///TEST_325_media_roundtrip.mp3']
+
 ## (c) media_uris (R4)
 
-FAIL: unverified -- no project with MediaFilesOA populated found. needs_human: provide a project with actual media files to verify R4.
+PASS -- GSP+Apply round-trip uri='file:///TEST_325_media_roundtrip.mp3'
 
 ## (d) Create no NRE
 
@@ -130,5 +150,5 @@ live
 
 ## run_timestamp
 
-2026-09-22T21:59:00.402122+00:00
+2026-09-22T22:45:44.027422+00:00
 

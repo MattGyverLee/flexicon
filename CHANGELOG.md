@@ -30,8 +30,13 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `DoNotShowMainEntryInRC` from sense sync; moved-text marker create via
   `row.CellsOS` and `WordGroupRA` navigation; deprecated etymology
   `GetLanguage` / `SetLanguage` in favour of `GetLanguages` / `SetLanguages`.
-  Live verification for `media_uris` round-trip remains blocked pending a
-  project with populated media (R4 `needs_human`). Migration notes in
+  `TextOperations.ApplySyncableProperties` for `media_uris` uses
+  `ICmMediaContainerFactory` + `ICmMediaURIFactory` and owns the URI in
+  `MediaURIsOC` before `set_MediaURI` (the prior `ICmFolderFactory` /
+  `ICmMediaFactory` path could not create a valid container or URI).
+  Live T3 re-run covers LanguageRS Apply with seeded LanguagesOA,
+  media_uris GSP/Apply LCM read-back in `target_sandbox`, and mutating
+  `targets_rs` Clear+Add. Migration notes in
   `docs/MIGRATION_GUIDE.md` and Category 8 in
   `docs/API_ISSUES_CATEGORIZED.md`.
 
