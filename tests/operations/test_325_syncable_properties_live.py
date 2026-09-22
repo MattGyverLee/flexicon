@@ -135,18 +135,43 @@ class TestEtymologyLanguageRS:
         project = target_sandbox
         assert project.writeEnabled, "target_sandbox must be write-enabled"
 
-        # Try to find Language possibilities from the project's Languages list
-        # (LangProject.LexDbOA.LanguagesOA is ICmPossibilityList of language codes)
-        lang_possibilities = []
-        try:
-            lex_db = project.project.LangProject.LexDbOA
-            if hasattr(lex_db, "LanguagesOA") and lex_db.LanguagesOA is not None:
-                lang_possibilities = list(lex_db.LanguagesOA.PossibilitiesOS)
-        except Exception as exc:
-            logger.warning("[WARN] Could not read LanguagesOA: %s", exc)
-
         etym_ops = project.Etymology
         entry_ops = project.LexEntry
+
+        # Seed Language possibilities into LanguagesOA when the list is empty
+        # (Target sandbox ships with Count=0; LanguageRS Apply cannot be
+        # exercised without at least one ICmPossibility to reference).
+        lang_possibilities = []
+        seeded_lang_objs = []
+        try:
+            from SIL.LCModel import ICmPossibilityFactory
+            from SIL.LCModel.Core.Text import TsStringUtils
+
+            lex_db = project.project.LangProject.LexDbOA
+            langs_list = None
+            if hasattr(lex_db, "LanguagesOA") and lex_db.LanguagesOA is not None:
+                langs_list = lex_db.LanguagesOA
+                lang_possibilities = list(langs_list.PossibilitiesOS)
+
+            if len(lang_possibilities) < 2 and langs_list is not None:
+                factory = project.project.ServiceLocator.GetService(
+                    ICmPossibilityFactory
+                )
+                ws_handle = project.project.DefaultAnalWs
+                with etym_ops._TransactionCM("T3 seed LanguagesOA"):
+                    for label in (
+                        f"{TEST_PREFIX}lang_a",
+                        f"{TEST_PREFIX}lang_b",
+                    ):
+                        poss = factory.Create()
+                        langs_list.PossibilitiesOS.Add(poss)
+                        poss.Name.set_String(
+                            ws_handle, TsStringUtils.MakeString(label, ws_handle)
+                        )
+                        seeded_lang_objs.append(poss)
+                lang_possibilities = list(langs_list.PossibilitiesOS)
+        except Exception as exc:
+            logger.warning("[WARN] Could not seed LanguagesOA: %s", exc)
 
         # Create a source entry + etymology
         src_entry = entry_ops.Create(lexeme_form=f"{TEST_PREFIX}etym_src")
@@ -167,9 +192,17 @@ class TestEtymologyLanguageRS:
                     langs_to_seed = lang_possibilities[:2]
                     etym_ops.SetLanguages(src_etym, langs_to_seed)
                     seeded_guids = [str(l.Guid) for l in langs_to_seed]
-                    _EVIDENCE["(a) languages_seeded"] = f"{len(seeded_guids)} GUIDs: {seeded_guids}"
+                    _EVIDENCE["(a) languages_seeded"] = (
+                        f"{len(seeded_guids)} GUIDs: {seeded_guids}"
+                    )
                 else:
-                    _EVIDENCE["(a) languages_seeded"] = "Languages list empty in Target sandbox; seeded 0"
+                    _EVIDENCE["(a) languages_seeded"] = (
+                        "FAIL: Languages list empty and seeding failed"
+                    )
+                    pytest.fail(
+                        "LanguageRS Apply cannot be verified: LanguagesOA empty "
+                        "and seeding produced 0 possibilities"
+                    )
 
                 # --- GetSyncableProperties ---
                 props = etym_ops.GetSyncableProperties(src_etym)
@@ -302,6 +335,20 @@ class TestEtymologyLanguageRS:
                 etym_ops.Delete(src_etym)
         finally:
             entry_ops.Delete(src_entry)
+            # Best-effort cleanup of seeded language possibilities (sandbox
+            # is disposable; Remove only -- Delete after Remove NREs).
+            if seeded_lang_objs:
+                try:
+                    langs_list = project.project.LangProject.LexDbOA.LanguagesOA
+                    with etym_ops._TransactionCM("T3 cleanup LanguagesOA"):
+                        for poss in list(seeded_lang_objs):
+                            try:
+                                if poss in langs_list.PossibilitiesOS:
+                                    langs_list.PossibilitiesOS.Remove(poss)
+                            except Exception:
+                                pass
+                except Exception as exc:
+                    logger.warning("[WARN] LanguagesOA cleanup: %s", exc)
 
 
 def normalize_ts(text):
@@ -434,6 +481,73 @@ class TestLexReferenceOwnerGuid:
             # unchanged, no structural change was made)
             _close(project)
 
+    @pytest.mark.live_phase("LexReferenceOperations", "modify")
+    def test_targets_rs_mutating_apply(self, target_sandbox):
+        """
+        R3: Create a LexReference with 3 sense targets in target_sandbox,
+        Apply a reversed targets_rs (Remove+rotate replace, never Clear),
+        re-read TargetsRS from the LCM by GUID.
+        """
+        project = target_sandbox
+        assert project.writeEnabled
+
+        ref_ops = project.LexReferences
+        entry_ops = project.LexEntry
+        sense_ops = project.Senses
+
+        entries = []
+        senses = []
+        try:
+            for i in range(3):
+                e = entry_ops.Create(lexeme_form=f"{TEST_PREFIX}ref_tgt_{i}")
+                entries.append(e)
+                senses.append(sense_ops.Create(e, gloss=f"{TEST_PREFIX}gloss_{i}"))
+
+            rtype = ref_ops.FindType(f"{TEST_PREFIX}Seq")
+            if rtype is None:
+                rtype = ref_ops.CreateType(f"{TEST_PREFIX}Seq", "Sequence")
+
+            ref = ref_ops.Create(rtype, senses)
+            try:
+                before = [str(t.Guid) for t in ref.TargetsRS]
+                assert len(before) == 3, f"expected 3 targets, got {before}"
+                mutated = list(reversed(before))
+                assert mutated != before
+
+                props = ref_ops.GetSyncableProperties(ref)
+                props["targets_rs"] = mutated
+                ref_ops.ApplySyncableProperties(ref, props)
+
+                ref_guid = str(ref.Guid)
+                from SIL.LCModel import ILexReferenceRepository
+
+                repo = project.project.ServiceLocator.GetService(
+                    ILexReferenceRepository
+                )
+                refetched = None
+                for r in repo.AllInstances():
+                    if str(r.Guid) == ref_guid:
+                        refetched = r
+                        break
+                assert refetched is not None, "Could not re-fetch LexReference"
+
+                after = [str(t.Guid) for t in refetched.TargetsRS]
+                assert after == mutated, (
+                    f"targets_rs after mutating Apply: expected {mutated}, "
+                    f"got {after}"
+                )
+                _EVIDENCE["(b) targets_rs before"] = before
+                _EVIDENCE["(b) targets_rs after mutating Apply (re-read)"] = after
+                _EVIDENCE["(b) targets_rs mutating Apply"] = "PASS"
+            finally:
+                ref_ops.Delete(ref)
+        finally:
+            for e in entries:
+                try:
+                    entry_ops.Delete(e)
+                except Exception:
+                    pass
+
 
 # ---------------------------------------------------------------------------
 # (c) Text media + IText.Name payload (R4, R8)
@@ -485,71 +599,85 @@ class TestTextMediaAndName:
         finally:
             text_ops.Delete(text)
 
-    @pytest.mark.live_phase("TextOperations", "read")
-    def test_media_uris_key_present_or_needs_human(self):
+    @pytest.mark.live_phase("TextOperations", "add")
+    def test_media_uris_roundtrip_in_sandbox(self, target_sandbox):
         """
-        R4: Check all accessible projects for media. If one has media,
-        verify media_uris key in payload. If none, mark FAIL: unverified
-        + needs_human (per R4 ruling: do not fake it).
+        R4: Create MediaFilesOA + MediaURI in target_sandbox (own before set),
+        verify GetSyncableProperties media_uris, Apply onto a second text,
+        and re-read MediaURIsOC from the LCM.
         """
-        candidates = [
-            "Sena_InterlinearTraining", "Ejagham Full", "Test",
-            "SwissGerman", "Xinaliq",
-        ]
-        media_found = False
+        from System import Type as ClrType
+        from flexicon.code.lcm_casting import cast_to_concrete
 
-        for name in candidates:
-            proj = _open_ro(name)
-            if proj is None:
-                continue
+        project = target_sandbox
+        text_ops = project.Texts
+        sl = project.project.ServiceLocator
+        cont_fac = sl.GetService(
+            ClrType.GetType(
+                "SIL.LCModel.ICmMediaContainerFactory, SIL.LCModel", True
+            )
+        )
+        uri_fac = sl.GetService(
+            ClrType.GetType(
+                "SIL.LCModel.ICmMediaURIFactory, SIL.LCModel", True
+            )
+        )
+
+        src = text_ops.Create(f"{TEST_PREFIX}media_src")
+        try:
+            concrete = cast_to_concrete(src)
+            probe_uri = "file:///TEST_325_media_roundtrip.mp3"
+            with text_ops._TransactionCM("T3 seed MediaFilesOA"):
+                container = cont_fac.Create()
+                concrete.MediaFilesOA = container
+                new_uri = uri_fac.Create()
+                container.MediaURIsOC.Add(new_uri)
+                new_uri.MediaURI = probe_uri
+
+            props = text_ops.GetSyncableProperties(src)
+            assert "media_uris" in props, (
+                f"media_uris absent after seeding. Keys: {list(props.keys())}"
+            )
+            assert props["media_uris"][0]["uri"] == probe_uri, props["media_uris"]
+            _EVIDENCE["(c) media_uris GSP"] = props["media_uris"]
+
+            tgt = text_ops.Create(f"{TEST_PREFIX}media_tgt")
             try:
+                text_ops.ApplySyncableProperties(
+                    tgt, {"media_uris": props["media_uris"]}
+                )
+                tgt_guid = str(tgt.Guid)
                 from SIL.LCModel import ITextRepository
-                text_repo = proj.project.ServiceLocator.GetService(ITextRepository)
-                from flexicon.code.lcm_casting import cast_to_concrete
-                for text in text_repo.AllInstances():
-                    concrete = cast_to_concrete(text)
-                    if concrete is None:
-                        continue
-                    container = getattr(concrete, "MediaFilesOA", None)
-                    if container is None:
-                        continue
-                    uris_oc = getattr(container, "MediaURIsOC", None)
-                    if uris_oc is None or uris_oc.Count == 0:
-                        continue
-                    # Found media!
-                    text_ops = proj.Texts
-                    props = text_ops.GetSyncableProperties(text)
-                    assert "media_uris" in props, (
-                        f"Project '{name}' has media but 'media_uris' absent from payload. "
-                        f"Got keys: {list(props.keys())}"
-                    )
-                    assert isinstance(props["media_uris"], list), (
-                        f"media_uris must be list, got {type(props['media_uris'])}"
-                    )
-                    assert len(props["media_uris"]) > 0, (
-                        "media_uris is empty despite container having URIs"
-                    )
-                    for entry in props["media_uris"]:
-                        assert "uri" in entry, f"media_uri entry missing 'uri': {entry}"
-                        assert "file_guid" in entry, f"media_uri entry missing 'file_guid': {entry}"
-                    _EVIDENCE["(c) media_uris (R4)"] = f"PASS -- {len(props['media_uris'])} URI(s) in {name}"
-                    media_found = True
-                    break
-            finally:
-                _close(proj)
-            if media_found:
-                break
 
-        if not media_found:
-            _EVIDENCE["(c) media_uris (R4)"] = (
-                "FAIL: unverified -- no project with MediaFilesOA populated found. "
-                "needs_human: provide a project with actual media files to verify R4."
-            )
-            pytest.xfail(
-                "FAIL: unverified -- no project with media files available. "
-                "needs_human: R4 media_uris path cannot be exercised without a project "
-                "that has MediaFilesOA populated. Human must supply such a project."
-            )
+                repo = project.project.ServiceLocator.GetService(ITextRepository)
+                refetched = None
+                for t in repo.AllInstances():
+                    if str(t.Guid) == tgt_guid:
+                        refetched = t
+                        break
+                assert refetched is not None, "Could not re-fetch target text by GUID"
+
+                c2 = cast_to_concrete(refetched)
+                cont2 = getattr(c2, "MediaFilesOA", None)
+                assert cont2 is not None, "MediaFilesOA None after Apply"
+                actual_uris = [str(u.MediaURI) for u in cont2.MediaURIsOC]
+                assert probe_uri in actual_uris, (
+                    f"MediaURI not in LCM after Apply: {actual_uris}"
+                )
+                re_props = text_ops.GetSyncableProperties(refetched)
+                assert re_props.get("media_uris"), re_props
+                assert any(
+                    e.get("uri") == probe_uri for e in re_props["media_uris"]
+                ), re_props["media_uris"]
+
+                _EVIDENCE["(c) media_uris after Apply (re-read)"] = actual_uris
+                _EVIDENCE["(c) media_uris (R4)"] = (
+                    f"PASS -- GSP+Apply round-trip uri={probe_uri!r}"
+                )
+            finally:
+                text_ops.Delete(tgt)
+        finally:
+            text_ops.Delete(src)
 
 
 # ---------------------------------------------------------------------------

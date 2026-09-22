@@ -371,10 +371,9 @@ class TextOperations(BaseOperations):
             - Does NOT include owned sequences (paragraphs) - those are children
 
         R4 note: MediaFilesOA is on the concrete DomainImpl.Text, NOT on the
-        IText interface; cast_to_concrete() is required to access it.
-        MediaFilesOC (used in GetMediaFiles) vs MediaURIsOC discrepancy is an
-        open needs_human item; this method uses MediaURIsOC per T0 reflection.
-        GetMediaFiles/AddMediaFile are out of scope for this fix.
+        IText interface; cast_to_concrete() is required. Access path:
+        MediaFilesOA -> MediaURIsOC. GetMediaFiles/AddMediaFile still use
+        MediaFilesOC and are tracked separately (#356).
         """
         from ..lcm_casting import cast_to_concrete
 
@@ -485,10 +484,19 @@ class TextOperations(BaseOperations):
             # Reconcile by URI: add missing entries; leave extras untouched.
             # An absent or empty media_uris key means do-nothing (R4 apply
             # strategy: do not destroy existing media).
+            #
+            # Live LCM facts (issue #325 probe, 2026-09-22):
+            # - MediaFilesOA requires ICmMediaContainer (ICmMediaContainerFactory),
+            #   NOT ICmFolder (ICmFolderFactory raises type conversion failure).
+            # - Elements of MediaURIsOC are ICmMediaURI (ICmMediaURIFactory),
+            #   NOT ICmMedia (ICmMediaFactory cannot Add to MediaURIsOC).
+            # - set_MediaURI NREs on an unowned factory instance; Add to
+            #   MediaURIsOC BEFORE setting MediaURI (same ownership pattern
+            #   as ConstChartMovedText / issue #290).
             media_uris_data = special_props.get("media_uris")
             if media_uris_data:
                 from ..lcm_casting import cast_to_concrete
-                from SIL.LCModel import ICmMediaFactory, ICmFolderFactory
+                from System import Type as _ClrType
 
                 concrete = cast_to_concrete(item)
                 if concrete is None or not hasattr(concrete, "MediaFilesOA"):
@@ -497,14 +505,25 @@ class TextOperations(BaseOperations):
                         "MediaFilesOA not accessible on concrete text -- skipping"
                     )
                 else:
+                    sl = self.project.project.ServiceLocator
+                    # Resolve factories by CLR type name -- pythonnet dir() of
+                    # SIL.LCModel omits these interfaces, but GetService finds them.
+                    cont_fac = sl.GetService(
+                        _ClrType.GetType(
+                            "SIL.LCModel.ICmMediaContainerFactory, SIL.LCModel",
+                            True,
+                        )
+                    )
+                    uri_fac = sl.GetService(
+                        _ClrType.GetType(
+                            "SIL.LCModel.ICmMediaURIFactory, SIL.LCModel",
+                            True,
+                        )
+                    )
+
                     # Ensure container exists.
                     if concrete.MediaFilesOA is None:
-                        container_factory = (
-                            self.project.project.ServiceLocator
-                            .GetService(ICmFolderFactory)
-                        )
-                        container = container_factory.Create()
-                        concrete.MediaFilesOA = container
+                        concrete.MediaFilesOA = cont_fac.Create()
                     container = concrete.MediaFilesOA
 
                     # Build set of existing URIs to avoid duplicates.
@@ -514,20 +533,22 @@ class TextOperations(BaseOperations):
                             if uri_obj.MediaURI:
                                 existing_uris.add(str(uri_obj.MediaURI))
 
-                    # Add missing entries.
+                    # Add missing entries (own first, then set MediaURI).
                     for entry in media_uris_data:
                         uri_str = entry.get("uri", "")
                         if not uri_str or uri_str in existing_uris:
                             continue
                         try:
-                            media_factory = (
-                                self.project.project.ServiceLocator
-                                .GetService(ICmMediaFactory)
-                            )
-                            new_uri = media_factory.Create()
+                            if not hasattr(container, "MediaURIsOC"):
+                                _log.warning(
+                                    "[WARN] ApplySyncableProperties: MediaURIsOC "
+                                    "absent on media container -- skipping %r",
+                                    uri_str,
+                                )
+                                continue
+                            new_uri = uri_fac.Create()
+                            container.MediaURIsOC.Add(new_uri)
                             new_uri.MediaURI = uri_str
-                            if hasattr(container, "MediaURIsOC"):
-                                container.MediaURIsOC.Add(new_uri)
                             existing_uris.add(uri_str)
                         except Exception as exc:
                             _log.warning(

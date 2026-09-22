@@ -268,11 +268,16 @@ class LexReferenceOperations(BaseOperations):
             if reverse_name and mapping_value == LexRefMappingTypes.ASYMMETRIC:
                 rev_mkstr = TsStringUtils.MakeString(reverse_name, wsHandle)
                 new_ref_type.ReverseName.set_String(wsHandle, rev_mkstr)
-            else:
-                # Create the reference list if it doesn't exist
+
+            # Create the reference list if it doesn't exist (only when
+            # ReferencesOA was missing above -- do NOT replace an existing
+            # list or re-Add an already-owned type).
+            if not ref_types_list:
                 from SIL.LCModel import ICmPossibilityListFactory
 
-                list_factory = self.project.project.ServiceLocator.GetService(ICmPossibilityListFactory)
+                list_factory = self.project.project.ServiceLocator.GetService(
+                    ICmPossibilityListFactory
+                )
                 new_list = list_factory.Create()
                 self.project.lexDB.ReferencesOA = new_list
                 new_list.PossibilitiesOS.Add(new_ref_type)
@@ -1450,14 +1455,59 @@ class LexReferenceOperations(BaseOperations):
                 if current_guids == incoming_guids:
                     pass
                 else:
-                    # Replace the sequence: clear all existing targets, then
-                    # add resolved targets in order.  Use Clear() not Remove():
-                    # iterating and calling Remove() on a live IFdoReferenceSequence
-                    # raises a NullReferenceException at get_TargetsRS() inside
-                    # the LCM DomainImpl (confirmed T3 live run, 2026-09-22).
-                    item.TargetsRS.Clear()
-                    for obj in resolved:
-                        item.TargetsRS.Add(obj)
+                    # Replace without Clear(): Clear() permanently breaks
+                    # LexReference.get_TargetsRS() (NRE on every later access;
+                    # live probe 2026-09-22). Keep Count >= 2 at all times:
+                    # add missing, remove undesirables, then rotate to order.
+                    if len(resolved) < 2:
+                        _log.warning(
+                            "[WARN] ApplySyncableProperties: targets_rs replace "
+                            "requires >=2 resolved targets (got %d); skipping",
+                            len(resolved),
+                        )
+                    else:
+                        desired_guids = [str(o.Guid) for o in resolved]
+                        desired_set = set(desired_guids)
+
+                        present = {
+                            str(t.Guid) for t in list(item.TargetsRS)
+                        }
+                        for obj in resolved:
+                            g = str(obj.Guid)
+                            if g not in present:
+                                item.TargetsRS.Add(obj)
+                                present.add(g)
+
+                        # Drop undesirables while Count > len(desired).
+                        guard = 0
+                        while item.TargetsRS.Count > len(resolved) and guard < 64:
+                            guard += 1
+                            dropped = False
+                            for t in list(item.TargetsRS):
+                                if str(t.Guid) not in desired_set:
+                                    item.TargetsRS.Remove(t)
+                                    dropped = True
+                                    break
+                            if not dropped:
+                                break
+
+                        # Rotate until order matches (never go below 2).
+                        for _ in range(len(resolved) * len(resolved) + 5):
+                            cur = [str(t.Guid) for t in item.TargetsRS]
+                            if cur == desired_guids:
+                                break
+                            mismatch = None
+                            for i, (c, d) in enumerate(
+                                zip(cur, desired_guids)
+                            ):
+                                if c != d:
+                                    mismatch = i
+                                    break
+                            if mismatch is None:
+                                break
+                            victim = list(item.TargetsRS)[mismatch]
+                            item.TargetsRS.Remove(victim)
+                            item.TargetsRS.Add(victim)
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):

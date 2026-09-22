@@ -81,10 +81,14 @@ The **close keyword gate** is stricter: T9 may use `closes #325` only if **every
 
 ## T9 instruction: `closes #325`
 
-| Decision | **CLOSE_BLOCKED** |
-|----------|-------------------|
+| Decision | **CLOSE_OK** (wave-2, 2026-09-22) |
+|----------|-----------------------------------|
 
-T9 must **not** use `closes #325` on the merge commit unless the archivist receives updated live evidence that (1) exercises `media_uris` on a media-populated project with post-Apply read-back, and (2) completes LanguageRS Apply re-read with at least one seeded language GUID (and, if policy requires, a mutating `targets_rs` Apply read-back). Until then, prefer **`Addresses #325`** (or equivalent non-closing reference) and leave #325 open with a short comment linking `live-T3-syncable-properties.md`, the R4 `needs_human` line, and optional follow-up issues for media verification and RS replace paths.
+Wave-2 live evidence in `live-T3-wave2-close-gate.md` and updated
+`live-T3-syncable-properties.md` closes the three prior gaps (LanguageRS
+Apply with seeded LanguagesOA, media_uris GSP/Apply with sandbox-created
+MediaURI, mutating targets_rs via Remove+rotate). T9 may use
+`closes #325` on the merge commit.
 
 Parallel T9 work: file **15** pattern-audit siblings per triage; do not conflate sibling filing with closing #325.
 
