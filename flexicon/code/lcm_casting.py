@@ -60,7 +60,7 @@ Usage::
 Supported Types:
     - MSA types: MoStemMsa, MoDerivAffMsa, MoInflAffMsa, MoUnclassifiedAffixMsa
     - Allomorph types: MoStemAllomorph, MoAffixAllomorph
-    - Phonological rule types: PhRegularRule, PhMetathesisRule, PhReduplicationRule
+    - Phonological rule types: PhRegularRule, PhMetathesisRule
     - Compound rule types: MoEndoCompound, MoExoCompound
     - Morphosyntactic prohibition types: MoAdhocProhibGr, MoAdhocProhibMorph, MoAdhocProhibAllomorph
     - Owner / container types (used by .Owner casting paths in Lexicon,
@@ -121,12 +121,11 @@ def _ensure_interfaces() -> None:
     )
 
     # Phonological rule interfaces - try to import, but don't fail if unavailable
-    # LCM defines two concrete subclasses of PhSegmentRule:
+    # LCM defines exactly two concrete subclasses of PhSegmentRule:
     #   - PhRegularRule: Standard phonological rules (most common)
     #   - PhMetathesisRule: Metathesis rules (swapping segments)
-    # There is no IPhReduplicationRule interface in LCM (no PhReduplicationRule
-    # class in MasterLCModel.xml); the slot is kept as None for back-compat
-    # callers that still pass the legacy key.
+    # There is no PhReduplicationRule class or IPhReduplicationRule interface
+    # in this LCM (issue #326, T1 live reflection).
     try:
         from SIL.LCModel import (
             IPhRegularRule,
@@ -138,7 +137,6 @@ def _ensure_interfaces() -> None:
     except ImportError:
         IPhRegularRule = IPhMetathesisRule = None
         IPhSimpleContextSeg = IPhSimpleContextNC = IPhSegRuleRHS = None
-    IPhReduplicationRule = None
 
     # Compound rule interfaces - try to import, but don't fail if unavailable
     # These are the two main compound rule types:
@@ -277,10 +275,8 @@ def _ensure_interfaces() -> None:
     # `liblcm_snapshot["missing_types"] == ["IPosFeatures"]`). Only a
     # descriptive comment at InflectionFeatureOperations.py:486
     # ("IPosFeatures.FeaturesOA") ever referenced this name; no snapshot,
-    # probe, or existing import confirms it. Per this module's own
-    # precedent for a name that plainly does not exist in LCM
-    # (IPhReduplicationRule below), this is a hardcoded None with NO
-    # `from SIL.LCModel import IPosFeatures` attempt -- a real import
+    # probe, or existing import confirms it. This is a hardcoded None with
+    # NO `from SIL.LCModel import IPosFeatures` attempt -- a real import
     # statement would (a) always raise ImportError on every environment,
     # and (b) get picked up by tests/contract/test_lcm_contract.py's
     # static AST extractor as an "expected" type, permanently failing
@@ -319,13 +315,11 @@ def _ensure_interfaces() -> None:
     }
 
     # Add phonological rule types if imports succeeded
-    # The 3 main rule types in FLEx phonology:
+    # The 2 concrete subclasses of PhSegmentRule in this LCM:
     if IPhRegularRule is not None:
         _interface_cache["PhRegularRule"] = IPhRegularRule
     if IPhMetathesisRule is not None:
         _interface_cache["PhMetathesisRule"] = IPhMetathesisRule
-    if IPhReduplicationRule is not None:
-        _interface_cache["PhReduplicationRule"] = IPhReduplicationRule
 
     # Context and RHS types used within rules:
     if IPhSimpleContextSeg is not None:
@@ -1061,10 +1055,6 @@ def _get_factory_for_class(class_name: str, project: object) -> "Optional[object
             IPhSimpleContextNCFactory,
         )
 
-        # LCM has no PhReduplicationRule class -- PhSegmentRule only branches
-        # into PhRegularRule (129) and PhMetathesisRule (130). The factory map
-        # therefore omits any reduplication entry; callers that pass that key
-        # fall through to None.
         factory_map = {
             # The 2 concrete PhSegmentRule subclasses
             "PhRegularRule": IPhRegularRuleFactory,
@@ -1092,7 +1082,9 @@ def cast_phonological_rule(rule_obj):
     This function casts to the concrete interface based on ClassName:
     - PhRegularRule -> IPhRegularRule
     - PhMetathesisRule -> IPhMetathesisRule
-    - PhReduplicationRule -> IPhReduplicationRule
+
+    PhReduplicationRule is not a concrete type in this LCM (issue #326),
+    so any object claiming that ClassName is returned unchanged.
 
     Args:
         rule_obj: A phonological rule object (typed as IPhSegmentRule or similar).
@@ -1350,7 +1342,7 @@ def get_concrete_type_properties(lcm_obj):
             print(unique_props['RightHandSidesOS'])  # The actual RHS collection
 
         if rule.ClassName == 'PhMetathesisRule':
-            print('LeftPartOfMetathesisOS' in unique_props)  # True
+            print('StrucDescOS' in unique_props)  # True
 
     Notes:
         - Returns empty dict if object has no ClassName attribute
