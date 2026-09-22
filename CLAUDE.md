@@ -121,15 +121,22 @@ Applies to every change touching an Operations class, a factory call, a
 property setter, `FLExProject`, or the transaction/write path. Does not
 apply to pure-docs, pure-typing, or pure-test-scaffolding changes.
 
-### The two live projects
+### The two live write projects
+
+**Reads are unrestricted.** Any project on the machine may be opened
+read-only, at any time, with no gate -- which project holds a given element
+is not knowable without looking. The table below allocates the two projects
+that are safe to **write** to; it is not a list of what may be read.
 
 | Project | Contents | Use for | Restore |
 |---------|----------|---------|---------|
-| **Target** | Mostly blank scratch | **Write-path work**: create / modify / delete against a clean slate | `python scripts/restore_target.py` |
-| **Sena 3** | Fully populated example | Read-path coverage, modify-pre-existing-data | `python scripts/restore_sena3.py` |
+| **Target** | Mostly blank scratch | **Write-path work**: create / modify / delete against a clean slate; the default when a test creates its own data | `python scripts/restore_target.py` |
+| **Sena 3** | Fully populated example | Safe for reads and edits **in place, at any time**; the right choice when a test needs pre-existing data to modify rather than data it created itself | `python scripts/restore_sena3.py` |
 
-Default to **Target** for anything that writes. Reach for Sena 3 only when
-the test genuinely needs pre-existing data to read or modify.
+Target is the default for write-path work, not a mandate -- Sena 3 is
+equally sanctioned for in-place writes whenever the test needs existing
+data. Where a test needs data that does not exist, add it to Target or copy
+an existing project; never repurpose or destroy data another test reads.
 
 ### Fixtures
 
@@ -143,12 +150,19 @@ the test genuinely needs pre-existing data to read or modify.
 Canonical template: `tests/operations/test_target_live_smoke.py`. Copy its
 structure.
 
-### The required invocation
+### The two required invocations
 
 ```
+python -m pytest -m "not requires_live_project" -q
 $env:FLEXLIBS_REQUIRE_LIVE = "1"
 python -m pytest <your live test file> -m requires_live_project -q
 ```
+
+Both are required and every brief quotes them explicitly. The offline run is
+the gate for non-write-path work; the live run is REQUIRED and performed
+unattended -- no human gate -- for any change touching an Operations class, a
+factory call, a property setter, `FLExProject`, or the transaction/write
+path.
 
 `FLEXLIBS_REQUIRE_LIVE=1` converts every silent degradation into a hard
 failure: FLEx init falling back to mocks, a locked Target, a missing

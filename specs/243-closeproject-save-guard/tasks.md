@@ -1,3 +1,12 @@
+> **Superseded 2026-09-22 by constitution v2.0.0:** where the checkpoints
+> below cite the offline invocation (`pytest -m "not requires_live_project"`)
+> as the sole test gate, that was written against a Principle II that forbade
+> any agent live write outright. That prohibition was reversed -- both
+> invocations (offline and live, `FLEXLIBS_REQUIRE_LIVE=1`) are now REQUIRED
+> for any write-path change, run unattended against Target, Sena 3, or a
+> tempdir sandbox with no human gate. The text below is retained as the record
+> of what was decided at the time; it is not current guidance.
+
 # TASKS -- 243-closeproject-save-guard
 
 Derived from `spec.md` sections 3 and 6 (C1-C10). Issue: #243.

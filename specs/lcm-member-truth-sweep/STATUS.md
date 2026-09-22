@@ -1,3 +1,11 @@
+> **Superseded 2026-09-22 by constitution v2.0.0:** the "never a destructive
+> live-LCM write unattended" clause below (and any `needs_human`-on-write
+> reasoning it reflects) was written against a Principle II that forbade any
+> agent live write outright. That prohibition was reversed -- live writes to
+> Target, Sena 3, or a tempdir sandbox are now REQUIRED and performed
+> unattended, with no human gate. The text below is retained as the record of
+> what was decided at the time; it is not current guidance.
+
 # STATUS -- lcm-member-truth-sweep
 
 **Last updated:** 2026-09-18 (end of spurt 4)

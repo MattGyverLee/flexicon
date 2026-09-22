@@ -1,3 +1,13 @@
+> **Superseded 2026-09-22 by constitution v2.0.0:** the restriction below to
+> `target_sandbox` ONLY, and never the real Target or any `scripts/restore_*.py`
+> run, was written against a Principle II that forbade any agent live write
+> outright. That prohibition was reversed -- live writes to Target, Sena 3, or
+> a tempdir sandbox are now REQUIRED and performed unattended, with no human
+> gate; the real Target and `restore_target.py` are sanctioned, and the sandbox
+> is reserved for destructive tests or a locked project. The text below is
+> retained as the record of what was decided at the time; it is not current
+> guidance.
+
 # TASKS -- 242-paragraph-whitespace
 
 Derived from `spec.md` sections 2-4 (C1-C18, R1-R3 [DISCHARGED], Q1-Q3

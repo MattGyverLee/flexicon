@@ -10,21 +10,31 @@ unless `FLEXLIBS_REQUIRE_LIVE=1` is set (see below).
 LCM.** A mock-only pass is not verification. See CLAUDE.md, "Live LCM
 Verification (REQUIRED)", for the policy; this file is the mechanics.
 
-## The two live projects
+## The two live write projects
+
+**Reads are unrestricted.** Any project on the machine may be opened
+read-only, at any time, with no gate (constitution Principle II) -- which
+project holds a given element is not knowable without looking. The table
+below allocates the two projects that are safe to **write** to; it is not a
+list of what may be read. `tests/operations/test_parser_live.py` reads
+`IndonesianHC-Complete` and `Malay Parsing`, and `.claude/bugfix-loop.md`
+names `Ejagham Full` as an additional read-path corpus when Sena 3 lacks the
+data -- all sanctioned, none a Target substitute.
 
 | Project | Contents | Use for | Restore |
 |---------|----------|---------|---------|
 | **Target** | Mostly blank scratch | **Write-path work**: create / modify / delete against a clean slate | `python scripts/restore_target.py` |
-| **Sena 3** | Fully populated example | Read-path coverage, modify-pre-existing-data | `python scripts/restore_sena3.py` |
+| **Sena 3** | Fully populated example | Safe for reads and edits **in place, at any time**; the right choice when a test needs pre-existing data to modify | `python scripts/restore_sena3.py` |
 
 Default to **Target** for anything that writes: a leaked `TEST_` object is
 obvious in a blank project, and its backup is ~1.3 MB against Sena 3's
-~15 MB, so restores are cheap. Reach for Sena 3 only when the test needs
-pre-existing data to read or modify.
+~15 MB, so restores are cheap. That is a default, not a mandate -- Sena 3 is
+equally sanctioned for in-place writes when the test needs existing data.
 
 `Test`, `SampleLexicon`, and `SampleLexicon3` remain as fallback candidates
 in older per-module `writable_project` fixtures, but new live tests should
-use the Target or Sena 3 fixtures below.
+take their **write-enabled** fixture from Target or Sena 3 below. This
+constrains where a test writes, not what it may open read-only.
 
 ### Target fixtures
 

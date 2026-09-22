@@ -1,3 +1,11 @@
+> **Superseded 2026-09-22 by constitution v2.0.0:** Principle II, as this plan
+> quotes and gates against it below, forbade any agent from performing a live
+> LCM write and routed such work to `needs_human`. That prohibition was
+> reversed -- live writes to Target, Sena 3, or a tempdir sandbox are now
+> REQUIRED and performed unattended, with no human gate. The text below is
+> retained as the record of what was decided and gated against at the time;
+> it is not current guidance.
+
 # Implementation Plan: write-path-transactions
 
 **Feature dir**: `specs/write-path-transactions` | **Working branch**: `write-path-transactions-b1-b3`

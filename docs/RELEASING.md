@@ -232,10 +232,15 @@ Run from a clean tree on `main`, fully merged and pushed.
 python -m pytest -m "not requires_live_project" -q
 ```
 
+This is the offline half of the two invocations constitution Principle II
+(v2.0.0) requires in every brief; run the live half below for any write-path
+change carried by this release.
+
 **Never run bare `pytest`,** and never `pytest --ignore=tests/contract`.
 Neither applies an `-m` filter, so both collect and *execute* the
-several-hundred `requires_live_project` tests in place against real FLEx
-projects. The `-m` selector is the safety mechanism.
+several-hundred `requires_live_project` tests in place, unscoped, rather than
+against the specific live test file a change's evidence should cite. The `-m`
+selector is the safety mechanism.
 
 Record `passed` and `deselected` in the release notes. Both numbers move
 legitimately as tests land; a *drop* in either is what matters. The

@@ -1,3 +1,12 @@
+> **Superseded 2026-09-22 by constitution v2.0.0:** the instruction below to
+> never run `scripts/restore_*.py` unattended and to stop with
+> `status: needs_human` was written against a Principle II that forbade any
+> agent live write outright. That prohibition was reversed -- `restore_target.py`
+> is now the sanctioned unattended path, and live writes to Target, Sena 3, or
+> a tempdir sandbox are REQUIRED and performed unattended, with no human gate.
+> The text below is retained as the record of what was decided at the time; it
+> is not current guidance.
+
 # SPEC -- lcm-member-truth-sweep
 
 **Campaign:** `lcm-member-truth-sweep`

@@ -1,0 +1,29 @@
+{
+  "feature": "constitution-v2-amendment",
+  "status": "needs_human",
+  "last_cycle": 2,
+  "spurts_completed": 1,
+  "tasks_done": [
+    "T1-constitution-v2.1.0",
+    "T2-all-exports-99-names-verified-additive",
+    "T3-propagation-2-docs-6-superseding-notes",
+    "T4-read-scope-sweep-3-defects-found",
+    "T5-ratchet-design-only"
+  ],
+  "tasks_open": [
+    "T6-merge-and-apply-CLAUDE.md-diff (BLOCKED: user approval, one merged diff)",
+    "T7-lex-verification.md-read-scope-line (BLOCKED: user global config, propose only)",
+    "T8-LIVE_TESTING.md-read-scope-fix (repo-owned, land before spurt commit)",
+    "T9-gate-1-both-invocations-with-counts (mechanical, before commit)",
+    "T10-build-api-surface-ratchet (all of spurt 2)"
+  ],
+  "blocker": "flexicon/CLAUDE.md lines 124-132 need ONE merged diff (write-target wording from cycle2-propagation.md + reads-unrestricted retitle from cycle2-read-scope.md); CLAUDE.md is the user's binding runtime contract and lex-verification.md is user global agent config -- neither is amendable on a specialist report.",
+  "next_checkpoint": "api-surface-ratchet-built-and-live-verified",
+  "next_entry": "Apply T8 (tests/LIVE_TESTING.md read-scope fix), run T9 (both required invocations, counts quoted), commit the spurt, then build the 7-file ratchet from reviews/cycle1-ratchet-design.md -- rooting Set A in __all__ (99 names, ~1464 entries), NOT the design's 97 import bindings.",
+  "gate_notes": {
+    "principle_vii": "T2 verified purely additive (|P|=99, |__all__|=99, zero dropped). No BREAKING CHANGE footer due.",
+    "principle_ii": "Spurt 2 is NOT scaffolding-exempt. _api_surface_scan.py ships inside the package; Gate 1 applies unconditionally; the AST-derived baseline must be confronted with a live LCM read and a live Target write before it is trusted. Evidence to specs/constitution-v2-amendment/evidence/live-ratchet.md.",
+    "process_defect": "lex-doc asserted it had written cycle2-propagation.md and had not; only its file edits landed. Future plans must have the orchestrator verify report existence on disk, not trust the claim."
+  },
+  "updated": "2026-09-22"
+}

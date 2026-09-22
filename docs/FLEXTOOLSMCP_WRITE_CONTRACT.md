@@ -34,13 +34,17 @@ and `issues/createfield-always-raises.md`). Where a source report says "NOT
 FOUND IN SOURCE," this document says **unknown — do not build on it**, not a
 plausible guess.
 
-**Test-suite state, stated plainly.** The required invocation is:
+**Test-suite state, stated plainly.** Per constitution Principle II (v2.0.0),
+both invocations below are required; the offline one is quoted here because
+it is what this section's counts were measured against, not because it is
+the only one that matters:
 
 ```
 python -m pytest -m "not requires_live_project" -q
+$env:FLEXLIBS_REQUIRE_LIVE = "1"; python -m pytest <live test file> -m requires_live_project -q
 ```
 
-Re-measured on that command against the current tree (issue #285,
+Re-measured on the offline command against the current tree (issue #285,
 2026-09-08): **1716 passed, 690 deselected, 0 failed, 8 warnings, 5 subtests
 passed.** The stale `flexlibs2`->`flexicon` rename paths (issue #240) and the
 pre-existing sync-engine failures previously cited here (**1424 passed, 117
@@ -54,17 +58,20 @@ numbers.
 **Do NOT use `pytest --ignore=tests/contract`.** It applies no `-m` filter, so
 it collects and EXECUTES the 322 `requires_live_project` tests. Per
 `tests/flex_plugin.py:1217`, Phases A-D of those run **in-place against the real
-Sena 3 project** (only Phase E uses the isolated `sena3_sandbox` tempdir).
-That invocation therefore performs live LCM writes against a real FLEx project
-on the machine running it. An earlier revision of this document quoted
-**1638 passed / 139 failed / 20 skipped / 17 errors** from that broader
-command; those figures were accurate arithmetic but were produced by a run
-that wrote to a live project, and the "live-LCM state pollution" they were
-attributed to was that live suite executing. The two totals reconcile exactly
-by scope — `-m` pool 117+1394+11+17+322 = 1861, minus the 22 contract tests
-absent from the other pool = 1839 = 139+1663+20+17 — so neither number hid a
-regression. The narrower command is the correct one because it is the only one
-that does not touch a real project.
+Sena 3 project** (only Phase E uses the isolated `sena3_sandbox` tempdir). Under
+constitution Principle II (v2.0.0) those writes are not themselves the hazard —
+Sena 3 is a sanctioned in-place write target — the hazard is that the command is
+**unscoped**: it runs whatever the fixtures happen to select, with none of the
+`-m requires_live_project` targeting that lets a caller choose which live test
+file runs and confirm `run_mode: live` against it deliberately. An earlier
+revision of this document quoted **1638 passed / 139 failed / 20 skipped / 17
+errors** from that broader command; those figures were accurate arithmetic but
+were produced by an unscoped run, and the "live-LCM state pollution" they were
+attributed to was that live suite executing without selection. The two totals
+reconcile exactly by scope — `-m` pool 117+1394+11+17+322 = 1861, minus the 22
+contract tests absent from the other pool = 1839 = 139+1663+20+17 — so neither
+number hid a regression. The narrower, `-m`-filtered command is the correct one
+because it is scope-filtered, not because it avoids writing.
 
 ---
 
