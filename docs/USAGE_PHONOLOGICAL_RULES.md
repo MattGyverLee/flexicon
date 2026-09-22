@@ -4,12 +4,11 @@ This guide shows how to work with phonological rules in Flexicon, including the 
 
 ## Overview
 
-Phonological rules in FieldWorks come in three concrete types:
+Phonological rules in FieldWorks come in two concrete types:
 - **PhRegularRule**: Standard phonological rules with output specifications
 - **PhMetathesisRule**: Metathesis rules that swap segments
-- **PhReduplicationRule**: Reduplication rules that repeat segments
 
-All three types share common properties (name, direction, input contexts) but have type-specific properties.
+Both types share common properties (name, direction, input contexts) but have type-specific properties.
 
 Flexicon provides a unified interface through the `PhonologicalRule` wrapper class, which transparently handles these differences so you don't need to check `ClassName` or cast objects manually.
 
@@ -40,7 +39,8 @@ for rule in phonRuleOps.GetAll():
             print(f"Output: {rhs}")
     elif rule.ClassName == 'PhMetathesisRule':
         concrete = cast_to_concrete(rule)
-        for part in concrete.LeftPartOfMetathesisOS:
+        left, right = rule.metathesis_parts
+        for part in left:
             print(f"Left part: {part}")
 
 project.CloseProject()
@@ -63,10 +63,9 @@ rules = phonRuleOps.GetAll()
 
 # Print collection shows type breakdown
 print(rules)
-# RuleCollection (12 total)
-#   PhRegularRule: 7 (58%)
-#   PhMetathesisRule: 3 (25%)
-#   PhReduplicationRule: 2 (17%)
+# RuleCollection (10 total)
+#   PhRegularRule: 7 (70%)
+#   PhMetathesisRule: 3 (30%)
 
 # Access properties directly on wrapped rules
 for rule in rules:
@@ -116,11 +115,6 @@ if rule.has_output_specs:
 if rule.has_metathesis_parts:
     left_parts, right_parts = rule.metathesis_parts
     # Process metathesis parts
-
-# Check if rule is a reduplication rule
-if rule.has_redup_parts:
-    left_parts, right_parts = rule.redup_parts
-    # Process reduplication parts
 ```
 
 ### Filtering Rules
@@ -133,7 +127,6 @@ rules = phonRuleOps.GetAll()
 # Filter to specific type
 regular_rules = rules.regular_rules()
 metathesis_rules = rules.metathesis_rules()
-redup_rules = rules.redup_rules()
 
 # Filter by name (case-sensitive)
 voicing_rules = rules.filter(name_contains='voicing')
@@ -187,11 +180,6 @@ if regular_rule := rule.as_regular_rule():
 # For metathesis rules
 if metathesis_rule := rule.as_metathesis_rule():
     # Access IPhMetathesisRule interface directly
-    # Advanced C# operations...
-
-# For reduplication rules
-if redup_rule := rule.as_reduplication_rule():
-    # Access IPhReduplicationRule interface directly
     # Advanced C# operations...
 
 # Or access raw concrete directly
@@ -271,15 +259,13 @@ else:
 ```python
 rule = rules[0]
 
-print(rule.class_type)  # 'PhRegularRule', 'PhMetathesisRule', or 'PhReduplicationRule'
+print(rule.class_type)  # 'PhRegularRule' or 'PhMetathesisRule'
 
 # Or use capability checks
 if rule.has_output_specs:
     print("This is a PhRegularRule")
 elif rule.has_metathesis_parts:
     print("This is a PhMetathesisRule")
-elif rule.has_redup_parts:
-    print("This is a PhReduplicationRule")
 ```
 
 ### Can I still use operation methods with wrapped rules?

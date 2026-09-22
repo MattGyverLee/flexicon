@@ -125,10 +125,9 @@ rules = project.PhonRules.GetAll()  # Returns RuleCollection
 
 # Display shows type breakdown
 print(rules)
-# Output: Phonological Rules (12 total)
-#   PhRegularRule: 7 (58%)
-#   PhMetathesisRule: 3 (25%)
-#   PhReduplicationRule: 2 (17%)
+# Output: Phonological Rules (10 total)
+#   PhRegularRule: 7 (70%)
+#   PhMetathesisRule: 3 (30%)
 
 # Filter works across all types
 voicing_rules = rules.filter(name_contains='voicing')
