@@ -55,7 +55,7 @@ for rule in rules:
         print(concrete.RightHandSidesOS)  # Now it works
     elif rule.ClassName == 'PhMetathesisRule':
         concrete = IPhMetathesisRule(rule)  # Different cast needed
-        print(concrete.LeftPartOfMetathesisOS)
+        print(concrete.StrucDescOS)  # Via StrucDescOS + switch indices
 ```
 
 This is error-prone and clutters user code.
@@ -84,7 +84,7 @@ for rule in rules:
         print(rule.RightHandSidesOS)  # Just works!
     elif rule.class_type == 'PhMetathesisRule':
         # Different concrete type, same seamless access
-        print(rule.LeftPartOfMetathesisOS)
+        left, right = rule.metathesis_parts  # Via StrucDescOS + switch indices
 
     # Or use capability checks instead of type checking
     if rule.has_output_specs:
@@ -275,12 +275,7 @@ class PhonologicalRule(LCMObjectWrapper):
     @property
     def has_metathesis_parts(self):
         """Check if rule has metathesis parts (Metathesis rules only)."""
-        return self.get_property('LeftPartOfMetathesisOS') is not None
-
-    @property
-    def has_reduplication_parts(self):
-        """Check if rule has reduplication parts (Reduplication rules only)."""
-        return self.get_property('LeftPartOfReduplicationOS') is not None
+        return self.get_property('StrucDescOS') is not None and len(self.get_property('StrucDescOS', [])) > 0
 
     # ========== Convenience Properties ==========
     # These provide common functionality across all types
@@ -307,12 +302,7 @@ class PhonologicalRule(LCMObjectWrapper):
     #   - rule.RightHandSidesOS
     #
     # Metathesis rules:
-    #   - rule.LeftPartOfMetathesisOS
-    #   - rule.RightPartOfMetathesisOS
-    #
-    # Reduplication rules:
-    #   - rule.LeftPartOfReduplicationOS
-    #   - rule.RightPartOfReduplicationOS
+    #   - rule.metathesis_parts (reads StrucDescOS + switch indices)
 
 
 # Usage example in operations class
@@ -410,10 +400,7 @@ for rule in rules:
         output = rule.RightHandSidesOS  # Transparent access
 
     if rule.has_metathesis_parts:
-        left = rule.LeftPartOfMetathesisOS
-
-    if rule.has_reduplication_parts:
-        left = rule.LeftPartOfReduplicationOS
+        left, right = rule.metathesis_parts
 ```
 
 The second approach is:

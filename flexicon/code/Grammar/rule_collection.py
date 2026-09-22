@@ -16,10 +16,9 @@ Smart collection class for phonological rules.
 
 This module provides RuleCollection, a smart collection that manages
 phonological rules while showing type diversity and supporting unified
-operations across the three concrete types:
+operations across the concrete types that exist in this LCM:
 - PhRegularRule
 - PhMetathesisRule
-- PhReduplicationRule
 
 Problem:
     GetAll() returns objects with multiple concrete implementations. Users
@@ -34,7 +33,7 @@ Solution:
     - __str__() showing type breakdown
     - by_type() filtering to specific concrete types
     - filter() for common criteria (name_contains, direction, stratum)
-    - Convenience methods (regular_rules(), metathesis_rules(), redup_rules())
+    - Convenience methods (regular_rules(), metathesis_rules())
     - Chainable filtering: rules.regular_rules().filter(name_contains='voicing')
 
 Example::
@@ -47,7 +46,6 @@ Example::
     # RuleCollection (12 total)
     #   PhRegularRule: 7 (58%)
     #   PhMetathesisRule: 3 (25%)
-    #   PhReduplicationRule: 2 (17%)
 
     # Filter by type
     regular_only = rules.regular_rules()
@@ -63,6 +61,8 @@ Example::
     for rule in rules:
         print(rule.name)
 """
+
+import warnings
 
 from ..Shared.smart_collection import SmartCollection
 from .phonological_rule import PhonologicalRule
@@ -84,6 +84,7 @@ class RuleCollection(SmartCollection):
         rules = phonRuleOps.GetAll()  # Returns RuleCollection
         print(rules)  # Shows type breakdown
         regular = rules.regular_rules()  # Filter to PhRegularRule
+        metathesis = rules.metathesis_rules()  # Filter to PhMetathesisRule
         voicing = rules.filter(name_contains='voicing')  # Name filter
         both = rules.regular_rules().filter(name_contains='voicing')  # Chain
     """
@@ -261,27 +262,22 @@ class RuleCollection(SmartCollection):
 
     def redup_rules(self):
         """
-        Get only the reduplication (PhReduplicationRule) rules from the collection.
+        Deprecated. Returns an empty RuleCollection.
 
-        Convenience method for filtering to PhReduplicationRule objects only.
+        PhReduplicationRule is not supported by this LCM and this method will
+        be removed in flexicon v5.0.0.
 
         Returns:
-            RuleCollection: New collection with only PhReduplicationRule objects.
-
-        Example::
-
-            redup = rules.redup_rules()
-            print(f"Found {len(redup)} reduplication rules")
-
-            # Chain with other filters
-            prefix_redup = rules.redup_rules().filter(name_contains='prefix')
-
-        Notes:
-            - Equivalent to by_type('PhReduplicationRule')
-            - Reduplication rules repeat segments
-            - Use has_redup_parts on individual rules to check type
+            RuleCollection: Empty collection.
         """
-        return self.by_type("PhReduplicationRule")
+        warnings.warn(
+            "RuleCollection.redup_rules() is deprecated; PhReduplicationRule is "
+            "not supported by this LCM and this method will be removed in "
+            "flexicon v5.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return RuleCollection()
 
     def __repr__(self):
         """Technical representation."""

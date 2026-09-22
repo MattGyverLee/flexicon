@@ -113,10 +113,9 @@ class PhonologicalRuleOperations(BaseOperations):
             >>> phonRuleOps = PhonologicalRuleOperations(project)
             >>> rules = phonRuleOps.GetAll()
             >>> print(rules)  # Shows type breakdown
-            RuleCollection (12 total)
-              PhRegularRule: 7 (58%)
-              PhMetathesisRule: 3 (25%)
-              PhReduplicationRule: 2 (17%)
+            RuleCollection (10 total)
+              PhRegularRule: 7 (70%)
+              PhMetathesisRule: 3 (30%)
 
             >>> # Access individual rules
             >>> for rule in rules:
@@ -1334,8 +1333,8 @@ class PhonologicalRuleOperations(BaseOperations):
 
         Notes:
             - Preserves the source's concrete subtype: a PhMetathesisRule
-              source produces a PhMetathesisRule duplicate, etc. Dispatches
-              on source.ClassName to pick the matching factory. (issue #126)
+              source produces a PhMetathesisRule duplicate. Dispatches on
+              source.ClassName to pick the matching factory. (issue #126)
             - insert_after=True preserves the original rule's position
             - Copies all simple properties: Name, Description, Direction, StratumRA
             - Copies all owned objects when deep=True:
@@ -1355,18 +1354,17 @@ class PhonologicalRuleOperations(BaseOperations):
 
         phon_data = self.project.lp.PhonologicalDataOA
 
-        # Dispatch on the source's concrete subtype so a metathesis or
-        # reduplication rule duplicate doesn't silently become a regular
-        # rule. PhonRulesOS is polymorphic (PhRegularRule, PhMetathesisRule,
-        # PhReduplicationRule); CreateAndAppendElement and the previous
-        # IPhRegularRuleFactory-only fallback both produced PhRegularRule
-        # regardless of source. Same fix shape as 76204e0 (#27) for
+        # Dispatch on the source's concrete subtype so a metathesis rule
+        # duplicate doesn't silently become a regular rule. PhonRulesOS is
+        # polymorphic (PhRegularRule, PhMetathesisRule); CreateAndAppendElement
+        # and the previous IPhRegularRuleFactory-only fallback both produced
+        # PhRegularRule regardless of source. Same fix shape as 76204e0 (#27) for
         # NaturalClassOperations.Duplicate. (issue #126)
         #
         # Resolve the factory through lcm_casting's _get_factory_for_class
-        # rather than importing IPh{Metathesis,Reduplication}RuleFactory at
-        # module load. Some pythonnet/LCM builds don't expose all three
-        # factory interfaces at import time; lcm_casting wraps the lookup
+        # rather than importing IPh{Metathesis}RuleFactory at module load. Some
+        # pythonnet/LCM builds don't expose both factory interfaces at import
+        # time; lcm_casting wraps the lookup
         # in a try/except and returns None if the factory isn't bindable
         # on the current build. That lets PhonologicalRuleOperations
         # itself remain importable everywhere, and surfaces a clear
@@ -1381,7 +1379,7 @@ class PhonologicalRuleOperations(BaseOperations):
                 f"Cannot duplicate rule of class {source_class!r}: no "
                 f"factory available on this LCM build. Known concrete "
                 f"phonological rule types are PhRegularRule, "
-                f"PhMetathesisRule, PhReduplicationRule."
+                f"PhMetathesisRule."
             )
         with self._TransactionCM("Duplicate phonological rule"):
             duplicate = factory.Create()

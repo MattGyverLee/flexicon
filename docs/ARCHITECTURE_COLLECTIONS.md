@@ -20,8 +20,7 @@ rules = phonRuleOps.GetAll()
 # Returns rules that are:
 #   - 7 PhRegularRule objects
 #   - 3 PhMetathesisRule objects
-#   - 2 PhReduplicationRule objects
-# Total: 12 rules, but 3 different concrete types
+# Total: 10 rules, but 2 different concrete types
 ```
 
 This creates challenges for users:
@@ -50,9 +49,8 @@ for rule in raw_rules:
 for rule in raw_rules:
     if rule.ClassName == 'PhRegularRule':
         print(rule.RightHandSidesOS)
-    elif rule.ClassName == 'PhMetathesisRule':
-        print(rule.LeftPartOfMetathesisOS)
-    # ... more type checks
+    el    elif rule.ClassName == 'PhMetathesisRule':
+        left, right = rule.metathesis_parts
 ```
 
 ---
@@ -75,10 +73,9 @@ rules = phonRuleOps.GetAll()  # Returns SmartCollection
 # Type breakdown visible on display
 print(rules)
 # Output:
-# PhonologicalRuleCollection (12 total)
-#   PhRegularRule: 7 (58%)
-#   PhMetathesisRule: 3 (25%)
-#   PhReduplicationRule: 2 (17%)
+# PhonologicalRuleCollection (10 total)
+#   PhRegularRule: 7 (70%)
+#   PhMetathesisRule: 3 (30%)
 
 # Easy type filtering
 regular_only = rules.by_type('PhRegularRule')  # Returns 7-item collection
@@ -206,10 +203,9 @@ rules = phonRuleOps.GetAll()
 
 print(rules)
 # Output:
-# PhonologicalRuleCollection (12 total)
-#   PhRegularRule: 7 (58%)
-#   PhMetathesisRule: 3 (25%)
-#   PhReduplicationRule: 2 (17%)
+# PhonologicalRuleCollection (10 total)
+#   PhRegularRule: 7 (70%)
+#   PhMetathesisRule: 3 (30%)
 
 # Empty collections show clearly
 empty_rules = rules.by_type('NonExistentType')
@@ -268,10 +264,9 @@ class PhonologicalRuleCollection(SmartCollection):
     and provides domain-specific filtering.
 
     Type breakdown displayed on print():
-        PhonologicalRuleCollection (12 total)
-          PhRegularRule: 7 (58%)
-          PhMetathesisRule: 3 (25%)
-          PhReduplicationRule: 2 (17%)
+        PhonologicalRuleCollection (10 total)
+          PhRegularRule: 7 (70%)
+          PhMetathesisRule: 3 (30%)
     """
 
     def __init__(self, items=None):
@@ -346,7 +341,7 @@ class PhonologicalRuleCollection(SmartCollection):
 
             rules = phonRuleOps.GetAll()
             counts = rules.by_type_count()
-            # {'PhRegularRule': 7, 'PhMetathesisRule': 3, 'PhReduplicationRule': 2}
+            # {'PhRegularRule': 7, 'PhMetathesisRule': 3}
         """
         counts = {}
         for item in self._items:
@@ -389,15 +384,6 @@ class PhonologicalRuleCollection(SmartCollection):
             PhonologicalRuleCollection: Filtered to PhMetathesisRule only.
         """
         return self.by_type('PhMetathesisRule')
-
-    def reduplication_rules(self):
-        """
-        Get just the reduplication rules (convenience method).
-
-        Returns:
-            PhonologicalRuleCollection: Filtered to PhReduplicationRule only.
-        """
-        return self.by_type('PhReduplicationRule')
 ```
 
 ### Pattern: Lexical Entry Collection
@@ -506,10 +492,9 @@ rules = phonRuleOps.GetAll()
 # Display type breakdown
 print(rules)
 # Output:
-# PhonologicalRuleCollection (12 total)
-#   PhRegularRule: 7 (58%)
-#   PhMetathesisRule: 3 (25%)
-#   PhReduplicationRule: 2 (17%)
+# PhonologicalRuleCollection (10 total)
+#   PhRegularRule: 7 (70%)
+#   PhMetathesisRule: 3 (30%)
 
 # Iterate and access properties
 for rule in rules:

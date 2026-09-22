@@ -44,12 +44,11 @@ Example::
             return RuleCollection(filtered)
 
     # Usage
-    rules = phonRuleOps.GetAll()  # Returns RuleCollection with 12 rules
+    rules = phonRuleOps.GetAll()  # Returns RuleCollection with 10 rules
     print(rules)  # Shows type breakdown
-    # "Phonological Rules (12 total)"
-    # "  PhRegularRule: 7 (58%)"
-    # "  PhMetathesisRule: 3 (25%)"
-    # "  PhReduplicationRule: 2 (17%)"
+    # "Phonological Rules (10 total)"
+    # "  PhRegularRule: 7 (70%)"
+    # "  PhMetathesisRule: 3 (30%)"
 
     # Filter to specific type
     regular_rules = rules.by_type('PhRegularRule')
@@ -157,10 +156,9 @@ class SmartCollection(Iterable):
 
         Returns:
             str: Human-readable summary like:
-                "Phonological Rules (12 total)"
-                "  PhRegularRule: 7 (58%)"
-                "  PhMetathesisRule: 3 (25%)"
-                "  PhReduplicationRule: 2 (17%)"
+                "Phonological Rules (10 total)"
+                "  PhRegularRule: 7 (70%)"
+                "  PhMetathesisRule: 3 (30%)"
 
         Example::
 

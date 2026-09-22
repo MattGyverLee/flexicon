@@ -559,6 +559,37 @@ To obtain a genuinely typeless `IMoForm` for testing, clear
 Evidence: `specs/254-getmorphtype-allomorph/evidence/live-cycle2-fix.md`
 (item 4, Sena 3, 2026-09-06).
 
+### The `SegmentRA` and `NaturalClassRA` fields (issue #326, RESOLVED)
+
+`IPhSimpleContextSeg` and `IPhSimpleContextNC` previously had wrapper properties named `segment` and `natural_class` that read nonexistent `SegmentRA` and `NaturalClassRA` fields. Live reflection confirmed these fields do not exist on the real LCM types.
+
+The actual fields are:
+
+| Object type | Invented name | Real field | Real type | Notes |
+|---|---|---|---|---|
+| `IPhSimpleContextSeg` | `SegmentRA` | `FeatureStructureRA` | `IPhPhoneme` (cast from `IPhFeatureStructure`) | Live instances observed; the simple segment context points to a phoneme via the feature-structure link |
+| `IPhSimpleContextNC` | `NaturalClassRA` | `FeatureStructureRA` | `IPhNaturalClass` (cast from `IPhFeatureStructure`) | Live instances observed; the simple natural-class context points to a natural class via the feature-structure link |
+
+**Fix**: `PhonologicalContext.segment` and `.natural_class` properties now read `FeatureStructureRA` and cast/return the concrete type (`IPhPhoneme` / `IPhNaturalClass`). The property names are kept (for API stability) even though the field name changed.
+
+Evidence: `specs/326-phonological-wrapper-members/evidence/live-programmer-context-links.json` (2026-09-22, live reflection and read-back).
+
+### The metathesis part model (issue #326, RESOLVED)
+
+`IPhMetathesisRule` previously had wrapper properties `has_metathesis_parts` and `metathesis_parts` that read nonexistent `LeftPartOfMetathesisOS` and `RightPartOfMetathesisOS` fields. Live reflection confirmed these fields do not exist on the real LCM type.
+
+The actual structure is:
+
+| Field | Type | Notes |
+|---|---|---|
+| `StrucDescOS` | `ILcmOwningSequence<IPhContextOrVar>` | Ordered list of structural-description contexts; one continuous sequence containing the two swapped parts |
+| `LeftSwitchIndex` | `int` | Start offset of the left swapped part in `StrucDescOS` |
+| `LeftSwitchLimit` | `int` | End offset of the left swapped part (exclusive; `LeftSwitchLimit - LeftSwitchIndex` = length) |
+| `RightSwitchIndex` | `int` | Start offset of the right swapped part in `StrucDescOS` |
+| `RightSwitchLimit` | `int` | End offset of the right swapped part (exclusive) |
+
+**Fix**: `PhonologicalRule.has_metathesis_parts` and `.metathesis_parts` now read `StrucDescOS` and extract the two parts using the switch indices/limits. Returns `(left_parts, right_parts)` tuple of `ContextCollection` items. This is a **BREAKING behavioral fix** (no signature change; corrected return value per house convention for minor-version repairs). Evidence: `specs/326-phonological-wrapper-members/evidence/live-programmer-metathesis.json` (2026-09-22, live reflection and switch-index verification).
+
 ### Recommended pattern
 
 Before touching a field whose type you have not verified for *this specific LCM type*, check this table. If the type is not listed here, verify via the LCM source in `liblcm/src/SIL.LCModel/InterfaceAdditions.cs` or by reading another Operations class that already handles the same type correctly.

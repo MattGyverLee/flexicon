@@ -15,10 +15,9 @@
 Wrapper class for phonological rule objects with unified interface.
 
 This module provides PhonologicalRule, a wrapper class that transparently
-handles the three concrete types of phonological rules:
+handles the concrete types of phonological rules that exist in this LCM:
 - PhRegularRule: Standard rules with output specifications
 - PhMetathesisRule: Metathesis rules with swapped segments
-- PhReduplicationRule: Reduplication rules with repeated segments
 
 The wrapper exposes a unified interface for accessing common properties
 and provides convenience methods for checking type-specific capabilities
@@ -27,8 +26,8 @@ without exposing the underlying ClassName or casting complexity.
 Problem:
     Phonological rules have different properties depending on their concrete type:
     - PhRegularRule has RightHandSidesOS (output specs)
-    - PhMetathesisRule has LeftPartOfMetathesisOS, RightPartOfMetathesisOS
-    - PhReduplicationRule has LeftPartOfReduplicationOS, RightPartOfReduplicationOS
+    - PhMetathesisRule has StrucDescOS plus switch-index fields
+      (LeftSwitchIndex, LeftSwitchLimit, RightSwitchIndex, RightSwitchLimit)
 
     All have StrucDescOS (input contexts), Name, Direction, etc.
 
@@ -38,7 +37,7 @@ Problem:
 Solution:
     PhonologicalRule wrapper provides:
     - Simple properties for common features (name, input_contexts)
-    - Capability check properties (has_output_specs, has_metathesis_parts, etc.)
+    - Capability check properties (has_output_specs, has_metathesis_parts)
     - Property access that works across all types
     - Optional: Methods for advanced users who know C# types
 
@@ -61,7 +60,8 @@ Example::
             print(f"Output: {spec}")
 
     if wrapped.has_metathesis_parts:
-        print("This is a metathesis rule")
+        left, right = wrapped.metathesis_parts
+        print(f"Swap: {left} <-> {right}")
 
     # Optional: Advanced users can access concrete types
     if wrapped.as_regular_rule():
@@ -69,24 +69,35 @@ Example::
         # Use concrete interface for advanced operations
 """
 
+import logging
+import warnings
+
 from ..Shared.wrapper_base import LCMObjectWrapper
-from ..lcm_casting import cast_to_concrete
 from ..System.phonological_context import PhonologicalContext
 from ..System.context_collection import ContextCollection
+
+logger = logging.getLogger(__name__)
+
+
+# Common deprecation message for the PhReduplicationRule public surface that
+# T4 (lex-author) ruled to deprecate-then-remove at flexicon v5.0.0.
+_REDUP_DEPRECATION_MSG = (
+    "{name} is deprecated; PhReduplicationRule is not supported by this LCM "
+    "and will be removed in flexicon v5.0.0."
+)
 
 
 class PhonologicalRule(LCMObjectWrapper):
     """
     Wrapper for phonological rule objects providing unified interface access.
 
-    Handles the three concrete types of phonological rules (PhRegularRule,
-    PhMetathesisRule, PhReduplicationRule) transparently, providing common
+    Handles the concrete types of phonological rules that exist in this LCM
+    (PhRegularRule, PhMetathesisRule) transparently, providing common
     properties and capability checks without exposing ClassName or casting.
 
     Attributes:
         _obj: The base interface object (IPhSegmentRule)
-        _concrete: The concrete type object (IPhRegularRule, IPhMetathesisRule,
-                  or IPhReduplicationRule)
+        _concrete: The concrete type object (IPhRegularRule or IPhMetathesisRule)
 
     Example::
 
@@ -201,7 +212,7 @@ class PhonologicalRule(LCMObjectWrapper):
 
         Notes:
             - StrucDescOS contains the input specifications
-            - Works on all rule types (regular, metathesis, reduplication)
+            - Works on all rule types (regular, metathesis)
             - Returns ContextCollection for convenient filtering and type checking
             - Contexts are wrapped in PhonologicalContext for unified interface
         """
@@ -233,8 +244,7 @@ class PhonologicalRule(LCMObjectWrapper):
 
         Notes:
             - Only PhRegularRule has output specifications
-            - PhMetathesisRule and PhReduplicationRule have their own
-              output representations
+            - PhMetathesisRule uses StrucDescOS plus switch indices
         """
         try:
             return self.class_type == "PhRegularRule" and hasattr(self._concrete, "RightHandSidesOS")
@@ -265,19 +275,73 @@ class PhonologicalRule(LCMObjectWrapper):
             return []
 
         try:
-            if hasattr(self._concrete, "RightHandSidesOS"):
-                return list(self._concrete.RightHandSidesOS)
-            return []
+            return list(self._concrete.RightHandSidesOS)
         except Exception:
             return []
+
+    def _is_valid_index_range(self, start, end, count):
+        """Return True when 0 <= start < end <= count and both are set."""
+        try:
+            if start is None or end is None:
+                return False
+            start = int(start)
+            end = int(end)
+            if start < 0 or end < 0:
+                return False
+            return 0 <= start < end <= count
+        except Exception:
+            return False
+
+    def _get_int_field(self, obj, name, default=-1):
+        """Safely read an integer field from an LCM object."""
+        try:
+            val = getattr(obj, name, default)
+            if val is None:
+                return default
+            return int(val)
+        except Exception:
+            return default
+
+    def _metathesis_ranges(self):
+        """
+        Return validated (left_start, left_end, right_start, right_end) slices
+        for a PhMetathesisRule, or None when the rule is not a metathesis rule
+        or the switch ranges are unset/invalid.
+        """
+        try:
+            if self.class_type != "PhMetathesisRule":
+                return None
+
+            sd = self._concrete.StrucDescOS
+            count = getattr(sd, "Count", None)
+            if count is None:
+                count = len(list(sd))
+            if count == 0:
+                return None
+
+            left_start = self._get_int_field(self._concrete, "LeftSwitchIndex")
+            left_end = self._get_int_field(self._concrete, "LeftSwitchLimit")
+            right_start = self._get_int_field(self._concrete, "RightSwitchIndex")
+            right_end = self._get_int_field(self._concrete, "RightSwitchLimit")
+
+            if not self._is_valid_index_range(left_start, left_end, count):
+                return None
+            if not self._is_valid_index_range(right_start, right_end, count):
+                return None
+
+            return left_start, left_end, right_start, right_end
+        except Exception:
+            logger.debug("_metathesis_ranges: failed to read switch indices", exc_info=True)
+            return None
 
     @property
     def has_metathesis_parts(self):
         """
-        Check if this rule is a metathesis rule.
+        Check if this rule has non-empty metathesis parts.
 
         Returns:
-            bool: True if this is a PhMetathesisRule with metathesis parts.
+            bool: True if this is a PhMetathesisRule whose StrucDescOS can be
+                sliced into left and right switch ranges.
 
         Example::
 
@@ -287,16 +351,10 @@ class PhonologicalRule(LCMObjectWrapper):
 
         Notes:
             - Only PhMetathesisRule objects have this capability
+            - Empty or index-unset rules report False gracefully
             - Use metathesis_parts to get the actual parts
         """
-        try:
-            return (
-                self.class_type == "PhMetathesisRule"
-                and hasattr(self._concrete, "LeftPartOfMetathesisOS")
-                and hasattr(self._concrete, "RightPartOfMetathesisOS")
-            )
-        except Exception:
-            return False
+        return self._metathesis_ranges() is not None
 
     @property
     def metathesis_parts(self):
@@ -304,100 +362,72 @@ class PhonologicalRule(LCMObjectWrapper):
         Get the metathesis parts (left and right swapped segments).
 
         Returns:
-            tuple: (left_parts, right_parts) where each is a list of contexts,
-                   or ([], []) if not a metathesis rule.
+            tuple: (left_collection, right_collection) where each is a
+                ContextCollection of PhonologicalContext wrappers, or two empty
+                collections if this is not a metathesis rule with valid ranges.
 
         Example::
 
             if wrapped.has_metathesis_parts:
                 left, right = wrapped.metathesis_parts
                 for part in left:
-                    print(f"Left swapped part: {part}")
+                    print(f"Left swapped part: {part.context_name}")
 
         Notes:
             - Only PhMetathesisRule has these parts
+            - Parts are derived from StrucDescOS using the switch-index fields
+              LeftSwitchIndex/LeftSwitchLimit and RightSwitchIndex/RightSwitchLimit
             - Use has_metathesis_parts to check before accessing
         """
-        if not self.has_metathesis_parts:
-            return [], []
+        ranges = self._metathesis_ranges()
+        if ranges is None:
+            return ContextCollection(), ContextCollection()
 
+        left_start, left_end, right_start, right_end = ranges
         try:
-            left = (
-                list(self._concrete.LeftPartOfMetathesisOS) if hasattr(self._concrete, "LeftPartOfMetathesisOS") else []
-            )
-            right = (
-                list(self._concrete.RightPartOfMetathesisOS)
-                if hasattr(self._concrete, "RightPartOfMetathesisOS")
-                else []
-            )
-            return left, right
+            contexts = list(self._concrete.StrucDescOS)
+            left = [PhonologicalContext(ctx) for ctx in contexts[left_start:left_end]]
+            right = [PhonologicalContext(ctx) for ctx in contexts[right_start:right_end]]
+            return ContextCollection(left), ContextCollection(right)
         except Exception:
-            return [], []
+            logger.debug("metathesis_parts: failed to slice StrucDescOS", exc_info=True)
+            return ContextCollection(), ContextCollection()
 
     @property
     def has_redup_parts(self):
         """
-        Check if this rule is a reduplication rule.
+        Deprecated. Always returns False.
+
+        PhReduplicationRule is not supported by this LCM and this property will
+        be removed in flexicon v5.0.0.
 
         Returns:
-            bool: True if this is a PhReduplicationRule with reduplication parts.
-
-        Example::
-
-            if wrapped.has_redup_parts:
-                left, right = wrapped.redup_parts
-                print(f"Reduplication: {left} <-> {right}")
-
-        Notes:
-            - Only PhReduplicationRule objects have this capability
-            - Use redup_parts to get the actual parts
+            bool: False
         """
-        try:
-            return (
-                self.class_type == "PhReduplicationRule"
-                and hasattr(self._concrete, "LeftPartOfReduplicationOS")
-                and hasattr(self._concrete, "RightPartOfReduplicationOS")
-            )
-        except Exception:
-            return False
+        warnings.warn(
+            _REDUP_DEPRECATION_MSG.format(name="PhonologicalRule.has_redup_parts"),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return False
 
     @property
     def redup_parts(self):
         """
-        Get the reduplication parts (left and right repeated segments).
+        Deprecated. Always returns two empty collections.
+
+        PhReduplicationRule is not supported by this LCM and this property will
+        be removed in flexicon v5.0.0.
 
         Returns:
-            tuple: (left_parts, right_parts) where each is a list of contexts,
-                   or ([], []) if not a reduplication rule.
-
-        Example::
-
-            if wrapped.has_redup_parts:
-                left, right = wrapped.redup_parts
-                for part in left:
-                    print(f"Left reduplicated part: {part}")
-
-        Notes:
-            - Only PhReduplicationRule has these parts
-            - Use has_redup_parts to check before accessing
+            tuple: (ContextCollection(), ContextCollection())
         """
-        if not self.has_redup_parts:
-            return [], []
-
-        try:
-            left = (
-                list(self._concrete.LeftPartOfReduplicationOS)
-                if hasattr(self._concrete, "LeftPartOfReduplicationOS")
-                else []
-            )
-            right = (
-                list(self._concrete.RightPartOfReduplicationOS)
-                if hasattr(self._concrete, "RightPartOfReduplicationOS")
-                else []
-            )
-            return left, right
-        except Exception:
-            return [], []
+        warnings.warn(
+            _REDUP_DEPRECATION_MSG.format(name="PhonologicalRule.redup_parts"),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return ContextCollection(), ContextCollection()
 
     # ========== Advanced: Direct C# class access (optional for power users) ==========
 
@@ -459,28 +489,19 @@ class PhonologicalRule(LCMObjectWrapper):
 
     def as_reduplication_rule(self):
         """
-        Cast to IPhReduplicationRule if this is a reduplication rule.
+        Deprecated. Always returns None.
 
-        For advanced users who need direct access to the C# concrete interface.
-        Returns None if this is not a PhReduplicationRule.
+        PhReduplicationRule is not supported by this LCM and this method will
+        be removed in flexicon v5.0.0.
 
         Returns:
-            IPhReduplicationRule or None: The concrete interface if this is a
-                PhReduplicationRule, None otherwise.
-
-        Example::
-
-            if rule_obj.as_reduplication_rule():
-                concrete = rule_obj.as_reduplication_rule()
-                # Can now access IPhReduplicationRule-specific methods/properties
-
-        Notes:
-            - For users who know C# interfaces and want advanced control
-            - Most users should use properties like has_redup_parts and
-              redup_parts instead
+            None
         """
-        if self.class_type == "PhReduplicationRule":
-            return self._concrete
+        warnings.warn(
+            _REDUP_DEPRECATION_MSG.format(name="PhonologicalRule.as_reduplication_rule()"),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return None
 
     @property
@@ -492,8 +513,8 @@ class PhonologicalRule(LCMObjectWrapper):
         directly without going through wrapper properties.
 
         Returns:
-            The concrete interface object (IPhRegularRule, IPhMetathesisRule,
-            or IPhReduplicationRule depending on the rule's actual type).
+            The concrete interface object (IPhRegularRule or IPhMetathesisRule
+            depending on the rule's actual type).
 
         Example::
 

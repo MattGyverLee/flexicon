@@ -39,7 +39,7 @@ for context in contexts:
     if class_name == 'PhSimpleContextSeg':
         # Need to cast to concrete interface
         seg_context = IPhSimpleContextSeg(context)
-        segment = seg_context.SegmentRA
+        segment = seg_context.FeatureStructureRA  # Link to IPhPhoneme
         print(f"Segment: {segment.Name}")
 
     elif class_name == 'PhBoundaryContext':
@@ -192,7 +192,7 @@ context = rule.input_contexts[0]
 
 # Simple segment context
 if context.is_simple_context_seg:
-    segment = context.segment  # IPhSegment object
+    segment = context.segment  # IPhPhoneme object
     if segment:
         print(f"Segment: {segment.Name}")
 
@@ -256,7 +256,7 @@ context = rule.input_contexts[0]
 if context.is_simple_context_seg:
     concrete = context.as_simple_context_seg()
     # concrete is now IPhSimpleContextSeg
-    segment_ref = concrete.SegmentRA
+    segment_ref = concrete.FeatureStructureRA  # Link to IPhPhoneme
 
     # Can call methods on concrete interface
     # (if any exist)
