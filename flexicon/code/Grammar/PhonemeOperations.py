@@ -109,10 +109,19 @@ class PhonemeOperations(BaseOperations):
 
     def _GetSequence(self, parent):
         """
-        Specify which sequence to reorder for phonemes.
-        For Phoneme, we reorder parent.PhonemesOS
+        Reorder operations are not supported for phonemes in a phoneme set.
+
+        ``IPhPhonemeSet.PhonemesOC`` is an unordered ``ILcmOwningCollection``;
+        there is no ``PhonemesOS`` and index-based reorder has no LCM meaning
+        (issue #301).
         """
-        return parent.PhonemesOS
+        raise NotImplementedError(
+            "PhonemeOperations does not support inherited Sort / MoveUp / "
+            "MoveDown / MoveToIndex: IPhPhonemeSet.PhonemesOC is an "
+            "unordered ILcmOwningCollection with no user-visible order. "
+            "Pass an IPhPhonemeSet as parent; manipulate PhonemesOC via LCM "
+            "if you need to add or remove phonemes."
+        )
 
     @wrap_enumerable
     @OperationsMethod
