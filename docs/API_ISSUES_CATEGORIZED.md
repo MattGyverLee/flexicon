@@ -504,7 +504,7 @@ Evidence: `specs/325-syncable-properties/evidence/live-T0-lexref-raw.json`, `liv
 | `MediaFilesRC` | Not on `IText`; sync code that guarded on it never emitted media | Removed; sync key `"media_uris"` |
 | `MediaFilesOA` on interface | Not on `IText` static interface; on concrete `DomainImpl.Text` | `cast_to_concrete(text)` then `MediaFilesOA` (may be `None`) |
 | Container collection | `ICmMediaContainer` holds `MediaURIsOC` of `ICmMediaURI` | Each URI: `MediaURI` (string), optional `MediaFileRA` (file GUID) |
-| `GetMediaFiles()` | Historically used `MediaFilesOC` on the container | `MediaURIsOC` confirmed by T0; `GetMediaFiles`/`AddMediaFile` discrepancy remains **needs_human** until verified on a project with populated media |
+| `GetMediaFiles()` / `AddMediaFile()` | Historically used `MediaFilesOC` on the container | Fixed in issue #356: both use `MediaURIsOC` / `ICmMediaURI` (R4 path) |
 
 Sync shape: `"media_uris": [{"uri": str, "file_guid": str|null}, ...]`. Live read-back of populated media was **not** verified in T3 (no media-bearing project available).
 
