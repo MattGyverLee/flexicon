@@ -3202,6 +3202,103 @@ class FLExProject(object):
         return self._scrbook_ops
 
     @property
+    def ScrNotes(self):
+        """
+        Access to Scripture note operations.
+
+        Returns:
+            ScrNoteOperations: Instance providing Scripture note methods
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("MyProject", writeEnabled=True)
+            >>> book = project.ScrBooks.Find(40)
+            >>> note = project.ScrNotes.Find(book, 0)
+            >>> print(project.ScrNotes.GetText(note))
+
+        Notes:
+            - Requires a project with Scripture (TranslatedScriptureOA)
+        """
+        if "_scrnote_ops" not in self.__dict__:
+            from .Scripture.ScrNoteOperations import ScrNoteOperations
+
+            self._scrnote_ops = ScrNoteOperations(self)
+        return self._scrnote_ops
+
+    @property
+    def ScrSections(self):
+        """
+        Access to Scripture section operations.
+
+        Returns:
+            ScrSectionOperations: Instance providing section management methods
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("MyProject", writeEnabled=True)
+            >>> book = project.ScrBooks.Find(1)
+            >>> if book:
+            ...     section = project.ScrSections.Create(book, "Creation")
+
+        Notes:
+            - Requires a project with Scripture (TranslatedScriptureOA)
+        """
+        if "_scrsection_ops" not in self.__dict__:
+            from .Scripture.ScrSectionOperations import ScrSectionOperations
+
+            self._scrsection_ops = ScrSectionOperations(self)
+        return self._scrsection_ops
+
+    @property
+    def ScrTxtParas(self):
+        """
+        Access to Scripture text paragraph operations.
+
+        Returns:
+            ScrTxtParaOperations: Instance providing paragraph methods
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("MyProject", writeEnabled=True)
+            >>> book = project.ScrBooks.Find(1)
+            >>> section = project.ScrSections.Find(book, 0)
+            >>> para = project.ScrTxtParas.Find(section, 0)
+            >>> print(project.ScrTxtParas.GetText(para))
+
+        Notes:
+            - Requires a project with Scripture (TranslatedScriptureOA)
+        """
+        if "_scrtxtpara_ops" not in self.__dict__:
+            from .Scripture.ScrTxtParaOperations import ScrTxtParaOperations
+
+            self._scrtxtpara_ops = ScrTxtParaOperations(self)
+        return self._scrtxtpara_ops
+
+    @property
+    def ScrAnnotations(self):
+        """
+        Access to Scripture annotation operations.
+
+        Returns:
+            ScrAnnotationsOperations: Instance providing annotation methods
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("MyProject", writeEnabled=True)
+            >>> book = project.ScrBooks.Find(40)
+            >>> if book:
+            ...     notes = project.ScrAnnotations.GetNotes(book)
+
+        Notes:
+            - Requires a project with Scripture (TranslatedScriptureOA)
+        """
+        if "_scrannotations_ops" not in self.__dict__:
+            from .Scripture.ScrAnnotationsOperations import ScrAnnotationsOperations
+
+            self._scrannotations_ops = ScrAnnotationsOperations(self)
+        return self._scrannotations_ops
+
+    @property
     def DataNotebook(self):
         """
         Access to data notebook operations for research notes and observations.
