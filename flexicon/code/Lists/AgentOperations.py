@@ -287,6 +287,52 @@ class AgentOperations(PossibilityItemOperations):
 
         return None
 
+    # --- Sync integration (ICmAgent is not ICmPossibility) ---
+
+    @OperationsMethod
+    def GetSyncableProperties(self, item_or_hvo):
+        """Return syncable properties for an analyzing agent.
+
+        ICmAgent exposes ``Name`` and ``Human`` but not ``Description``.
+        The inherited ``PossibilityItemOperations.GetSyncableProperties``
+        unconditionally read ``Description`` and raised ``AttributeError``
+        on every agent (issue #350).
+        """
+        self._ValidateParam(item_or_hvo, "item_or_hvo")
+
+        agent = self._PossibilityItemOperations__ResolveObject(item_or_hvo)
+
+        props = {"Guid": str(agent.Guid)}
+
+        name_alts = {}
+        for ws in self.project.WritingSystems.GetAll():
+            wsHandle = ws.Handle
+            name_str = agent.Name.get_String(wsHandle)
+            if name_str:
+                name_alts[str(wsHandle)] = ITsString(name_str).Text or ""
+
+        if name_alts:
+            props["Name"] = name_alts
+
+        props["Human"] = bool(agent.Human)
+
+        version = self.GetVersion(agent)
+        if version:
+            props["Version"] = version
+
+        return props
+
+    @OperationsMethod
+    def GetDescription(self, item_or_hvo, wsHandle=None):
+        """ICmAgent has no Description member (issue #350)."""
+        self._ValidateParam(item_or_hvo, "item_or_hvo")
+        return ""
+
+    @OperationsMethod
+    def SetDescription(self, item_or_hvo, description, wsHandle=None):
+        """ICmAgent has no Description member; intentionally a no-op (#350)."""
+        self._ValidateParam(item_or_hvo, "item_or_hvo")
+
     # --- Version and Type Management ---
 
     @OperationsMethod

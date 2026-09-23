@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`AgentOperations.GetSyncableProperties` raised `AttributeError` on every
+  agent** (#350). `ICmAgent` has `Name` but no `Description`; the method now
+  reflects agent fields (`Human`, `Version`) instead of inheriting the
+  possibility-shaped reader. `GetDescription` / `SetDescription` are overridden
+  so they no longer touch a nonexistent `Description` member.
 - **`DataNotebookOperations.SetDateOfEvent` raised `TypeError` on every call**
   (#330). `IRnGenericRec.DateOfEvent` is a GenDate field; the method now
   assigns a normalized date string (same pattern as
