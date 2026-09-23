@@ -41,6 +41,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `AllowsInstanceOf`, and `Multi`, not `InstanceOf`, `AllowsMultiple`, or
   `AnnotationType`; sync now reads the real fields and drops the nonexistent
   `AnnotationType` key.
+- **`AnthropologyOperations.GetSyncableProperties` guarded phantom OCM/category
+  members** (#359). `ICmAnthroItem` has no `AnthroCode` or `CategoryRA`; the
+  sync payload now sets `AnthroCode` from `Abbreviation` and keeps `Category`
+  as `None` without dead guards.
 
 - **`VariantOperations` sync/duplicate used phantom `ShowComplexFormsIn`** (#358).
   `ILexEntryRef` exposes `ShowComplexFormsInRS`; `GetSyncableProperties` now
