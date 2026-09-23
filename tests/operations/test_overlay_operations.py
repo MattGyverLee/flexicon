@@ -59,6 +59,36 @@ def test_get_all_reads_overlays_oc():
     assert "OverlaysOC" in get_all_block
 
 
+def test_issue303_inherited_surface_overridden():
+    """Source ratchet: possibility-shaped inherited methods must not read Description."""
+    source = _overlay_operations_source()
+    for method in (
+        "GetDescription",
+        "SetDescription",
+        "CompareTo",
+        "GetSyncableProperties",
+        "Duplicate",
+    ):
+        assert f"def {method}(self" in source, f"missing OverlayOperations.{method}"
+
+    gsp_block = source.split("def GetSyncableProperties(self, overlay_or_hvo):", 1)[1]
+    gsp_block = gsp_block.split("\n    def ", 1)[0]
+    assert "Description" not in gsp_block
+
+    dup_block = source.split("def Duplicate(self, overlay_or_hvo", 1)[1].split("\n    def ", 1)[0]
+    assert "ICmOverlayFactory" in dup_block
+    assert "OverlaysOC.Add" in dup_block
+    assert "PossibilitiesOS" not in dup_block
+
+
+def test_find_by_chart_uses_project_overlays():
+    """Source ratchet: FindByChart must not read chart.OverlaysOC (#303)."""
+    source = _overlay_operations_source()
+    block = source.split("def FindByChart(self, chart):", 1)[1].split("\n    def ", 1)[0]
+    assert "chart.OverlaysOC" not in block
+    assert "return self.GetAll()" in block
+
+
 def test_visibility_and_get_chart_drop_phantom_members():
     """Source ratchet for issue #364: no IsVisibleRA or ChartRA on ICmOverlay."""
     source = _overlay_operations_source()

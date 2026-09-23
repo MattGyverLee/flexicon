@@ -131,8 +131,19 @@ class WfiAnalysisOperations(BaseOperations):
         super().__init__(project)
 
     def _GetSequence(self, parent):
-        """Specify which sequence to reorder for wordform analyses."""
-        return parent.AnalysesOS
+        """
+        Reorder operations are not supported for wordform analyses.
+
+        ``IWfiWordform.AnalysesOC`` is an unordered ``ILcmOwningCollection``;
+        there is no ``AnalysesOS`` and index-based reorder has no LCM meaning
+        (issue #301; see ``Duplicate()`` comments in this module).
+        """
+        raise NotImplementedError(
+            "WfiAnalysisOperations does not support inherited Sort / MoveUp / "
+            "MoveDown / MoveToIndex: IWfiWordform.AnalysesOC is an unordered "
+            "ILcmOwningCollection with no user-visible order. Use LCM APIs "
+            "directly if you need to add or remove analyses."
+        )
 
     def __WSHandle(self, wsHandle):
         """

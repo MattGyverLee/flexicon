@@ -22,6 +22,15 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `None` and setters never reached the LCM** (#329). `IRnGenericRec` exposes
   `StatusRA`, `TypeRA`, and `ConfidenceRA`, not bare `Status`/`Type`/`Confidence`;
   all read/write/sync/duplicate sites now use the real RA members.
+- **`ConfidenceOperations` phantom `ConfidenceRA` scans on wordform types**
+  (#363). `GetAnalysesWithConfidence` now matches `ConfidenceRA` on research
+  notebook records (`DataNotebook.GetAll()`); interlinear `IWfiAnalysis` has
+  no confidence field. `GetGlossesWithConfidence` raises `FP_ParameterError`
+  because `IWfiGloss` has no confidence field (replacing a silent empty list).
+- **`PersonOperations.GetSyncableProperties` never emitted person languages**
+  (#362). `ICmPerson` has no `LanguagesRC`; the phantom `hasattr` guard was
+  always false, so `Languages` never entered the sync payload. The dead guard
+  is removed; real RC fields (`Positions`, `PlacesOfResidence`) are unchanged.
 - **`AgentOperations.GetSyncableProperties` raised `AttributeError` on every
   agent** (#350). `ICmAgent` has `Name` but no `Description`; the method now
   reflects agent fields (`Human`, `Version`) instead of inheriting the
@@ -45,6 +54,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `AllowsInstanceOf`, and `Multi`, not `InstanceOf`, `AllowsMultiple`, or
   `AnnotationType`; sync now reads the real fields and drops the nonexistent
   `AnnotationType` key.
+- **`AnthropologyOperations.GetSyncableProperties` guarded phantom OCM/category
+  members** (#359). `ICmAnthroItem` has no `AnthroCode` or `CategoryRA`; the
+  sync payload now sets `AnthroCode` from `Abbreviation` and keeps `Category`
+  as `None` without dead guards.
 
 - **`VariantOperations` sync/duplicate used phantom `ShowComplexFormsIn`** (#358).
   `ILexEntryRef` exposes `ShowComplexFormsInRS`; `GetSyncableProperties` now

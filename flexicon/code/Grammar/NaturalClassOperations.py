@@ -692,12 +692,13 @@ class NaturalClassOperations(BaseOperations):
 
         Notes:
             - Only works with segment-based natural classes (IPhNCSegments)
+            - Call ``IsSegmentBased()`` or ``GetType()`` before looping all classes
             - A phoneme can belong to multiple natural classes
             - Duplicate additions are typically ignored
             - For feature-based classes, define features instead
 
         See Also:
-            RemovePhoneme, GetPhonemes, Create
+            IsSegmentBased, IsFeatureBased, RemovePhoneme, GetPhonemes, Create
         """
         self._EnsureWriteEnabled()
 
@@ -707,9 +708,12 @@ class NaturalClassOperations(BaseOperations):
         nc = self.__GetNaturalClassObject(nc_or_hvo)
         phoneme = self.__GetPhonemeObject(phoneme_or_hvo)
 
-        # Check if it's a segment-based natural class
-        if not hasattr(nc, "SegmentsRC"):
-            raise FP_ParameterError("Cannot add phoneme to feature-based natural class")
+        if not self.IsSegmentBased(nc):
+            raise FP_ParameterError(
+                "Cannot add phoneme to feature-based natural class. "
+                "Use IsFeatureBased() or GetType() to branch before AddPhoneme; "
+                "for feature-based classes use SetFeatures or CreateFeatureBased."
+            )
 
         # Add the phoneme if not already present
         if phoneme not in nc.SegmentsRC:
@@ -762,9 +766,11 @@ class NaturalClassOperations(BaseOperations):
         nc = self.__GetNaturalClassObject(nc_or_hvo)
         phoneme = self.__GetPhonemeObject(phoneme_or_hvo)
 
-        # Check if it's a segment-based natural class
-        if not hasattr(nc, "SegmentsRC"):
-            raise FP_ParameterError("Cannot remove phoneme from feature-based natural class")
+        if not self.IsSegmentBased(nc):
+            raise FP_ParameterError(
+                "Cannot remove phoneme from feature-based natural class. "
+                "Use IsFeatureBased() or GetType() to branch before RemovePhoneme."
+            )
 
         # Check if phoneme is in the collection
         if phoneme not in nc.SegmentsRC:
@@ -914,6 +920,54 @@ class NaturalClassOperations(BaseOperations):
             return "segments"
         # Defensive fallback for unknown subtypes
         return nc.ClassName
+
+    @OperationsMethod
+    def IsFeatureBased(self, nc_or_hvo):
+        """
+        Return whether a natural class is feature-based (IPhNCFeatures).
+
+        Args:
+            nc_or_hvo: The IPhNaturalClass object or HVO.
+
+        Returns:
+            bool: True when ``GetType`` would return ``"features"``.
+
+        Raises:
+            FP_NullParameterError: If nc_or_hvo is None.
+
+        Example:
+            >>> for nc in project.NaturalClasses.GetAll():
+            ...     if project.NaturalClasses.IsFeatureBased(nc):
+            ...         continue  # skip AddPhoneme; use SetFeatures instead
+            ...     project.NaturalClasses.AddPhoneme(nc, phoneme)
+
+        See Also:
+            IsSegmentBased, GetType, AddPhoneme, SetFeatures
+        """
+        return self.GetType(nc_or_hvo) == "features"
+
+    @OperationsMethod
+    def IsSegmentBased(self, nc_or_hvo):
+        """
+        Return whether a natural class accepts segment membership mutators.
+
+        Args:
+            nc_or_hvo: The IPhNaturalClass object or HVO.
+
+        Returns:
+            bool: True when ``GetType`` would return ``"segments"``.
+
+        Raises:
+            FP_NullParameterError: If nc_or_hvo is None.
+
+        Example:
+            >>> if project.NaturalClasses.IsSegmentBased(nc):
+            ...     project.NaturalClasses.AddPhoneme(nc, phoneme)
+
+        See Also:
+            IsFeatureBased, GetType, AddPhoneme, RemovePhoneme
+        """
+        return self.GetType(nc_or_hvo) == "segments"
 
     @OperationsMethod
     def GetFeatures(self, nc_or_hvo):

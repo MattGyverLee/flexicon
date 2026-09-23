@@ -301,6 +301,23 @@ class TestNaturalClassFeatureBased:
             "Natural class still findable after Delete - round-trip not net-zero"
         )
 
+    def test_is_feature_based_matches_get_type(self, writable_project):
+        """IsFeatureBased / IsSegmentBased mirror GetType (issue #340)."""
+        feat = writable_project.NaturalClasses.CreateFeatureBased(
+            "test_is_feat", "tif"
+        )
+        seg = writable_project.NaturalClasses.Create(
+            "test_is_seg", "tis"
+        )
+
+        assert writable_project.NaturalClasses.IsFeatureBased(feat)
+        assert not writable_project.NaturalClasses.IsSegmentBased(feat)
+        assert writable_project.NaturalClasses.IsSegmentBased(seg)
+        assert not writable_project.NaturalClasses.IsFeatureBased(seg)
+
+        _delete_nc(writable_project, feat)
+        _delete_nc(writable_project, seg)
+
     # --- GetFeatures -----------------------------------------------------
 
     def test_get_features_raises_on_segment_nc(self, writable_project):

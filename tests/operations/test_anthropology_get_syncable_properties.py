@@ -42,3 +42,14 @@ class TestAnthropologyGetSyncablePropertiesResolve:
         source = ANTHRO_OPS.read_text(encoding="utf-8")
         assert re.search(r"def __GetItemObject\s*\(", source)
         assert not re.search(r"def __ResolveObject\s*\(", source)
+
+
+class TestAnthropologyGetSyncablePropertiesIssue359:
+    def test_gsp_does_not_guard_phantom_anthro_members(self):
+        source = ANTHRO_OPS.read_text(encoding="utf-8")
+        body = _get_syncable_properties_body(source)
+        assert 'hasattr(anthro_item, "AnthroCode")' not in body
+        assert 'hasattr(anthro_item, "CategoryRA")' not in body
+        assert 'props["Abbreviation"]' in body
+        assert 'props["AnthroCode"]' in body
+        assert 'props["Category"] = None' in body
