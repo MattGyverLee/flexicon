@@ -1998,7 +1998,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         """Get syncable properties for cross-project synchronization."""
         self._ValidateParam(item, "item")
 
-        anthro_item = self.__ResolveObject(item)
+        anthro_item = self.__GetItemObject(item)
         wsHandle = self.project.project.DefaultAnalWs
 
         props = {}
