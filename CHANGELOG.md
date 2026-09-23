@@ -18,6 +18,9 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`PhonFeatureOperations.ApplySyncableProperties` silently minted a random
+  GUID when `Values[].Guid` was present but empty** (#336). An explicit empty
+  string now raises `FP_ParameterError`; omit the key to request a minted GUID.
 - **`OpenProject` no longer constructs `ProgressDialogWithTask` on every
   open** (#289). The default progress object is now
   ``HeadlessThreadedProgress`` (no WinForms handle, no per-open leak).

@@ -52,13 +52,8 @@ import System  # noqa: E402  (only importable after the flexicon import above
 
 MALFORMED_GUIDS = ["not-a-guid", "", "   ", "d7f713e8-1234"]
 
-# __CreateValueWithGuid gates the parse behind `if guid_str:`, so an empty
-# string never reaches System.Guid() at all -- it takes the pre-existing
-# "no GUID supplied" last-resort random-create branch instead. That branch
-# is untouched by this fix, so it is deliberately excluded from this one
-# site's parametrization (unlike the other three sites, which parse
-# unconditionally and so cover "" too).
-MALFORMED_GUIDS_TRUTHY = ["not-a-guid", "   ", "d7f713e8-1234"]
+# Issue #336: explicit "" is rejected before parse/mint (unlike a missing key).
+MALFORMED_GUIDS_TRUTHY = ["not-a-guid", "", "   ", "d7f713e8-1234"]
 
 VALID_GUID_STR = "d7f713e8-1234-4d1a-9a3d-000000000001"
 
@@ -146,27 +141,6 @@ class TestPhonFeatureCreateValueWithGuid:
             (System.FormatException, System.ArgumentNullException),
         )
 
-    def test_empty_guid_string_does_not_reach_the_parse(self, monkeypatch):
-        """
-        Documents (does not newly introduce) the pre-existing behaviour
-        that '' guid_str is falsy and bypasses System.Guid() entirely,
-        taking the last-resort random-create branch instead -- so no
-        FP_ParameterError is raised here for ''. This is out of scope for
-        #334; only the other three sites parse '' unconditionally.
-        """
-        ops, mod, factory = self._ops(monkeypatch)
-        monkeypatch.setattr(
-            ops, "_TransactionCM", lambda label: _recording_transaction([], label)
-        )
-        monkeypatch.setattr(mod, "IFsSymFeatVal", lambda obj: obj)
-        added = []
-        feature = SimpleNamespace(ValuesOC=SimpleNamespace(Add=added.append))
-
-        result = ops._PhonFeatureOperations__CreateValueWithGuid(feature, "")
-
-        assert result is not None
-        assert added  # last-resort random-create path attached via Add()
-
     def test_valid_guid_still_creates_value(self, monkeypatch):
         ops, mod, factory = self._ops(monkeypatch)
         monkeypatch.setattr(
@@ -185,6 +159,29 @@ class TestPhonFeatureCreateValueWithGuid:
         # (Path B) was never invoked.
         assert factory.create_calls
         assert factory.create_calls[0][0] == System.Guid(VALID_GUID_STR)
+
+    def test_apply_values_rejects_empty_guid_key(self, monkeypatch):
+        """Public ApplySyncableProperties path via __ApplyValues (issue #336)."""
+        ops, mod, _factory = self._ops(monkeypatch)
+        monkeypatch.setattr(
+            ops,
+            "_TransactionCM",
+            lambda label: _recording_transaction([], label),
+        )
+        monkeypatch.setattr(
+            mod,
+            "IFsClosedFeature",
+            lambda obj: obj,
+        )
+        feature = SimpleNamespace(ValuesOC=[])
+
+        with pytest.raises(FP_ParameterError, match="Empty 'Guid'"):
+            ops._PhonFeatureOperations__ApplyValues(
+                feature,
+                [{"Guid": "", "Name": {}}],
+                ws_map=None,
+                fill_gaps=False,
+            )
 
 
 # ---------------------------------------------------------------------------
