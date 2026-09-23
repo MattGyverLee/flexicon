@@ -2740,6 +2740,81 @@ class LexEntryOperations(BaseOperations):
                 result.extend(self.__CollectSubsenses(subsense))
         return result
 
+    # --- Complex form type catalog (issue #305) ---
+
+    @wrap_enumerable
+    @OperationsMethod
+    def GetAllComplexFormTypes(self):
+        """
+        Get all complex form types defined in the project.
+
+        Complex form types classify compounds, idioms, and other multi-lexeme
+        entries (for example ``Composto`` / ``Compound``). The list lives at
+        ``LexDbOA.ComplexEntryTypesOA`` and is **not** reachable by a fixed
+        English name through ``PossibilityLists.FindList``.
+
+        Returns:
+            EnumerableWrapper: Each complex form type (``LexEntryType``) in the
+            project, including subtypes.
+
+        Example:
+            >>> for cf_type in project.LexEntry.GetAllComplexFormTypes():
+            ...     name = project.PossibilityLists.GetItemName(cf_type)
+            ...     print(name)
+            Compound
+            Idiom
+
+        See Also:
+            FindComplexFormType, AddComplexFormComponent,
+            ``VariantOperations.GetAllTypes``
+        """
+        lexdb = self.project.lp.LexDbOA
+        if lexdb is None or lexdb.ComplexEntryTypesOA is None:
+            return
+
+        from ..lcm_casting import cast_to_concrete
+
+        for ctype in lexdb.ComplexEntryTypesOA.PossibilitiesOS:
+            yield cast_to_concrete(ctype)
+            if ctype.SubPossibilitiesOS.Count > 0:
+                for subtype in ctype.SubPossibilitiesOS:
+                    yield cast_to_concrete(subtype)
+
+    @OperationsMethod
+    def FindComplexFormType(self, name):
+        """
+        Find a complex form type by name (case-insensitive).
+
+        Args:
+            name (str): Type name to find (for example ``Composto`` on a
+                Portuguese UI project, or ``Compound`` on an English one).
+
+        Returns:
+            The type object if found, otherwise ``None``.
+
+        Example:
+            >>> cf_type = project.LexEntry.FindComplexFormType("Compound")
+            >>> if cf_type:
+            ...     project.LexiconSetComplexFormType(entry_ref, cf_type)
+
+        See Also:
+            GetAllComplexFormTypes, ``PossibilityLists.FindItem``
+        """
+        self._ValidateParam(name, "name")
+
+        if not name or not name.strip():
+            return None
+
+        target = normalize_match_key(name, casefold=True)
+        wsHandle = self.project.project.DefaultAnalWs
+
+        for cf_type in self.GetAllComplexFormTypes():
+            type_name = ITsString(cf_type.Name.get_String(wsHandle)).Text
+            if type_name and normalize_match_key(type_name, casefold=True) == target:
+                return cf_type
+
+        return None
+
     # --- Complex Form Helper Methods (Pattern 4) ---
 
     @OperationsMethod

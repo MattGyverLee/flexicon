@@ -1679,6 +1679,9 @@ class FLExProject(object):
             >>> sense = project.LexEntry.AddSense(entry, "to move rapidly on foot")
             >>> # Set citation form
             >>> project.LexEntry.SetCitationForm(entry, "run")
+            >>> # List complex form types without touching lexDB directly
+            >>> for cf_type in project.LexEntry.GetAllComplexFormTypes():
+            ...     print(project.PossibilityLists.GetItemName(cf_type))
         """
         if "_lexentry_ops" not in self.__dict__:
             from .Lexicon.LexEntryOperations import LexEntryOperations
