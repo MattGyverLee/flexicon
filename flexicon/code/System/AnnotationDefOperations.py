@@ -1203,14 +1203,12 @@ class AnnotationDefOperations(BaseOperations):
         props["HelpString"] = ITsString(anno_def.Description.get_String(wsHandle)).Text or ""
         props["Prompt"] = ITsString(anno_def.Description.get_String(wsHandle)).Text or ""
 
-        if hasattr(anno_def, "AnnotationType"):
-            props["AnnotationType"] = int(anno_def.AnnotationType)
-        if hasattr(anno_def, "InstanceOf"):
-            props["InstanceOf"] = int(anno_def.InstanceOf)
-        if hasattr(anno_def, "UserCanCreate"):
-            props["UserCanCreate"] = bool(anno_def.UserCanCreate)
-        if hasattr(anno_def, "AllowsMultiple"):
-            props["AllowsMultiple"] = bool(anno_def.AllowsMultiple)
+        # ICmAnnotationDefn has InstanceOfSignature / AllowsInstanceOf / Multi,
+        # not InstanceOf / AllowsMultiple; no AnnotationType member (issue #361).
+        props["InstanceOf"] = int(anno_def.InstanceOfSignature)
+        props["AllowsInstanceOf"] = bool(anno_def.AllowsInstanceOf)
+        props["UserCanCreate"] = bool(anno_def.UserCanCreate)
+        props["AllowsMultiple"] = bool(anno_def.Multi)
 
         return props
 

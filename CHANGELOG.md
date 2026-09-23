@@ -24,6 +24,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   Callers may inject ``progress=`` explicitly; a passed
   ``ProgressDialogWithTask`` is disposed after ``CreateCacheFromExistingData``
   returns. Exported at the package top level as ``HeadlessThreadedProgress``.
+- **`AnnotationDefOperations.GetSyncableProperties` guarded phantom LCM
+  members** (#361). `ICmAnnotationDefn` exposes `InstanceOfSignature`,
+  `AllowsInstanceOf`, and `Multi`, not `InstanceOf`, `AllowsMultiple`, or
+  `AnnotationType`; sync now reads the real fields and drops the nonexistent
+  `AnnotationType` key.
 
 - **`VariantOperations` sync/duplicate used phantom `ShowComplexFormsIn`** (#358).
   `ILexEntryRef` exposes `ShowComplexFormsInRS`; `GetSyncableProperties` now

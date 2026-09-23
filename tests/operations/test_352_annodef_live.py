@@ -47,6 +47,10 @@ class Test352AnnoDefHelpPrompt:
             props = op.GetSyncableProperties(d)
             assert props["HelpString"] == "TEST_352 prompt text"
             assert props["Prompt"] == "TEST_352 prompt text"
+            assert "AnnotationType" not in props
+            assert props["AllowsMultiple"] is True
+            assert "InstanceOf" in props
+            assert "AllowsInstanceOf" in props
         finally:
             op.Delete(d)
 
