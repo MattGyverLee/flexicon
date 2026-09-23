@@ -89,6 +89,15 @@ def test_find_by_chart_uses_project_overlays():
     assert "return self.GetAll()" in block
 
 
+def test_issue303_get_sequence_raises_for_unordered_overlays_oc():
+    """Inherited reorder must fail at _GetSequence, not via silent PossibilitiesOS no-op."""
+    source = _overlay_operations_source()
+    block = source.split("def _GetSequence(self, parent):", 1)[1].split("\n    def ", 1)[0]
+    assert "OverlaysOC" in block
+    assert "NotImplementedError" in block
+    assert "unordered" in block.lower()
+
+
 def test_visibility_and_get_chart_drop_phantom_members():
     """Source ratchet for issue #364: no IsVisibleRA or ChartRA on ICmOverlay."""
     source = _overlay_operations_source()
