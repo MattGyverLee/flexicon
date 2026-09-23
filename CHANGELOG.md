@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`from flexicon import MSAOperations` / `PhonFeatureOperations` regression
+  guard** (#339). Added an AST ratchet so the #257 public exports for morphological
+  slot and phonological-feature Operations cannot disappear from `__init__.py` or
+  the type stub without failing CI.
 - **`MSAOperations` had no wrapper to edit `SlotsRC` on an existing
   inflectional-affix MSA** (#258). Added `SetInflAffMsaSlots(sense, slots,
   replace=True)` so callers can replace or append template slots without raw
