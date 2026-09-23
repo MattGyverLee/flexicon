@@ -277,10 +277,8 @@ class OverlayOperations(PossibilityItemOperations):
 
         overlay = self._PossibilityItemOperations__ResolveObject(overlay_or_hvo)
 
-        # Overlays have a visibility flag in the model
-        if hasattr(overlay, "IsVisibleRA"):
-            return bool(overlay.IsVisibleRA)
-        elif hasattr(overlay, "Hidden"):
+        # ICmOverlay has no visibility member (issue #364 / live #277 surface).
+        if hasattr(overlay, "Hidden"):
             return not overlay.Hidden
         return True
 
@@ -309,12 +307,15 @@ class OverlayOperations(PossibilityItemOperations):
 
         overlay = self._PossibilityItemOperations__ResolveObject(overlay_or_hvo)
 
-        # Set visibility flag
+        if not hasattr(overlay, "Hidden"):
+            logger.debug(
+                "SetVisible: %s has no Hidden/visibility member; no-op (issue #364)",
+                getattr(overlay, "ClassName", type(overlay).__name__),
+            )
+            return
+
         with self._TransactionCM(f"Set overlay visible={bool(visible)}"):
-            if hasattr(overlay, "IsVisibleRA"):
-                overlay.IsVisibleRA = bool(visible)
-            elif hasattr(overlay, "Hidden"):
-                overlay.Hidden = not visible
+            overlay.Hidden = not visible
 
     # --- Display Order Operations ---
 
@@ -585,16 +586,8 @@ class OverlayOperations(PossibilityItemOperations):
 
         overlay = self._PossibilityItemOperations__ResolveObject(overlay_or_hvo)
 
-        # Direct-reference fast path: if a future LCM version exposes ChartRA
-        # or Chart as a direct property, prefer it over walking ownership.
-        if hasattr(overlay, "ChartRA"):
-            return overlay.ChartRA
-        elif hasattr(overlay, "Chart"):
-            return overlay.Chart
-        # Per issue #149: ICmOverlay is owned per-chart via
-        # IDsConstChart.OverlaysOC (LcmOwningCollection<ICmOverlay>), not via a
-        # project-wide DsDiscourseData list.  Walk the ownership chain to find
-        # the enclosing IDsConstChart ancestor.
+        # ICmOverlay has no ChartRA/Chart (issue #364). Overlays are project-
+        # scoped at ILangProject.OverlaysOC (#303); OwnerOfClass usually None.
         chart_lcm = overlay.OwnerOfClass(DsConstChartTags.kClassId)
         if chart_lcm is None:
             return None

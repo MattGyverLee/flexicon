@@ -59,6 +59,25 @@ def test_get_all_reads_overlays_oc():
     assert "OverlaysOC" in get_all_block
 
 
+def test_visibility_and_get_chart_drop_phantom_members():
+    """Source ratchet for issue #364: no IsVisibleRA or ChartRA on ICmOverlay."""
+    source = _overlay_operations_source()
+
+    is_visible_block = source.split("def IsVisible(self, overlay_or_hvo):", 1)[1]
+    is_visible_block = is_visible_block.split("\n    def ", 1)[0]
+    assert "IsVisibleRA" not in is_visible_block
+
+    set_visible_block = source.split("def SetVisible(self, overlay_or_hvo, visible):", 1)[1]
+    set_visible_block = set_visible_block.split("\n    def ", 1)[0]
+    assert "IsVisibleRA" not in set_visible_block
+
+    get_chart_block = source.split("def GetChart(self, overlay_or_hvo):", 1)[1]
+    get_chart_block = get_chart_block.split("\n    def ", 1)[0]
+    assert 'hasattr(overlay, "ChartRA")' not in get_chart_block
+    assert 'hasattr(overlay, "Chart")' not in get_chart_block
+    assert "OwnerOfClass" in get_chart_block
+
+
 def test_get_poss_items_reads_possitemsrc_not_subpossibilitiesos():
     """
     Source-level ratchet: GetPossItems must read ICmOverlay.PossItemsRC.
