@@ -17,7 +17,6 @@
 #   Copyright 2026
 #
 
-import inspect
 from pathlib import Path
 
 import pytest
@@ -69,27 +68,15 @@ def test_get_poss_items_reads_possitemsrc_not_subpossibilitiesos():
     ICmPossibility.IsAssignableFrom(ICmOverlay) is False). Guards against
     silently reverting to the always-empty-list defect.
     """
-    from flexicon.code.Lists.OverlayOperations import OverlayOperations
-    from flexicon.code.BaseOperations import OperationsMethod
+    source = _overlay_operations_source()
+    get_poss_items_block = source.split("def GetPossItems(self, overlay_or_hvo):", 1)[1]
+    get_poss_items_block = get_poss_items_block.split("\n    def ", 1)[0]
 
-    # GetPossItems is wrapped in the OperationsMethod descriptor (see
-    # BaseOperations.py), which returns a `class_method` closure from
-    # __get__ rather than the original function -- accessing it through
-    # the class (OverlayOperations.GetPossItems) would inspect that
-    # closure instead of the real method body. Pull the raw function
-    # straight out of the descriptor via __dict__ to bypass __get__.
-    descriptor = OverlayOperations.__dict__["GetPossItems"]
-    assert isinstance(descriptor, OperationsMethod), (
-        "GetPossItems is no longer wrapped in OperationsMethod -- update "
-        "this test's unwrapping to match the new decoration."
-    )
-    source = inspect.getsource(descriptor.func)
-
-    assert "PossItemsRC" in source, (
+    assert "PossItemsRC" in get_poss_items_block, (
         "GetPossItems() no longer reads PossItemsRC -- this is the only "
         "real possibility-item property on ICmOverlay (issue #277)."
     )
-    assert 'hasattr(overlay, "SubPossibilitiesOS")' not in source, (
+    assert 'hasattr(overlay, "SubPossibilitiesOS")' not in get_poss_items_block, (
         "GetPossItems() guards on SubPossibilitiesOS again -- that "
         "property does not exist on ICmOverlay so the hasattr guard is "
         "always False, silently regressing to returning [] always "
