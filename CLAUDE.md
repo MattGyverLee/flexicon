@@ -254,6 +254,23 @@ exactly like "the issue does not exist." Run
 `gh repo set-default MattGyverLee/flexicon` on a fresh checkout, or pass
 `--repo` explicitly.
 
+#### Every bug issue carries exactly one priority label: P0, P1, P2 or P3
+
+Apply it at creation (`gh issue create ... --label bug --label P2`), not
+later. If you edit an existing untagged bug, tag it as well.
+
+| Label | Meaning |
+|-------|---------|
+| **P0** | Critical. Corrupts or loses FLEx project data, breaks opening or saving a project, breaks `import flexicon`, or is a security issue. No workaround. Drop everything else. |
+| **P1** | High. A public operation fails on every call (always raises, or silently does the wrong thing) in a commonly used area, or an API rests on a wrong premise and needs redesign. Fix next. |
+| **P2** | Medium. Broken or a silent no-op on a narrower or less-used path, or a missing wrapper that forces raw LCM access. A workaround exists. |
+| **P3** | Low. Hygiene, docs, test-coverage gaps, "verify" tasks with no demonstrated defect, latent traps with no current user impact. |
+
+Calibration examples: #309 (`OverlayOperations.Create` always raises) is
+P1; #329 (setters that never reach the LCM) is P2; #281 (stranded
+`import logging`) is P3. If you are unsure between two levels, pick the
+higher one and say so in the issue body.
+
 ### Before committing
 
 Verify style, confirm operations use BaseOperations validation, ensure
