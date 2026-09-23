@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`PhonFeatureOperations.ApplySyncableProperties` silently minted a random
+  GUID when `Values[].Guid` was present but empty** (#336). An explicit empty
+  string now raises `FP_ParameterError`; omit the key to request a minted GUID.
+
 - **`VariantOperations` sync/duplicate used phantom `ShowComplexFormsIn`** (#358).
   `ILexEntryRef` exposes `ShowComplexFormsInRS`; `GetSyncableProperties` now
   emits `show_complex_forms_in_rs` (ordered target GUIDs) and `Duplicate`

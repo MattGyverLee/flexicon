@@ -724,6 +724,13 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         for value_dict in values:
             if not isinstance(value_dict, dict):
                 continue
+            # Distinguish "key absent, mint a GUID" from "key present but empty",
+            # which would silently fabricate identity (issue #336, lex-lead ruling).
+            if "Guid" in value_dict and value_dict["Guid"] == "":
+                raise FP_ParameterError(
+                    "Empty 'Guid' in props; omit the key to mint a new GUID, "
+                    "or supply a well-formed GUID string."
+                )
             guid_str = value_dict.get("Guid")
             val = None
             if guid_str:
@@ -762,6 +769,11 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         # must not leave a free-floating value behind.
         with self._TransactionCM("Create feature value"):
             new_val = None
+            if guid_str == "":
+                raise FP_ParameterError(
+                    "Empty 'Guid' in props; omit the key to mint a new GUID, "
+                    "or supply a well-formed GUID string."
+                )
             if guid_str:
                 try:
                     guid = System.Guid(guid_str)
