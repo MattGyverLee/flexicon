@@ -18,6 +18,12 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`AnnotationDefOperations.GetSyncableProperties` guarded phantom LCM
+  members** (#361). `ICmAnnotationDefn` exposes `InstanceOfSignature`,
+  `AllowsInstanceOf`, and `Multi`, not `InstanceOf`, `AllowsMultiple`, or
+  `AnnotationType`; sync now reads the real fields and drops the nonexistent
+  `AnnotationType` key.
+
 - **`VariantOperations` sync/duplicate used phantom `ShowComplexFormsIn`** (#358).
   `ILexEntryRef` exposes `ShowComplexFormsInRS`; `GetSyncableProperties` now
   emits `show_complex_forms_in_rs` (ordered target GUIDs) and `Duplicate`
