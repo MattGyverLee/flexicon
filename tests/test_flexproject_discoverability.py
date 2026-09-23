@@ -142,6 +142,8 @@ class TestFLExProjectDiscoverability:
         expected = [
             "Cache",
             "GetService",
+            "DefaultVernacularWs",
+            "DefaultAnalysisWs",
             "GetDefaultVernacularWSHandle",
             "GetDefaultAnalysisWSHandle",
         ]
@@ -167,7 +169,13 @@ class TestFLExProjectDiscoverability:
             f"got {len(params)}: {[p.name for p in params]}"
         )
 
-        # Both *WSHandle methods are plain methods too.
+        # Default*Ws properties (issue #314) and *WSHandle method siblings.
+        for prop_name in ("DefaultVernacularWs", "DefaultAnalysisWs"):
+            prop = inspect.getattr_static(FLExProject, prop_name)
+            assert isinstance(prop, property), (
+                f"{prop_name} must be a property descriptor"
+            )
+
         for method_name in (
             "GetDefaultVernacularWSHandle",
             "GetDefaultAnalysisWSHandle",
@@ -244,6 +252,20 @@ class TestFLExProjectDiscoverability:
             f"Handle from helper ({handle}) does not match "
             f"WritingSystems.GetDefaultVernacular().Handle ({expected})"
         )
+
+    def test_default_ws_properties_match_handle_helpers(self, live_project):
+        """
+        DefaultVernacularWs / DefaultAnalysisWs must return the same ints as
+        GetDefault*WSHandle() (issue #314).
+        """
+        assert live_project.DefaultVernacularWs == (
+            live_project.GetDefaultVernacularWSHandle()
+        )
+        assert live_project.DefaultAnalysisWs == (
+            live_project.GetDefaultAnalysisWSHandle()
+        )
+        assert isinstance(live_project.DefaultVernacularWs, int)
+        assert isinstance(live_project.DefaultAnalysisWs, int)
 
     def test_get_default_analysis_ws_handle_returns_int(self, live_project):
         """

@@ -8,7 +8,7 @@ Author: FlexTools Development Team
 Date: 2025-11-22
 """
 
-from typing import Any, Union, Optional, Protocol, TypeVar
+from typing import Any, Union, Optional, Protocol, TypeVar, runtime_checkable
 
 
 # Type aliases for FLEx objects (to be replaced with actual imports when integrated)
@@ -77,6 +77,7 @@ class FlexObject(Protocol):
         ...
 
 
+@runtime_checkable
 class FlexProject(Protocol):
     """
     Protocol for FLEx Project objects.
