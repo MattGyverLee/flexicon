@@ -18,12 +18,28 @@ FLEXLCM_SOURCE = REPO_ROOT / "flexicon" / "code" / "FLExLCM.py"
 
 
 def _import_headless_progress():
+    # Skip only when the LCM itself is absent. A failure inside flexicon's own
+    # import must fail the test: a blanket skip here hid a broken
+    # `import flexicon` (pythonnet cannot emit IProgress.Canceling) behind a
+    # green run.
     try:
-        from flexicon.code.headless_ui import HeadlessThreadedProgress
-        from SIL.LCModel.Utils import IThreadedProgress
-    except Exception as exc:  # pragma: no cover - environment-dependent
-        pytest.skip(f"SIL.LCModel / HeadlessThreadedProgress not available: {exc}")
+        import flexicon  # noqa: F401 -- initialises the FieldWorks paths
+    except ImportError as exc:  # pragma: no cover - environment-dependent
+        if "SIL" not in str(exc) and "clr" not in str(exc):
+            raise
+        pytest.skip(f"SIL.LCModel not available: {exc}")
+    from flexicon.code.headless_ui import HeadlessThreadedProgress
+    from SIL.LCModel.Utils import IThreadedProgress
+
     return HeadlessThreadedProgress, IThreadedProgress
+
+
+def _task_delegate(fn):
+    """Wrap fn as the Func<IThreadedProgress, object[], object> LCM passes."""
+    from System import Array, Func, Object
+    from SIL.LCModel.Utils import IThreadedProgress
+
+    return Func[IThreadedProgress, Array[Object], Object](fn)
 
 
 class TestHeadlessThreadedProgressSurface:
@@ -38,10 +54,37 @@ class TestHeadlessThreadedProgressSurface:
         seen = []
 
         def task(prog, args):
-            seen.append((prog, args))
+            seen.append((prog, list(args)))
+            return "task-result"
 
-        assert progress.RunTask(task, ["a", "b"]) is True
-        assert seen == [(progress, ["a", "b"])]
+        # IThreadedProgress.RunTask returns the task's own result.
+        assert progress.RunTask(_task_delegate(task), ["a", "b"]) == "task-result"
+        assert len(seen) == 1
+        assert seen[0][1] == ["a", "b"]
+
+    def test_run_task_three_arg_overload_runs_on_caller_thread(self):
+        import threading
+
+        HeadlessThreadedProgress, _ = _import_headless_progress()
+        progress = HeadlessThreadedProgress()
+        caller = threading.get_ident()
+        ran_on = []
+
+        def task(prog, args):
+            ran_on.append(threading.get_ident())
+            return 42
+
+        assert progress.RunTask(True, _task_delegate(task), []) == 42
+        assert ran_on == [caller]
+
+    def test_canceling_event_accepts_handlers(self):
+        from System.ComponentModel import CancelEventHandler
+
+        HeadlessThreadedProgress, _ = _import_headless_progress()
+        progress = HeadlessThreadedProgress()
+        handler = CancelEventHandler(lambda sender, e: None)
+        progress.Canceling += handler
+        progress.Canceling -= handler
 
     def test_is_canceling_defaults_false(self):
         HeadlessThreadedProgress, _ = _import_headless_progress()
