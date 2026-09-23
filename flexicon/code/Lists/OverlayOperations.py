@@ -20,6 +20,7 @@ import System
 from SIL.LCModel import (
     IDsConstChart,
     IDsConstChartFactory,
+    ICmOverlayFactory,
     ICmPossibility,
     ICmPossibilityFactory,
 )
@@ -38,7 +39,8 @@ from ..FLExProject import (
     FP_ParameterError,
     FP_NullParameterError,
 )
-from ..BaseOperations import OperationsMethod
+from ..BaseOperations import OperationsMethod, wrap_enumerable
+from ..Shared.string_utils import normalize_match_key
 from .possibility_item_base import PossibilityItemOperations
 
 
@@ -81,40 +83,22 @@ class OverlayOperations(PossibilityItemOperations):
     - GetVisibleOverlays() - Get visible overlays for a chart
 
     Note:
-        Overlays are specific to constituent charts (IConstChart). They provide
-        a way to layer multiple analytical perspectives in a single chart view.
-        GetAll() requires chart context - use FindByChart() instead for chart-specific queries.
+        Overlays are project-scoped at ``ILangProject.OverlaysOC`` (issue #303).
+        ``Create`` requires a source possibility list (``poss_list``) for
+        ``PossListRA``; ``ICmOverlay.Name`` is a plain string, not multilingual.
 
     Usage::
 
-        from flexicon import FLExProject, DiscourseOperations, OverlayOperations
+        from flexicon import FLExProject
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)
 
-        discourse_ops = DiscourseOperations(project)
-        overlay_ops = OverlayOperations(project)
-
-        # Get a chart
-        text = list(project.Texts.GetAll())[0]
-        charts = list(discourse_ops.GetAllCharts(text))
-        chart = charts[0]
-
-        # Get overlays for the chart
-        overlays = list(overlay_ops.FindByChart(chart))
-        print(f"Chart has {len(overlays)} overlays")
-
-        # Create a new overlay
-        overlay = overlay_ops.Create("Participants")
-        overlay_ops.SetDescription(overlay, "Track participant chains")
-
-        # Configure visibility and display order
-        overlay_ops.SetVisible(overlay, True)
-        overlay_ops.SetDisplayOrder(overlay, 1)
-
-        # Get visible overlays
-        visible = list(overlay_ops.GetVisibleOverlays(chart))
-        print(f"Chart has {len(visible)} visible overlays")
+        poss_list = project.lp.ConfidenceLevelsOA
+        overlay = project.Overlays.Create("Participants", poss_list)
+        project.Overlays.SetName(overlay, "Participant chains")
+        for o in project.Overlays.GetAll():
+            print(project.Overlays.GetName(o))
 
         project.CloseProject()
     """
@@ -133,13 +117,137 @@ class OverlayOperations(PossibilityItemOperations):
         return "Overlay"
 
     def _get_list_object(self):
-        """Get the overlay list container.
+        """Return None so inherited PossibilityItem CRUD stays inert.
 
-        Note: Overlays are chart-scoped, not project-wide.
-        Returns None because overlays don't have a single project list.
-        Use FindByChart() to get overlays for a specific chart.
+        Overlays live on ``ILangProject.OverlaysOC``, not a
+        ``ICmPossibilityList.PossibilitiesOS``. This class overrides
+        ``Create``/``GetAll``/``Delete``/``Find``/``GetName``/``SetName``
+        directly (issue #309).
         """
         return None
+
+    def __ResolveOverlay(self, overlay_or_hvo):
+        """Resolve an overlay object or HVO to ``ICmOverlay``."""
+        if isinstance(overlay_or_hvo, int):
+            obj = self.project.Object(overlay_or_hvo)
+            if obj is None:
+                raise FP_ParameterError(
+                    f"HVO {overlay_or_hvo} does not refer to a valid Overlay"
+                )
+            from ..lcm_casting import cast_to_concrete
+
+            return cast_to_concrete(obj)
+        return overlay_or_hvo
+
+    def __ResolvePossList(self, poss_list_or_hvo):
+        """Resolve a possibility list (or HVO) for ``PossListRA``."""
+        if poss_list_or_hvo is None:
+            raise FP_ParameterError(
+                "poss_list is required when creating an overlay "
+                "(sets PossListRA -- the source list for overlay items)"
+            )
+        if isinstance(poss_list_or_hvo, int):
+            obj = self.project.Object(poss_list_or_hvo)
+            if obj is None:
+                raise FP_ParameterError(
+                    f"HVO {poss_list_or_hvo} does not refer to a valid possibility list"
+                )
+            from ..lcm_casting import cast_to_concrete
+
+            return cast_to_concrete(obj)
+        return poss_list_or_hvo
+
+    # --- CRUD (ICmOverlay-specific; issue #309) ---
+
+    @wrap_enumerable
+    @OperationsMethod
+    def GetAll(self):
+        """Return all overlays in the project."""
+        return list(self.project.lp.OverlaysOC)
+
+    @OperationsMethod
+    def Create(self, name, poss_list, items=None, wsHandle=None):
+        """Create a new overlay on ``ILangProject.OverlaysOC``.
+
+        Args:
+            name (str): Overlay name (plain string on ``ICmOverlay``).
+            poss_list: ``ICmPossibilityList`` (or HVO) assigned to ``PossListRA``.
+            items: Optional iterable of ``ICmPossibility`` objects to seed
+                ``PossItemsRC``.
+            wsHandle: Ignored (kept for call-site uniformity with other
+                ``Create`` methods; overlay names are not multilingual).
+
+        Returns:
+            ICmOverlay: The newly created overlay.
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(name, "name")
+
+        if not name or not str(name).strip():
+            raise FP_ParameterError("Overlay name cannot be empty")
+
+        poss_list_obj = self.__ResolvePossList(poss_list)
+        factory = self.project.project.ServiceLocator.GetService(ICmOverlayFactory)
+
+        with self._TransactionCM(f"Create Overlay {name!r}"):
+            overlay = factory.Create()
+            self.project.lp.OverlaysOC.Add(overlay)
+            overlay.Name = str(name).strip()
+            overlay.PossListRA = poss_list_obj
+            if items:
+                for item in items:
+                    overlay.PossItemsRC.Add(item)
+            return overlay
+
+    @OperationsMethod
+    def Delete(self, overlay_or_hvo):
+        """Remove an overlay from ``OverlaysOC``."""
+        self._EnsureWriteEnabled()
+        self._ValidateParam(overlay_or_hvo, "overlay_or_hvo")
+
+        overlay = self.__ResolveOverlay(overlay_or_hvo)
+        if overlay in self.project.lp.OverlaysOC:
+            with self._TransactionCM("Delete Overlay"):
+                self.project.lp.OverlaysOC.Remove(overlay)
+
+    @OperationsMethod
+    def Find(self, name):
+        """Find an overlay by plain-string name."""
+        self._ValidateParam(name, "name")
+
+        if not name or not str(name).strip():
+            return None
+
+        target = normalize_match_key(str(name), casefold=True).strip()
+        for overlay in self.GetAll():
+            overlay_name = overlay.Name or ""
+            if normalize_match_key(str(overlay_name), casefold=True).strip() == target:
+                return overlay
+        return None
+
+    @OperationsMethod
+    def Exists(self, name):
+        """Return True if an overlay with ``name`` exists."""
+        self._ValidateParam(name, "name")
+        return self.Find(name) is not None
+
+    @OperationsMethod
+    def GetName(self, overlay_or_hvo, wsHandle=None):
+        """Return the overlay name (``ICmOverlay.Name`` is a plain string)."""
+        self._ValidateParam(overlay_or_hvo, "overlay_or_hvo")
+        overlay = self.__ResolveOverlay(overlay_or_hvo)
+        return str(overlay.Name or "")
+
+    @OperationsMethod
+    def SetName(self, overlay_or_hvo, name, wsHandle=None):
+        """Set the overlay name."""
+        self._EnsureWriteEnabled()
+        self._ValidateParam(overlay_or_hvo, "overlay_or_hvo")
+        self._ValidateParam(name, "name")
+
+        overlay = self.__ResolveOverlay(overlay_or_hvo)
+        with self._TransactionCM(f"Set Overlay name {name!r}"):
+            overlay.Name = str(name or "")
 
     # --- Visibility Operations ---
 

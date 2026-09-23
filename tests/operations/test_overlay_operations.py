@@ -17,9 +17,15 @@
 #   Copyright 2026
 #
 
-import inspect
+from pathlib import Path
 
 import pytest
+
+
+def _overlay_operations_source() -> str:
+    """Load OverlayOperations.py without importing pythonnet/clr."""
+    root = Path(__file__).resolve().parents[2]
+    return (root / "flexicon/code/Lists/OverlayOperations.py").read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -32,6 +38,27 @@ import pytest
 # ---------------------------------------------------------------------------
 
 
+def test_create_uses_overlay_factory_and_overlays_oc():
+    """Source ratchet for issue #309: Create must not use PossibilityItem Create."""
+    source = _overlay_operations_source()
+    assert "def Create(self, name, poss_list" in source
+    assert "ICmOverlayFactory" in source
+    assert "OverlaysOC.Add" in source
+    assert "PossListRA" in source
+    # OverlayOperations.Create body must not delegate to PossibilityItem Create.
+    create_block = source.split("def Create(self, name, poss_list", 1)[1]
+    create_block = create_block.split("\n    def ", 1)[0]
+    assert "ICmPossibilityFactory" not in create_block
+    assert "PossibilitiesOS.Add" not in create_block
+
+
+def test_get_all_reads_overlays_oc():
+    """Source ratchet: GetAll must enumerate ILangProject.OverlaysOC."""
+    source = _overlay_operations_source()
+    get_all_block = source.split("def GetAll(self):", 1)[1].split("\n    def ", 1)[0]
+    assert "OverlaysOC" in get_all_block
+
+
 def test_get_poss_items_reads_possitemsrc_not_subpossibilitiesos():
     """
     Source-level ratchet: GetPossItems must read ICmOverlay.PossItemsRC.
@@ -41,27 +68,15 @@ def test_get_poss_items_reads_possitemsrc_not_subpossibilitiesos():
     ICmPossibility.IsAssignableFrom(ICmOverlay) is False). Guards against
     silently reverting to the always-empty-list defect.
     """
-    from flexicon.code.Lists.OverlayOperations import OverlayOperations
-    from flexicon.code.BaseOperations import OperationsMethod
+    source = _overlay_operations_source()
+    get_poss_items_block = source.split("def GetPossItems(self, overlay_or_hvo):", 1)[1]
+    get_poss_items_block = get_poss_items_block.split("\n    def ", 1)[0]
 
-    # GetPossItems is wrapped in the OperationsMethod descriptor (see
-    # BaseOperations.py), which returns a `class_method` closure from
-    # __get__ rather than the original function -- accessing it through
-    # the class (OverlayOperations.GetPossItems) would inspect that
-    # closure instead of the real method body. Pull the raw function
-    # straight out of the descriptor via __dict__ to bypass __get__.
-    descriptor = OverlayOperations.__dict__["GetPossItems"]
-    assert isinstance(descriptor, OperationsMethod), (
-        "GetPossItems is no longer wrapped in OperationsMethod -- update "
-        "this test's unwrapping to match the new decoration."
-    )
-    source = inspect.getsource(descriptor.func)
-
-    assert "PossItemsRC" in source, (
+    assert "PossItemsRC" in get_poss_items_block, (
         "GetPossItems() no longer reads PossItemsRC -- this is the only "
         "real possibility-item property on ICmOverlay (issue #277)."
     )
-    assert 'hasattr(overlay, "SubPossibilitiesOS")' not in source, (
+    assert 'hasattr(overlay, "SubPossibilitiesOS")' not in get_poss_items_block, (
         "GetPossItems() guards on SubPossibilitiesOS again -- that "
         "property does not exist on ICmOverlay so the hasattr guard is "
         "always False, silently regressing to returning [] always "
@@ -80,14 +95,9 @@ class TestGetPossItemsLive:
     per tests/flex_plugin.py's sena3_sandbox fixture -- never touches the
     user's real Sena 3).
 
-    OverlayOperations.Create()/GetAll() are inherited from
-    PossibilityItemOperations and are broken for a different reason
-    (_get_list_object() returns None by design, since ICmOverlay is not
-    backed by a ICmPossibilityList) -- see the finding recorded in the
-    evidence file. These tests therefore construct/locate ICmOverlay
-    objects directly via the LCM (project.lp.OverlaysOC /
-    ICmOverlayFactory), exactly as a real caller would have to today,
-    and exercise only GetPossItems() through the Operations class.
+    GetPossItems() tests below construct overlays via the LCM factory
+    where noted; issue #309 adds ``OverlayOperations.Create()`` coverage
+    in ``TestOverlayCreateLive``.
     """
 
     pytestmark = pytest.mark.requires_live_project
@@ -202,3 +212,41 @@ class TestGetPossItemsLive:
                 with overlay_ops._TransactionCM("test: cleanup empty overlay"):
                     if overlay in lp.OverlaysOC:
                         lp.OverlaysOC.Remove(overlay)
+
+
+class TestOverlayCreateLive:
+    """Live coverage for issue #309 OverlayOperations.Create()."""
+
+    pytestmark = pytest.mark.requires_live_project
+
+    @pytest.mark.live_phase("OverlayOperations", "add")
+    def test_create_round_trip_via_operations_api(self, sena3_sandbox):
+        """Create through project.Overlays.Create and read back name from LCM."""
+        from flexicon.code.FLExProject import FP_ParameterError
+
+        project = sena3_sandbox
+        overlay_ops = project.Overlays
+        poss_list = project.lp.ConfidenceLevelsOA
+        test_name = "TEST_309_overlay_create"
+
+        existing = overlay_ops.Find(test_name)
+        if existing is not None:
+            overlay_ops.Delete(existing)
+
+        overlay = None
+        try:
+            overlay = overlay_ops.Create(test_name, poss_list)
+            assert overlay is not None
+
+            reread = overlay_ops.Find(test_name)
+            assert reread is not None
+            assert reread.Hvo == overlay.Hvo
+            assert overlay_ops.GetName(reread) == test_name
+            assert overlay_ops.GetName(overlay.Hvo) == test_name
+
+            with pytest.raises(FP_ParameterError):
+                overlay_ops.Create("", poss_list)
+        finally:
+            if overlay is not None:
+                overlay_ops.Delete(overlay)
+            assert overlay_ops.Find(test_name) is None
