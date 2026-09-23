@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`VariantOperations` sync/duplicate used phantom `ShowComplexFormsIn`** (#358).
+  `ILexEntryRef` exposes `ShowComplexFormsInRS`; `GetSyncableProperties` now
+  emits `show_complex_forms_in_rs` (ordered target GUIDs) and `Duplicate`
+  copies the reference sequence.
+
 - **`GetSyncableProperties` / `ApplySyncableProperties` used phantom or
   wrong-suffix LCM members** (#325). Sync and duplicate paths guarded on
   members that do not exist on the typed interface (always-false `hasattr`,
