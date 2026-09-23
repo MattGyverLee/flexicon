@@ -3673,6 +3673,9 @@ class FLExProject(object):
         """
         Returns the default vernacular writing system: (Language-tag, Name)
 
+        For the int handle used by multistring APIs, use
+        :attr:`DefaultVernacularWs` or :meth:`GetDefaultVernacularWSHandle`.
+
         Note: This method now delegates to WritingSystemOperations for single source of truth.
         """
         ws = self.WritingSystems.GetDefaultVernacular()
@@ -3681,6 +3684,9 @@ class FLExProject(object):
     def GetDefaultAnalysisWS(self):
         """
         Returns the default analysis writing system: (Language-tag, Name)
+
+        For the int handle used by multistring APIs, use
+        :attr:`DefaultAnalysisWs` or :meth:`GetDefaultAnalysisWSHandle`.
 
         Note: This method now delegates to WritingSystemOperations for single source of truth.
         """
@@ -3726,6 +3732,34 @@ class FLExProject(object):
             >>> tss = TsStringUtils.MakeString("gloss", ws)
         """
         return self.WritingSystems.GetDefaultAnalysis().Handle
+
+    @property
+    def DefaultVernacularWs(self):
+        """
+        Default vernacular writing system handle (int).
+
+        Alias for :meth:`GetDefaultVernacularWSHandle`. Satisfies
+        ``core.types.FlexProject`` and matches scripts that expect a
+        property rather than a method call.
+
+        Returns:
+            int: Handle suitable for ``TsStringUtils.MakeString(text, ws)``.
+        """
+        return self.GetDefaultVernacularWSHandle()
+
+    @property
+    def DefaultAnalysisWs(self):
+        """
+        Default analysis writing system handle (int).
+
+        Alias for :meth:`GetDefaultAnalysisWSHandle`. Satisfies
+        ``core.types.FlexProject`` and matches scripts that expect a
+        property rather than a method call.
+
+        Returns:
+            int: Handle suitable for ``TsStringUtils.MakeString(text, ws)``.
+        """
+        return self.GetDefaultAnalysisWSHandle()
 
     # --- Media and LinkedFiles support ---
 
