@@ -154,11 +154,7 @@ class TestAffixTemplateOwnerPos:
 # ===========================================================================
 # Site 3: OverlayOperations.py  GetChart
 # ===========================================================================
-# The fixed body is (simplified to its call-shape logic):
-#     if hasattr(overlay, "ChartRA"):
-#         return overlay.ChartRA
-#     elif hasattr(overlay, "Chart"):
-#         return overlay.Chart
+# The fixed body is (simplified to its call-shape logic, issue #364):
 #     chart_lcm = overlay.OwnerOfClass(DsConstChartTags.kClassId)
 #     if chart_lcm is None:
 #         return None
@@ -172,10 +168,6 @@ def _get_chart_logic(overlay):
     Mirrors the fixed GetChart ownership-walk logic verbatim
     (IDsConstChart cast omitted; test env has no real IDsConstChart).
     """
-    if hasattr(overlay, "ChartRA"):
-        return overlay.ChartRA
-    elif hasattr(overlay, "Chart"):
-        return overlay.Chart
     chart_lcm = overlay.OwnerOfClass(_MOCK_CHART_CLASS_ID)
     if chart_lcm is None:
         return None
@@ -186,22 +178,6 @@ class TestOverlayGetChart:
     """
     Regression guard for OverlayOperations.GetChart (Pattern G, issue #169).
     """
-
-    def test_chart_ra_fast_path(self):
-        """
-        Overlay has ChartRA set -> returned directly (fast path).
-        """
-        fake_chart = SimpleNamespace(Guid="chart-guid-1")
-        overlay = SimpleNamespace(ChartRA=fake_chart)
-        assert _get_chart_logic(overlay) is fake_chart
-
-    def test_chart_attribute_fast_path(self):
-        """
-        Overlay has Chart set (no ChartRA) -> returned directly (fast path).
-        """
-        fake_chart = SimpleNamespace(Guid="chart-guid-2")
-        overlay = SimpleNamespace(Chart=fake_chart)
-        assert _get_chart_logic(overlay) is fake_chart
 
     def test_owner_of_class_walk_returns_chart(self):
         """
