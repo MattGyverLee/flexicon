@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`ConfidenceOperations` phantom `ConfidenceRA` scans on wordform types**
+  (#363). `GetAnalysesWithConfidence` now matches `ConfidenceRA` on research
+  notebook records (`DataNotebook.GetAll()`); interlinear `IWfiAnalysis` has
+  no confidence field. `GetGlossesWithConfidence` raises `FP_ParameterError`
+  because `IWfiGloss` has no confidence field (replacing a silent empty list).
 - **`PersonOperations.GetSyncableProperties` never emitted person languages**
   (#362). `ICmPerson` has no `LanguagesRC`; the phantom `hasattr` guard was
   always false, so `Languages` never entered the sync payload. The dead guard
