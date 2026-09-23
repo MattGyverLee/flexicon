@@ -257,7 +257,9 @@ class FLExProject(object):
 
     """
 
-    def OpenProject(self, projectName, writeEnabled=False, undoable=True, ui=None):
+    def OpenProject(
+        self, projectName, writeEnabled=False, undoable=True, ui=None, progress=None
+    ):
         """
         Open a project. The project must be closed with `CloseProject()` to
         save any changes, and release the lock.
@@ -330,6 +332,13 @@ class FLExProject(object):
             conflicting save can block the commit thread on a dialog with
             no owner, or silently discard this session's unsaved changes.
 
+        progress:
+            Optional ``IThreadedProgress``, passed through to
+            ``FLExLCM.OpenProject()``. **Default since issue #289: a bare
+            ``HeadlessThreadedProgress()``** (no WinForms handle). Pass
+            ``progress=ProgressDialogWithTask(ThreadHelper())`` to opt back
+            into the historical dialog; it is disposed after open completes.
+
         Note:
             A call to `OpenProject()` may fail with a `FP_FileLockedError`
             exception if the project is open in Fieldworks (or another
@@ -342,7 +351,7 @@ class FLExProject(object):
         """
 
         try:
-            self.project = FLExLCM.OpenProject(projectName, ui)
+            self.project = FLExLCM.OpenProject(projectName, ui, progress)
 
         except System.IO.FileNotFoundException as e:
             raise FP_FileNotFoundError(projectName, e)
