@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`lcm_casting.py` had no module logger** (#281). A stray `import logging`
+  line inside the module docstring never executed; the import and
+  `logger = logging.getLogger(__name__)` now live at module scope, and
+  unregistered `ClassName` no-ops in `cast_to_concrete` emit `logger.debug`
+  to aid diagnosis of silent cast skips (#279).
 - **`MSAOperations` had no wrapper to edit `SlotsRC` on an existing
   inflectional-affix MSA** (#258). Added `SetInflAffMsaSlots(sense, slots,
   replace=True)` so callers can replace or append template slots without raw
