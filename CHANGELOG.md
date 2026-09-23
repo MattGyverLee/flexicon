@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`DataNotebookOperations` status/type/confidence getters always returned
+  `None` and setters never reached the LCM** (#329). `IRnGenericRec` exposes
+  `StatusRA`, `TypeRA`, and `ConfidenceRA`, not bare `Status`/`Type`/`Confidence`;
+  all read/write/sync/duplicate sites now use the real RA members.
 - **`AgentOperations.GetSyncableProperties` raised `AttributeError` on every
   agent** (#350). `ICmAgent` has `Name` but no `Description`; the method now
   reflects agent fields (`Human`, `Version`) instead of inheriting the
