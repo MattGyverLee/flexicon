@@ -667,7 +667,10 @@ class LocationOperations(BaseOperations):
                 # For now, set directly if property exists
                 if hasattr(location, "DateOfEvent"):
                     # Try to initialize the GenDate object
-                    from SIL.LCModel import GenDate
+                    # NOTE: unreachable -- ICmLocation has no DateOfEvent
+                    # (live reflection, 2026-09-23). GenDate lives in
+                    # SIL.LCModel.Core.Cellar, not SIL.LCModel.
+                    from SIL.LCModel.Core.Cellar import GenDate
 
                     location.DateOfEvent = GenDate()
 
