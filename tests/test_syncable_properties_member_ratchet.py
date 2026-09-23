@@ -52,6 +52,7 @@ _OPS_INTERFACE_MAP: dict[str, str] = {
     "WfiMorphBundleOperations.py": "IWfiMorphBundle",
     "WordformOperations.py":       "IWfiWordform",
     "MediaOperations.py":          "ICmFile",
+    "AgentOperations.py":          "ICmAgent",
 }
 
 # ---------------------------------------------------------------------------
