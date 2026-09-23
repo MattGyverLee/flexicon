@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`DataNotebookOperations` status/type/confidence getters always returned
+  `None` and setters never reached the LCM** (#329). `IRnGenericRec` exposes
+  `StatusRA`, `TypeRA`, and `ConfidenceRA`, not bare `Status`/`Type`/`Confidence`;
+  all read/write/sync/duplicate sites now use the real RA members.
 - **`ConfidenceOperations` phantom `ConfidenceRA` scans on wordform types**
   (#363). `GetAnalysesWithConfidence` now matches `ConfidenceRA` on research
   notebook records (`DataNotebook.GetAll()`); interlinear `IWfiAnalysis` has

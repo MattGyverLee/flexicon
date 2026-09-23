@@ -781,8 +781,8 @@ class DataNotebookOperations(BaseOperations):
         """
         record = self.__GetRecordObject(record_or_hvo)
 
-        if hasattr(record, "Type") and record.Type:
-            return record.Type
+        if hasattr(record, "TypeRA") and record.TypeRA:
+            return record.TypeRA
 
         return None
 
@@ -831,7 +831,7 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         with self._TransactionCM("Set record type"):
-            record.Type = record_type
+            record.TypeRA = record_type
 
     @OperationsMethod
     def GetAllRecordTypes(self):
@@ -2276,8 +2276,8 @@ class DataNotebookOperations(BaseOperations):
         """
         record = self.__GetRecordObject(record_or_hvo)
 
-        if hasattr(record, "Status") and record.Status:
-            return record.Status
+        if hasattr(record, "StatusRA") and record.StatusRA:
+            return record.StatusRA
 
         return None
 
@@ -2338,7 +2338,7 @@ class DataNotebookOperations(BaseOperations):
         # Lookup above stays outside the bracket: an unknown status name must
         # raise before any undo task opens (D5/P3).
         with self._TransactionCM("Set record status"):
-            record.Status = status
+            record.StatusRA = status
 
     @OperationsMethod
     def GetAllStatuses(self):
@@ -2678,12 +2678,12 @@ class DataNotebookOperations(BaseOperations):
             self._CopyRecordContent(source, duplicate)
 
             # Copy Reference Atomic (RA) properties
-            if hasattr(source, "Type") and source.Type:
-                duplicate.Type = source.Type
-            if hasattr(source, "Status") and source.Status:
-                duplicate.Status = source.Status
-            if hasattr(source, "Confidence") and source.Confidence:
-                duplicate.Confidence = source.Confidence
+            if hasattr(source, "TypeRA") and source.TypeRA:
+                duplicate.TypeRA = source.TypeRA
+            if hasattr(source, "StatusRA") and source.StatusRA:
+                duplicate.StatusRA = source.StatusRA
+            if hasattr(source, "ConfidenceRA") and source.ConfidenceRA:
+                duplicate.ConfidenceRA = source.ConfidenceRA
 
             # Copy DateTime properties
             if hasattr(source, "DateOfEvent") and source.DateOfEvent:
@@ -2715,12 +2715,12 @@ class DataNotebookOperations(BaseOperations):
             dup_rec.Title = source_rec.Title
             self._CopyRecordContent(source_rec, dup_rec)
 
-            if hasattr(source_rec, "Type") and source_rec.Type:
-                dup_rec.Type = source_rec.Type
-            if hasattr(source_rec, "Status") and source_rec.Status:
-                dup_rec.Status = source_rec.Status
-            if hasattr(source_rec, "Confidence") and source_rec.Confidence:
-                dup_rec.Confidence = source_rec.Confidence
+            if hasattr(source_rec, "TypeRA") and source_rec.TypeRA:
+                dup_rec.TypeRA = source_rec.TypeRA
+            if hasattr(source_rec, "StatusRA") and source_rec.StatusRA:
+                dup_rec.StatusRA = source_rec.StatusRA
+            if hasattr(source_rec, "ConfidenceRA") and source_rec.ConfidenceRA:
+                dup_rec.ConfidenceRA = source_rec.ConfidenceRA
 
             if hasattr(source_rec, "DateOfEvent") and source_rec.DateOfEvent:
                 dup_rec.DateOfEvent = source_rec.DateOfEvent
@@ -2743,18 +2743,18 @@ class DataNotebookOperations(BaseOperations):
         props["Title"] = self._ReadTsString(record.Title)
         props["Text"] = self._ReadRecordContent(record)
 
-        if hasattr(record, "Type") and record.Type:
-            props["Type"] = str(record.Type.Guid)
+        if hasattr(record, "TypeRA") and record.TypeRA:
+            props["Type"] = str(record.TypeRA.Guid)
         else:
             props["Type"] = None
 
-        if hasattr(record, "Status") and record.Status:
-            props["Status"] = str(record.Status.Guid)
+        if hasattr(record, "StatusRA") and record.StatusRA:
+            props["Status"] = str(record.StatusRA.Guid)
         else:
             props["Status"] = None
 
-        if hasattr(record, "Confidence") and record.Confidence:
-            props["Confidence"] = str(record.Confidence.Guid)
+        if hasattr(record, "ConfidenceRA") and record.ConfidenceRA:
+            props["Confidence"] = str(record.ConfidenceRA.Guid)
         else:
             props["Confidence"] = None
 
@@ -2860,8 +2860,8 @@ class DataNotebookOperations(BaseOperations):
         """
         record = self.__GetRecordObject(record_or_hvo)
 
-        if hasattr(record, "Confidence") and record.Confidence:
-            return record.Confidence
+        if hasattr(record, "ConfidenceRA") and record.ConfidenceRA:
+            return record.ConfidenceRA
 
         return None
 
@@ -2913,4 +2913,4 @@ class DataNotebookOperations(BaseOperations):
 
         with self._TransactionCM('Set Confidence'):
 
-            record.Confidence = confidence
+            record.ConfidenceRA = confidence
