@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`DataNotebookOperations.SetDateOfEvent` raised `TypeError` on every call**
+  (#330). `IRnGenericRec.DateOfEvent` is a GenDate field; the method now
+  assigns a normalized date string (same pattern as
+  `PersonOperations.SetDateOfBirth`) instead of a `System.DateTime`.
 - **`PhonFeatureOperations.ApplySyncableProperties` silently minted a random
   GUID when `Values[].Guid` was present but empty** (#336). An explicit empty
   string now raises `FP_ParameterError`; omit the key to request a minted GUID.

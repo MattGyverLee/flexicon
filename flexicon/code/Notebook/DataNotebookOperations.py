@@ -1049,6 +1049,34 @@ class DataNotebookOperations(BaseOperations):
 
         return None
 
+    @staticmethod
+    def _GenDateStringFromInput(date):
+        """
+        Normalize caller date input to a string assignable to a GenDate field.
+
+        IRnGenericRec.DateOfEvent is CLR-typed GenDate, not System.DateTime.
+        PersonOperations.SetDateOfBirth uses the same string-assignment pattern.
+        """
+        if isinstance(date, str):
+            try:
+                parsed = DateTime.Parse(date.strip())
+            except (System.FormatException, ValueError, TypeError) as e:
+                raise FP_ParameterError(
+                    f"Invalid date format: {date}. Use 'YYYY-MM-DD' or "
+                    f"'YYYY-MM-DD HH:MM:SS' - {e}"
+                )
+        elif isinstance(date, DateTime):
+            parsed = date
+        else:
+            raise FP_ParameterError(
+                f"Invalid date type: {type(date).__name__}. "
+                "Use a System.DateTime or date string."
+            )
+
+        if parsed.Hour == 0 and parsed.Minute == 0 and parsed.Second == 0:
+            return parsed.ToString("yyyy-MM-dd")
+        return parsed.ToString("yyyy-MM-dd HH:mm:ss")
+
     @OperationsMethod
     def SetDateOfEvent(self, record_or_hvo, date):
         """
@@ -1081,6 +1109,7 @@ class DataNotebookOperations(BaseOperations):
         Notes:
             - Accepts DateTime object or string format
             - String format: "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS"
+            - Stored as a GenDate string on the LCM object (not System.DateTime)
             - Represents when the documented event occurred
             - Independent of creation/modification dates
 
@@ -1093,17 +1122,12 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        # Convert string to DateTime if needed
-        if isinstance(date, str):
-            try:
-                date = DateTime.Parse(date)
-            except (System.FormatException, ValueError, TypeError) as e:
-                raise FP_ParameterError(f"Invalid date format: {date}. Use 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS' - {e}")
+        # Validation/normalization stays outside the bracket: a malformed date
+        # must raise before any undo task opens (D5/P3).
+        gen_date_str = self._GenDateStringFromInput(date)
 
-        # Parse above stays outside the bracket: a malformed date must raise
-        # before any undo task opens (D5/P3).
         with self._TransactionCM("Set record date of event"):
-            record.DateOfEvent = date
+            record.DateOfEvent = gen_date_str
 
     # --- Hierarchy Operations ---
 
