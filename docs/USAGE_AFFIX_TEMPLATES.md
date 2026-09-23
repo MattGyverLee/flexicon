@@ -67,6 +67,21 @@ wrapped = AffixTemplate(template)
 print(f"Total slots: {wrapped.total_slots}")
 ```
 
+#### Create a Slot and Add It
+
+`CreateAffixTemplate` creates an empty template. Create the slot on the
+part of speech, then insert it into one side of the template:
+
+```python
+slot = project.POS.CreateAffixSlot(verb, "PossConcord", optional=False)
+template = project.MorphRules.CreateAffixTemplate(verb, "Possessive inflection")
+template = project.MorphRules.AddSlotToTemplate(template, slot, "prefix")
+```
+
+`side` is `prefix`, `suffix`, `proclitic`, or `enclitic` (any case).
+Leave `index` unset to append, or pass an integer to insert at that
+position.
+
 ## Working with Template Properties
 
 ### Basic Properties

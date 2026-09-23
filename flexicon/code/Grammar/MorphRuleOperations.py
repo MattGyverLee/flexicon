@@ -49,8 +49,20 @@ from SIL.LCModel.Core.Text import TsStringUtils
 
 # Import flexlibs exceptions
 from ..FLExProject import (
+    FP_NullParameterError,  # noqa: F401  -- raised by _ValidateParam
     FP_ParameterError,
+    FP_ReadOnlyError,  # noqa: F401  -- raised by _EnsureWriteEnabled
 )
+
+# IMoInflAffixTemplate reference sequences. clr reflection on
+# ILcmReferenceSequence<IMoInflAffixSlot> (SIL.LCModel 11.0.0) shows
+# IList.Insert(Int32, T) and ICollection.Add(T). There is no InsertAt.
+_AFFIX_TEMPLATE_SLOT_SIDES = {
+    "prefix": "PrefixSlotsRS",
+    "suffix": "SuffixSlotsRS",
+    "proclitic": "ProcliticSlotsRS",
+    "enclitic": "EncliticSlotsRS",
+}
 
 
 class MorphRuleOperations(BaseOperations):
@@ -384,10 +396,10 @@ class MorphRuleOperations(BaseOperations):
         Notes:
             - Templates are owned by PartOfSpeech, not MoMorphData
             - New templates are added at the end of AffixTemplatesOS
-            - Slot assignments (prefix/suffix slots) must be configured separately
+            - Slot assignments are made with AddSlotToTemplate
 
         See Also:
-            CreateCompoundRule, Delete, GetAllAffixTemplates
+            CreateCompoundRule, Delete, GetAllAffixTemplates, AddSlotToTemplate
         """
         self._EnsureWriteEnabled()
 
@@ -415,6 +427,93 @@ class MorphRuleOperations(BaseOperations):
                 new_template.Description.set_String(wsHandle, mkstr_desc)
 
             return new_template
+
+    @OperationsMethod
+    def AddSlotToTemplate(self, template, slot, side, index=None):
+        """
+        Insert an affix slot into one side of an inflectional template.
+
+        Access via FLExProject as ``project.MorphRules.AddSlotToTemplate``.
+        The slot must already be owned by the same part of speech that owns
+        the template (see ``project.POS.CreateAffixSlot``). The four sides
+        are reference sequences, so this method does not create the slot.
+
+        Args:
+            template: The IMoInflAffixTemplate object or HVO.
+            slot: The IMoInflAffixSlot object or HVO to insert.
+            side (str): ``prefix``, ``suffix``, ``proclitic``, or
+                ``enclitic``. Case-insensitive.
+            index (int, optional): Position to insert at. ``None`` (the
+                default) appends. An index outside ``0..Count`` is rejected.
+
+        Returns:
+            IMoInflAffixTemplate: The template the slot was added to.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If template, slot, or side is None.
+            FP_ParameterError: If side is not one of the four sides, if the
+                slot and template have different owners, or if index is
+                not an integer in range.
+
+        Example:
+            >>> slot = project.POS.CreateAffixSlot(verb, "PossConcord")
+            >>> template = project.MorphRules.CreateAffixTemplate(verb, "Verb Inflection")
+            >>> project.MorphRules.AddSlotToTemplate(template, slot, "prefix")
+
+        See Also:
+            CreateAffixTemplate
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(template, "template")
+        self._ValidateParam(slot, "slot")
+        self._ValidateParam(side, "side")
+
+        if not isinstance(side, str):
+            raise FP_ParameterError(
+                "side must be one of prefix, suffix, proclitic, enclitic"
+            )
+        prop_name = _AFFIX_TEMPLATE_SLOT_SIDES.get(side.lower())
+        if prop_name is None:
+            raise FP_ParameterError(
+                "side must be one of prefix, suffix, proclitic, enclitic"
+            )
+
+        template = self.__ResolveObject(template)
+        slot = self.__ResolveObject(slot)
+
+        slot_owner_hvo = getattr(getattr(slot, "Owner", None), "Hvo", None)
+        template_owner_hvo = getattr(getattr(template, "Owner", None), "Hvo", None)
+        if (
+            slot_owner_hvo is None
+            or template_owner_hvo is None
+            or slot_owner_hvo != template_owner_hvo
+        ):
+            raise FP_ParameterError(
+                "Affix slot and template must be owned by the same part of speech"
+            )
+
+        sequence = getattr(template, prop_name)
+
+        if index is None:
+            insert_at = None
+        elif isinstance(index, bool) or not isinstance(index, int):
+            raise FP_ParameterError("index must be an integer or None")
+        else:
+            count = sequence.Count
+            if index < 0 or index > count:
+                raise FP_ParameterError(
+                    f"index {index} is out of range for a slot sequence of length {count}"
+                )
+            insert_at = index
+
+        with self._TransactionCM(f"Add affix slot to {prop_name}"):
+            if insert_at is None:
+                sequence.Add(slot)
+            else:
+                sequence.Insert(insert_at, slot)
+            return template
 
     # ========== DELETION ==========
 

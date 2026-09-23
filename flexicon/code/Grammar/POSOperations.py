@@ -15,13 +15,20 @@
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
-from SIL.LCModel import IPartOfSpeechFactory, IPartOfSpeech, ILexEntryRepository
+from SIL.LCModel import (
+    ILexEntryRepository,
+    IMoInflAffixSlotFactory,
+    IPartOfSpeech,
+    IPartOfSpeechFactory,
+)
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 
 # Import flexlibs exceptions
 from ..FLExProject import (
+    FP_NullParameterError,  # noqa: F401  -- raised by _ValidateParam
     FP_ParameterError,
+    FP_ReadOnlyError,  # noqa: F401  -- raised by _EnsureWriteEnabled
 )
 
 # Import LCM casting utilities for pythonnet interface casting
@@ -851,7 +858,7 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             - Used for morphological parsing and generation
 
         See Also:
-            GetInflectionClasses
+            GetInflectionClasses, CreateAffixSlot
         """
         self._ValidateParam(pos_or_hvo, "pos_or_hvo")
 
@@ -859,6 +866,63 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
 
         # IPartOfSpeech has AffixSlotsOC
         return list(pos.AffixSlotsOC)
+
+    @OperationsMethod
+    def CreateAffixSlot(self, pos, name, optional=True):
+        """
+        Create an inflectional affix slot owned by a part of speech.
+
+        Access via FLExProject as ``project.POS.CreateAffixSlot``. The new
+        slot is attached to ``IPartOfSpeech.AffixSlotsOC`` before its Name
+        or Optional is written. Place it on a template with
+        ``project.MorphRules.AddSlotToTemplate``.
+
+        Args:
+            pos: The IPartOfSpeech object or HVO that will own the slot.
+            name (str): Slot name, written in the analysis writing system.
+            optional (bool): Whether the slot may be left empty. Defaults
+                to True.
+
+        Returns:
+            IMoInflAffixSlot: The newly created affix slot.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If pos or name is None.
+            FP_ParameterError: If name is empty.
+
+        Example:
+            >>> verb = project.POS.Find("Verb")
+            >>> slot = project.POS.CreateAffixSlot(verb, "PossConcord", optional=False)
+
+        See Also:
+            GetAffixSlots
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(pos, "pos")
+        self._ValidateParam(name, "name")
+
+        if not name or not name.strip():
+            raise FP_ParameterError("Name cannot be empty")
+
+        pos = self.__ResolveObject(pos)
+        wsHandle = self.project.project.DefaultAnalWs
+
+        factory = self.project.project.ServiceLocator.GetService(IMoInflAffixSlotFactory)
+
+        with self._TransactionCM(f"Create affix slot '{name}'"):
+            slot = factory.Create()
+
+            # Attach before property writes (Phase 2 ownership rule).
+            pos.AffixSlotsOC.Add(slot)
+
+            mkstr_name = TsStringUtils.MakeString(name, wsHandle)
+            slot.Name.set_String(wsHandle, mkstr_name)
+            # Boolean property is Optional (clr reflection, SIL.LCModel 11).
+            slot.Optional = optional
+
+            return slot
 
     @OperationsMethod
     def GetEntryCount(self, pos_or_hvo, recursive=False):

@@ -60,6 +60,12 @@ The original 14 phases (the v2.0.0 baseline) are documented unchanged below. Pub
 #### `project.POS.GetAffixSlots(pos_or_hvo)`
 **Replaces:** `IPartOfSpeech.AffixSlotsOC` list conversion
 
+#### `project.POS.CreateAffixSlot(pos, name, optional=True)`
+**Replaces:** `IMoInflAffixSlotFactory.Create()`, `IPartOfSpeech.AffixSlotsOC.Add()`, `IMoInflAffixSlot.Name.set_String()`, `IMoInflAffixSlot.Optional`
+
+#### `project.MorphRules.AddSlotToTemplate(template, slot, side, index=None)`
+**Replaces:** `IMoInflAffixTemplate.PrefixSlotsRS` / `SuffixSlotsRS` / `ProcliticSlotsRS` / `EncliticSlotsRS` `.Add()` or `.Insert(index, slot)`
+
 #### `project.POS.GetEntryCount(pos_or_hvo)`
 **Replaces:** `ILexEntryRepository.AllInstances()` iteration with morph type filtering
 
