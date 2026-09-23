@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`MSAOperations` had no wrapper to edit `SlotsRC` on an existing
+  inflectional-affix MSA** (#258). Added `SetInflAffMsaSlots(sense, slots,
+  replace=True)` so callers can replace or append template slots without raw
+  LCM `SlotsRC` access.
 - **`DataNotebookOperations` status/type/confidence getters always returned
   `None` and setters never reached the LCM** (#329). `IRnGenericRec` exposes
   `StatusRA`, `TypeRA`, and `ConfidenceRA`, not bare `Status`/`Type`/`Confidence`;
