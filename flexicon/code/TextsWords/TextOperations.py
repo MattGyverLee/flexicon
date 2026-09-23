@@ -21,9 +21,6 @@ from SIL.LCModel import (
     ITextRepository,
     IStTxtPara,
     ICmPossibility,
-    ICmMedia,
-    ICmMediaFactory,
-    ICmFolderFactory,
 )
 
 from SIL.LCModel.Core.KernelInterfaces import ITsString
@@ -372,8 +369,7 @@ class TextOperations(BaseOperations):
 
         R4 note: MediaFilesOA is on the concrete DomainImpl.Text, NOT on the
         IText interface; cast_to_concrete() is required. Access path:
-        MediaFilesOA -> MediaURIsOC. GetMediaFiles/AddMediaFile still use
-        MediaFilesOC and are tracked separately (#356).
+        MediaFilesOA -> MediaURIsOC (same path as GetMediaFiles/AddMediaFile).
         """
         from ..lcm_casting import cast_to_concrete
 
@@ -1080,8 +1076,8 @@ class TextOperations(BaseOperations):
             text_or_hvo: Either an IText object or its HVO (integer identifier).
 
         Returns:
-            list: List of ICmMedia objects. Returns empty list if no media
-                container exists or no media files are attached.
+            list: List of ICmMediaURI objects. Returns empty list if no media
+                container exists or no media URIs are attached.
 
         Raises:
             FP_NullParameterError: If text_or_hvo is None.
@@ -1090,17 +1086,22 @@ class TextOperations(BaseOperations):
         Example:
             >>> text = list(project.Texts.GetAll())[0]
             >>> media = project.Texts.GetMediaFiles(text)
-            >>> for m in media:
-            ...     if m.MediaFileRA:
-            ...         path = m.MediaFileRA.AbsoluteInternalPath
+            >>> for uri in media:
+            ...     if uri.MediaFileRA:
+            ...         path = uri.MediaFileRA.AbsoluteInternalPath
             ...         print(f"Media file: {path}")
 
         See Also:
             AddMediaFile
         """
+        from ..lcm_casting import cast_to_concrete
+
         text_obj = self.__GetTextObject(text_or_hvo)
-        if text_obj.MediaFilesOA:
-            return list(text_obj.MediaFilesOA.MediaFilesOC)
+        concrete = cast_to_concrete(text_obj)
+        if concrete is not None and getattr(concrete, "MediaFilesOA", None):
+            container = concrete.MediaFilesOA
+            if container is not None and hasattr(container, "MediaURIsOC"):
+                return list(container.MediaURIsOC)
         return []
 
     @OperationsMethod
@@ -1118,7 +1119,7 @@ class TextOperations(BaseOperations):
             label (str, optional): Descriptive label for the media file.
 
         Returns:
-            ICmMedia: The created media object with file properly linked.
+            ICmMediaURI: The created media URI with ICmFile properly linked.
 
         Raises:
             FP_ReadOnlyError: If project was not opened with writeEnabled=True.
@@ -1137,12 +1138,15 @@ class TextOperations(BaseOperations):
         Notes:
             - File is copied to project's LinkedFiles/AudioVisual directory
             - Unique filename generated if collision occurs (file_1.mp3, etc.)
-            - Creates ICmMedia object with proper ICmFile reference
-            - Media is automatically added to text's MediaFilesOC collection
+            - Creates ICmMediaURI owned in MediaURIsOC with ICmFile reference
+            - Uses ICmMediaContainerFactory (not ICmFolderFactory) per R4
 
         See Also:
             GetMediaFiles, project.Media.CopyToProject
         """
+        from ..lcm_casting import cast_to_concrete
+        from System import Type as _ClrType
+
         self._EnsureWriteEnabled()
 
         self._ValidateParam(filepath, "filepath")
@@ -1151,29 +1155,44 @@ class TextOperations(BaseOperations):
         self._ValidateParam(filepath, "filepath")
 
         text_obj = self.__GetTextObject(text_or_hvo)
+        concrete = cast_to_concrete(text_obj)
+        if concrete is None or not hasattr(concrete, "MediaFilesOA"):
+            raise FP_ParameterError(
+                "Text object does not expose MediaFilesOA on its concrete type"
+            )
 
         with self._TransactionCM("Add media file"):
-            # Create media container if needed
-            if not text_obj.MediaFilesOA:
-                folder_factory = self.project.project.ServiceLocator.GetService(ICmFolderFactory)
-                container = folder_factory.Create()
-                text_obj.MediaFilesOA = container
+            sl = self.project.project.ServiceLocator
+            cont_fac = sl.GetService(
+                _ClrType.GetType(
+                    "SIL.LCModel.ICmMediaContainerFactory, SIL.LCModel",
+                    True,
+                )
+            )
+            uri_fac = sl.GetService(
+                _ClrType.GetType(
+                    "SIL.LCModel.ICmMediaURIFactory, SIL.LCModel",
+                    True,
+                )
+            )
 
-            # Use MediaOperations to properly copy file and create ICmFile
-            # Copy file to project and get ICmFile reference
-            cm_file = self.project.Media.CopyToProject(filepath, internal_subdir="AudioVisual", label=label)
+            cm_file = self.project.Media.CopyToProject(
+                filepath, internal_subdir="AudioVisual", label=label
+            )
 
-            # Create ICmMedia object
-            media_factory = self.project.project.ServiceLocator.GetService(ICmMediaFactory)
-            media = media_factory.Create()
+            if concrete.MediaFilesOA is None:
+                concrete.MediaFilesOA = cont_fac.Create()
+            container = concrete.MediaFilesOA
 
-            # Add to text's media collection (must be done before setting properties)
-            text_obj.MediaFilesOA.MediaFilesOC.Add(media)
+            media_uri = uri_fac.Create()
+            container.MediaURIsOC.Add(media_uri)
+            media_uri.MediaFileRA = cm_file
+            try:
+                media_uri.MediaURI = cm_file.AbsoluteInternalPath or filepath
+            except Exception:
+                media_uri.MediaURI = filepath
 
-            # Link the ICmFile to ICmMedia
-            media.MediaFileRA = cm_file
-
-            return media
+            return media_uri
 
     @OperationsMethod
     def GetAbbreviation(self, text_or_hvo, wsHandle=None):

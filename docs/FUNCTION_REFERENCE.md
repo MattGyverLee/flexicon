@@ -100,10 +100,10 @@ The original 14 phases (the v2.0.0 baseline) are documented unchanged below. Pub
 **Replaces:** `IText.ContentsOA.ParagraphsOS.Count`
 
 #### `project.Texts.GetMediaFiles(text_or_hvo)`
-**Replaces:** `IText.MediaFilesOA.MediaFilesOC` list conversion
+**Replaces:** `cast_to_concrete(IText).MediaFilesOA.MediaURIsOC` list conversion
 
 #### `project.Texts.AddMediaFile(text_or_hvo, filepath, label=None)`
-**Replaces:** `ICmFolderFactory.Create()`, `ICmMediaFactory.Create()`, `MediaOperations.CopyToProject()`, `IText.MediaFilesOA.MediaFilesOC.Add()`
+**Replaces:** `ICmMediaContainerFactory.Create()`, `ICmMediaURIFactory.Create()`, `MediaOperations.CopyToProject()`, `MediaURIsOC.Add()`
 
 #### `project.Texts.GetAbbreviation(text_or_hvo, wsHandle=None)`
 **Replaces:** `IText.Abbreviation.get_String()`, `ITsString.Text`
