@@ -7,6 +7,8 @@
 #          a System.DateTime and a date string. Assertions read the GenDate
 #          components back from a record re-queried by GUID, not the value
 #          passed in.
+#          TestIssue330FindByDateLive: FindByDate over stored GenDates with
+#          lower-only, upper-only and closed string bounds.
 #
 #   Runs against target_sandbox (tempdir copy of the Target .fwbackup).
 #
@@ -66,6 +68,48 @@ class TestIssue330SetDateOfEventLive:
             assert ops.GetDateOfEvent(rec) is not None
         finally:
             ops.Delete(rec)
+
+
+class TestIssue330FindByDateLive:
+    """FindByDate compared stored GenDates with DateTime bounds (TypeError)."""
+
+    @pytest.mark.live_phase("DataNotebookOperations", "read")
+    def test_find_by_date_ranges_over_stored_gendates(self, target_sandbox):
+        ops = target_sandbox.DataNotebook
+        recs = {
+            "early": ops.Create("TEST_330 find early"),
+            "mid": ops.Create("TEST_330 find mid"),
+            "late": ops.Create("TEST_330 find late"),
+            "undated": ops.Create("TEST_330 find undated"),
+        }
+        try:
+            ops.SetDateOfEvent(recs["early"], "2023-12-31")
+            ops.SetDateOfEvent(recs["mid"], "2024-06-01")
+            ops.SetDateOfEvent(recs["late"], "2025-01-01")
+
+            # Pre-state read back from the LCM, by GUID.
+            stored = {k: _reread_gendate(target_sandbox, r) for k, r in recs.items()}
+            assert (stored["mid"].Year, stored["mid"].Month, stored["mid"].Day) == (
+                2024,
+                6,
+                1,
+            )
+            assert stored["undated"].IsEmpty
+            assert ops.GetDateOfEvent(recs["undated"]) is None
+
+            guid_to_key = {str(r.Guid): k for k, r in recs.items()}
+
+            def keys(found):
+                return sorted(
+                    guid_to_key[str(r.Guid)] for r in found if str(r.Guid) in guid_to_key
+                )
+
+            assert keys(ops.FindByDate("2024-01-01", "2024-12-31")) == ["mid"]
+            assert keys(ops.FindByDate(start_date="2024-01-01")) == ["late", "mid"]
+            assert keys(ops.FindByDate(end_date="2024-12-31")) == ["early", "mid"]
+        finally:
+            for r in recs.values():
+                ops.Delete(r)
 
 
 class TestIssue330SetDateOfBirthLive:

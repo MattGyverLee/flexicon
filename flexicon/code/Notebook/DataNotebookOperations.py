@@ -1021,7 +1021,8 @@ class DataNotebookOperations(BaseOperations):
             record_or_hvo: The notebook record object (IRnGenericRec) or its HVO.
 
         Returns:
-            DateTime: The event date, or None if not set.
+            GenDate: The event date (SIL.LCModel.Core.Cellar.GenDate), or
+            None if not set.
 
         Raises:
             FP_NullParameterError: If record_or_hvo is None.
@@ -1030,8 +1031,8 @@ class DataNotebookOperations(BaseOperations):
         Example:
             >>> record = project.DataNotebook.Find("Interview 1")
             >>> event_date = project.DataNotebook.GetDateOfEvent(record)
-            >>> if event_date:
-            ...     print(f"Event: {event_date.ToString('yyyy-MM-dd')}")
+            >>> if event_date is not None:
+            ...     print(f"Event: {event_date.Year}-{event_date.Month:02}-{event_date.Day:02}")
             ... else:
             ...     print("Event date not set")
             Event: 2024-01-15
@@ -1039,7 +1040,9 @@ class DataNotebookOperations(BaseOperations):
         Notes:
             - Can be different from creation/modification dates
             - Useful for documenting when fieldwork occurred
-            - Returns None if not set
+            - Returns None if not set. An unset DateOfEvent is an empty
+              GenDate struct, which is truthy under pythonnet, so IsEmpty
+              is checked explicitly.
 
         See Also:
             SetDateOfEvent, GetDateCreated
@@ -1047,8 +1050,10 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         try:
-            if hasattr(record, "DateOfEvent") and record.DateOfEvent:
-                return record.DateOfEvent
+            if hasattr(record, "DateOfEvent"):
+                event_date = record.DateOfEvent
+                if event_date is not None and not event_date.IsEmpty:
+                    return event_date
         except (AttributeError, System.NullReferenceException) as e:
             pass
 
@@ -2411,8 +2416,10 @@ class DataNotebookOperations(BaseOperations):
         Searches for records whose DateOfEvent falls within the specified range.
 
         Args:
-            start_date: Start date (DateTime or string "YYYY-MM-DD"). None means no start limit.
-            end_date: End date (DateTime or string "YYYY-MM-DD"). None means no end limit.
+            start_date: Start date (GenDate, DateTime or string "YYYY-MM-DD").
+                None means no start limit.
+            end_date: End date (GenDate, DateTime or string "YYYY-MM-DD").
+                None means no end limit.
 
         Returns:
             list: List of IRnGenericRec objects matching the date criteria.
@@ -2436,27 +2443,33 @@ class DataNotebookOperations(BaseOperations):
             - Searches DateOfEvent, not DateCreated/Modified
             - Records without DateOfEvent are excluded
             - Both dates are inclusive
-            - Accepts DateTime objects or date strings
+            - Accepts GenDate, DateTime objects or date strings
+            - Bounds are compared as GenDates at day resolution; a stored
+              non-exact date ("before"/"after"/"approximately") uses
+              GenDate's own ordering
 
         See Also:
             FindByResearcher, FindByType, GetDateOfEvent
         """
-        # Convert string dates to DateTime if needed
-        if start_date and isinstance(start_date, str):
-            start_date = DateTime.Parse(start_date)
-        if end_date and isinstance(end_date, str):
-            end_date = DateTime.Parse(end_date)
+        # DateOfEvent is a GenDate, whose relational operators only accept
+        # another GenDate -- comparing it with a DateTime raises TypeError.
+        # Normalize both bounds up front so a bad bound raises
+        # FP_ParameterError before any iteration.
+        if start_date is not None:
+            start_date = gendate_from_input(start_date)
+        if end_date is not None:
+            end_date = gendate_from_input(end_date)
 
         results = []
         for record in self.GetAll():
             event_date = self.GetDateOfEvent(record)
-            if not event_date:
+            if event_date is None:
                 continue
 
             # Check if date falls within range
-            if start_date and event_date < start_date:
+            if start_date is not None and event_date < start_date:
                 continue
-            if end_date and event_date > end_date:
+            if end_date is not None and event_date > end_date:
                 continue
 
             results.append(record)

@@ -2,11 +2,15 @@
 #   test_issue330_setdateofevent_gendate.py
 #
 #   Class: TestIssue330GenDateFromInput,
-#          TestIssue330SetDateOfEventAssignment
+#          TestIssue330SetDateOfEventAssignment,
+#          TestIssue330FindByDateGenDate
 #          Offline regression for issue #330: SetDateOfEvent assigned a
 #          System.DateTime (and, after #376, a str) to
 #          IRnGenericRec.DateOfEvent (GenDate), raising TypeError on every
-#          call. Live proof: test_issue330_setdateofevent_live.py.
+#          call. Follow-on: FindByDate compared the stored GenDate with
+#          DateTime bounds (TypeError), and an unset (empty, but truthy)
+#          GenDate leaked into upper-bounded results.
+#          Live proof: test_issue330_setdateofevent_live.py.
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+
@@ -110,3 +114,58 @@ class TestIssue330SetDateOfEventAssignment:
 
         assert isinstance(record.DateOfEvent, GenDate)
         assert _ymd(record.DateOfEvent) == (2024, 6, 1)
+
+
+class TestIssue330FindByDateGenDate:
+    """FindByDate must compare GenDate with GenDate, and skip empty dates."""
+
+    def _ops_with(self, records):
+        ops = DataNotebookOperations.__new__(DataNotebookOperations)
+        ops.GetAll = lambda: list(records)
+        ops._DataNotebookOperations__GetRecordObject = lambda r: r
+        return ops
+
+    def _records(self):
+        from flexicon.code.Shared.gendate_utils import empty_gendate
+
+        return {
+            "early": SimpleNamespace(DateOfEvent=gendate_from_input("2023-12-31")),
+            "mid": SimpleNamespace(DateOfEvent=gendate_from_input("2024-06-01")),
+            "late": SimpleNamespace(DateOfEvent=gendate_from_input("2025-01-01")),
+            "undated": SimpleNamespace(DateOfEvent=empty_gendate()),
+        }
+
+    def _find(self, *args, **kwargs):
+        recs = self._records()
+        found = self._ops_with(recs.values()).FindByDate(*args, **kwargs)
+        return sorted(k for k, v in recs.items() if v in found)
+
+    def test_closed_string_range_returns_gendate_match(self):
+        assert self._find("2024-01-01", "2024-12-31") == ["mid"]
+
+    def test_closed_range_bounds_are_inclusive(self):
+        assert self._find("2024-06-01", "2024-06-01") == ["mid"]
+
+    def test_lower_only_range(self):
+        assert self._find(start_date="2024-01-01") == ["late", "mid"]
+
+    def test_upper_only_range_excludes_undated(self):
+        assert self._find(end_date="2024-12-31") == ["early", "mid"]
+
+    def test_datetime_bounds_accepted(self):
+        assert self._find(DateTime(2024, 1, 1), DateTime(2024, 12, 31, 23, 59, 0)) == [
+            "mid"
+        ]
+
+    def test_unbounded_returns_all_dated(self):
+        assert self._find() == ["early", "late", "mid"]
+
+    def test_invalid_bound_raises_fp_parameter_error(self):
+        with pytest.raises(FP_ParameterError, match="Invalid date format"):
+            self._find("not-a-date")
+
+    def test_get_date_of_event_returns_none_for_empty(self):
+        recs = self._records()
+        ops = self._ops_with(recs.values())
+        assert ops.GetDateOfEvent(recs["undated"]) is None
+        assert (ops.GetDateOfEvent(recs["mid"]).Year) == 2024
