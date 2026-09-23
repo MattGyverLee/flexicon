@@ -18,6 +18,12 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`DataNotebookOperations` record CRUD was broken on first use** (#302,
+  #328, #261). Top-level records now attach to
+  `ResearchNotebookOA.RecordsOC` (not the repository service), HVO
+  resolution uses `FLExProject.Object()`, `Title` is written as a bare
+  `ITsString` assignment, and body content uses `DescriptionOA` instead of
+  a nonexistent `Text` member. Offline ratchets pin the remediated paths.
 - **`MSAOperations` had no wrapper to edit `SlotsRC` on an existing
   inflectional-affix MSA** (#258). Added `SetInflAffMsaSlots(sense, slots,
   replace=True)` so callers can replace or append template slots without raw
