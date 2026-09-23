@@ -22,13 +22,30 @@ import pytest
 pytestmark = pytest.mark.requires_live_project
 
 TEST_PREFIX = "TEST_"
-_MEASUREMENTS = (
+_EVIDENCE = (
     pathlib.Path(__file__).resolve().parents[2]
     / "specs"
     / "255-affix-slot"
     / "evidence"
-    / "_live_measurements.json"
 )
+_MEASUREMENTS = _EVIDENCE / "_live_measurements.json"
+_CYCLE3_MEASUREMENTS = _EVIDENCE / "_cycle3_measurements.json"
+
+
+def _template_on(project, pos_hvo, template_hvo):
+    """Re-fetch a template from its owning POS. Not the object just returned."""
+    from SIL.LCModel import IMoInflAffixTemplate, IPartOfSpeech
+
+    owner = IPartOfSpeech(project.Object(pos_hvo))
+    for raw in owner.AffixTemplatesOS:
+        if raw.Hvo == template_hvo:
+            return IMoInflAffixTemplate(raw)
+    return None
+
+
+def _side_hvos(template, side_name):
+    sequence = getattr(template, side_name)
+    return [int(item.Hvo) for item in sequence]
 
 
 def _analysis_text(multistring, ws_handle):
@@ -200,5 +217,121 @@ class TestIssue255AffixSlotLive:
         finally:
             _MEASUREMENTS.parent.mkdir(parents=True, exist_ok=True)
             _MEASUREMENTS.write_text(
+                json.dumps(record, indent=2), encoding="utf-8"
+            )
+
+    @pytest.mark.live_phase("POSOperations", "add")
+    def test_ancestor_slot_accepted_descendant_slot_rejected(self, target_sandbox):
+        """Obligatory default, ancestor slot accepted, descendant slot rejected."""
+        import clr
+        from SIL.LCModel import IMoInflAffixSlot, IPartOfSpeech
+
+        from flexicon.code.FLExProject import FP_ParameterError
+
+        project = target_sandbox
+        assert project.writeEnabled is True
+
+        record = {"status": "fail"}
+        try:
+            iface = clr.GetClrType(IPartOfSpeech)
+            all_affix = iface.GetProperty("AllAffixSlots")
+            assert all_affix is not None
+            record["all_affix_slots_property"] = all_affix.Name
+            record["all_affix_slots_type"] = all_affix.PropertyType.FullName
+
+            parent = project.POS.Create(f"{TEST_PREFIX}Cycle3Parent", "T3P")
+            child = project.POS.AddSubcategory(
+                parent, f"{TEST_PREFIX}Cycle3Child", "T3C"
+            )
+            parent_hvo = int(parent.Hvo)
+            child_hvo = int(child.Hvo)
+            record["parent_hvo"] = parent_hvo
+            record["child_hvo"] = child_hvo
+
+            parent_fresh = IPartOfSpeech(project.Object(parent_hvo))
+            pre_parent_slots = [
+                int(item.Hvo) for item in project.POS.GetAffixSlots(parent_fresh)
+            ]
+            record["pre_parent_slot_hvos"] = pre_parent_slots
+
+            slot_name = f"{TEST_PREFIX}Cycle3Obligatory"
+            created = project.POS.CreateAffixSlot(parent, slot_name)
+            parent_slot_hvo = int(created.Hvo)
+
+            ws = project.project.DefaultAnalWs
+            reread = [
+                IMoInflAffixSlot(item)
+                for item in project.POS.GetAffixSlots(
+                    IPartOfSpeech(project.Object(parent_hvo))
+                )
+                if int(item.Hvo) == parent_slot_hvo
+            ]
+            assert len(reread) == 1
+            fresh_slot = reread[0]
+            read_optional = fresh_slot.Optional
+            assert _analysis_text(fresh_slot.Name, ws) == slot_name
+            assert read_optional == False  # noqa: E712  -- LCM bool, not identity
+            record["parent_slot_hvo"] = parent_slot_hvo
+            record["optional_read_back"] = bool(read_optional)
+
+            child_pos = IPartOfSpeech(project.Object(child_hvo))
+            child_visible = [int(item.Hvo) for item in child_pos.AllAffixSlots]
+            record["child_all_affix_slots_before"] = child_visible
+            assert parent_slot_hvo in child_visible
+
+            child_template = project.MorphRules.CreateAffixTemplate(
+                child, f"{TEST_PREFIX}Cycle3ChildTemplate"
+            )
+            child_template_hvo = int(child_template.Hvo)
+            pre_child_side = _side_hvos(
+                _template_on(project, child_hvo, child_template_hvo),
+                "PrefixSlotsRS",
+            )
+            record["pre_child_prefix_hvos"] = pre_child_side
+
+            project.MorphRules.AddSlotToTemplate(
+                child_template, created, "prefix"
+            )
+            post_child = _template_on(project, child_hvo, child_template_hvo)
+            post_child_side = _side_hvos(post_child, "PrefixSlotsRS")
+            record["post_child_prefix_hvos"] = post_child_side
+            assert parent_slot_hvo in post_child_side
+
+            child_slot = project.POS.CreateAffixSlot(
+                child, f"{TEST_PREFIX}Cycle3ChildSlot"
+            )
+            child_slot_hvo = int(child_slot.Hvo)
+            parent_pos = IPartOfSpeech(project.Object(parent_hvo))
+            parent_visible = [int(item.Hvo) for item in parent_pos.AllAffixSlots]
+            record["child_slot_hvo"] = child_slot_hvo
+            record["parent_all_affix_slots"] = parent_visible
+            assert child_slot_hvo not in parent_visible
+
+            parent_template = project.MorphRules.CreateAffixTemplate(
+                parent, f"{TEST_PREFIX}Cycle3ParentTemplate"
+            )
+            parent_template_hvo = int(parent_template.Hvo)
+            pre_parent_side = _side_hvos(
+                _template_on(project, parent_hvo, parent_template_hvo),
+                "PrefixSlotsRS",
+            )
+            record["pre_parent_prefix_hvos"] = pre_parent_side
+
+            with pytest.raises(FP_ParameterError):
+                project.MorphRules.AddSlotToTemplate(
+                    parent_template, child_slot, "prefix"
+                )
+
+            post_parent_side = _side_hvos(
+                _template_on(project, parent_hvo, parent_template_hvo),
+                "PrefixSlotsRS",
+            )
+            record["post_parent_prefix_hvos"] = post_parent_side
+            assert post_parent_side == pre_parent_side
+
+            record["status"] = "pass"
+        finally:
+            _CYCLE3_MEASUREMENTS.parent.mkdir(parents=True, exist_ok=True)
+            _CYCLE3_MEASUREMENTS.write_text(
                 json.dumps(record, indent=2), encoding="utf-8"
             )

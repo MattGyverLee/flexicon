@@ -868,7 +868,7 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         return list(pos.AffixSlotsOC)
 
     @OperationsMethod
-    def CreateAffixSlot(self, pos, name, optional=True):
+    def CreateAffixSlot(self, pos, name, optional=False):
         """
         Create an inflectional affix slot owned by a part of speech.
 
@@ -881,7 +881,8 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             pos: The IPartOfSpeech object or HVO that will own the slot.
             name (str): Slot name, written in the analysis writing system.
             optional (bool): Whether the slot may be left empty. Defaults
-                to True.
+                to False. A new FLEx affix slot is obligatory; pass True
+                to create an optional slot.
 
         Returns:
             IMoInflAffixSlot: The newly created affix slot.

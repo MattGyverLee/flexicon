@@ -107,9 +107,19 @@ class _Sequence:
         self.items.insert(index, item)
 
 
+class _Category:
+    """Part-of-speech stand-in. Membership is AllAffixSlots, not owner HVO."""
+
+    ClassName = "PartOfSpeech"
+
+    def __init__(self, hvo, slots=()):
+        self.Hvo = hvo
+        self.AllAffixSlots = list(slots)
+
+
 class _Template:
-    def __init__(self, owner_hvo=1):
-        self.Owner = _Owner(owner_hvo)
+    def __init__(self, owner_hvo=1, all_affix_slots=()):
+        self.Owner = _Category(owner_hvo, all_affix_slots)
         self.Hvo = 80
         self.PrefixSlotsRS = _Sequence()
         self.SuffixSlotsRS = _Sequence()
@@ -202,8 +212,41 @@ class TestCreateAffixSlotCallOrder:
         assert slot.Optional is False
         assert slot.optional_seen is True
 
+    def test_omitted_optional_is_obligatory_after_add(self, monkeypatch):
+        log = _CallLog()
+        ops, _, slot, _factory = _pos_ops(log)
+        pos = _Pos(log)
+
+        class _TsStringUtils:
+            @staticmethod
+            def MakeString(text, ws):
+                log.events.append("makestring")
+                assert "add" in log.events
+                return object()
+
+        monkeypatch.setattr(
+            "flexicon.code.Grammar.POSOperations.TsStringUtils",
+            _TsStringUtils,
+        )
+
+        ops.CreateAffixSlot(pos, "PossConcord")
+
+        assert log.events == ["create", "add", "makestring", "name", "optional"]
+        assert log.events.index("add") < log.events.index("optional")
+        assert slot.Optional is False
+
 
 class TestAddSlotToTemplate:
+    @pytest.fixture(autouse=True)
+    def _passthrough_pos_cast(self, monkeypatch):
+        # Stand-ins are not CLR objects. Production __ResolveObject casts
+        # a PartOfSpeech Owner to IPartOfSpeech; this returns the stand-in
+        # so the test can assert AllAffixSlots membership.
+        monkeypatch.setattr(
+            "flexicon.code.Grammar.MorphRuleOperations.IPartOfSpeech",
+            lambda obj: obj,
+        )
+
     def test_bad_side_raises(self):
         ops = _rule_ops()
         template = _Template()
@@ -218,8 +261,34 @@ class TestAddSlotToTemplate:
 
     def test_owner_mismatch_raises(self):
         ops = _rule_ops()
-        template = _Template(owner_hvo=1)
         slot = _Slot(_CallLog(), owner_hvo=2)
+        other = _Slot(_CallLog(), owner_hvo=1)
+        other.Hvo = 99
+        template = _Template(owner_hvo=1, all_affix_slots=[other])
+
+        with pytest.raises(FP_ParameterError):
+            ops.AddSlotToTemplate(template, slot, "prefix")
+        assert template.PrefixSlotsRS.add_calls == []
+        assert template.PrefixSlotsRS.insert_calls == []
+
+    def test_ancestor_slot_is_accepted(self):
+        ops = _rule_ops()
+        slot = _Slot(_CallLog(), owner_hvo=1)
+        slot.Hvo = 50
+        template = _Template(owner_hvo=2, all_affix_slots=[slot])
+
+        returned = ops.AddSlotToTemplate(template, slot, "prefix")
+
+        assert returned is template
+        assert template.PrefixSlotsRS.add_calls == [slot]
+
+    def test_descendant_slot_is_rejected(self):
+        ops = _rule_ops()
+        slot = _Slot(_CallLog(), owner_hvo=2)
+        slot.Hvo = 60
+        parent_slot = _Slot(_CallLog(), owner_hvo=1)
+        parent_slot.Hvo = 50
+        template = _Template(owner_hvo=1, all_affix_slots=[parent_slot])
 
         with pytest.raises(FP_ParameterError):
             ops.AddSlotToTemplate(template, slot, "prefix")
@@ -228,8 +297,8 @@ class TestAddSlotToTemplate:
 
     def test_index_none_appends(self):
         ops = _rule_ops()
-        template = _Template(owner_hvo=7)
         slot = _Slot(_CallLog(), owner_hvo=7)
+        template = _Template(owner_hvo=7, all_affix_slots=[slot])
         template.PrefixSlotsRS.items.append(object())
 
         returned = ops.AddSlotToTemplate(template, slot, "PREFIX")
@@ -243,8 +312,8 @@ class TestAddSlotToTemplate:
 
     def test_index_inserts_and_out_of_range_raises(self):
         ops = _rule_ops()
-        template = _Template(owner_hvo=7)
         slot = _Slot(_CallLog(), owner_hvo=7)
+        template = _Template(owner_hvo=7, all_affix_slots=[slot])
 
         with pytest.raises(FP_ParameterError):
             ops.AddSlotToTemplate(template, slot, "suffix", index=1)

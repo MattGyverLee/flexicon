@@ -434,9 +434,10 @@ class MorphRuleOperations(BaseOperations):
         Insert an affix slot into one side of an inflectional template.
 
         Access via FLExProject as ``project.MorphRules.AddSlotToTemplate``.
-        The slot must already be owned by the same part of speech that owns
-        the template (see ``project.POS.CreateAffixSlot``). The four sides
-        are reference sequences, so this method does not create the slot.
+        The slot must already be in the template category's AllAffixSlots:
+        that category's own slots, or a slot owned by an ancestor category
+        (see ``project.POS.CreateAffixSlot``). The four sides are reference
+        sequences, so this method does not create the slot.
 
         Args:
             template: The IMoInflAffixTemplate object or HVO.
@@ -453,8 +454,8 @@ class MorphRuleOperations(BaseOperations):
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If template, slot, or side is None.
             FP_ParameterError: If side is not one of the four sides, if the
-                slot and template have different owners, or if index is
-                not an integer in range.
+                slot is not in the template category's AllAffixSlots, or
+                if index is not an integer in range.
 
         Example:
             >>> slot = project.POS.CreateAffixSlot(verb, "PossConcord")
@@ -483,15 +484,21 @@ class MorphRuleOperations(BaseOperations):
         template = self.__ResolveObject(template)
         slot = self.__ResolveObject(slot)
 
-        slot_owner_hvo = getattr(getattr(slot, "Owner", None), "Hvo", None)
-        template_owner_hvo = getattr(getattr(template, "Owner", None), "Hvo", None)
+        # Owner can be a bare ICmObject. __ResolveObject casts a
+        # PartOfSpeech to IPartOfSpeech so AllAffixSlots is visible.
+        pos = self.__ResolveObject(getattr(template, "Owner", None))
+        visible = None
+        if getattr(pos, "ClassName", None) == "PartOfSpeech":
+            visible = self.__AllAffixSlotHvos(pos)
+        slot_hvo = getattr(slot, "Hvo", None)
         if (
-            slot_owner_hvo is None
-            or template_owner_hvo is None
-            or slot_owner_hvo != template_owner_hvo
+            visible is None
+            or slot_hvo is None
+            or int(slot_hvo) not in visible
         ):
             raise FP_ParameterError(
-                "Affix slot and template must be owned by the same part of speech"
+                "Affix slot must be in the template category's AllAffixSlots "
+                "(the category itself or an ancestor)"
             )
 
         sequence = getattr(template, prop_name)
@@ -1098,10 +1105,42 @@ class MorphRuleOperations(BaseOperations):
     # ========== PRIVATE HELPERS ==========
 
     def __ResolveObject(self, rule_or_hvo):
-        """Resolve HVO or object to LCM object."""
+        """Resolve an HVO or object to an LCM object.
+
+        A ``PartOfSpeech`` is cast to ``IPartOfSpeech``. ``Owner`` and
+        ``project.Object`` can both be a bare ``ICmObject``, which does
+        not expose category members such as ``AllAffixSlots``.
+        """
         if isinstance(rule_or_hvo, int):
-            return self.project.Object(rule_or_hvo)
-        return rule_or_hvo
+            obj = self.project.Object(rule_or_hvo)
+        else:
+            obj = rule_or_hvo
+
+        if getattr(obj, "ClassName", None) == "PartOfSpeech":
+            return IPartOfSpeech(obj)
+        return obj
+
+    def __AllAffixSlotHvos(self, pos):
+        """HVOs in ``IPartOfSpeech.AllAffixSlots``, or None if that property is absent.
+
+        Confirmed on the live interface with ``clr.GetClrType``:
+        ``AllAffixSlots`` is ``IEnumerable<IMoInflAffixSlot>``. It is the
+        category's own affix slots plus the owner's ``AllAffixSlots``,
+        walking up. There is no same-owner HVO fallback.
+        """
+        import clr
+        from SIL.LCModel import IPartOfSpeech as PartOfSpeechIface
+
+        prop = clr.GetClrType(PartOfSpeechIface).GetProperty("AllAffixSlots")
+        if prop is None:
+            return None
+        try:
+            slots = pos.AllAffixSlots
+        except AttributeError:
+            return None
+        if slots is None:
+            return set()
+        return {int(item.Hvo) for item in slots}
 
     def __WSHandle(self, wsHandle):
         """Get writing system handle, defaulting to analysis WS."""

@@ -78,6 +78,9 @@ template = project.MorphRules.CreateAffixTemplate(verb, "Possessive inflection")
 template = project.MorphRules.AddSlotToTemplate(template, slot, "prefix")
 ```
 
+Omitting `optional` creates an obligatory slot.
+A subcategory template may take a slot owned by an ancestor category.
+
 `side` is `prefix`, `suffix`, `proclitic`, or `enclitic` (any case).
 Leave `index` unset to append, or pass an integer to insert at that
 position.
