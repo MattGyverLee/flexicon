@@ -18,6 +18,8 @@ available; no FLEx init). Live run was **not executed** here.
 python3 -m pytest tests/operations/test_overlay_operations.py -m "not requires_live_project" -q
 ```
 
+**2026-09-23 automation run:** 3 passed, 4 deselected (cloud Linux pod, no libmono).
+
 ## Result
 
 **FAIL: unverified (live)** -- write-path change requires LCM read-back on a
