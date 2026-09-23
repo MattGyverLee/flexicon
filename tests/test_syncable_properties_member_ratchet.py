@@ -74,17 +74,6 @@ _ALLOWLIST: dict[tuple[str, str, str], str] = {
     # a media-container GetSyncableProperties in the future.
     # (No current hit; retained for documentation purposes only.)
 
-    # --- Out-of-scope findings (do not fix here; open separate issues) ---
-    #
-    # FINDING: ShowComplexFormsIn is absent from ILexEntryRef in the baseline
-    # (VariantOperations.py line 618).  This is the same class of bug as R7
-    # (hasattr guard that is always False, dead key in sync payload).
-    # Out of scope for #325 -- tracked as a separate finding.
-    # Allowlisted so the ratchet passes while the fix is pending.
-    ("VariantOperations.py", "ILexEntryRef", "ShowComplexFormsIn"):
-        "FINDING: absent from ILexEntryRef baseline; same bug class as R7 "
-        "(hasattr always False, dead sync key).  Out of scope for #325; "
-        "fix in a follow-on issue.",
 }
 
 # ---------------------------------------------------------------------------

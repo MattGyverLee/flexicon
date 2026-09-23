@@ -525,8 +525,9 @@ class VariantOperations(BaseOperations):
         Notes:
             - Factory.Create() automatically generates a new GUID
             - insert_after=True preserves the original variant's position/priority
-            - Simple properties copied: RefType, HideMinorEntry, ShowComplexFormsIn
-            - Reference Sequence (RS) properties copied: VariantEntryTypesRS, ComponentLexemesRS
+            - Simple properties copied: RefType, HideMinorEntry
+            - Reference Sequence (RS) properties copied: VariantEntryTypesRS,
+              ComponentLexemesRS, ShowComplexFormsInRS
             - The duplicate shares the same form as the source (both owned by same entry)
             - Variants have no owned objects, so deep parameter has no effect
             - LiftResidue is not copied (import-specific data)
@@ -566,9 +567,6 @@ class VariantOperations(BaseOperations):
             if hasattr(source, "HideMinorEntry"):
                 duplicate.HideMinorEntry = source.HideMinorEntry
 
-            if hasattr(source, "ShowComplexFormsIn"):
-                duplicate.ShowComplexFormsIn = source.ShowComplexFormsIn
-
             # Copy Reference Sequence (RS) properties
             # Copy variant entry types
             for vtype in source.VariantEntryTypesRS:
@@ -577,6 +575,9 @@ class VariantOperations(BaseOperations):
             # Copy component lexemes (for irregularly inflected forms)
             for component in source.ComponentLexemesRS:
                 duplicate.ComponentLexemesRS.Add(component)
+
+            for shown_in in source.ShowComplexFormsInRS:
+                duplicate.ShowComplexFormsInRS.Add(shown_in)
 
             # Copy complex entry types (if applicable)
             if hasattr(source, "ComplexEntryTypesRS"):
@@ -614,9 +615,11 @@ class VariantOperations(BaseOperations):
         if hasattr(item, "HideMinorEntry"):
             props["HideMinorEntry"] = item.HideMinorEntry
 
-        # ShowComplexFormsIn - flags for showing complex forms
-        if hasattr(item, "ShowComplexFormsIn"):
-            props["ShowComplexFormsIn"] = item.ShowComplexFormsIn
+        # show_complex_forms_in_rs -- ordered GUID list from ShowComplexFormsInRS
+        # (ILexEntryRef has ShowComplexFormsInRS, not the phantom ShowComplexFormsIn)
+        props["show_complex_forms_in_rs"] = [
+            str(t.Guid) for t in item.ShowComplexFormsInRS
+        ]
 
         # Note: The variant form itself is stored on the owning entry's LexemeFormOA
         # Note: VariantEntryTypesRS is a Reference Sequence (complex relationships) - not included as simple property
