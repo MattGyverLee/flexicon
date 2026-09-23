@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **Note reply threading used phantom `RepliesOS` on `ICmBaseAnnotation`**
+  (#323). General discussion replies now attach via `LangProject.AnnotationsOC`
+  with `BeginObjectRA` pointing at the parent note; scripture notes use
+  `ResponsesOS`. `GetReplies`, `AddReply`, `Duplicate`, `Delete`, and
+  `annotation.replies` follow the same two-path model instead of silent no-ops.
 - **`MSAOperations` had no wrapper to edit `SlotsRC` on an existing
   inflectional-affix MSA** (#258). Added `SetInflAffMsaSlots(sense, slots,
   replace=True)` so callers can replace or append template slots without raw
