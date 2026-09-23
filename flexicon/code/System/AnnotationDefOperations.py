@@ -1148,8 +1148,7 @@ class AnnotationDefOperations(BaseOperations):
 
             return duplicate
 
-    @staticmethod
-    def _CopySimpleFlags(source, dup):
+    def _CopySimpleFlags(self, source, dup):
         """
         Copy the scalar ICmAnnotationDefn fields from source to dup.
 
@@ -1158,11 +1157,13 @@ class AnnotationDefOperations(BaseOperations):
         AllowsMultiple, none of which exist, so those flags were never
         duplicated.
         """
-        dup.InstanceOfSignature = source.InstanceOfSignature
-        dup.AllowsInstanceOf = source.AllowsInstanceOf
-        dup.UserCanCreate = source.UserCanCreate
-        dup.Multi = source.Multi
-        dup.CopyCutPastable = source.CopyCutPastable
+        # Called inside Duplicate's bracket; re-entering joins it.
+        with self._TransactionCM("Copy annotation definition flags"):
+            dup.InstanceOfSignature = source.InstanceOfSignature
+            dup.AllowsInstanceOf = source.AllowsInstanceOf
+            dup.UserCanCreate = source.UserCanCreate
+            dup.Multi = source.Multi
+            dup.CopyCutPastable = source.CopyCutPastable
 
     def _DuplicateSubDefInto(self, source_def, parent_dup, deep=True):
         """Duplicate an annotation sub-definition into the specified parent."""

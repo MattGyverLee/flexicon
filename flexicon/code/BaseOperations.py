@@ -3224,9 +3224,12 @@ class BaseOperations:
         if publications is None or not hasattr(publications, "GetAll"):
             return
 
-        for publication in publications.GetAll():
-            if publication not in item.DoNotPublishInRC:
-                item.DoNotPublishInRC.Add(publication)
+        # Callers run this inside their own Create bracket; re-entering
+        # _TransactionCM joins that block rather than opening a second task.
+        with self._TransactionCM("Exclude new item from all publications"):
+            for publication in publications.GetAll():
+                if publication not in item.DoNotPublishInRC:
+                    item.DoNotPublishInRC.Add(publication)
 
     def _ValidateParam(self, param: Any, param_name: str = "parameter") -> None:
         """

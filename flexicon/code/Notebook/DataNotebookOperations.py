@@ -229,22 +229,24 @@ class DataNotebookOperations(BaseOperations):
         (one paragraph per line). An empty ``content`` clears the
         paragraphs.
         """
-        if record.DescriptionOA is None:
-            text_factory = self.project.project.ServiceLocator.GetService(
-                IStTextFactory
-            )
-            record.DescriptionOA = text_factory.Create()
-        sttext = record.DescriptionOA
-        while sttext.ParagraphsOS.Count > 0:
-            sttext.ParagraphsOS.Remove(sttext.ParagraphsOS[0])
-        if content:
-            para_factory = self.project.project.ServiceLocator.GetService(
-                IStTxtParaFactory
-            )
-            for line in content.splitlines() or [content]:
-                new_para = para_factory.Create()
-                sttext.ParagraphsOS.Add(new_para)
-                new_para.Contents = TsStringUtils.MakeString(line, wsHandle)
+        # Callers already hold a transaction; re-entering joins it.
+        with self._TransactionCM("Set record content"):
+            if record.DescriptionOA is None:
+                text_factory = self.project.project.ServiceLocator.GetService(
+                    IStTextFactory
+                )
+                record.DescriptionOA = text_factory.Create()
+            sttext = record.DescriptionOA
+            while sttext.ParagraphsOS.Count > 0:
+                sttext.ParagraphsOS.Remove(sttext.ParagraphsOS[0])
+            if content:
+                para_factory = self.project.project.ServiceLocator.GetService(
+                    IStTxtParaFactory
+                )
+                for line in content.splitlines() or [content]:
+                    new_para = para_factory.Create()
+                    sttext.ParagraphsOS.Add(new_para)
+                    new_para.Contents = TsStringUtils.MakeString(line, wsHandle)
 
     def _CopyRecordContent(self, source, duplicate):
         """Deep-copy body paragraphs (call inside a transaction).
@@ -253,23 +255,25 @@ class DataNotebookOperations(BaseOperations):
         and all writing-system runs (same idiom as
         ``TextOperations.Duplicate``).
         """
-        source_st = source.DescriptionOA
-        if source_st is None or source_st.ParagraphsOS.Count == 0:
-            return
-        text_factory = self.project.project.ServiceLocator.GetService(
-            IStTextFactory
-        )
-        if duplicate.DescriptionOA is None:
-            duplicate.DescriptionOA = text_factory.Create()
-        para_factory = self.project.project.ServiceLocator.GetService(
-            IStTxtParaFactory
-        )
-        for para in source_st.ParagraphsOS:
-            contents = IStTxtPara(para).Contents
-            if contents:
-                new_para = para_factory.Create()
-                duplicate.DescriptionOA.ParagraphsOS.Add(new_para)
-                new_para.Contents = contents
+        # Callers already hold a transaction; re-entering joins it.
+        with self._TransactionCM("Copy record content"):
+            source_st = source.DescriptionOA
+            if source_st is None or source_st.ParagraphsOS.Count == 0:
+                return
+            text_factory = self.project.project.ServiceLocator.GetService(
+                IStTextFactory
+            )
+            if duplicate.DescriptionOA is None:
+                duplicate.DescriptionOA = text_factory.Create()
+            para_factory = self.project.project.ServiceLocator.GetService(
+                IStTxtParaFactory
+            )
+            for para in source_st.ParagraphsOS:
+                contents = IStTxtPara(para).Contents
+                if contents:
+                    new_para = para_factory.Create()
+                    duplicate.DescriptionOA.ParagraphsOS.Add(new_para)
+                    new_para.Contents = contents
 
     # --- Core CRUD Operations ---
 
