@@ -249,6 +249,76 @@ class OverlayOperations(PossibilityItemOperations):
         with self._TransactionCM(f"Set Overlay name {name!r}"):
             overlay.Name = str(name or "")
 
+    @OperationsMethod
+    def Duplicate(self, overlay_or_hvo, insert_after=True, deep=False):
+        """Clone an overlay into ``OverlaysOC`` with a new GUID (issue #303)."""
+        self._EnsureWriteEnabled()
+        self._ValidateParam(overlay_or_hvo, "overlay_or_hvo")
+
+        source = self.__ResolveOverlay(overlay_or_hvo)
+        factory = self.project.project.ServiceLocator.GetService(ICmOverlayFactory)
+
+        with self._TransactionCM("Duplicate Overlay"):
+            duplicate = factory.Create()
+            self.project.lp.OverlaysOC.Add(duplicate)
+            duplicate.Name = source.Name
+            duplicate.PossListRA = source.PossListRA
+            if hasattr(source, "PossItemsRC"):
+                for item in source.PossItemsRC:
+                    duplicate.PossItemsRC.Add(item)
+            return duplicate
+
+    @OperationsMethod
+    def GetDescription(self, overlay_or_hvo, wsHandle=None):
+        """``ICmOverlay`` has no ``Description`` member (issue #303)."""
+        self._ValidateParam(overlay_or_hvo, "overlay_or_hvo")
+        return ""
+
+    @OperationsMethod
+    def SetDescription(self, overlay_or_hvo, description, wsHandle=None):
+        """``ICmOverlay`` has no ``Description`` member; validated no-op (#303)."""
+        self._ValidateParam(overlay_or_hvo, "overlay_or_hvo")
+
+    @OperationsMethod
+    def GetGuid(self, overlay_or_hvo):
+        """Return the overlay GUID."""
+        self._ValidateParam(overlay_or_hvo, "overlay_or_hvo")
+        overlay = self.__ResolveOverlay(overlay_or_hvo)
+        return str(overlay.Guid)
+
+    @OperationsMethod
+    def CompareTo(self, overlay1_or_hvo, overlay2_or_hvo):
+        """Compare two overlays by plain-string ``Name``."""
+        self._ValidateParam(overlay1_or_hvo, "overlay1_or_hvo")
+        self._ValidateParam(overlay2_or_hvo, "overlay2_or_hvo")
+
+        name1 = self.GetName(overlay1_or_hvo)
+        name2 = self.GetName(overlay2_or_hvo)
+
+        if name1 < name2:
+            return -1
+        if name1 > name2:
+            return 1
+        return 0
+
+    @OperationsMethod
+    def GetSyncableProperties(self, overlay_or_hvo):
+        """Syncable snapshot for project-scoped ``ICmOverlay`` (#303)."""
+        self._ValidateParam(overlay_or_hvo, "overlay_or_hvo")
+
+        overlay = self.__ResolveOverlay(overlay_or_hvo)
+        props = {"Guid": str(overlay.Guid)}
+
+        name = overlay.Name
+        if name:
+            props["Name"] = str(name)
+
+        poss_list = overlay.PossListRA
+        if poss_list is not None:
+            props["PossListRA"] = str(poss_list.Guid)
+
+        return props
+
     # --- Visibility Operations ---
 
     @OperationsMethod
@@ -675,14 +745,8 @@ class OverlayOperations(PossibilityItemOperations):
         """
         self._ValidateParam(chart, "chart")
 
-        # Query the chart's overlay list
-        overlays = []
-        if hasattr(chart, "OverlaysOC"):
-            overlays = list(chart.OverlaysOC)
-        elif hasattr(chart, "Overlays"):
-            overlays = list(chart.Overlays)
-
-        return overlays
+        # Overlays live on ILangProject.OverlaysOC, not on the chart (#303).
+        return self.GetAll()
 
     @OperationsMethod
     def GetVisibleOverlays(self, chart):
@@ -722,12 +786,4 @@ class OverlayOperations(PossibilityItemOperations):
         """
         self._ValidateParam(chart, "chart")
 
-        # Get all overlays and filter by visibility
-        all_overlays = self.FindByChart(chart)
-        visible_overlays = []
-
-        for overlay in all_overlays:
-            if self.IsVisible(overlay):
-                visible_overlays.append(overlay)
-
-        return visible_overlays
+        return [overlay for overlay in self.GetAll() if self.IsVisible(overlay)]

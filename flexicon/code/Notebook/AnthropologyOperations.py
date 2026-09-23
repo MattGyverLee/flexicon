@@ -2006,15 +2006,12 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         props["Abbreviation"] = ITsString(anthro_item.Abbreviation.get_String(wsHandle)).Text or ""
         props["Description"] = ITsString(anthro_item.Description.get_String(wsHandle)).Text or ""
 
-        if hasattr(anthro_item, "AnthroCode") and anthro_item.AnthroCode:
-            props["AnthroCode"] = anthro_item.AnthroCode
-        else:
-            props["AnthroCode"] = None
+        # OCM code: ICmAnthroItem has no AnthroCode member; data lives in
+        # Abbreviation (issue #359).
+        props["AnthroCode"] = props["Abbreviation"] or None
 
-        if hasattr(anthro_item, "CategoryRA") and anthro_item.CategoryRA:
-            props["Category"] = str(anthro_item.CategoryRA.Guid)
-        else:
-            props["Category"] = None
+        # ICmAnthroItem has no CategoryRA (issue #359); keep key for sync shape.
+        props["Category"] = None
 
         return props
 

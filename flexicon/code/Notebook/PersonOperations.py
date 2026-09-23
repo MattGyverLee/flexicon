@@ -1106,8 +1106,6 @@ class PersonOperations(BaseOperations):
             props["Positions"] = [str(pos.Guid) for pos in person.PositionsRC]
         if hasattr(person, "PlacesOfResidenceRC"):
             props["PlacesOfResidence"] = [str(place.Guid) for place in person.PlacesOfResidenceRC]
-        if hasattr(person, "LanguagesRC"):
-            props["Languages"] = [str(lang.Guid) for lang in person.LanguagesRC]
 
         return props
 

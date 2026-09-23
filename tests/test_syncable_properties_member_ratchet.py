@@ -53,6 +53,7 @@ _OPS_INTERFACE_MAP: dict[str, str] = {
     "WordformOperations.py":       "IWfiWordform",
     "MediaOperations.py":          "ICmFile",
     "AgentOperations.py":          "ICmAgent",
+    "PersonOperations.py":         "ICmPerson",
 }
 
 # ---------------------------------------------------------------------------
