@@ -122,15 +122,18 @@ class ConstChartClauseMarkerOperations(BaseOperations):
             factory = self.project.project.ServiceLocator.GetService(IConstChartClauseMarkerFactory)
             new_marker = factory.Create()
 
-            # Add to row's clause markers collection
-            # Note: In FLEx, clause markers may be stored in different collections
-            # depending on the chart structure. This assumes a ClauseMarkersOS collection.
-            if hasattr(row, "ClauseMarkersOS"):
-                row.ClauseMarkersOS.Add(new_marker)
+            # Clause markers are peer cell-parts in row.CellsOS (issue #324).
+            # IConstChartRow has CellsOS only -- ClauseMarkersOS does not exist.
+            row.CellsOS.Add(new_marker)
 
-            # Set the word group reference
-            if hasattr(new_marker, "WordGroupRA"):
-                new_marker.WordGroupRA = word_group
+            # ColumnRA must be set when available (same ordering model as
+            # ConstChartMovedTextOperations.Create, issue #290 / R5).
+            if hasattr(new_marker, "ColumnRA") and hasattr(word_group, "ColumnRA"):
+                if word_group.ColumnRA is not None:
+                    new_marker.ColumnRA = word_group.ColumnRA
+
+            # WordGroupRA is not on IConstChartClauseMarker (see #232 sweep);
+            # association is via chart structure / DependentClausesRS, not here.
 
             return new_marker
 
@@ -208,12 +211,10 @@ class ConstChartClauseMarkerOperations(BaseOperations):
 
         row = self.__ResolveRow(row_or_hvo)
 
-        if hasattr(row, "ClauseMarkersOS"):
-            if index < 0 or index >= row.ClauseMarkersOS.Count:
-                return None
-            return row.ClauseMarkersOS[index]
-
-        return None
+        markers = self.__ClauseMarkersInRow(row)
+        if index < 0 or index >= len(markers):
+            return None
+        return markers[index]
 
     @wrap_enumerable
     @OperationsMethod
@@ -249,10 +250,7 @@ class ConstChartClauseMarkerOperations(BaseOperations):
 
         row = self.__ResolveRow(row_or_hvo)
 
-        if hasattr(row, "ClauseMarkersOS"):
-            return list(row.ClauseMarkersOS)
-
-        return []
+        return self.__ClauseMarkersInRow(row)
 
     # --- Marker Properties ---
 
@@ -387,6 +385,12 @@ class ConstChartClauseMarkerOperations(BaseOperations):
 
     # --- Private Helper Methods ---
 
+    def __ClauseMarkersInRow(self, row):
+        """Return clause markers in ``row.CellsOS`` order (issue #324)."""
+        return self._GetTypedElements(
+            c for c in row.CellsOS if c.ClassName == "ConstChartClauseMarker"
+        )
+
     def __ResolveObject(self, marker_or_hvo):
         """
         Resolve HVO or object to IConstChartClauseMarker.
@@ -457,15 +461,11 @@ class ConstChartClauseMarkerOperations(BaseOperations):
             parent: The parent IConstChartRow object
 
         Returns:
-            ILcmOwningSequence: The ClauseMarkersOS sequence
+            ILcmOwningSequence: The row's CellsOS sequence
 
         Notes:
             - Required for BaseOperations reordering methods
-            - Returns the ClauseMarkersOS collection from the row
+            - Clause markers are cell-parts in CellsOS alongside word groups,
+              tags, and moved-text markers (issue #324)
         """
-        if hasattr(parent, "ClauseMarkersOS"):
-            return parent.ClauseMarkersOS
-        raise NotImplementedError(
-            "Row does not have a ClauseMarkersOS collection. "
-            "Clause marker reordering may not be applicable to this row structure."
-        )
+        return parent.CellsOS
