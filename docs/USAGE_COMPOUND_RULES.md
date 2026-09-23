@@ -73,9 +73,12 @@ print(wrapped.name)                    # Rule name
 print(wrapped.left_head_dep)          # Left head dependency
 print(wrapped.right_head_dep)         # Right head dependency
 print(wrapped.head_dependency)        # Either left or right (convenience)
-print(wrapped.left_context)           # Left phonological context
-print(wrapped.right_context)          # Right phonological context
-print(wrapped.contexts)               # Both as tuple (left, right)
+# Type-specific (LCM has no phonological context on compound rules -- issue #327)
+if wrapped.is_endo_compound:
+    print(wrapped.head_last)          # HeadLast on MoEndoCompound
+    print(wrapped.overriding_msa)     # OverridingMsaOA when set
+if wrapped.is_exo_compound:
+    print(wrapped.to_msa)             # ToMsaOA when set
 ```
 
 ### Type Checking Properties
@@ -163,9 +166,9 @@ result = rules.filter(name_contains='Verb', head_dependency=0)
 For complex filtering, use `where()` with a predicate function:
 
 ```python
-# Filter where both contexts are defined
-full_context = rules.where(
-    lambda r: r.left_context is not None and r.right_context is not None
+# Filter endo rules with HeadLast set
+head_last_endo = rules.where(
+    lambda r: r.is_endo_compound and r.head_last is True
 )
 
 # Filter by type AND other criteria
@@ -177,7 +180,7 @@ endo_with_name = rules.where(
 complex = rules.where(
     lambda r: r.is_endo_compound and
               r.head_dependency == 0 and
-              r.left_context is not None
+              r.overriding_msa is not None
 )
 ```
 
@@ -261,15 +264,15 @@ print(f"\nExocentric: {len(exo)} rules")
 for rule in exo:
     print(f"  - {rule.name} (head dep: {rule.head_dependency})")
 
-# Find verb-related compounds with both contexts
-verb_full = rules.where(
+# Find verb-related endo compounds with an overriding MSA
+verb_with_msa = rules.where(
     lambda r: 'Verb' in r.name and
-              r.left_context is not None and
-              r.right_context is not None
+              r.is_endo_compound and
+              r.overriding_msa is not None
 )
 
-print(f"\nVerb compounds with full context: {len(verb_full)}")
-for rule in verb_full:
+print(f"\nVerb endo compounds with overriding MSA: {len(verb_with_msa)}")
+for rule in verb_with_msa:
     print(f"  - {rule.name}")
 
 # Advanced: Access concrete interfaces if needed
@@ -328,9 +331,9 @@ for rule in rules:
 - `left_head_dep` (int) - Left head dependency
 - `right_head_dep` (int) - Right head dependency
 - `head_dependency` (int) - Either left or right (convenience)
-- `left_context` (IMoPhonContext) - Left context or None
-- `right_context` (IMoPhonContext) - Right context or None
-- `contexts` (tuple) - Both contexts as (left, right)
+- `head_last` (bool or None) - MoEndoCompound HeadLast; None on exo rules
+- `overriding_msa` (IMoStemMsa or None) - MoEndoCompound OverridingMsaOA
+- `to_msa` (IMoStemMsa or None) - MoExoCompound ToMsaOA
 - `is_endo_compound` (bool) - Check if endocentric
 - `is_exo_compound` (bool) - Check if exocentric
 - `concrete` - Raw C# interface object
