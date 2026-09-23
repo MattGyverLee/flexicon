@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`ConfidenceOperations` phantom `ConfidenceRA` scans on wordform types**
+  (#363). `GetAnalysesWithConfidence` now matches `ConfidenceRA` on research
+  notebook records (`DataNotebook.GetAll()`); interlinear `IWfiAnalysis` has
+  no confidence field. `GetGlossesWithConfidence` raises `FP_ParameterError`
+  because `IWfiGloss` has no confidence field (replacing a silent empty list).
 - **`AgentOperations.GetSyncableProperties` raised `AttributeError` on every
   agent** (#350). `ICmAgent` has `Name` but no `Description`; the method now
   reflects agent fields (`Human`, `Version`) instead of inheriting the

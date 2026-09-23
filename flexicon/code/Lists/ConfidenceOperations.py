@@ -11,12 +11,6 @@
 #   Copyright 2025
 #
 
-# Import FLEx LCM types
-from SIL.LCModel import (
-    IWfiAnalysisRepository,
-    IWfiGlossRepository,
-)
-
 # Import flexlibs exceptions
 from ..FLExProject import (
     FP_ParameterError,
@@ -30,9 +24,9 @@ class ConfidenceOperations(PossibilityItemOperations):
     This class provides operations for managing confidence levels (quality
     ratings) in a FieldWorks project.
 
-    Confidence levels are used to rate the quality or certainty of linguistic
-    analyses and glosses. They provide a standardized way to indicate how
-    confident a linguist or parser is about a particular analysis or gloss.
+    Confidence levels rate the quality or certainty of research notebook
+    records (and other LCM types that expose ``ConfidenceRA``). They are
+    not stored on interlinear ``IWfiAnalysis`` / ``IWfiGloss`` objects.
     Confidence levels are implemented as a possibility list using ICmPossibility.
 
     Common confidence levels might include:
@@ -54,8 +48,8 @@ class ConfidenceOperations(PossibilityItemOperations):
     - CompareTo() - Compare by name
 
     Domain-Specific Methods (ConfidenceOperations):
-    - GetAnalysesWithConfidence() - Find analyses using a level
-    - GetGlossesWithConfidence() - Find glosses using a level
+    - GetAnalysesWithConfidence() - Find notebook records using a level
+    - GetGlossesWithConfidence() - Not supported (IWfiGloss has no confidence)
     - GetDefault() - Get default confidence level
 
     This class should be accessed via FLExProject.Confidence property.
@@ -76,9 +70,9 @@ class ConfidenceOperations(PossibilityItemOperations):
         # Find a specific confidence level
         high = project.Confidence.Find("High Confidence")
         if high:
-            # Get analyses using this confidence level
-            analyses = project.Confidence.GetAnalysesWithConfidence(high)
-            print(f"{len(analyses)} analyses have high confidence")
+            # Get notebook records using this confidence level
+            records = project.Confidence.GetAnalysesWithConfidence(high)
+            print(f"{len(records)} records have high confidence")
 
         # Create a custom confidence level
         custom = project.Confidence.Create("Verified", "en")
@@ -115,126 +109,80 @@ class ConfidenceOperations(PossibilityItemOperations):
     @OperationsMethod
     def GetAnalysesWithConfidence(self, level_or_hvo):
         """
-        Get all wordform analyses that use this confidence level.
+        Get all research notebook records that use this confidence level.
 
         Args:
             level_or_hvo: Either an ICmPossibility object or its HVO.
 
         Returns:
-            list: List of IWfiAnalysis objects that reference this confidence level.
+            list: List of IRnGenericRec objects whose ``ConfidenceRA`` matches
+            this level.
 
         Raises:
             FP_NullParameterError: If level_or_hvo is None.
 
         Example:
             >>> high = project.Confidence.Find("High Confidence")
-            >>> analyses = project.Confidence.GetAnalysesWithConfidence(high)
-            >>> print(f"Found {len(analyses)} high-confidence analyses")
-            Found 127 high-confidence analyses
+            >>> records = project.Confidence.GetAnalysesWithConfidence(high)
+            >>> print(f"Found {len(records)} high-confidence notebook records")
+            Found 12 high-confidence notebook records
 
-            >>> # Show analyses for each confidence level
+            >>> # Show records for each confidence level
             >>> for level in project.Confidence.GetAll():
             ...     name = project.Confidence.GetName(level)
-            ...     analyses = project.Confidence.GetAnalysesWithConfidence(level)
-            ...     print(f"{name}: {len(analyses)} analyses")
-
-            >>> # Find analyses that need review
-            >>> low = project.Confidence.Find("Low Confidence")
-            >>> if low:
-            ...     review_list = project.Confidence.GetAnalysesWithConfidence(low)
-            ...     for analysis in review_list:
-            ...         # Process analyses needing review
-            ...         pass
+            ...     records = project.Confidence.GetAnalysesWithConfidence(level)
+            ...     print(f"{name}: {len(records)} records")
 
         Notes:
-            - Searches through all wordform analyses in the project
-            - Returns empty list if no analyses use this confidence level
-            - May be slow for large lexicons (searches entire repository)
-            - Useful for quality control and validation workflows
+            - Scans ``DataNotebook.GetAll()`` (``IRnGenericRec`` with
+              ``ConfidenceRA`` in LCM)
+            - Interlinear ``IWfiAnalysis`` objects do not carry confidence
+              levels; the historical method name is retained
+            - Returns empty list if no records use this confidence level
             - Use before deleting a confidence level
 
         See Also:
-            GetGlossesWithConfidence, Delete
+            GetGlossesWithConfidence, Delete, DataNotebookOperations.GetConfidence
         """
         self._ValidateParam(level_or_hvo, "level_or_hvo")
 
         level = self._PossibilityItemOperations__ResolveObject(level_or_hvo)
         level_hvo = level.Hvo
 
-        analyses = []
-        analysis_repo = self.project.GetService(IWfiAnalysisRepository)
+        records = []
+        for record in self.project.DataNotebook.GetAll():
+            confidence = record.ConfidenceRA
+            if confidence and confidence.Hvo == level_hvo:
+                records.append(record)
 
-        # Search through all analyses
-        for analysis in analysis_repo.AllInstances():
-            # Check if this analysis has this confidence level
-            # Note: IWfiAnalysis may have Confidence property as reference
-            if hasattr(analysis, "ConfidenceRA") and analysis.ConfidenceRA:
-                if analysis.ConfidenceRA.Hvo == level_hvo:
-                    analyses.append(analysis)
-
-        return analyses
+        return records
 
     @OperationsMethod
     def GetGlossesWithConfidence(self, level_or_hvo):
         """
-        Get all wordform glosses that use this confidence level.
+        Not supported: wordform glosses have no confidence field in LCM.
 
         Args:
             level_or_hvo: Either an ICmPossibility object or its HVO.
 
         Returns:
-            list: List of IWfiGloss objects that reference this confidence level.
+            Never returns normally.
 
         Raises:
             FP_NullParameterError: If level_or_hvo is None.
-
-        Example:
-            >>> high = project.Confidence.Find("High Confidence")
-            >>> glosses = project.Confidence.GetGlossesWithConfidence(high)
-            >>> print(f"Found {len(glosses)} high-confidence glosses")
-            Found 89 high-confidence glosses
-
-            >>> # Show glosses for each confidence level
-            >>> for level in project.Confidence.GetAll():
-            ...     name = project.Confidence.GetName(level)
-            ...     glosses = project.Confidence.GetGlossesWithConfidence(level)
-            ...     print(f"{name}: {len(glosses)} glosses")
-
-            >>> # Find glosses that need verification
-            >>> unconfirmed = project.Confidence.Find("Unconfirmed")
-            >>> if unconfirmed:
-            ...     pending = project.Confidence.GetGlossesWithConfidence(unconfirmed)
-            ...     for gloss in pending:
-            ...         # Process glosses needing verification
-            ...         pass
-
-        Notes:
-            - Searches through all wordform glosses in the project
-            - Returns empty list if no glosses use this confidence level
-            - May be slow for large projects (searches entire repository)
-            - Useful for tracking translation quality
-            - Use before deleting a confidence level
+            FP_ParameterError: Always -- ``IWfiGloss`` has no ``ConfidenceRA``.
 
         See Also:
-            GetAnalysesWithConfidence, Delete
+            GetAnalysesWithConfidence, WfiAnalysisOperations
         """
         self._ValidateParam(level_or_hvo, "level_or_hvo")
 
-        level = self._PossibilityItemOperations__ResolveObject(level_or_hvo)
-        level_hvo = level.Hvo
-
-        glosses = []
-        gloss_repo = self.project.GetService(IWfiGlossRepository)
-
-        # Search through all glosses
-        for gloss in gloss_repo.AllInstances():
-            # Check if this gloss has this confidence level
-            # Note: IWfiGloss may have Confidence property as reference
-            if hasattr(gloss, "ConfidenceRA") and gloss.ConfidenceRA:
-                if gloss.ConfidenceRA.Hvo == level_hvo:
-                    glosses.append(gloss)
-
-        return glosses
+        raise FP_ParameterError(
+            "IWfiGloss has no confidence level in LCM; wordform glosses do "
+            "not reference ConfidenceLevelsOA. Use GetAnalysesWithConfidence "
+            "for notebook records, or WfiAnalysis approval APIs for "
+            "interlinear quality."
+        )
 
     # --- Special Query Operations ---
 
