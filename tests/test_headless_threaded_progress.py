@@ -98,6 +98,10 @@ class TestHeadlessThreadedProgressSurface:
         assert progress.SynchronizeInvoke is None
 
 
+# LcmCache is monkeypatched, so no project is opened; the marker keeps these
+# FLExLCM.OpenProject() calls (and the real WinForms ProgressDialogWithTask)
+# out of the offline gate, per the #264 guard.
+@pytest.mark.requires_live_project
 class TestOpenProjectDefaultProgress:
     def test_flexlcm_openproject_defaults_to_headless_threaded_progress(
         self, monkeypatch

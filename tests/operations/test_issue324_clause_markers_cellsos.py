@@ -45,14 +45,22 @@ class TestIssue324ClauseMarkersCellsOSOffline:
         ops._TransactionCM.return_value.__exit__ = Mock(return_value=False)
         return ops, marker
 
-    def test_create_adds_to_cellsos_not_clausemarkersos(self):
+    def test_create_adds_to_cellsos_not_clausemarkersos(self, monkeypatch):
+        import flexicon.code.Discourse.ConstChartClauseMarkerOperations as mod
+
+        # Create() type-guards with isinstance(word_group, IConstChartWordGroup)
+        # (#371); substitute a plain class so the double passes that guard.
+        class _FakeWordGroup:
+            ColumnRA = None
+
+        monkeypatch.setattr(mod, "IConstChartWordGroup", _FakeWordGroup)
+
         ops, marker = self._ops()
         row = Mock()
         row.ClassName = "ConstChartRow"
         row.CellsOS = _FakeCellsOS()
         row.ClauseMarkersOS = Mock()
-        wg = Mock()
-        wg.ColumnRA = None
+        wg = _FakeWordGroup()
 
         result = ops.Create(row, wg)
 

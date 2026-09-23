@@ -98,7 +98,7 @@ class ConstChartClauseMarkerOperations(BaseOperations):
             >>> marker = project.ConstChartClauseMarkers.Create(row, wg)
 
         Notes:
-            - Marker is appended to the row's clause markers collection
+            - Marker is appended to the row's CellsOS (issue #324)
             - Each marker identifies a clause boundary or relationship
             - Factory.Create() automatically adds marker to repository
             - Markers can have dependent clauses attached

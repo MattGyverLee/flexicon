@@ -52,8 +52,10 @@ import System  # noqa: E402  (only importable after the flexicon import above
 
 MALFORMED_GUIDS = ["not-a-guid", "", "   ", "d7f713e8-1234"]
 
-# Issue #336: explicit "" is rejected before parse/mint (unlike a missing key).
-MALFORMED_GUIDS_TRUTHY = ["not-a-guid", "", "   ", "d7f713e8-1234"]
+# Issue #336: explicit "" is rejected before parse/mint (unlike a missing key),
+# so it raises FP_ParameterError with no CLR exception behind it. Only the
+# other malformed values reach System.Guid parsing and carry a __cause__.
+MALFORMED_GUIDS_CLR_PARSED = ["not-a-guid", "   ", "d7f713e8-1234"]
 
 VALID_GUID_STR = "d7f713e8-1234-4d1a-9a3d-000000000001"
 
@@ -101,7 +103,7 @@ class TestPhonFeatureCreateValueWithGuid:
         )
         return ops, mod, factory
 
-    @pytest.mark.parametrize("bad_guid", MALFORMED_GUIDS_TRUTHY)
+    @pytest.mark.parametrize("bad_guid", MALFORMED_GUIDS)
     def test_malformed_guid_raises_fp_parameter_error(self, monkeypatch, bad_guid):
         ops, mod, _factory = self._ops(monkeypatch)
 
@@ -122,7 +124,21 @@ class TestPhonFeatureCreateValueWithGuid:
         # opened exactly once.
         assert transaction_calls == ["Create feature value"]
 
-    @pytest.mark.parametrize("bad_guid", MALFORMED_GUIDS_TRUTHY)
+    def test_empty_guid_rejected_before_parse(self, monkeypatch):
+        ops, mod, factory = self._ops(monkeypatch)
+        monkeypatch.setattr(
+            ops, "_TransactionCM", lambda label: _recording_transaction([], label)
+        )
+        feature = SimpleNamespace(ValuesOC=SimpleNamespace(Add=lambda v: None))
+
+        with pytest.raises(FP_ParameterError, match="Empty 'Guid'") as excinfo:
+            ops._PhonFeatureOperations__CreateValueWithGuid(feature, "")
+
+        # #336 guard fires before any CLR parse, so nothing is chained.
+        assert excinfo.value.__cause__ is None
+        assert not factory.create_calls
+
+    @pytest.mark.parametrize("bad_guid", MALFORMED_GUIDS_CLR_PARSED)
     def test_malformed_guid_preserves_clr_exception_as_cause(
         self, monkeypatch, bad_guid
     ):

@@ -3053,7 +3053,7 @@ class FLExProject(object):
             >>> # Get a chart
             >>> text = list(project.Texts.GetAll())[0]
             >>> chart = project.Discourse.CreateChart(text, "Chart")
-            >>> poss_list = project.lp.ConfidenceLevelsOA
+            >>> poss_list = project.PossibilityLists.FindList("Confidence Levels")
             >>> overlay = project.Overlays.Create("Temporal", poss_list)
             >>> name = project.Overlays.GetName(overlay)
             >>> print(f"Overlay: {name}")
