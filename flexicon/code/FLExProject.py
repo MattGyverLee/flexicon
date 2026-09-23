@@ -3044,16 +3044,10 @@ class FLExProject(object):
             >>> # Get a chart
             >>> text = list(project.Texts.GetAll())[0]
             >>> chart = project.Discourse.CreateChart(text, "Chart")
-            >>> # NOTE: OverlayOperations.Create() is currently broken -- it
-            >>> # inherits PossibilityItemOperations.Create(), but
-            >>> # OverlayOperations._get_list_object() always returns None
-            >>> # (overlays are chart-scoped, no project-wide list), so this
-            >>> # call always raises FP_ParameterError. See flexicon issue #309.
-            >>> # overlay = project.Overlays.Create("Temporal")
-            >>> # project.Overlays.SetVisible(overlay, True)
-            >>> # for o in project.Overlays.GetVisibleOverlays(chart):
-            >>> #     name = project.Overlays.GetName(o)
-            >>> #     print(f"Overlay: {name}")
+            >>> poss_list = project.lp.ConfidenceLevelsOA
+            >>> overlay = project.Overlays.Create("Temporal", poss_list)
+            >>> name = project.Overlays.GetName(overlay)
+            >>> print(f"Overlay: {name}")
         """
         if "_overlay_ops" not in self.__dict__:
             from .Lists.OverlayOperations import OverlayOperations
