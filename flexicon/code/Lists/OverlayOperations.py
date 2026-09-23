@@ -57,8 +57,8 @@ class OverlayOperations(PossibilityItemOperations):
     order. They are used to organize complex chart analyses by separating different
     aspects of discourse structure into manageable layers.
 
-    Inherited CRUD Operations (from PossibilityItemOperations):
-    - GetAll() - Get all overlays (NOTE: requires chart context, see special handling)
+    CRUD Operations (overridden for ``ICmOverlay`` / ``OverlaysOC``):
+    - GetAll() - All overlays on ``ILangProject.OverlaysOC`` (project-scoped)
     - Create() - Create a new overlay
     - Delete() - Delete an overlay
     - Duplicate() - Clone an overlay
@@ -125,6 +125,21 @@ class OverlayOperations(PossibilityItemOperations):
         directly (issue #309).
         """
         return None
+
+    def _GetSequence(self, parent):
+        """
+        Reorder operations are not supported for project overlays.
+
+        ``ILangProject.OverlaysOC`` is an unordered ``ILcmOwningCollection``;
+        inherited ``Sort`` / ``MoveUp`` / ``MoveDown`` / ``MoveToIndex`` from
+        ``PossibilityItemOperations`` assume an ordered ``PossibilitiesOS``
+        list (issue #303; same pattern as #301 / ``ConstChartMarkerOperations``).
+        """
+        raise NotImplementedError(
+            "OverlayOperations does not support inherited Sort / MoveUp / "
+            "MoveDown / MoveToIndex: ILangProject.OverlaysOC is an unordered "
+            "ILcmOwningCollection with no user-visible order."
+        )
 
     def __ResolveOverlay(self, overlay_or_hvo):
         """Resolve an overlay object or HVO to ``ICmOverlay``."""
@@ -715,30 +730,22 @@ class OverlayOperations(PossibilityItemOperations):
             chart: The IDsConstChart to search.
 
         Returns:
-            list: List of ICmPossibility objects representing overlays for the chart.
+            list: All ``ICmOverlay`` objects on the project (same as ``GetAll()``).
 
         Raises:
             FP_NullParameterError: If chart is None.
 
         Example:
-            >>> # Get all overlays for a chart
             >>> charts = project.Discourse.GetAllCharts(text)
             >>> chart = list(charts)[0]
-            >>> overlays = project.Overlay.FindByChart(chart)
-            >>> print(f"Chart has {len(overlays)} overlays")
-            Chart has 3 overlays
-
-            >>> # Find overlays by name for a chart
-            >>> overlays = project.Overlay.FindByChart(chart)
-            >>> for overlay in overlays:
-            ...     name = project.Overlay.GetName(overlay)
-            ...     if name == "Participants":
-            ...         print(f"Found participants overlay")
+            >>> overlays = project.Overlays.FindByChart(chart)
+            >>> print(f"Project has {len(overlays)} overlays")
+            Project has 3 overlays
 
         Notes:
-            - Returns empty list if chart has no overlays
-            - Overlays are scoped to specific charts
-            - More efficient than GetAll() for chart-specific queries
+            - Overlays are **project-scoped** at ``ILangProject.OverlaysOC``;
+              the chart argument is validated but not used for lookup (#303).
+            - Prefer ``GetAll()`` when you do not already hold a chart reference.
 
         See Also:
             GetVisibleOverlays, GetChart
@@ -757,29 +764,26 @@ class OverlayOperations(PossibilityItemOperations):
             chart: The IDsConstChart to search.
 
         Returns:
-            list: List of visible overlay ICmPossibility objects.
+            list: Visible ``ICmOverlay`` objects (``IsVisible`` filter over ``GetAll()``).
 
         Raises:
             FP_NullParameterError: If chart is None.
 
         Example:
-            >>> # Get only visible overlays
-            >>> overlays = project.Overlay.GetVisibleOverlays(chart)
+            >>> overlays = project.Overlays.GetVisibleOverlays(chart)
             >>> print(f"Chart has {len(overlays)} visible overlays")
             Chart has 2 visible overlays
 
-            >>> # Hide and show overlays
-            >>> all_overlays = project.Overlay.FindByChart(chart)
+            >>> all_overlays = project.Overlays.FindByChart(chart)
             >>> for overlay in all_overlays:
-            ...     project.Overlay.SetVisible(overlay, False)
-            >>> # Now GetVisibleOverlays returns empty list
-            >>> visible = project.Overlay.GetVisibleOverlays(chart)
+            ...     project.Overlays.SetVisible(overlay, False)
+            >>> visible = project.Overlays.GetVisibleOverlays(chart)
             >>> assert len(visible) == 0
 
         Notes:
-            - Returns subset of FindByChart() filtered by visibility
-            - Used for determining which layers to render in chart display
-            - Empty list if all overlays are hidden
+            - Chart argument is validated only; overlays are project-scoped (#303).
+            - Returns ``GetAll()`` filtered by ``IsVisible``.
+            - Empty list if all overlays are hidden or visibility is unsupported.
 
         See Also:
             FindByChart, IsVisible, SetVisible
