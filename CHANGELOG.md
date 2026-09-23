@@ -18,6 +18,12 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **Notebook text links and record types used phantom LCM members** (#322).
+  `DataNotebookOperations` now reads record types from
+  `ResearchNotebookOA.RecTypesOA` (not `ILangProject.RecTypesOA`) and links
+  texts through `IRnGenericRec.TextRA` instead of a nonexistent `TextsRC`.
+  `AnthropologyOperations.AddText` / `RemoveText` raise `FP_ParameterError`
+  because `ICmAnthroItem` has no text-link surface, replacing silent no-ops.
 - **`MSAOperations` had no wrapper to edit `SlotsRC` on an existing
   inflectional-affix MSA** (#258). Added `SetInflAffMsaSlots(sense, slots,
   replace=True)` so callers can replace or append template slots without raw
