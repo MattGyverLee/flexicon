@@ -650,6 +650,19 @@ The actual structure is:
 
 **Fix**: `PhonologicalRule.has_metathesis_parts` and `.metathesis_parts` now read `StrucDescOS` and extract the two parts using the switch indices/limits. Returns `(left_parts, right_parts)` tuple of `ContextCollection` items. This is a **BREAKING behavioral fix** (no signature change; corrected return value per house convention for minor-version repairs). Evidence: `specs/326-phonological-wrapper-members/evidence/live-programmer-metathesis.json` (2026-09-22, live reflection and switch-index verification).
 
+### The `ICmAnnotationDefn` scalar flags (issue #361 follow-up, RESOLVED)
+
+#361 moved `AnnotationDefOperations.GetSyncableProperties` onto the real fields but left `hasattr`-guarded probes of the invented names in the getters, setters and `Duplicate`. `hasattr` on a nonexistent member is always False, so each getter returned its hard-coded default and each setter / copy was a silent no-op.
+
+| Invented name | Real field | Old symptom |
+|---|---|---|
+| `AllowsMultiple` | `Multi` (`bool`) | `GetMultiple` always `True`; `SetMultiple` never wrote; `Duplicate` never copied |
+| `CopyCutPasteAllowed` | `CopyCutPastable` (`bool`) | `GetCopyCutPasteAllowed` always `True` |
+| `InstanceOf` | `InstanceOfSignature` (`int` class ID) | `GetInstanceOf` always `0`; `Duplicate` never copied |
+| `AnnotationType` | **Does not exist**; no replacement field | `GetAnnotationType` always `0`, so `FindByType(n != 0)` finds nothing. Not changed here; this API needs a redesign rather than a rename |
+
+**Fix**: the methods cast to `ICmAnnotationDefn` and use the real fields; `Duplicate` copies `InstanceOfSignature`, `AllowsInstanceOf`, `UserCanCreate`, `Multi` and `CopyCutPastable`. Evidence: `specs/live-verification-followups/evidence/live-annodef-multi.md` (2026-09-23, live reflection and read-back).
+
 ### Recommended pattern
 
 Before touching a field whose type you have not verified for *this specific LCM type*, check this table. If the type is not listed here, verify via the LCM source in `liblcm/src/SIL.LCModel/InterfaceAdditions.cs` or by reading another Operations class that already handles the same type correctly.

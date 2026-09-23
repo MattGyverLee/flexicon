@@ -610,9 +610,9 @@ class AnnotationDefOperations(BaseOperations):
         """
         self._ValidateParam(anno_def, "anno_def")
 
-        if hasattr(anno_def, "InstanceOf"):
-            return anno_def.InstanceOf
-        return 0
+        # ICmAnnotationDefn has no InstanceOf member; the class ID lives in
+        # InstanceOfSignature (issue #361).
+        return int(self.__AsDefn(anno_def).InstanceOfSignature)
 
     # --- User Control Fields ---
 
@@ -737,9 +737,9 @@ class AnnotationDefOperations(BaseOperations):
         """
         self._ValidateParam(anno_def, "anno_def")
 
-        if hasattr(anno_def, "AllowsMultiple"):
-            return bool(anno_def.AllowsMultiple)
-        return True  # Default to allowing multiple
+        # The LCM field is Multi; there is no AllowsMultiple member, so a
+        # hasattr probe on that name always fell through to True.
+        return bool(self.__AsDefn(anno_def).Multi)
 
     @OperationsMethod
     def SetMultiple(self, anno_def, allow_multiple):
@@ -779,10 +779,9 @@ class AnnotationDefOperations(BaseOperations):
         self._ValidateParam(anno_def, "anno_def")
         self._ValidateParam(allow_multiple, "allow_multiple")
 
-        # hasattr guard outside the bracket -- its absence is a true no-op.
-        if hasattr(anno_def, "AllowsMultiple"):
-            with self._TransactionCM("Set annotation allows-multiple flag"):
-                anno_def.AllowsMultiple = bool(allow_multiple)
+        anno_def = self.__AsDefn(anno_def)
+        with self._TransactionCM("Set annotation allows-multiple flag"):
+            anno_def.Multi = bool(allow_multiple)
 
     # --- Prompt and Copy/Paste Settings ---
 
@@ -902,9 +901,9 @@ class AnnotationDefOperations(BaseOperations):
         """
         self._ValidateParam(anno_def, "anno_def")
 
-        if hasattr(anno_def, "CopyCutPasteAllowed"):
-            return bool(anno_def.CopyCutPasteAllowed)
-        return True  # Default to allowing copy/paste
+        # The LCM field is CopyCutPastable; there is no CopyCutPasteAllowed
+        # member, so a hasattr probe on that name always returned True.
+        return bool(self.__AsDefn(anno_def).CopyCutPastable)
 
     # --- Query Methods ---
 
@@ -1087,7 +1086,8 @@ class AnnotationDefOperations(BaseOperations):
             - Factory.Create() automatically generates a new GUID
             - MultiString properties: Name, Description (surfaced as
               HelpString and Prompt, which have no backing field)
-            - Simple properties: AnnotationType, InstanceOf, UserCanCreate, AllowsMultiple
+            - Simple properties: InstanceOfSignature, AllowsInstanceOf,
+              UserCanCreate, Multi, CopyCutPastable
             - Sub-possibilities duplicated only if deep=True
 
         See Also:
@@ -1139,15 +1139,7 @@ class AnnotationDefOperations(BaseOperations):
             duplicate.Name.CopyAlternatives(source.Name)
             duplicate.Description.CopyAlternatives(source.Description)
 
-            # Copy simple properties
-            if hasattr(source, "AnnotationType"):
-                duplicate.AnnotationType = source.AnnotationType
-            if hasattr(source, "InstanceOf"):
-                duplicate.InstanceOf = source.InstanceOf
-            if hasattr(source, "UserCanCreate"):
-                duplicate.UserCanCreate = source.UserCanCreate
-            if hasattr(source, "AllowsMultiple"):
-                duplicate.AllowsMultiple = source.AllowsMultiple
+            self._CopySimpleFlags(source, duplicate)
 
             # Deep copy: duplicate sub-possibilities into the NEW duplicate
             if deep and hasattr(source, "SubPossibilitiesOS") and source.SubPossibilitiesOS.Count > 0:
@@ -1155,6 +1147,22 @@ class AnnotationDefOperations(BaseOperations):
                     self._DuplicateSubDefInto(sub, duplicate, deep=True)
 
             return duplicate
+
+    @staticmethod
+    def _CopySimpleFlags(source, dup):
+        """
+        Copy the scalar ICmAnnotationDefn fields from source to dup.
+
+        These are the real LCM names (live reflection, 2026-09-23). The
+        earlier copy blocks probed AnnotationType / InstanceOf /
+        AllowsMultiple, none of which exist, so those flags were never
+        duplicated.
+        """
+        dup.InstanceOfSignature = source.InstanceOfSignature
+        dup.AllowsInstanceOf = source.AllowsInstanceOf
+        dup.UserCanCreate = source.UserCanCreate
+        dup.Multi = source.Multi
+        dup.CopyCutPastable = source.CopyCutPastable
 
     def _DuplicateSubDefInto(self, source_def, parent_dup, deep=True):
         """Duplicate an annotation sub-definition into the specified parent."""
@@ -1168,14 +1176,7 @@ class AnnotationDefOperations(BaseOperations):
             dup_def.Name.CopyAlternatives(source_def.Name)
             dup_def.Description.CopyAlternatives(source_def.Description)
 
-            if hasattr(source_def, "AnnotationType"):
-                dup_def.AnnotationType = source_def.AnnotationType
-            if hasattr(source_def, "InstanceOf"):
-                dup_def.InstanceOf = source_def.InstanceOf
-            if hasattr(source_def, "UserCanCreate"):
-                dup_def.UserCanCreate = source_def.UserCanCreate
-            if hasattr(source_def, "AllowsMultiple"):
-                dup_def.AllowsMultiple = source_def.AllowsMultiple
+            self._CopySimpleFlags(ICmAnnotationDefn(source_def), dup_def)
 
             # Recurse into nested sub-definitions. The recursive call re-enters
             # _TransactionCM, which joins this block under Phase 2 rather than
@@ -1236,6 +1237,18 @@ class AnnotationDefOperations(BaseOperations):
         return is_different, differences
 
     # --- Private Helper Methods ---
+
+    def __AsDefn(self, anno_def_or_hvo):
+        """
+        Resolve an HVO or base-typed reference to ICmAnnotationDefn.
+
+        project.Object() and ICmPossibility-typed views hide the
+        ICmAnnotationDefn fields (Multi, CopyCutPastable, ...), so cast
+        before touching them.
+        """
+        if isinstance(anno_def_or_hvo, int):
+            anno_def_or_hvo = self.project.Object(anno_def_or_hvo)
+        return ICmAnnotationDefn(anno_def_or_hvo)
 
     def __WSHandle(self, wsHandle):
         """
