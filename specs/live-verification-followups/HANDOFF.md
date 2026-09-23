@@ -5,6 +5,25 @@
 26 PRs merged 2026-09-22/23. Full per-PR results:
 `specs/issue-289-headless-progress/evidence/live-import-regression.md`.
 
+## STATUS 2026-09-23 (second session, branch `fix/live-verification-followups`)
+
+- Working-tree fixes: committed (e1bce7f), live 44/44.
+- Item 1 (#369 `file_guid`): **still open, needs the (a)/(b) decision.**
+- Item 2 (AnnotationDef): fixed (f86cc40). Also found `CopyCutPasteAllowed`
+  and `InstanceOf` phantoms. `AnnotationType` has no LCM field, so it is left
+  for a redesign.
+- Item 3a (#330): **#376 never worked.** Assigning a `str` to a GenDate field
+  still raised TypeError. Fixed with a real `GenDate` (6bc609c). Same fix
+  applied to sibling `PersonOperations.SetDateOfBirth`. #330 is CLOSED on
+  GitHub even though its fix was ineffective.
+- Item 3b (#327): live test added (32ea37c). New finding: `LeftHeadDep` /
+  `RightHeadDep` are also phantoms, so `head_dependency` is always None.
+- Item 4: offline suite **fully green** (2214 passed). Rows 12-13 were
+  `id()`-reuse test bugs, not leaks.
+- Item 5: note added to `live-T8.md` (b702d69).
+- New finding: `LocationOperations` Get/SetCoordinates targets
+  `ICmLocation.DateOfEvent`, which does not exist.
+
 ## TL;DR for the next session
 
 17 of 18 runnable live groups pass (`run_mode: live`). This file lists what
