@@ -42,6 +42,7 @@ from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import string utilities
 from ..Shared.string_utils import normalize_text, normalize_match_key
+from ..Shared.gendate_utils import gendate_from_input
 
 
 class DataNotebookOperations(BaseOperations):
@@ -1049,34 +1050,6 @@ class DataNotebookOperations(BaseOperations):
 
         return None
 
-    @staticmethod
-    def _GenDateStringFromInput(date):
-        """
-        Normalize caller date input to a string assignable to a GenDate field.
-
-        IRnGenericRec.DateOfEvent is CLR-typed GenDate, not System.DateTime.
-        PersonOperations.SetDateOfBirth uses the same string-assignment pattern.
-        """
-        if isinstance(date, str):
-            try:
-                parsed = DateTime.Parse(date.strip())
-            except (System.FormatException, ValueError, TypeError) as e:
-                raise FP_ParameterError(
-                    f"Invalid date format: {date}. Use 'YYYY-MM-DD' or "
-                    f"'YYYY-MM-DD HH:MM:SS' - {e}"
-                )
-        elif isinstance(date, DateTime):
-            parsed = date
-        else:
-            raise FP_ParameterError(
-                f"Invalid date type: {type(date).__name__}. "
-                "Use a System.DateTime or date string."
-            )
-
-        if parsed.Hour == 0 and parsed.Minute == 0 and parsed.Second == 0:
-            return parsed.ToString("yyyy-MM-dd")
-        return parsed.ToString("yyyy-MM-dd HH:mm:ss")
-
     @OperationsMethod
     def SetDateOfEvent(self, record_or_hvo, date):
         """
@@ -1109,7 +1082,10 @@ class DataNotebookOperations(BaseOperations):
         Notes:
             - Accepts DateTime object or string format
             - String format: "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS"
-            - Stored as a GenDate string on the LCM object (not System.DateTime)
+            - Stored as an exact AD GenDate (IRnGenericRec.DateOfEvent is not
+              System.DateTime, and pythonnet converts neither a str nor a
+              DateTime to GenDate -- issue #330). GenDate has no time
+              component, so any time of day is dropped.
             - Represents when the documented event occurred
             - Independent of creation/modification dates
 
@@ -1124,10 +1100,10 @@ class DataNotebookOperations(BaseOperations):
 
         # Validation/normalization stays outside the bracket: a malformed date
         # must raise before any undo task opens (D5/P3).
-        gen_date_str = self._GenDateStringFromInput(date)
+        gen_date = gendate_from_input(date)
 
         with self._TransactionCM("Set record date of event"):
-            record.DateOfEvent = gen_date_str
+            record.DateOfEvent = gen_date
 
     # --- Hierarchy Operations ---
 
