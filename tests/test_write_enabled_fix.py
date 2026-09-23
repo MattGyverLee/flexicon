@@ -121,6 +121,23 @@ class TestFLExProjectWriteEnabled:
         # Check that there's no CanModify method
         assert "def CanModify(" not in content, "FLExProject should not have a CanModify() method"
 
+    def test_flex_project_pyi_matches_write_enabled_casing(self):
+        """
+        [INFO] Test: FLExProject.pyi exposes writeEnabled, not WriteEnabled.
+
+        Regression pin for issue #263: stub/implementation drift caused
+        type-checkers and codegen to emit the wrong attribute name.
+        """
+        from pathlib import Path
+
+        pyi = Path("flexicon/code/FLExProject.pyi").read_text(encoding="utf-8")
+        assert "writeEnabled: bool" in pyi, (
+            "FLExProject.pyi must declare the runtime writeEnabled attribute"
+        )
+        assert "WriteEnabled: bool" not in pyi, (
+            "FLExProject.pyi must not declare the nonexistent WriteEnabled name"
+        )
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

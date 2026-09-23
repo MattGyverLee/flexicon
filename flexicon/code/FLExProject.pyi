@@ -84,7 +84,7 @@ _ATTACHED_VIEW_ABORT_REFUSAL: str
 def _IsAttachedView(obj: Any) -> bool: ...
 
 class FLExProject:
-    WriteEnabled: bool
+    writeEnabled: bool
     ProjectName: str
     ProjectPath: str
 
