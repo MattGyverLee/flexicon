@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`PersonOperations.GetSyncableProperties` never emitted person languages**
+  (#362). `ICmPerson` has no `LanguagesRC`; the phantom `hasattr` guard was
+  always false, so `Languages` never entered the sync payload. The dead guard
+  is removed; real RC fields (`Positions`, `PlacesOfResidence`) are unchanged.
 - **`AgentOperations.GetSyncableProperties` raised `AttributeError` on every
   agent** (#350). `ICmAgent` has `Name` but no `Description`; the method now
   reflects agent fields (`Human`, `Version`) instead of inheriting the
