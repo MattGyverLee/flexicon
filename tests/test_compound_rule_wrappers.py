@@ -25,7 +25,15 @@ from unittest.mock import Mock, patch, MagicMock
 class MockCompoundRule:
     """Mock CompoundRule for testing CompoundRuleCollection."""
 
-    def __init__(self, class_type, name="Test Rule", head_dependency=0, left_context=None, right_context=None):
+    def __init__(
+        self,
+        class_type,
+        name="Test Rule",
+        head_dependency=0,
+        head_last=None,
+        overriding_msa=None,
+        to_msa=None,
+    ):
         """
         Create a mock CompoundRule.
 
@@ -33,15 +41,17 @@ class MockCompoundRule:
             class_type: The ClassName (MoEndoCompound or MoExoCompound)
             name: Rule name
             head_dependency: Head dependency value
-            left_context: Left context object or None
-            right_context: Right context object or None
+            head_last: HeadLast flag for endo rules (issue #327 surface)
+            overriding_msa: OverridingMsaOA stand-in for endo rules
+            to_msa: ToMsaOA stand-in for exo rules
         """
         self.class_type = class_type
         self.ClassName = class_type
         self._name = name
         self._head_dependency = head_dependency
-        self._left_context = left_context
-        self._right_context = right_context
+        self._head_last = head_last
+        self._overriding_msa = overriding_msa
+        self._to_msa = to_msa
 
     @property
     def name(self):
@@ -60,16 +70,16 @@ class MockCompoundRule:
         return self._head_dependency if self.class_type == "MoExoCompound" else None
 
     @property
-    def left_context(self):
-        return self._left_context
+    def head_last(self):
+        return self._head_last if self.class_type == "MoEndoCompound" else None
 
     @property
-    def right_context(self):
-        return self._right_context
+    def overriding_msa(self):
+        return self._overriding_msa if self.class_type == "MoEndoCompound" else None
 
     @property
-    def contexts(self):
-        return (self._left_context, self._right_context)
+    def to_msa(self):
+        return self._to_msa if self.class_type == "MoExoCompound" else None
 
     @property
     def is_endo_compound(self):
@@ -334,21 +344,19 @@ class TestCompoundRuleCollection:
         collection.clear()
         assert len(collection) == 0
 
-    def test_filter_with_contexts(self):
-        """Test filtering by context presence."""
+    def test_filter_with_head_last(self):
+        """Test filtering by HeadLast (issue #327 surface)."""
         from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
-        left_ctx = Mock()
         rules = [
-            MockCompoundRule("MoEndoCompound", left_context=left_ctx),
-            MockCompoundRule("MoEndoCompound", left_context=None),
-            MockCompoundRule("MoExoCompound", left_context=left_ctx),
+            MockCompoundRule("MoEndoCompound", head_last=True),
+            MockCompoundRule("MoEndoCompound", head_last=False),
+            MockCompoundRule("MoExoCompound"),
         ]
         collection = CompoundRuleCollection(rules)
 
-        # Filter rules with left context
-        with_context = collection.where(lambda r: r.left_context is not None)
-        assert len(with_context) == 2
+        head_last_rules = collection.where(lambda r: r.head_last is True)
+        assert len(head_last_rules) == 1
 
     def test_filter_empty_result(self):
         """Test filtering that results in empty collection."""
@@ -521,18 +529,19 @@ class TestCompoundRuleEdgeCases:
         """Test where() with complex predicates."""
         from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
-        left_ctx = Mock()
-        right_ctx = Mock()
+        msa_a = Mock()
+        msa_b = Mock()
         rules = [
-            MockCompoundRule("MoEndoCompound", left_context=left_ctx, right_context=right_ctx),
-            MockCompoundRule("MoEndoCompound", left_context=left_ctx),
-            MockCompoundRule("MoExoCompound", right_context=right_ctx),
+            MockCompoundRule("MoEndoCompound", overriding_msa=msa_a),
+            MockCompoundRule("MoEndoCompound"),
+            MockCompoundRule("MoExoCompound", to_msa=msa_b),
         ]
         collection = CompoundRuleCollection(rules)
 
-        # Filter for rules with both contexts
-        both_contexts = collection.where(lambda r: r.left_context is not None and r.right_context is not None)
-        assert len(both_contexts) == 1
+        with_msa = collection.where(
+            lambda r: r.overriding_msa is not None or r.to_msa is not None
+        )
+        assert len(with_msa) == 2
 
     def test_multiple_filter_chains(self):
         """Test multiple chained filters."""

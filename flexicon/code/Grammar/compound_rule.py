@@ -26,8 +26,10 @@ without exposing the underlying ClassName or casting complexity.
 Problem:
     Compound rules have different properties depending on their concrete type:
 
-    - MoEndoCompound and MoExoCompound both have LeftHeadDep, RightHeadDep,
-      LeftContextOA, RightContextOA
+    - MoEndoCompound and MoExoCompound both expose LeftHeadDep and RightHeadDep
+    - MoEndoCompound additionally exposes HeadLast and OverridingMsaOA
+    - MoExoCompound additionally exposes ToMsaOA
+    - Neither concrete type models phonological context (unlike IPhEnvironment)
 
     Users working with mixed collections need to check ClassName and cast to
     access type-specific properties, which is error-prone and verbose.
@@ -35,7 +37,7 @@ Problem:
 Solution:
     CompoundRule wrapper provides:
 
-    - Simple properties for common features (name, head_dependency, contexts)
+    - Simple properties for common features (name, head_dependency)
     - Capability check properties (is_endo_compound, is_exo_compound)
     - Property access that works across all types
     - Optional: Methods for advanced users who know C# types
@@ -200,74 +202,59 @@ class CompoundRule(LCMObjectWrapper):
         return self.right_head_dep
 
     @property
-    def left_context(self):
+    def head_last(self):
         """
-        Get the left context.
+        Whether the head is last (MoEndoCompound only).
 
         Returns:
-            IMoPhonContext or None: The left context object, or None if not set.
-
-        Example::
-
-            if wrapped.left_context:
-                print(f"Left context: {wrapped.left_context}")
+            bool or None: ``HeadLast`` on endocentric rules; ``None`` on exo rules
+            or when the member is unavailable.
 
         Notes:
-            - Available on both MoEndoCompound and MoExoCompound
-            - Use contexts property for generic access
+            - Live reflection (issue #327) confirms ``HeadLast`` on
+              ``IMoEndoCompound`` only; compound rules do not carry
+              phonological contexts like ``IPhEnvironment``.
         """
-        try:
-            if hasattr(self._concrete, "LeftContextOA"):
-                return self._concrete.LeftContextOA
+        if not self.is_endo_compound:
             return None
+        try:
+            return bool(self._concrete.HeadLast)
         except Exception:
             return None
 
     @property
-    def right_context(self):
+    def overriding_msa(self):
         """
-        Get the right context.
+        Overriding stem MSA (MoEndoCompound only).
 
         Returns:
-            IMoPhonContext or None: The right context object, or None if not set.
-
-        Example::
-
-            if wrapped.right_context:
-                print(f"Right context: {wrapped.right_context}")
-
-        Notes:
-            - Available on both MoEndoCompound and MoExoCompound
-            - Use contexts property for generic access
+            IMoStemMsa or None: ``OverridingMsaOA`` when set on an endo rule.
         """
+        if not self.is_endo_compound:
+            return None
         try:
-            if hasattr(self._concrete, "RightContextOA"):
-                return self._concrete.RightContextOA
-            return None
+            if hasattr(self._concrete, "OverridingMsaOA"):
+                return self._concrete.OverridingMsaOA
         except Exception:
-            return None
+            pass
+        return None
 
     @property
-    def contexts(self):
+    def to_msa(self):
         """
-        Get both left and right contexts as a tuple.
+        Target stem MSA (MoExoCompound only).
 
         Returns:
-            tuple: (left_context, right_context) where each can be None.
-
-        Example::
-
-            left_ctx, right_ctx = wrapped.contexts
-            if left_ctx:
-                print(f"Left: {left_ctx}")
-            if right_ctx:
-                print(f"Right: {right_ctx}")
-
-        Notes:
-            - Convenience property for accessing both contexts
-            - Use left_context or right_context for individual access
+            IMoStemMsa or None: ``ToMsaOA`` when set on an exo rule.
         """
-        return (self.left_context, self.right_context)
+        if not self.is_exo_compound:
+            return None
+        try:
+            if hasattr(self._concrete, "ToMsaOA"):
+                return self._concrete.ToMsaOA
+        except Exception:
+            pass
+        return None
 
     # ========== Capability Checks (for type-specific properties) ==========
 

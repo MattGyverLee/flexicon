@@ -126,8 +126,8 @@ class CompoundRuleCollection(SmartCollection):
             # Filter by head dependency
             lhs_head = rules.filter(head_dependency=0)
 
-            # Custom filtering
-            with_contexts = rules.where(lambda r: r.left_context or r.right_context)
+            # Custom filtering (type-specific MSA surface)
+            with_overriding_msa = rules.where(lambda r: r.overriding_msa is not None)
 
             # Chain filters
             verb_lhs = rules.filter(name_contains='Verb').filter(head_dependency=0)
@@ -170,14 +170,14 @@ class CompoundRuleCollection(SmartCollection):
 
         Example::
 
-            # Complex predicate: rules with both left and right contexts
-            full_context = rules.where(
-                lambda r: r.left_context is not None and r.right_context is not None
+            # Complex predicate: endo rules with HeadLast set
+            head_last_endo = rules.where(
+                lambda r: r.is_endo_compound and r.head_last is True
             )
 
             # Combining conditions
-            endo_with_context = rules.where(
-                lambda r: r.is_endo_compound and (r.left_context or r.right_context)
+            exo_with_to_msa = rules.where(
+                lambda r: r.is_exo_compound and r.to_msa is not None
             )
 
             # Type checking combined with other criteria
