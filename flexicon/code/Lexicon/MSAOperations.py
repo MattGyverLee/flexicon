@@ -252,7 +252,8 @@ class MSAOperations(BaseOperations):
               not of MSAOperations: the class is write-capable, and its
               CreateStem / CreateDerivAff / CreateInflAff /
               CreateUnclassifiedAffix / SetStemMsaPos / SetDerivAffMsaPos
-              / ChangeAffixVariant / RemoveOrphaned siblings all mutate
+              / SetInflAffMsaSlots / ChangeAffixVariant / RemoveOrphaned
+              siblings all mutate
               the project and call _EnsureWriteEnabled.
             - Collection order follows FLEx's MorphoSyntaxAnalysesOC
               order. When entry_or_hvo is None, entries are visited in
@@ -553,6 +554,55 @@ class MSAOperations(BaseOperations):
                 deriv.FromPartOfSpeechRA = self.__Resolve(from_pos)
             if to_pos is not None:
                 deriv.ToPartOfSpeechRA = self.__Resolve(to_pos)
+
+    @OperationsMethod
+    def SetInflAffMsaSlots(self, sense, slots, replace=True):
+        """
+        Update the ``SlotsRC`` reference collection on an existing
+        ``IMoInflAffMsa`` attached to a sense.
+
+        ``CreateInflAff`` accepts ``slots=`` only at creation time; this
+        method edits slot membership on an MSA that already exists.
+
+        Args:
+            sense: An ``ILexSense`` (or HVO) whose inflectional-affix MSA
+                should be updated.
+            slots: Sequence of ``IMoInflAffixSlot`` objects (or HVOs) to
+                attach. An empty sequence with ``replace=True`` clears all
+                slots.
+            replace: When ``True`` (default), existing slots are cleared
+                before the new set is added. When ``False``, each resolved
+                slot is appended without clearing.
+
+        Raises:
+            FP_ReadOnlyError, FP_NullParameterError, FP_ParameterError.
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(sense, "sense")
+        self._ValidateParam(slots, "slots")
+
+        sense_obj = self.__ResolveSense(sense)
+        existing = sense_obj.MorphoSyntaxAnalysisRA
+        if existing is None:
+            raise FP_ParameterError(
+                "Sense has no MSA; use CreateInflAff to create one."
+            )
+        try:
+            infl = IMoInflAffMsa(existing)
+        except Exception:
+            raise FP_ParameterError(
+                "Sense's existing MSA is not an inflectional-affix MSA. To "
+                "change MSA type, create a new MSA with the appropriate "
+                "Create* method."
+            )
+
+        resolved_slots = [self.__Resolve(slot) for slot in slots]
+
+        with self._TransactionCM("Set inflectional affix MSA slots"):
+            if replace:
+                infl.SlotsRC.Clear()
+            for slot_obj in resolved_slots:
+                infl.SlotsRC.Add(slot_obj)
 
     # ------------------------------------------------------------------
     # Affix MSA variant conversion

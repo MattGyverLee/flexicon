@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`MSAOperations` had no wrapper to edit `SlotsRC` on an existing
+  inflectional-affix MSA** (#258). Added `SetInflAffMsaSlots(sense, slots,
+  replace=True)` so callers can replace or append template slots without raw
+  LCM `SlotsRC` access.
 - **`AgentOperations.GetSyncableProperties` raised `AttributeError` on every
   agent** (#350). `ICmAgent` has `Name` but no `Description`; the method now
   reflects agent fields (`Human`, `Version`) instead of inheriting the
