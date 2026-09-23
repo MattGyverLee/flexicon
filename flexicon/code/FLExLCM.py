@@ -44,7 +44,7 @@ from SIL.FieldWorks.FwCoreDlgs import ChooseLangProjectDialog
 
 # Import Python mirror of CellarPropertyType constants
 from .Shared.lcm_constants import CellarPropertyType
-from .headless_ui import HeadlessLcmUI
+from .headless_ui import HeadlessLcmUI, HeadlessThreadedProgress
 
 # --- Globals --------------------------------------------------------
 
@@ -73,7 +73,7 @@ def GetListOfProjects():
 # -----------------------------------------------------------
 
 
-def OpenProject(projectName, ui=None):
+def OpenProject(projectName, ui=None, progress=None):
     """
     Open a FieldWorks project.
 
@@ -92,21 +92,30 @@ def OpenProject(projectName, ui=None):
           `Control.Invoke`, which in a process with no message pump blocks
           the commit thread and, on a conflicting save, silently discards
           this session's unsaved writes. See issues #238 and #285.
+
+    progress:
+        - Optional ``IThreadedProgress`` implementation. When None (the
+          default, since issue #289) a bare ``HeadlessThreadedProgress()``
+          is used: it runs any progress task on the calling thread and
+          allocates no WinForms handle.
+        - Interactive callers that want the historical FieldWorks progress
+          dialog may pass ``progress=ProgressDialogWithTask(ThreadHelper())``
+          explicitly. That object is ``IDisposable`` and is disposed after
+          the open completes so Win32 handles do not leak per call.
     """
 
     projectFileName = LcmFileHelper.GetXmlDataFileName(projectName)
 
     projId = ProjectId(projectFileName)
 
-    th = ThreadHelper()
     if ui is None:
         ui = HeadlessLcmUI()
+    if progress is None:
+        progress = HeadlessThreadedProgress()
     dirs = FwDirectoryFinder.LcmDirectories
     settings = LcmSettings()
     # Migration should be done within FieldWorks
     settings.DisableDataMigration = True
-
-    dlg = ProgressDialogWithTask(th)
 
     # SIL.LCModel\LcmCache.cs
     # public static LcmCache CreateCacheFromExistingData(
@@ -116,4 +125,10 @@ def OpenProject(projectName, ui=None):
     #    ILcmDirectories dirs,
     #    LcmSettings settings,
     #    IThreadedProgress progressDlg)
-    return LcmCache.CreateCacheFromExistingData(projId, "en", ui, dirs, settings, dlg)
+    try:
+        return LcmCache.CreateCacheFromExistingData(
+            projId, "en", ui, dirs, settings, progress
+        )
+    finally:
+        if isinstance(progress, ProgressDialogWithTask):
+            progress.Dispose()

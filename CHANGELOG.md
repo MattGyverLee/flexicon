@@ -18,6 +18,13 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`OpenProject` no longer constructs `ProgressDialogWithTask` on every
+  open** (#289). The default progress object is now
+  ``HeadlessThreadedProgress`` (no WinForms handle, no per-open leak).
+  Callers may inject ``progress=`` explicitly; a passed
+  ``ProgressDialogWithTask`` is disposed after ``CreateCacheFromExistingData``
+  returns. Exported at the package top level as ``HeadlessThreadedProgress``.
+
 - **`VariantOperations` sync/duplicate used phantom `ShowComplexFormsIn`** (#358).
   `ILexEntryRef` exposes `ShowComplexFormsInRS`; `GetSyncableProperties` now
   emits `show_complex_forms_in_rs` (ordered target GUIDs) and `Duplicate`
