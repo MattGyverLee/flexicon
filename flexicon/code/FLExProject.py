@@ -257,7 +257,9 @@ class FLExProject(object):
 
     """
 
-    def OpenProject(self, projectName, writeEnabled=False, undoable=True, ui=None):
+    def OpenProject(
+        self, projectName, writeEnabled=False, undoable=True, ui=None, progress=None
+    ):
         """
         Open a project. The project must be closed with `CloseProject()` to
         save any changes, and release the lock.
@@ -330,6 +332,13 @@ class FLExProject(object):
             conflicting save can block the commit thread on a dialog with
             no owner, or silently discard this session's unsaved changes.
 
+        progress:
+            Optional ``IThreadedProgress``, passed through to
+            ``FLExLCM.OpenProject()``. **Default since issue #289: a bare
+            ``HeadlessThreadedProgress()``** (no WinForms handle). Pass
+            ``progress=ProgressDialogWithTask(ThreadHelper())`` to opt back
+            into the historical dialog; it is disposed after open completes.
+
         Note:
             A call to `OpenProject()` may fail with a `FP_FileLockedError`
             exception if the project is open in Fieldworks (or another
@@ -342,7 +351,7 @@ class FLExProject(object):
         """
 
         try:
-            self.project = FLExLCM.OpenProject(projectName, ui)
+            self.project = FLExLCM.OpenProject(projectName, ui, progress)
 
         except System.IO.FileNotFoundException as e:
             raise FP_FileNotFoundError(projectName, e)
@@ -3044,16 +3053,10 @@ class FLExProject(object):
             >>> # Get a chart
             >>> text = list(project.Texts.GetAll())[0]
             >>> chart = project.Discourse.CreateChart(text, "Chart")
-            >>> # NOTE: OverlayOperations.Create() is currently broken -- it
-            >>> # inherits PossibilityItemOperations.Create(), but
-            >>> # OverlayOperations._get_list_object() always returns None
-            >>> # (overlays are chart-scoped, no project-wide list), so this
-            >>> # call always raises FP_ParameterError. See flexicon issue #309.
-            >>> # overlay = project.Overlays.Create("Temporal")
-            >>> # project.Overlays.SetVisible(overlay, True)
-            >>> # for o in project.Overlays.GetVisibleOverlays(chart):
-            >>> #     name = project.Overlays.GetName(o)
-            >>> #     print(f"Overlay: {name}")
+            >>> poss_list = project.lp.ConfidenceLevelsOA
+            >>> overlay = project.Overlays.Create("Temporal", poss_list)
+            >>> name = project.Overlays.GetName(overlay)
+            >>> print(f"Overlay: {name}")
         """
         if "_overlay_ops" not in self.__dict__:
             from .Lists.OverlayOperations import OverlayOperations

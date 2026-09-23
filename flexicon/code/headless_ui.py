@@ -64,12 +64,13 @@ import System
 from System import DateTime
 
 from SIL.LCModel import ILcmUI, MessageType, FileSelection, YesNoCancel
+from SIL.LCModel.Utils import IThreadedProgress
 
 # FP_ConflictingSaveError lives in exceptions.py alongside every other FP_*
 # type so `except FP_RuntimeError` catches it too (see docs/EXCEPTION_HANDLING.md).
 # Re-imported here (not re-defined) so
 # `from flexicon.code.headless_ui import FP_ConflictingSaveError` keeps working.
-from .exceptions import FP_ConflictingSaveError
+from .exceptions import FP_ConflictingSaveError, FP_ParameterError
 
 logger = logging.getLogger(__name__)
 
@@ -234,3 +235,256 @@ class HeadlessLcmUI(ILcmUI):
             "Skipping linked-file restore."
         )
         return YesNoCancel.OkNo
+
+
+class HeadlessThreadedProgress(IThreadedProgress):
+    """
+    ``IThreadedProgress`` that runs work on the calling thread with no UI.
+
+    FieldWorks' ``ProgressDialogWithTask`` allocates a WinForms ``Form`` and
+    forces a Win32 handle on construction (issue #289). ``OpenProject`` now
+    defaults to this class instead, mirroring FieldWorks' own
+    ``NullThreadedProgress`` console tools.
+    """
+
+    __namespace__ = "Flexicon.Headless"
+
+    def __init__(self):
+        self._title = ""
+        self._message = ""
+        self._minimum = 0
+        self._maximum = 100
+        self._position = 0
+        self._step_size = 1
+        self._is_indeterminate = False
+        self._allow_cancel = False
+        self._cancel_button_text = ""
+        self._cancel_label_text = ""
+        self._restartable = False
+        self._is_canceling = False
+        self._canceled = False
+        self._is_disposed = False
+
+    # -- IDisposable (via concrete ProgressDialogWithTask; safe no-op here) --
+
+    def Dispose(self):
+        self._is_disposed = True
+
+    def get_IsDisposed(self):
+        return self._is_disposed
+
+    @property
+    def IsDisposed(self):
+        return self._is_disposed
+
+    # -- IProgress / IThreadedProgress surface ---------------------------
+
+    @property
+    def SynchronizeInvoke(self):
+        return None
+
+    def get_SynchronizeInvoke(self):
+        return None
+
+    @property
+    def Title(self):
+        return self._title
+
+    @Title.setter
+    def Title(self, value):
+        self._title = value or ""
+
+    def get_Title(self):
+        return self._title
+
+    def set_Title(self, value):
+        self.Title = value
+
+    @property
+    def Message(self):
+        return self._message
+
+    @Message.setter
+    def Message(self, value):
+        self._message = value or ""
+
+    def get_Message(self):
+        return self._message
+
+    def set_Message(self, value):
+        self.Message = value
+
+    @property
+    def Minimum(self):
+        return self._minimum
+
+    @Minimum.setter
+    def Minimum(self, value):
+        self._minimum = int(value)
+
+    def get_Minimum(self):
+        return self._minimum
+
+    def set_Minimum(self, value):
+        self.Minimum = value
+
+    @property
+    def Maximum(self):
+        return self._maximum
+
+    @Maximum.setter
+    def Maximum(self, value):
+        self._maximum = int(value)
+
+    def get_Maximum(self):
+        return self._maximum
+
+    def set_Maximum(self, value):
+        self.Maximum = value
+
+    @property
+    def Position(self):
+        return self._position
+
+    @Position.setter
+    def Position(self, value):
+        self._position = int(value)
+
+    def get_Position(self):
+        return self._position
+
+    def set_Position(self, value):
+        self.Position = value
+
+    @property
+    def StepSize(self):
+        return self._step_size
+
+    @StepSize.setter
+    def StepSize(self, value):
+        self._step_size = int(value)
+
+    def get_StepSize(self):
+        return self._step_size
+
+    def set_StepSize(self, value):
+        self.StepSize = value
+
+    @property
+    def IsIndeterminate(self):
+        return self._is_indeterminate
+
+    @IsIndeterminate.setter
+    def IsIndeterminate(self, value):
+        self._is_indeterminate = bool(value)
+
+    def get_IsIndeterminate(self):
+        return self._is_indeterminate
+
+    def set_IsIndeterminate(self, value):
+        self.IsIndeterminate = value
+
+    @property
+    def AllowCancel(self):
+        return self._allow_cancel
+
+    @AllowCancel.setter
+    def AllowCancel(self, value):
+        self._allow_cancel = bool(value)
+
+    def get_AllowCancel(self):
+        return self._allow_cancel
+
+    def set_AllowCancel(self, value):
+        self.AllowCancel = value
+
+    @property
+    def CancelButtonText(self):
+        return self._cancel_button_text
+
+    @CancelButtonText.setter
+    def CancelButtonText(self, value):
+        self._cancel_button_text = value or ""
+
+    def get_CancelButtonText(self):
+        return self._cancel_button_text
+
+    def set_CancelButtonText(self, value):
+        self.CancelButtonText = value
+
+    @property
+    def CancelLabelText(self):
+        return self._cancel_label_text
+
+    @CancelLabelText.setter
+    def CancelLabelText(self, value):
+        self._cancel_label_text = value or ""
+
+    def get_CancelLabelText(self):
+        return self._cancel_label_text
+
+    def set_CancelLabelText(self, value):
+        self.CancelLabelText = value
+
+    @property
+    def Restartable(self):
+        return self._restartable
+
+    @Restartable.setter
+    def Restartable(self, value):
+        self._restartable = bool(value)
+
+    def get_Restartable(self):
+        return self._restartable
+
+    def set_Restartable(self, value):
+        self.Restartable = value
+
+    @property
+    def Canceled(self):
+        return self._canceled
+
+    def get_Canceled(self):
+        return self._canceled
+
+    @property
+    def IsCanceling(self):
+        return self._is_canceling
+
+    @IsCanceling.setter
+    def IsCanceling(self, value):
+        self._is_canceling = bool(value)
+
+    def get_IsCanceling(self):
+        return self._is_canceling
+
+    def set_IsCanceling(self, value):
+        self.IsCanceling = value
+
+    def Step(self, amount):
+        self._position += int(amount)
+
+    def RunTask(self, *args):
+        """
+        Run ``task(self, args)`` synchronously on the calling thread.
+
+        Accepts both ``RunTask(task, args)`` and
+        ``RunTask(useSeparateThread, task, args)`` overloads.
+        """
+        if len(args) == 2:
+            task, task_args = args[0], args[1]
+        elif len(args) == 3:
+            use_separate_thread, task, task_args = args
+            if use_separate_thread:
+                logger.debug(
+                    "HeadlessThreadedProgress.RunTask: ignoring "
+                    "useSeparateThread=True; running on caller thread."
+                )
+        else:
+            raise FP_ParameterError(
+                f"RunTask expected 2 or 3 arguments, got {len(args)}"
+            )
+
+        if task is not None:
+            task(self, task_args)
+        return not self._canceled

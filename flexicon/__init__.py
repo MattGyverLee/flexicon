@@ -131,7 +131,7 @@ from .code.FLExProject import (
 # FLExProject -> FLExLCM) has already imported flexicon.code.headless_ui at
 # module level, so this import is a sys.modules cache hit, not a fresh CLR
 # type emission -- see specs/285-headless-ui-default/reviews/cycle1-programmer.md.
-from .code.headless_ui import HeadlessLcmUI
+from .code.headless_ui import HeadlessLcmUI, HeadlessThreadedProgress
 
 # Advanced Operations (v2.0+)
 
@@ -480,6 +480,7 @@ __all__ = [
     "FilterOperations",
     "GramCatOperations",
     "HeadlessLcmUI",
+    "HeadlessThreadedProgress",
     "InflectionFeatureOperations",
     "LexEntryOperations",
     "LexReferenceOperations",
