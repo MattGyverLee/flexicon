@@ -26,6 +26,16 @@ python3 -m pytest -m "not requires_live_project" \
 Expected: all selected tests pass; ratchet no longer allowlists
 `ShowComplexFormsIn` on `VariantOperations.py`.
 
+## Offline gate (2026-09-23, cloud agent)
+
+```bash
+python3 -m pytest -m "not requires_live_project" \
+  tests/test_syncable_properties_member_ratchet.py \
+  tests/operations/test_variant_syncable_properties_offline.py -q
+```
+
+**PASS:** 75 passed.
+
 ## Result
 
 **FAIL: unverified (live)** -- fix is backed by liblcm baseline contract +
