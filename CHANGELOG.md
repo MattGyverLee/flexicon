@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **Note reply threading used phantom `RepliesOS` on `ICmBaseAnnotation`**
+  (#323). General discussion replies now attach via `LangProject.AnnotationsOC`
+  with `BeginObjectRA` pointing at the parent note; scripture notes use
+  `ResponsesOS`. `GetReplies`, `AddReply`, `Duplicate`, `Delete`, and
+  `annotation.replies` follow the same two-path model instead of silent no-ops.
 - **`from flexicon import MSAOperations` / `PhonFeatureOperations` regression
   guard** (#339). Added an AST ratchet so the #257 public exports for morphological
   slot and phonological-feature Operations cannot disappear from `__init__.py` or

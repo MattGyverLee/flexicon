@@ -495,9 +495,26 @@ class Annotation(LCMObjectWrapper):
             - Replies can themselves have replies (nested threading)
         """
         try:
-            if hasattr(self._obj, "RepliesOS"):
-                return list(self._obj.RepliesOS)
-            return []
+            from SIL.LCModel import ICmBaseAnnotation, IScrScriptureNote
+
+            try:
+                scr = IScrScriptureNote(self._obj)
+                return list(scr.ResponsesOS)
+            except Exception:
+                pass
+
+            repos = self._obj.Cache.ServiceLocator.GetService(
+                ICmBaseAnnotation
+            ).Repository
+            note_hvo = self._obj.Hvo
+            replies = []
+            for ann in repos.AllInstances():
+                if ann.Hvo == note_hvo:
+                    continue
+                if hasattr(ann, "BeginObjectRA") and ann.BeginObjectRA is not None:
+                    if ann.BeginObjectRA.Hvo == note_hvo:
+                        replies.append(ann)
+            return replies
         except Exception:
             return []
 
@@ -519,9 +536,7 @@ class Annotation(LCMObjectWrapper):
             - Returns False if no RepliesOS property or no replies
         """
         try:
-            if hasattr(self._obj, "RepliesOS"):
-                return self._obj.RepliesOS.Count > 0
-            return False
+            return len(self.replies) > 0
         except Exception:
             return False
 
