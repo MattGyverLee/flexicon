@@ -1,22 +1,35 @@
 # Issue #350 -- offline evidence
 
+## Lex-lead ruling
+
+See `specs/350-agent-gsp/rulings.md`.
+
 ## Commands
 
 ```
-python -m pytest tests/operations/test_agent_syncable_properties_offline.py -m "not requires_live_project" -q
-python -m pytest tests/test_syncable_properties_member_ratchet.py -m "not requires_live_project" -q
+python -m pytest tests/operations/test_issue350_agent_gsp_offline.py -m "not requires_live_project" -q
+python -m pytest tests/operations/test_issue350_agent_gsp_live.py -m requires_live_project -q
 ```
 
-## Result (cloud agent, Linux, 2026-09-23)
+## Result (cloud agent, 2026-09-23)
 
-75 passed (agent offline ratchets + full member ratchet suite in one run).
+```
+python3 -m pytest tests/operations/test_issue350_agent_gsp_offline.py -m "not requires_live_project" -q
+```
 
-## Behaviour
+```
+3 passed
+```
 
-| Method | Before | After |
-|--------|--------|-------|
-| `GetSyncableProperties` | Inherited possibility reader; `item.Description` -> `AttributeError` | Agent-specific: `Guid`, `Name`, `Human`, optional `Version` |
-| `GetDescription` | Inherited; `item.Description` -> `AttributeError` | Returns `""` |
-| `SetDescription` | Inherited; would write `Description` | Validated no-op |
+**Live LCM:** not run on this cloud pod (no FieldWorks). Existing live test:
+`tests/operations/test_issue350_agent_gsp_live.py` (`sena3_sandbox`).
 
-**Pass/fail:** PASS offline. Live LCM not available in cloud agent (`No module named 'clr'`).
+## Pre/post behaviour
+
+| Check | Before (issue report) | After (main + this PR) |
+|-------|----------------------|-------------------------|
+| `GetSyncableProperties(agent)` | `AttributeError: ... Description` | Returns dict with `Guid`, `Human`, optional `Name`/`Version`; no `Description` key |
+| `GetDescription(agent)` | Inherited possibility path | Returns `""` |
+| `SetDescription(agent, ...)` | Would touch missing member | Validated no-op |
+
+**Pass/fail:** PASS offline when pytest green.
