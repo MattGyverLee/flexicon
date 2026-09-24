@@ -18,6 +18,12 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **``PhonologicalRuleOperations.__ResolveObject`` casts to concrete** (#461).
+  HVO int callers no longer receive a bare ``ICmObject`` view from
+  ``project.Object(hvo)``, so ``GetName``, ``SetName``, ``GetDescription``,
+  and related rule accessors work when callers pass an HVO int (promoted from
+  #284 re-triage).
+
 - **``LexSenseOperations`` HVO resolvers cast to concrete interfaces** (#457).
   ``__GetSenseObject``, ``__GetEntryObject``, and ``__GetSemanticDomainObject``
   no longer return a bare ``ICmObject`` view from ``project.Object(hvo)``, so
