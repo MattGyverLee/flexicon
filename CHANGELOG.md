@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`from flexicon import MSAOperations` / `PhonFeatureOperations` regression
+  guard** (#339). Added an AST ratchet so the #257 public exports for morphological
+  slot and phonological-feature Operations cannot disappear from `__init__.py` or
+  the type stub without failing CI.
 - **`lcm_casting.py` had no module logger** (#281). A stray `import logging`
   line inside the module docstring never executed; the import and
   `logger = logging.getLogger(__name__)` now live at module scope, and
