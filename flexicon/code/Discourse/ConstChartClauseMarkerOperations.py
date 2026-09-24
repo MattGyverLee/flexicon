@@ -276,9 +276,12 @@ class ConstChartClauseMarkerOperations(BaseOperations):
             ...     print(f"Marker references word group {wg.Hvo}")
 
         Notes:
-            - Returns None if word group reference not set
-            - Word group is from the same or related row
-            - Each marker should reference a word group
+            - ``IConstChartClauseMarker`` has no ``WordGroupRA`` (that member
+              belongs to ``IConstChartMovedTextMarker`` only; issue #357).
+            - Navigation uses ``ColumnRA``: the word group in the marker's
+              owning row whose ``ColumnRA`` matches the marker's.
+            - Returns None when ``ColumnRA`` is unset or no matching word
+              group exists in the row.
 
         See Also:
             Create, GetDependentClauses
@@ -287,7 +290,7 @@ class ConstChartClauseMarkerOperations(BaseOperations):
 
         marker = self.__ResolveObject(marker_or_hvo)
 
-        return marker.WordGroupRA if hasattr(marker, "WordGroupRA") else None
+        return self.__WordGroupForClauseMarker(marker)
 
     @wrap_enumerable
     @OperationsMethod
@@ -483,6 +486,42 @@ class ConstChartClauseMarkerOperations(BaseOperations):
         return self._GetTypedElements(
             c for c in row.CellsOS if c.ClassName == "ConstChartClauseMarker"
         )
+
+    def __WordGroupForClauseMarker(self, marker):
+        """
+        Resolve the word group for a clause marker via shared ``ColumnRA``.
+
+        ``IConstChartClauseMarker`` does not expose ``WordGroupRA``; ``Create``
+        copies ``word_group.ColumnRA`` onto the new marker (issue #324 / #357).
+        """
+        if not hasattr(marker, "ColumnRA"):
+            return None
+
+        column = marker.ColumnRA
+        if column is None:
+            return None
+
+        row = marker.Owner
+        if row is None or not hasattr(row, "CellsOS"):
+            return None
+
+        column_hvo = column.Hvo if hasattr(column, "Hvo") else None
+        for cell in row.CellsOS:
+            if getattr(cell, "ClassName", None) != "ConstChartWordGroup":
+                continue
+            cell_column = getattr(cell, "ColumnRA", None)
+            if cell_column is None:
+                continue
+            if column_hvo is not None and hasattr(cell_column, "Hvo"):
+                if cell_column.Hvo != column_hvo:
+                    continue
+            elif cell_column != column:
+                continue
+            try:
+                return IConstChartWordGroup(cell)
+            except Exception:
+                return cell
+        return None
 
     def __ResolveObject(self, marker_or_hvo):
         """
