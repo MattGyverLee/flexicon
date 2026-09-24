@@ -13,6 +13,7 @@
 
 # --- Imports ------------------------------------------------------------------
 
+import uuid
 from typing import Any
 
 from .exceptions import (
@@ -2656,13 +2657,12 @@ class BaseOperations:
               one used to fall through unresolved and fail at the LCM
               property-set call; routing it through ``project.Object()``
               is a strict improvement with no back-compat risk. Plain
-              NAME-string resolution (e.g. passing ``"back"`` instead of
-              the feature object returned by ``Find("back")``) is
-              deliberately NOT added -- neither pre-T5 body supported it,
-              no shipped test exercises it, and guessing which of
-              several ``Find``-style lookups applies to an arbitrary
-              string would be exactly the kind of silent guess C1's
-              resolver exists to forbid.
+              feature/value NAME strings (issue #265) are also accepted:
+              non-GUID strings resolve via the owner-driven morphological
+              or phonological feature system using the same analysis-WS
+              casefold rules as ``InflectionFeatures.Find`` /
+              ``PhonFeatures.Find``, raising on ambiguity rather than
+              guessing.
             - Ownership-first (C5 invariant) at EVERY nesting level: the
               struct/``ValueOA`` is attached to its owner BEFORE its
               ``FeatureSpecsOC`` is populated or even read -- a free-
@@ -2701,10 +2701,12 @@ class BaseOperations:
                 "_ResolveFeatureStrucOwner."
             )
 
+        domain = self._FeatStrucOperandDomain(owner)
+
         # Normalize (resolve + validate shape) ALL specs, recursively,
         # BEFORE touching owner or opening a transaction -- mirrors both
         # pre-T5 bodies' up-front normalization pass.
-        normalized = self.__NormalizeFeatStrucLevel(specs)
+        normalized = self.__NormalizeFeatStrucLevel(specs, domain=domain)
 
         # THE #256 FIX: resolve owner via the C1 table instead of the
         # `hasattr(owner, "FeaturesOA")` gate. Raises FP_ParameterError
@@ -2733,7 +2735,7 @@ class BaseOperations:
 
             return struct
 
-    def __NormalizeFeatStrucLevel(self, level_specs):
+    def __NormalizeFeatStrucLevel(self, level_specs, domain=None):
         """
         Recursively resolve ONE level of ``_MakeFeatStruc`` specs (either
         shape from C3) into a list of ``(resolved_feat, resolved_val)``
@@ -2757,12 +2759,19 @@ class BaseOperations:
 
         normalized = []
         for feat_raw, val_raw in raw_pairs:
-            feat = self.__ResolveFeatStrucOperand(feat_raw)
+            feat = self.__ResolveFeatStrucOperand(
+                feat_raw, domain=domain, operand_role="feature"
+            )
             if isinstance(val_raw, dict):
-                nested = self.__NormalizeFeatStrucLevel(val_raw)
+                nested = self.__NormalizeFeatStrucLevel(val_raw, domain=domain)
                 normalized.append((feat, nested))
             else:
-                val = self.__ResolveFeatStrucOperand(val_raw)
+                val = self.__ResolveFeatStrucOperand(
+                    val_raw,
+                    domain=domain,
+                    operand_role="value",
+                    value_feature=feat,
+                )
                 normalized.append((feat, val))
         return normalized
 
@@ -2826,18 +2835,34 @@ class BaseOperations:
                     cv.FeatureRA = feat
                     cv.ValueRA = val
 
-    def __ResolveFeatStrucOperand(self, raw):
+    def __ResolveFeatStrucOperand(
+        self, raw, domain=None, operand_role=None, value_feature=None
+    ):
         """
         Resolve one ``_MakeFeatStruc`` feature/value operand: an HVO
-        (``int``), a GUID (``str``), or an already-resolved LCM
-        object/wrapper. See ``_MakeFeatStruc``'s Notes for why GUID
-        strings are additive-only and plain name strings are
-        deliberately unsupported.
+        (``int``), a GUID (``str``), a plain feature/value name (``str``,
+        issue #265), or an already-resolved LCM object/wrapper.
         """
         if isinstance(raw, int) and not isinstance(raw, bool):
             return self.project.Object(raw)
         if isinstance(raw, str):
-            return self.project.Object(raw)
+            if self._IsWellFormedGuidString(raw):
+                return self.project.Object(raw)
+            if domain is None or operand_role is None:
+                raise FP_ParameterError(
+                    "MakeFeatStruc name operands require an owner so the "
+                    "correct feature system can be chosen (issue #265)."
+                )
+            if operand_role == "feature":
+                return self._ResolveFeatStrucFeatureName(raw, domain)
+            if value_feature is None:
+                raise FP_ParameterError(
+                    "MakeFeatStruc value name operands require a resolved "
+                    "feature for the same (feature, value) pair."
+                )
+            return self._ResolveFeatStrucValueName(
+                raw, domain, value_feature
+            )
         # Peel off LCMObjectWrapper-style wrappers -- mirrors
         # InflectionFeatureOperations.__Unwrap / PhonFeatureOperations
         # .__Unwrap.
@@ -2846,6 +2871,120 @@ class BaseOperations:
         if hasattr(raw, "_obj") and hasattr(raw._obj, "Hvo"):
             return raw._obj
         return raw
+
+    @staticmethod
+    def _IsWellFormedGuidString(text):
+        try:
+            uuid.UUID(str(text))
+            return True
+        except (ValueError, AttributeError, TypeError):
+            return False
+
+    def _FeatStrucOperandDomain(self, owner):
+        """
+        Morphological vs phonological feature-system domain for name
+        operands, derived from ``owner.ClassName`` (issue #265 ruling).
+        """
+        unwrapped = owner
+        if hasattr(unwrapped, "_obj") and hasattr(unwrapped._obj, "ClassName"):
+            unwrapped = unwrapped._obj
+        elif hasattr(unwrapped, "_obj") and not hasattr(unwrapped, "ClassName"):
+            unwrapped = unwrapped._obj
+        class_name = getattr(unwrapped, "ClassName", None)
+        if class_name in ("PhPhoneme", "PhNCFeatures"):
+            return "phon"
+        return "ms"
+
+    def _ResolveFeatStrucFeatureName(self, name, domain):
+        matches = self._FindFeaturesByName(name, domain)
+        if not matches:
+            system_label = (
+                "phonological" if domain == "phon" else "morphological"
+            )
+            raise FP_ParameterError(
+                f"MakeFeatStruc: no {system_label} feature named {name!r} "
+                f"(analysis writing system, case-insensitive)."
+            )
+        if len(matches) > 1:
+            raise FP_ParameterError(
+                f"MakeFeatStruc: feature name {name!r} is ambiguous "
+                f"({len(matches)} matches in the "
+                f"{'phonological' if domain == 'phon' else 'morphological'} "
+                f"feature system)."
+            )
+        return matches[0]
+
+    def _ResolveFeatStrucValueName(self, name, domain, feature):
+        matches = self._FindFeatureValuesByName(name, domain, feature)
+        if not matches:
+            raise FP_ParameterError(
+                f"MakeFeatStruc: no value named {name!r} on feature "
+                f"(analysis writing system, case-insensitive)."
+            )
+        if len(matches) > 1:
+            raise FP_ParameterError(
+                f"MakeFeatStruc: value name {name!r} is ambiguous on the "
+                f"given feature ({len(matches)} matches)."
+            )
+        return matches[0]
+
+    def _FindFeaturesByName(self, name, domain):
+        from SIL.LCModel import IFsClosedFeature, IFsFeatDefn, ITsString
+
+        from flexicon.code.Shared.string_utils import normalize_match_key
+
+        target = normalize_match_key(name, casefold=True)
+        if not target:
+            raise FP_ParameterError("Feature name cannot be empty")
+
+        ws = self.project.project.DefaultAnalWs
+        if domain == "phon":
+            feature_system = self.project.lp.PhFeatureSystemOA
+            cast = IFsClosedFeature
+        else:
+            feature_system = self.project.lp.MsFeatureSystemOA
+            cast = IFsFeatDefn
+
+        if feature_system is None:
+            return []
+
+        matches = []
+        for raw in feature_system.FeaturesOC:
+            feat = cast(raw)
+            feat_name = ITsString(feat.Name.get_String(ws)).Text
+            if (
+                feat_name
+                and normalize_match_key(feat_name, casefold=True) == target
+            ):
+                matches.append(feat)
+        return matches
+
+    def _FindFeatureValuesByName(self, name, domain, feature):
+        from SIL.LCModel import ITsString
+
+        from flexicon.code.Shared.string_utils import normalize_match_key
+
+        target = normalize_match_key(name, casefold=True)
+        if not target:
+            raise FP_ParameterError("Feature value name cannot be empty")
+
+        ws = self.project.project.DefaultAnalWs
+        if domain == "phon":
+            values = list(self.project.PhonFeatures.GetValues(feature))
+        else:
+            values = self.project.InflectionFeatures.FeatureGetValues(feature)
+
+        matches = []
+        for val in values:
+            if not hasattr(val, "Name"):
+                continue
+            val_name = ITsString(val.Name.get_String(ws)).Text
+            if (
+                val_name
+                and normalize_match_key(val_name, casefold=True) == target
+            ):
+                matches.append(val)
+        return matches
 
     def _RejectLegacyKwargs(self, kwargs, legacy_to_new):
         """
