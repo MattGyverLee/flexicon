@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **Duplicate lexeme-form allomorphs can be removed from ``AlternateFormsOS``**
+  (#231, slice 1). ``project.Allomorphs.RemoveOrphaned(entry=None, progress=None)``
+  drops alternates whose ``Hvo`` matches the owning entry's ``LexemeFormOA``
+  (lexeme-form promotion artifact). MorphRA-aware unused-allomorph sweeps and
+  the other #231 cleanup families remain open.
 - **Possibility creation no longer requires raw ``CmPossibilityFactory`` overload
   guessing** (#341). ``PossibilityListOperations.CreateItemInListByName`` wraps
   ``FindList`` + ``CreateItem``; docstrings document the parameterless

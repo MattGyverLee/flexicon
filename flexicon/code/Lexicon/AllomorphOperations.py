@@ -12,8 +12,37 @@
 #
 
 import logging
+from collections import namedtuple
 
 logger = logging.getLogger(__name__)
+
+# --- Structured result for RemoveOrphaned (issue #231, slice 1) ------------
+
+RemovedAlternateAllomorph = namedtuple(
+    "RemovedAlternateAllomorph", ("entry_hvo", "allomorph_hvo", "class_name", "reason")
+)
+RemovedAlternateAllomorph.__doc__ = """
+One alternate allomorph removed from ILexEntry.AlternateFormsOS by
+AllomorphOperations.RemoveOrphaned.
+
+Fields:
+    entry_hvo (int): Hvo of the owning ILexEntry.
+    allomorph_hvo (int): Hvo of the removed allomorph.
+    class_name (str): ClassName of the removed allomorph.
+    reason (str): Machine-readable removal reason (e.g. ``duplicate_lexeme``).
+"""
+
+EntryAlternateOrphanBreakdown = namedtuple(
+    "EntryAlternateOrphanBreakdown", ("entry_hvo", "removed_count", "kept_count")
+)
+
+RemoveOrphanedAlternatesResult = namedtuple(
+    "RemoveOrphanedAlternatesResult",
+    ("removed_count", "kept_count", "removed", "by_entry"),
+)
+RemoveOrphanedAlternatesResult.__doc__ = """
+Structured result for AllomorphOperations.RemoveOrphaned.
+"""
 
 # Import BaseOperations parent class
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
@@ -25,6 +54,7 @@ from SIL.LCModel import (
     IMoStemAllomorphFactory,
     IMoAffixAllomorphFactory,
     ILexEntry,
+    ILexEntryRepository,
     IPhEnvironment,
     LexEntryTags,
 )
@@ -481,6 +511,114 @@ class AllomorphOperations(BaseOperations):
                 duplicate.PhoneEnvRC.Add(env)
 
             return duplicate
+
+    # ------------------------------------------------------------------
+    # Orphan cleanup (issue #231, slice 1 -- lex-lead ruling)
+    # ------------------------------------------------------------------
+
+    @OperationsMethod
+    def RemoveOrphaned(self, entry=None, progress=None):
+        """
+        Remove spurious allomorphs from ``ILexEntry.AlternateFormsOS``.
+
+        Lexeme-form promotion and other entry edits can leave the lexeme-form
+        object listed twice: once on ``LexemeFormOA`` and again in
+        ``AlternateFormsOS``. Those duplicates are safe to drop from the
+        alternates list only -- the lexeme form itself is untouched.
+
+        This is **slice 1** of issue #231. A project-wide
+        ``IWfiMorphBundle.MorphRA``-aware unused-allomorph sweep (and the
+        example-sentence / feature-structure gaps in the same issue) remain
+        out of scope until lex-domain confirms back-ref sets for each type.
+
+        Args:
+            entry: An ``ILexEntry`` (or HVO) to limit the scan to one entry.
+                Pass ``None`` (default) to sweep every entry in the project.
+            progress: Optional callback ``progress(current, total)`` invoked
+                once per entry scanned. Exceptions from the callback are
+                logged and ignored.
+
+        Returns:
+            RemoveOrphanedAlternatesResult: ``removed_count``, ``kept_count``,
+            ``removed`` (list of ``RemovedAlternateAllomorph``), and
+            ``by_entry`` (list of ``EntryAlternateOrphanBreakdown``).
+
+        Raises:
+            FP_ReadOnlyError: If the project is not write-enabled.
+            FP_ParameterError: If ``entry`` does not resolve to ``ILexEntry``.
+
+        See Also:
+            MSAOperations.RemoveOrphaned (issue #206)
+        """
+        self._EnsureWriteEnabled()
+
+        if entry is not None:
+            entries = [self.__GetEntryObject(entry)]
+        else:
+            entries = list(self.project.ObjectsIn(ILexEntryRepository))
+
+        removed = []
+        by_entry = []
+        removed_count = 0
+        kept_count = 0
+        total = len(entries)
+
+        with self._TransactionCM("Remove orphaned alternate allomorphs"):
+            for i, entry_obj in enumerate(entries, start=1):
+                lexeme = entry_obj.LexemeFormOA
+                lexeme_hvo = lexeme.Hvo if lexeme is not None else None
+
+                entry_removed = 0
+                entry_kept = 0
+
+                candidates = list(entry_obj.AlternateFormsOS)
+                for allo in candidates:
+                    if lexeme_hvo is not None and allo.Hvo == lexeme_hvo:
+                        if not allo.IsValidObject:
+                            continue
+                        entry_obj.AlternateFormsOS.Remove(allo)
+                        removed.append(
+                            RemovedAlternateAllomorph(
+                                entry_obj.Hvo,
+                                allo.Hvo,
+                                allo.ClassName,
+                                "duplicate_lexeme",
+                            )
+                        )
+                        entry_removed += 1
+                    else:
+                        entry_kept += 1
+
+                removed_count += entry_removed
+                kept_count += entry_kept
+                if entry_removed or entry_kept:
+                    by_entry.append(
+                        EntryAlternateOrphanBreakdown(
+                            entry_obj.Hvo, entry_removed, entry_kept
+                        )
+                    )
+
+                if progress is not None:
+                    try:
+                        progress(i, total)
+                    except Exception:
+                        logger.debug(
+                            "RemoveOrphaned: progress callback raised; ignoring.",
+                            exc_info=True,
+                        )
+
+        logger.info(
+            "RemoveOrphaned: removed %d duplicate alternate(s), kept %d "
+            "alternate(s) across %d entr%s.",
+            removed_count,
+            kept_count,
+            total,
+            "y" if total == 1 else "ies",
+        )
+
+        return RemoveOrphanedAlternatesResult(
+            removed_count, kept_count, removed, by_entry
+        )
 
     # ========== SYNC INTEGRATION METHODS ==========
     #
