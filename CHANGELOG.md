@@ -25,6 +25,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **Duplicate lexeme-form allomorphs can be removed from ``AlternateFormsOS``**
+  (#231, slice 1). ``project.Allomorphs.RemoveOrphaned(entry=None, progress=None)``
+  drops alternates whose ``Hvo`` matches the owning entry's ``LexemeFormOA``
+  (lexeme-form promotion artifact). MorphRA-aware unused-allomorph sweeps and
+  the other #231 cleanup families remain open.
 - **`MakeFeatStruc` accepts plain feature and value names** (#265). Non-GUID
   strings resolve in the owner-appropriate feature system (morphological vs
   phonological) using the same analysis-WS casefold rules as ``Find``; ambiguous
