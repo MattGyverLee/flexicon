@@ -5008,13 +5008,23 @@ class FLExProject(object):
 
     def ListFieldPossibilities(self, senseOrEntry, fieldID):
         """
-        Returns the `PossibilitiesOS` for the given list field. This
-        is a list of `CmPossibility` objects.
-        Raises an exception if the field is not a list (single/Atomic
-        or multiple/Collection)
+        Returns the live ``PossibilitiesOS`` owning sequence for the given list
+        field (elements are ``ICmPossibility`` / base LCM interfaces, not
+        pre-cast concrete types).
 
-        Note: this returns the top-level `CmPossibility` objects. Subitems
-        can be found via the `SubPossibilitiesOS` attribute. Alternatively,
+        Raises an exception if the field is not a list (single/Atomic
+        or multiple/Collection).
+
+        This return value is **load-bearing for writes**: callers index the
+        sequence and assign into reference fields (e.g.
+        ``sense.StatusRA = status_poss[3]``). Do not wrap or copy into a Python
+        list inside flexicon.
+
+        For concrete types (e.g. ``LexEntryType``), apply the public
+        ``cast_to_concrete`` (#271) to individual elements after read.
+
+        Note: this returns the top-level ``CmPossibility`` objects. Subitems
+        can be found via the ``SubPossibilitiesOS`` attribute. Alternatively,
         a flat list of all possible options can be obtained with::
 
             options = project.UnpackNestedPossibilityList(possibilities,
@@ -5027,9 +5037,12 @@ class FLExProject(object):
 
     def ListFieldLookup(self, senseOrEntry, fieldID, value):
         """
-        Looks up the value (a string) in the `CmPossibilityList` for the
+        Looks up the value (a string) in the ``CmPossibilityList`` for the
         given field.
-        Returns the `CmPossibility` object, or `None` if it can't be found.
+
+        Returns the ``ICmPossibility`` from ``FindPossibilityByName``, or
+        ``None`` if it can't be found. The helper does **not** cast to a
+        concrete ClassName; use ``cast_to_concrete`` (#271) when you need one.
         """
 
         pList = self.ListFieldPossibilityList(senseOrEntry, fieldID)

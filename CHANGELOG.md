@@ -63,8 +63,9 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   (#279). `LexEntryInflType`, `CmCustomItem`, `ChkTerm`, and
   `ConstituentChartCellPart` are now registered in
   `lcm_casting._interface_cache` with an updated LCM contract baseline.
-  `FLExProject` possibility helpers (`:4173` / `:4184`) remain an open API
-  decision on #279.
+  **Gap 2 (API policy):** ``ListFieldPossibilities`` / ``ListFieldLookup`` keep
+  returning live LCM interfaces; docstrings now document ``cast_to_concrete``
+  for callers who need concrete types (#279 close-out).
 - **`lcm_casting.py` had no module logger** (#281). A stray `import logging`
   line inside the module docstring never executed; the import and
   `logger = logging.getLogger(__name__)` now live at module scope, and
