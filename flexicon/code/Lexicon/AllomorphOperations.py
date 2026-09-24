@@ -513,7 +513,7 @@ class AllomorphOperations(BaseOperations):
             return duplicate
 
     # ------------------------------------------------------------------
-    # Orphan cleanup (issue #231, slice 1 -- lex-lead ruling)
+    # Orphan cleanup (issue #231 -- lex-lead rulings, slices 1-2)
     # ------------------------------------------------------------------
 
     @OperationsMethod
@@ -526,10 +526,16 @@ class AllomorphOperations(BaseOperations):
         ``AlternateFormsOS``. Those duplicates are safe to drop from the
         alternates list only -- the lexeme form itself is untouched.
 
-        This is **slice 1** of issue #231. A project-wide
-        ``IWfiMorphBundle.MorphRA``-aware unused-allomorph sweep (and the
-        example-sentence / feature-structure gaps in the same issue) remain
-        out of scope until lex-domain confirms back-ref sets for each type.
+        Cascade deletes and partial saves can also leave **stale** handles in
+        ``AlternateFormsOS`` where ``IsValidObject`` is false. Those list
+        slots are removed as well (they are not counted as kept alternates).
+
+        A project-wide ``IWfiMorphBundle.MorphRA``-aware unused-allomorph
+        sweep (alternates with no interlinear link but still valid objects)
+        and the example-sentence / feature-structure gaps in issue #231
+        remain out of scope until lex-domain confirms each back-ref set.
+        Alternates that are valid but not yet referenced in any text are not
+        treated as orphans here.
 
         Args:
             entry: An ``ILexEntry`` (or HVO) to limit the scan to one entry.
@@ -573,9 +579,20 @@ class AllomorphOperations(BaseOperations):
 
                 candidates = list(entry_obj.AlternateFormsOS)
                 for allo in candidates:
+                    if not allo.IsValidObject:
+                        entry_obj.AlternateFormsOS.Remove(allo)
+                        removed.append(
+                            RemovedAlternateAllomorph(
+                                entry_obj.Hvo,
+                                getattr(allo, "Hvo", 0),
+                                getattr(allo, "ClassName", ""),
+                                "invalid_stale",
+                            )
+                        )
+                        entry_removed += 1
+                        continue
+
                     if lexeme_hvo is not None and allo.Hvo == lexeme_hvo:
-                        if not allo.IsValidObject:
-                            continue
                         entry_obj.AlternateFormsOS.Remove(allo)
                         removed.append(
                             RemovedAlternateAllomorph(
@@ -608,7 +625,7 @@ class AllomorphOperations(BaseOperations):
                         )
 
         logger.info(
-            "RemoveOrphaned: removed %d duplicate alternate(s), kept %d "
+            "RemoveOrphaned: removed %d spurious alternate(s), kept %d "
             "alternate(s) across %d entr%s.",
             removed_count,
             kept_count,

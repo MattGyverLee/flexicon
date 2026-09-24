@@ -34,6 +34,12 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **Spurious allomorphs can be removed from ``AlternateFormsOS``** (#231).
+  ``project.Allomorphs.RemoveOrphaned(entry=None, progress=None)`` drops
+  alternates whose ``Hvo`` matches the owning entry's ``LexemeFormOA``
+  (lexeme-form promotion artifact) and purges invalid stale list entries
+  (``IsValidObject`` false). MorphRA-aware unused-allomorph sweeps and the
+  other #231 cleanup families remain open.
 - **`HeadlessLcmUI.SynchronizeInvoke` no longer returns ``None``** (#441).
   HermitCrab's ``HCParser`` registers an LCM change listener; with a null
   invoker every write after parsing raised ``NullReferenceException`` in

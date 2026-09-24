@@ -2,7 +2,7 @@
 #   test_issue231_allomorph_remove_orphaned.py
 #
 #   Mock-based unit tests for AllomorphOperations.RemoveOrphaned
-#   (issue #231 slice 1: duplicate lexeme-form entries in AlternateFormsOS).
+#   (issue #231: duplicate lexeme-form entries and invalid stale alternates).
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+
@@ -110,3 +110,30 @@ class TestAllomorphRemoveOrphanedDuplicates:
         ops = _make_ops([], write_enabled=False)
         with pytest.raises(FP_ReadOnlyError):
             ops.RemoveOrphaned()
+
+    def test_removes_invalid_stale_alternate(self):
+        lexeme = FakeAllomorph(10)
+        stale = FakeAllomorph(99, valid=False)
+        good = FakeAllomorph(11)
+        entry = FakeEntry(1, lexeme=lexeme, alternates=[stale, good])
+        ops = _make_ops([entry])
+
+        result = ops.RemoveOrphaned()
+
+        assert result.removed_count == 1
+        assert result.kept_count == 1
+        assert entry.AlternateFormsOS == [good]
+        assert result.removed[0].reason == "invalid_stale"
+
+    def test_removes_invalid_duplicate_lexeme_in_alternates(self):
+        lexeme = FakeAllomorph(10)
+        stale_dup = FakeAllomorph(10, valid=False)
+        entry = FakeEntry(1, lexeme=lexeme, alternates=[stale_dup])
+        ops = _make_ops([entry])
+
+        result = ops.RemoveOrphaned()
+
+        assert result.removed_count == 1
+        assert result.kept_count == 0
+        assert entry.AlternateFormsOS == []
+        assert result.removed[0].reason == "invalid_stale"
