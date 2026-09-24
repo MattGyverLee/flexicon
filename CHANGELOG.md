@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **``POSOperations.Duplicate`` OS placement regression coverage** (#295). Mock
+  tests pin ``SubPossibilitiesOS`` / ``PossibilitiesOS`` ``IndexOf`` +
+  ``Insert`` for ``insert_after=True`` and ``Add`` for append, plus deep
+  subcategory recursion -- guarding the last legitimate #163-shaped OS site
+  against an OC-style "fix" that would silently drop positional insert.
 - **Possibility creation no longer requires raw ``CmPossibilityFactory`` overload
   guessing** (#341). ``PossibilityListOperations.CreateItemInListByName`` wraps
   ``FindList`` + ``CreateItem``; docstrings document the parameterless
