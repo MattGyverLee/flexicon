@@ -21,6 +21,8 @@ import logging
 
 from SIL.LCModel.Infrastructure import UndoableUnitOfWorkHelper
 
+from flexicon.code.exceptions import FP_TransactionError
+
 logger = logging.getLogger(__name__)
 
 
@@ -252,14 +254,16 @@ class _FLExTransaction:
             ``specs/write-path-transactions/spec.md`` D1 for the specific API
             name checked). This is not a
             build-specific gap that might resolve later; there is no such API
-            to discover. Failing fast here would make every write operation
+            to discover.             Failing fast here would make every write operation
             under ``undoable=False`` impossible, so degraded-but-functional
             (no rollback, body still runs, exceptions still propagate) is the
-            permanent behavior in this mode. A per-session warning to this
-            effect is logged once per ``FLExProject.OpenProject()`` call (not
-            once per process or per instance -- a second ``OpenProject()``
-            call in the same session re-logs it), and not per transaction
-            (issue #221) -- see ``docs/EXCEPTION_HANDLING.md``.
+            default behavior in this mode. Callers may opt into fail-fast via
+            ``OpenProject(..., strict_transactions=True)`` (issue #210). A
+            per-session warning to this effect is logged once per
+            ``FLExProject.OpenProject()`` call (not once per process or per
+            instance -- a second ``OpenProject()`` call in the same session
+            re-logs it), and not per transaction (issue #221) -- see
+            ``docs/EXCEPTION_HANDLING.md``.
         """
         if not self._project.writeEnabled:
             # Silently allow entering on read-only project;
@@ -269,6 +273,15 @@ class _FLExTransaction:
             return self
 
         if self._mark_fn is None:
+            if getattr(self._project, "_strict_transactions", False):
+                raise FP_TransactionError(
+                    "Transaction rollback API is unavailable (mark_fn is "
+                    "None) but OpenProject(..., strict_transactions=True) "
+                    "requires atomic failure instead of degraded writes "
+                    "(issue #210). Reopen with strict_transactions=False to "
+                    "accept session-level atomicity, or use the default "
+                    "undoable=True write path for per-operation rollback."
+                )
             # No rollback API exists to use (see docstring above). Expected
             # and permanent in the current build, not an error -- the
             # one-shot OpenProject() warning already told the caller this
