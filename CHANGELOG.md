@@ -22,6 +22,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   (#202). ``PhonemeOperations.ImportCatalog`` skips catalog segments whose
   ``<Features/>`` branch is empty by default (``skip_tones=True``); pass
   ``skip_tones=False`` to restore the legacy behaviour.
+- **`CompoundRule` exposed phantom phonological context on compound rules**
+  (#327). `IMoEndoCompound` / `IMoExoCompound` have no `LeftContextOA` /
+  `RightContextOA`; removed `left_context`, `right_context`, and `contexts`
+  (always `None`) and added `head_last`, `overriding_msa`, and `to_msa` for
+  the live-confirmed type-specific members.
 - **Notebook text links and record types used phantom LCM members** (#322).
   `DataNotebookOperations` now reads record types from
   `ResearchNotebookOA.RecTypesOA` (not `ILangProject.RecTypesOA`) and links
