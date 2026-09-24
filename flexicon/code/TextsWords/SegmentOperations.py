@@ -31,6 +31,7 @@ from ..FLExProject import (
     FP_ReadOnlyError,
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
+from ..lcm_casting import cast_to_concrete
 
 logger = logging.getLogger(__name__)
 
@@ -156,8 +157,8 @@ class SegmentOperations(BaseOperations):
             IStTxtPara: The paragraph object.
         """
         if isinstance(para_or_hvo, int):
-            return self.project.Object(para_or_hvo)
-        return para_or_hvo
+            return cast_to_concrete(self.project.Object(para_or_hvo))
+        return cast_to_concrete(para_or_hvo)
 
     def __GetSegmentObject(self, segment_or_hvo):
         """
@@ -170,8 +171,8 @@ class SegmentOperations(BaseOperations):
             ISegment: The segment object.
         """
         if isinstance(segment_or_hvo, int):
-            return self.project.Object(segment_or_hvo)
-        return segment_or_hvo
+            return cast_to_concrete(self.project.Object(segment_or_hvo))
+        return cast_to_concrete(segment_or_hvo)
 
     def __GetSegmentFactory(self):
         """Return the ISegmentFactory from the service locator."""
