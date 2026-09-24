@@ -1340,8 +1340,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         """
         item = self.__GetItemObject(item_or_hvo)
 
-        if hasattr(item, "TextsRC"):
-            return list(item.TextsRC)
+        # ICmAnthroItem has no TextsRC in LCM (issue #322).
         return []
 
     @OperationsMethod
@@ -1392,21 +1391,13 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         self._ValidateParam(text, "text")
 
-        item = self.__GetItemObject(item_or_hvo)
+        self.__GetItemObject(item_or_hvo)
 
-        try:
-            text_obj = IText(text)
-        except Exception:
-            raise FP_ParameterError("text must be a valid IText object")
-
-        # Check if already linked
-        if hasattr(item, "TextsRC") and item.TextsRC.Contains(text_obj):
-            raise FP_ParameterError("Text is already linked to this item")
-
-        # Add the text to the item's collection
-        if hasattr(item, "TextsRC"):
-            with self._TransactionCM("Link text to anthropology item"):
-                item.TextsRC.Add(text_obj)
+        raise FP_ParameterError(
+            "ICmAnthroItem has no text-link field in LCM; AddText is not "
+            "supported on anthropology items (issue #322). Link texts via "
+            "DataNotebookOperations.LinkToText on notebook records instead."
+        )
 
     @OperationsMethod
     def RemoveText(self, item_or_hvo, text):
@@ -1450,21 +1441,12 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         self._ValidateParam(text, "text")
 
-        item = self.__GetItemObject(item_or_hvo)
+        self.__GetItemObject(item_or_hvo)
 
-        try:
-            text_obj = IText(text)
-        except Exception:
-            raise FP_ParameterError("text must be a valid IText object")
-
-        # Check if linked
-        if hasattr(item, "TextsRC") and not item.TextsRC.Contains(text_obj):
-            raise FP_ParameterError("Text is not linked to this item")
-
-        # Remove the text from the item's collection
-        if hasattr(item, "TextsRC"):
-            with self._TransactionCM("Unlink text from anthropology item"):
-                item.TextsRC.Remove(text_obj)
+        raise FP_ParameterError(
+            "ICmAnthroItem has no text-link field in LCM; RemoveText is not "
+            "supported on anthropology items (issue #322)."
+        )
 
     @OperationsMethod
     def GetTextCount(self, item_or_hvo):
@@ -1503,10 +1485,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         See Also:
             GetTexts, AddText, RemoveText
         """
-        item = self.__GetItemObject(item_or_hvo)
+        self.__GetItemObject(item_or_hvo)
 
-        if hasattr(item, "TextsRC"):
-            return item.TextsRC.Count
         return 0
 
     @OperationsMethod
@@ -1561,14 +1541,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         except Exception:
             raise FP_ParameterError("text must be a valid IText object")
 
-        results = []
-
-        # Search through all items
-        for item in self.GetAll():
-            if hasattr(item, "TextsRC") and item.TextsRC.Contains(text_obj):
-                results.append(item)
-
-        return results
+        # ICmAnthroItem has no TextsRC (issue #322).
+        return []
 
     # --- Researcher/People Linking Operations ---
 

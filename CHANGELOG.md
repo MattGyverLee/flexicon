@@ -18,6 +18,12 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **Notebook text links and record types used phantom LCM members** (#322).
+  `DataNotebookOperations` now reads record types from
+  `ResearchNotebookOA.RecTypesOA` (not `ILangProject.RecTypesOA`) and links
+  texts through `IRnGenericRec.TextRA` instead of a nonexistent `TextsRC`.
+  `AnthropologyOperations.AddText` / `RemoveText` raise `FP_ParameterError`
+  because `ICmAnthroItem` has no text-link surface, replacing silent no-ops.
 - **Note reply threading used phantom `RepliesOS` on `ICmBaseAnnotation`**
   (#323). General discussion replies now attach via `LangProject.AnnotationsOC`
   with `BeginObjectRA` pointing at the parent note; scripture notes use

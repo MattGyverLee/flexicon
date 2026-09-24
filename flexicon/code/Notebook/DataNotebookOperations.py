@@ -869,13 +869,12 @@ class DataNotebookOperations(BaseOperations):
         See Also:
             GetRecordType, SetRecordType, FindRecordTypeByName
         """
-        # Get the record types list from the project
-        if hasattr(self.project.lp, "RecTypesOA"):
-            rec_types_list = self.project.lp.RecTypesOA
-            # PossibilitiesOS is declared over ICmPossibility; cast
-            # elements so subtype surface is reachable (issue #270).
-            if rec_types_list is not None:
-                return self._GetTypedElements(rec_types_list.PossibilitiesOS)
+        # Record types live on the research notebook object, not ILangProject
+        # (issue #322; live reflection in lcm-member-truth-sweep).
+        notebook = self.project.lp.ResearchNotebookOA
+        rec_types_list = notebook.RecTypesOA
+        if rec_types_list is not None:
+            return self._GetTypedElements(rec_types_list.PossibilitiesOS)
 
         return []
 
@@ -2000,8 +1999,9 @@ class DataNotebookOperations(BaseOperations):
         """
         record = self.__GetRecordObject(record_or_hvo)
 
-        if hasattr(record, "TextsRC") and record.TextsRC:
-            return list(record.TextsRC)
+        linked = record.TextRA
+        if linked is not None:
+            return [IText(linked)]
 
         return []
 
@@ -2050,10 +2050,17 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        if hasattr(record, "TextsRC"):
-            if text not in record.TextsRC:
-                with self._TransactionCM("Link text to notebook record"):
-                    record.TextsRC.Add(text)
+        try:
+            text_obj = IText(text)
+        except Exception:
+            raise FP_ParameterError("text must be a valid IText object")
+
+        current = record.TextRA
+        if current is not None and current.Hvo == text_obj.Hvo:
+            return
+
+        with self._TransactionCM("Link text to notebook record"):
+            record.TextRA = text_obj
 
     @OperationsMethod
     def UnlinkFromText(self, record_or_hvo, text):
@@ -2091,10 +2098,17 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        if hasattr(record, "TextsRC"):
-            if text in record.TextsRC:
-                with self._TransactionCM("Unlink text from notebook record"):
-                    record.TextsRC.Remove(text)
+        try:
+            text_obj = IText(text)
+        except Exception:
+            raise FP_ParameterError("text must be a valid IText object")
+
+        current = record.TextRA
+        if current is None or current.Hvo != text_obj.Hvo:
+            return
+
+        with self._TransactionCM("Unlink text from notebook record"):
+            record.TextRA = None
 
     # --- Media File Operations ---
 
