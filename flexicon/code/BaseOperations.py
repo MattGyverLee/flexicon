@@ -22,6 +22,8 @@ from .exceptions import (
     FP_ParameterError,
 )
 from .Shared.lcm_constants import OWNING_SEQUENCE_SUFFIX, FEATURE_STRUC_OWNER_TABLE
+from .Shared.wrapper_base import LCMObjectWrapper
+from .PythonicWrapper import PythonicWrapper, unwrap as _unwrap_pythonic
 
 # --- Constants ---------------------------------------------------------------
 
@@ -828,6 +830,7 @@ class BaseOperations:
         if positions <= 0:
             raise ValueError("positions must be positive integer")
 
+        item = self._UnwrapLcm(item)
         parent = self._GetObject(parent_or_hvo)
         sequence = self._GetSequence(parent)
 
@@ -925,6 +928,7 @@ class BaseOperations:
         if positions <= 0:
             raise ValueError("positions must be positive integer")
 
+        item = self._UnwrapLcm(item)
         parent = self._GetObject(parent_or_hvo)
         sequence = self._GetSequence(parent)
 
@@ -1011,6 +1015,7 @@ class BaseOperations:
         """
         self._EnsureWriteEnabled()
 
+        item = self._UnwrapLcm(item)
         parent = self._GetObject(parent_or_hvo)
         sequence = self._GetSequence(parent)
 
@@ -1090,6 +1095,9 @@ class BaseOperations:
         """
         self._EnsureWriteEnabled()
 
+        item_to_move = self._UnwrapLcm(item_to_move)
+        target_item = self._UnwrapLcm(target_item)
+
         # Find which sequence contains both items
         sequence = self._FindCommonSequence(item_to_move, target_item)
 
@@ -1165,6 +1173,9 @@ class BaseOperations:
             MoveBefore, MoveToIndex, Swap
         """
         self._EnsureWriteEnabled()
+
+        item_to_move = self._UnwrapLcm(item_to_move)
+        target_item = self._UnwrapLcm(target_item)
 
         # Find which sequence contains both items
         sequence = self._FindCommonSequence(item_to_move, target_item)
@@ -1242,6 +1253,9 @@ class BaseOperations:
         See Also:
             MoveBefore, MoveAfter, MoveToIndex
         """
+        item1 = self._UnwrapLcm(item1)
+        item2 = self._UnwrapLcm(item2)
+
         # Find which sequence contains both items
         sequence = self._FindCommonSequence(item1, item2)
 
@@ -1671,6 +1685,57 @@ class BaseOperations:
             "Example: return parent.SensesOS"
         )
 
+    def _UnwrapLcm(self, obj):
+        """
+        Unwrap a flexicon wrapper object to the raw LCM object it holds.
+
+        `GetAll()` on several Operations classes (Allomorph, MSA, MorphRule,
+        PhonologicalRule) returns `LCMObjectWrapper` instances instead of raw
+        LCM objects, so users can iterate results and then pass an item
+        straight back into another Operations method (e.g.
+        `project.Allomorphs.GetForm(item)` for `item` in
+        `project.Allomorphs.GetAll(entry)`). Internal resolvers that later
+        perform a pythonnet interface cast (`IMoStemAllomorph(obj)`, etc.) or
+        an equality/`IndexOf`/`Remove` check against a raw LCM sequence need
+        the raw object, not the wrapper -- pythonnet cannot cast a plain
+        Python wrapper object, and wrapper instances don't define `__eq__`
+        against raw LCM objects.
+
+        This helper centralizes that unwrap step so every resolver applies
+        it the same way, using `isinstance` checks against the two known
+        wrapper types rather than `hasattr()` probes. `hasattr()` is unsafe
+        here: both wrapper types proxy unknown attribute access to the
+        wrapped LCM object via `__getattr__`, and raw pythonnet objects can
+        raise on some attribute probes rather than returning False.
+
+        Args:
+            obj: An `LCMObjectWrapper`, a `PythonicWrapper`, a raw LCM
+                object, an HVO (int), a string, or None.
+
+        Returns:
+            object: `obj.lcm_object` if obj is an `LCMObjectWrapper`;
+                the underlying LCM object if obj is a `PythonicWrapper`;
+                otherwise `obj` unchanged (including None, int, str, and
+                raw LCM objects, which all pass through untouched).
+
+        Example:
+            >>> allo_wrapper = project.Allomorphs.GetAll(entry)[0]
+            >>> raw = self._UnwrapLcm(allo_wrapper)
+            >>> IMoAffixAllomorph(raw)  # works; would TypeError on the wrapper
+
+        Notes:
+            - Never raises -- safe to call unconditionally on any value.
+            - Idempotent: unwrapping an already-raw object is a no-op.
+
+        See Also:
+            LCMObjectWrapper.lcm_object, PythonicWrapper.unwrap()
+        """
+        if isinstance(obj, LCMObjectWrapper):
+            return obj.lcm_object
+        if isinstance(obj, PythonicWrapper):
+            return _unwrap_pythonic(obj)
+        return obj
+
     def _GetObject(self, obj_or_hvo):
         """
         Get object from HVO or return object directly.
@@ -1679,7 +1744,10 @@ class BaseOperations:
         or its HVO (Handle Value Object = integer ID).
 
         Args:
-            obj_or_hvo: Either an object or an HVO (int).
+            obj_or_hvo: Either an object or an HVO (int). May also be a
+                flexicon wrapper object (e.g. an item from a wrapper-
+                returning `GetAll()`), which is unwrapped to its raw LCM
+                object before being returned.
 
         Returns:
             object: The resolved object.
@@ -1697,12 +1765,14 @@ class BaseOperations:
 
         Notes:
             - If obj_or_hvo is int, retrieves object by HVO
-            - If obj_or_hvo is object, returns it unchanged
+            - If obj_or_hvo is a wrapper, unwraps to the raw LCM object
+            - If obj_or_hvo is a raw object, returns it unchanged
             - Uses FLExProject.Object() for HVO resolution
 
         See Also:
             All methods that accept parent_or_hvo use this.
         """
+        obj_or_hvo = self._UnwrapLcm(obj_or_hvo)
         if isinstance(obj_or_hvo, int):
             return self.project.Object(obj_or_hvo)
         return obj_or_hvo
@@ -3084,6 +3154,9 @@ class BaseOperations:
         See Also:
             MoveBefore, MoveAfter, Swap
         """
+        item1 = self._UnwrapLcm(item1)
+        item2 = self._UnwrapLcm(item2)
+
         # Verify items have Owner property
         if not hasattr(item1, "Owner") or not hasattr(item2, "Owner"):
             raise ValueError("Items must have Owner property to find common sequence")

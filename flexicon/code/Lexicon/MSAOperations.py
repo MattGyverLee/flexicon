@@ -267,6 +267,13 @@ class MSAOperations(BaseOperations):
               ``ILcmOwningCollection<IMoMorphSynAnalysis>``, read-only,
               per tests/contract/snapshots/liblcm_baseline.json
               (liblcm 11.0.0.0).
+            - Items can be passed straight back into other MSAOperations
+              methods (e.g. ``ChangeAffixVariant(item, ...)``) -- resolvers
+              unwrap the wrapper internally (issue #449). A caller
+              performing a direct pythonnet cast, e.g. ``IMoInflAffMsa(item)``,
+              must use ``item.lcm_object`` instead
+              (``IMoInflAffMsa(item.lcm_object)``), since pythonnet cannot
+              cast a Python wrapper instance.
 
         See Also:
             CreateStem, CreateDerivAff, CreateInflAff,
@@ -629,7 +636,9 @@ class MSAOperations(BaseOperations):
 
         Args:
             msa: An existing affix MSA (IMoInflAffMsa, IMoDerivAffMsa,
-                or IMoUnclassifiedAffixMsa).
+                or IMoUnclassifiedAffixMsa), or a ``MorphosyntaxAnalysis``
+                wrapper item from ``GetAll()`` (unwrapped internally,
+                issue #449).
             target_kind: 'infl' | 'deriv' | 'unclassified'
 
         Returns:
@@ -657,6 +666,7 @@ class MSAOperations(BaseOperations):
               only when they carry actual data on the source MSA.
         """
         self._EnsureWriteEnabled()
+        msa = self._UnwrapLcm(msa)
         self._ValidateParam(msa, "msa")
 
         _VALID_KINDS = {"infl", "deriv", "unclassified"}
@@ -1325,8 +1335,10 @@ class MSAOperations(BaseOperations):
         fixed as of this correction.
 
         Args:
-            msa_or_hvo: An MSA object, a wrapper exposing one via
-                ``._obj``, an HVO (``int``), or a GUID (``str``).
+            msa_or_hvo: An MSA object, an ``LCMObjectWrapper``/
+                ``PythonicWrapper`` wrapper (e.g. a ``MorphosyntaxAnalysis``
+                item from ``GetAll()``, unwrapped via ``_UnwrapLcm``, issue
+                #449), an HVO (``int``), or a GUID (``str``).
 
         Returns:
             The resolved MSA, cast to its concrete interface when its
@@ -1336,10 +1348,9 @@ class MSAOperations(BaseOperations):
             dispatching callers above treat an unrecognised ClassName as
             a no-op, never a cast attempt.
         """
+        msa_or_hvo = self._UnwrapLcm(msa_or_hvo)
         if isinstance(msa_or_hvo, (int, str)):
             obj = self.project.Object(msa_or_hvo)
-        elif hasattr(msa_or_hvo, "_obj"):
-            obj = msa_or_hvo._obj
         else:
             obj = msa_or_hvo
 
