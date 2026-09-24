@@ -12,3 +12,12 @@
   MorphRule bare-owner bugs (template Delete, __DuplicateAffixTemplate)
   confirmed out of scope, documented for a follow-up issue. Next: T7/T8
   (QC + domain review, PR).
+- 2026-09-24 cycle 1 done: _UnwrapLcm helper + ~18 sites (b8e4b92, bb95a1a, af45c41, not pushed).
+  Offline new file 23/23 (21 red on main). Full offline suite WAS run: 148F/2109P/48E vs main
+  baseline 168F/2089P/48E; the delta is 20, but 21 tests fail on main, so the numbers are off by one
+  and the failing node IDs need diffing. Live read-only 6/6 run_mode=live.
+  Gaps for cycle 2: no live read-back for write paths that were silent no-ops (SetStratum,
+  SetDisabled, MoveUp/Down/Before/After/Swap, SetGrammaticalInfo, WfiMorphBundle SetMorph/SetMSA,
+  ChangeAffixVariant, MorphRule Delete/Duplicate); PhonologicalRules = 0 in Sena 3.
+  Out of scope: MorphRule template Delete / __DuplicateAffixTemplate take a bare owner from
+  _GetObject(Owner.Hvo); needs its own issue (user to approve filing).
