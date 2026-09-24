@@ -182,6 +182,10 @@ class PossibilityItemOperations(BaseOperations):
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If name is None.
             FP_ParameterError: If name is empty or list doesn't exist.
+
+        Notes:
+            - Uses parameterless ``ICmPossibilityFactory.Create()`` (issue #341).
+              Do not call raw factory overloads with ``(Guid, ICmPossibilityList)``.
         """
         self._EnsureWriteEnabled()
         self._ValidateParam(name, "name")

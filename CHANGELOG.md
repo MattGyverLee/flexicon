@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **Possibility creation no longer requires raw ``CmPossibilityFactory`` overload
+  guessing** (#341). ``PossibilityListOperations.CreateItemInListByName`` wraps
+  ``FindList`` + ``CreateItem``; docstrings document the parameterless
+  ``factory.Create()`` pattern and specialized ``PossibilityItemOperations.Create``
+  entry points (e.g. ``Publications.Create``).
 - **BasicIPA import no longer materializes tone rows as featureless phonemes**
   (#202). ``PhonemeOperations.ImportCatalog`` skips catalog segments whose
   ``<Features/>`` branch is empty by default (``skip_tones=True``); pass
