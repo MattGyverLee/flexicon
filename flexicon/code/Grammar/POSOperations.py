@@ -1531,6 +1531,116 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
                 label=f"PartOfSpeech ({prop_name})",
             )
 
+    def __ReadPOSFeatureStrucSpec(self, pos, slot):
+        """Return a C4 feature-struct dict for one PartOfSpeech slot, or None."""
+        concrete_owner, prop_name = self._ResolveFeatureStrucOwner(pos, slot=slot)
+        struct = getattr(concrete_owner, prop_name)
+        if struct is None:
+            return None
+        return self._GetFeatureStruc(struct)
+
+    def __WritePOSFeatureStrucSpec(self, pos, slot, spec, struct_guid=None):
+        """Apply a C4 feature-struct dict onto one PartOfSpeech slot."""
+        if spec is None:
+            raise FP_ParameterError("spec cannot be None; pass {} to clear entries")
+        if not isinstance(spec, dict):
+            raise FP_ParameterError(
+                f"spec must be a dict (C4 feature-struct shape), got {type(spec).__name__}"
+            )
+
+        concrete_owner, prop_name = self._ResolveFeatureStrucOwner(pos, slot=slot)
+        self._ApplyFeatureStruc(
+            concrete_owner,
+            prop_name,
+            spec,
+            struct_guid=struct_guid,
+            on_unresolved="raise",
+            label=f"PartOfSpeech ({prop_name})",
+        )
+
+    @OperationsMethod
+    def GetDefaultFeatures(self, pos_or_hvo):
+        """
+        Read ``DefaultFeaturesOA`` as a C4 feature-structure dict.
+
+        Args:
+            pos_or_hvo: ``IPartOfSpeech`` or HVO.
+
+        Returns:
+            dict or None: Recursive feature-structure spec (same shape as
+            ``GetSyncableProperties()['DefaultFeatures']`` when present),
+            or ``None`` when ``DefaultFeaturesOA`` is unset.
+
+        Example:
+            >>> noun = project.POS.Find("Noun")
+            >>> spec = project.POS.GetDefaultFeatures(noun)
+            >>> if spec:
+            ...     print(spec.get("specs", {}))
+        """
+        self._ValidateParam(pos_or_hvo, "pos_or_hvo")
+        pos = self.__ResolveObject(pos_or_hvo)
+        return self.__ReadPOSFeatureStrucSpec(pos, "Default")
+
+    @OperationsMethod
+    def SetDefaultFeatures(self, pos_or_hvo, spec, struct_guid=None):
+        """
+        Replace ``DefaultFeaturesOA`` from a C4 feature-structure dict.
+
+        Args:
+            pos_or_hvo: ``IPartOfSpeech`` or HVO.
+            spec (dict): C4 recursive dict (see ``BaseOperations._GetFeatureStruc``).
+            struct_guid (str, optional): Preserve or assign struct GUID.
+
+        Raises:
+            FP_ReadOnlyError: When the project is not write-enabled.
+            FP_ParameterError: On malformed ``spec`` or unresolved feature GUIDs.
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(pos_or_hvo, "pos_or_hvo")
+        pos = self.__ResolveObject(pos_or_hvo)
+
+        with self._TransactionCM("Set POS DefaultFeatures"):
+            self.__WritePOSFeatureStrucSpec(pos, "Default", spec, struct_guid=struct_guid)
+
+    @OperationsMethod
+    def GetInherFeatVal(self, pos_or_hvo):
+        """
+        Read ``InherFeatValOA`` as a C4 feature-structure dict.
+
+        Args:
+            pos_or_hvo: ``IPartOfSpeech`` or HVO.
+
+        Returns:
+            dict or None: Same shape as ``GetSyncableProperties()['InherFeatVal']``
+            when present, or ``None`` when ``InherFeatValOA`` is unset.
+        """
+        self._ValidateParam(pos_or_hvo, "pos_or_hvo")
+        pos = self.__ResolveObject(pos_or_hvo)
+        return self.__ReadPOSFeatureStrucSpec(pos, "InherFeatVal")
+
+    @OperationsMethod
+    def SetInherFeatVal(self, pos_or_hvo, spec, struct_guid=None):
+        """
+        Replace ``InherFeatValOA`` from a C4 feature-structure dict.
+
+        Args:
+            pos_or_hvo: ``IPartOfSpeech`` or HVO.
+            spec (dict): C4 recursive dict.
+            struct_guid (str, optional): Preserve or assign struct GUID.
+
+        Raises:
+            FP_ReadOnlyError: When the project is not write-enabled.
+            FP_ParameterError: On malformed ``spec`` or unresolved feature GUIDs.
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(pos_or_hvo, "pos_or_hvo")
+        pos = self.__ResolveObject(pos_or_hvo)
+
+        with self._TransactionCM("Set POS InherFeatVal"):
+            self.__WritePOSFeatureStrucSpec(
+                pos, "InherFeatVal", spec, struct_guid=struct_guid
+            )
+
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):
         """

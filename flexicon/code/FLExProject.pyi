@@ -57,6 +57,10 @@ from .System.AnnotationDefOperations import AnnotationDefOperations
 from .System.CheckOperations import CheckOperations
 from .Scripture.ScrDraftOperations import ScrDraftOperations
 from .Scripture.ScrBookOperations import ScrBookOperations
+from .Scripture.ScrNoteOperations import ScrNoteOperations
+from .Scripture.ScrSectionOperations import ScrSectionOperations
+from .Scripture.ScrTxtParaOperations import ScrTxtParaOperations
+from .Scripture.ScrAnnotationsOperations import ScrAnnotationsOperations
 from .Parser.ParserOperations import ParserOperations
 
 # Exception classes
@@ -204,6 +208,14 @@ class FLExProject:
     def ScrDrafts(self) -> ScrDraftOperations: ...
     @property
     def ScrBooks(self) -> ScrBookOperations: ...
+    @property
+    def ScrNotes(self) -> ScrNoteOperations: ...
+    @property
+    def ScrSections(self) -> ScrSectionOperations: ...
+    @property
+    def ScrTxtParas(self) -> ScrTxtParaOperations: ...
+    @property
+    def ScrAnnotations(self) -> ScrAnnotationsOperations: ...
 
     # Parser operations (read-only)
     @property
