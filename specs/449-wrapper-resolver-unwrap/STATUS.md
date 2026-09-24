@@ -37,3 +37,7 @@
   in docs/API_ISSUES_CATEGORIZED.md left unchanged (already consistent). Offline:
   48 passed (test_issue251_msa_feature_sync.py + test_449_wrapper_resolver_unwrap.py, not
   requires_live_project).
+- 2026-09-24 cycle 3 done, lead verdict APPROVED: ratchet updated (f1b9f5c), contract docs (4ece234), offline
+  failing-ID diff against main@88e2e2b empty both ways (195 identical pre-existing), alias ratchet green, no
+  production change since the cycle 2 live run (run_mode=live). Waiting on the user: approve push + PR; file the
+  affix-template owner bug (recommended P2) and the wrapper __eq__/__hash__ follow-up?

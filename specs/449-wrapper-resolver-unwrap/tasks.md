@@ -28,6 +28,6 @@ use close/fix keywords in prose.
       Sena 3 sandbox): for every wrapper-returning Ops, Ops.GetX(item) works for every
       item of GetAll(); stem+affix allomorphs, each MSA subtype present.
 - [x] T7 Offline suite + live run; evidence/live-T6.md with run_mode=live.
-- [ ] T8 QC + domain review; PR.
+- [x] T8 QC + domain review (PR pending user approval to push).
 
 **Checkpoint:** all gates green -> PR.
