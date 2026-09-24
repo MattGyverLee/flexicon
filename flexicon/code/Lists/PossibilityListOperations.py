@@ -1238,10 +1238,11 @@ class PossibilityListOperations(BaseOperations):
         item = self.__ResolveItem(item_or_hvo)
         owner = item.Owner
 
-        # Check if owner is a possibility (subitem) or a list (top-level)
-        if owner and hasattr(owner, "ClassName"):
-            if owner.ClassName == "CmPossibility":
-                return ICmPossibility(owner)
+        # Subitems are owned by another possibility (any CmPossibility
+        # subclass -- PartOfSpeech, CmSemanticDomain, etc.), not only the
+        # base ClassName "CmPossibility" (issue #448).
+        if owner and self.__OwnerIsPossibilityItem(owner):
+            return ICmPossibility(owner)
 
         return None
 
@@ -1278,7 +1279,8 @@ class PossibilityListOperations(BaseOperations):
             - Moving changes the item's hierarchical position
 
         Notes:
-            - Item is removed from old location and added to new location
+            - LCM re-parents on a single ``Add`` to the destination owning
+              sequence; do not ``Remove`` then ``Add`` (that deletes the item)
             - All subitems move with the item
             - Item remains in the same list
 
@@ -1308,14 +1310,8 @@ class PossibilityListOperations(BaseOperations):
             new_parent = None
 
         with self._TransactionCM("Move list item"):
-            # Remove from current location
-            old_parent = self.GetParentItem(item)
-            if old_parent:
-                old_parent.SubPossibilitiesOS.Remove(item)
-            else:
-                item_list.PossibilitiesOS.Remove(item)
-
-            # Add to new location
+            # LCM owning sequences re-parent on Add/Insert; Remove deletes
+            # the ownee (issue #448).
             if new_parent:
                 new_parent.SubPossibilitiesOS.Add(item)
             else:
@@ -1574,6 +1570,21 @@ class PossibilityListOperations(BaseOperations):
             return self.project.project.DefaultAnalWs
         return self.project._FLExProject__WSHandle(wsHandle, self.project.project.DefaultAnalWs)
 
+    def __OwnerIsPossibilityItem(self, owner):
+        """
+        True when *owner* is a possibility item (any CmPossibility subclass).
+
+        Top-level items are owned by ``CmPossibilityList``, which has
+        ``PossibilitiesOS`` but not ``SubPossibilitiesOS``. Nested items are
+        owned by another possibility (``PartOfSpeech``, ``CmSemanticDomain``,
+        etc.), which always exposes ``SubPossibilitiesOS``.
+        """
+        if owner is None:
+            return False
+        if getattr(owner, "ClassName", None) == "CmPossibilityList":
+            return False
+        return hasattr(owner, "SubPossibilitiesOS")
+
     def __GetListOwner(self, item):
         """
         Get the possibility list that owns an item.
@@ -1590,12 +1601,12 @@ class PossibilityListOperations(BaseOperations):
         current = item
         while current:
             owner = current.Owner
-            if hasattr(owner, "ClassName") and owner.ClassName == "CmPossibilityList":
+            if getattr(owner, "ClassName", None) == "CmPossibilityList":
                 return ICmPossibilityList(owner)
-            elif hasattr(owner, "ClassName") and owner.ClassName == "CmPossibility":
+            if self.__OwnerIsPossibilityItem(owner):
                 current = ICmPossibility(owner)
-            else:
-                break
+                continue
+            break
         return None
 
     def __IsDescendant(self, potential_descendant, potential_ancestor):
