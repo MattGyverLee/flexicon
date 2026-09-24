@@ -1588,7 +1588,7 @@ class AllomorphOperations(BaseOperations):
         if isinstance(allomorph_or_hvo, int):
             obj = self.project.Object(allomorph_or_hvo)
         else:
-            obj = allomorph_or_hvo
+            obj = self._UnwrapLcmObject(allomorph_or_hvo)
 
         class_name = getattr(obj, "ClassName", None)
         if class_name == "MoStemAllomorph":
