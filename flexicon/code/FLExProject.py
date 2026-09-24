@@ -200,6 +200,15 @@ _ATTACHED_VIEW_UNDOABLE_REFUSAL = (
 # Transaction()'s own docstring) -- so pointing a caller who asked to
 # DISCARD work at it would be a wrong answer in the shape of a helpful
 # one. There is no module-side discard on a view; say so.
+_ATTACHED_VIEW_SYNC_FOREIGN_REFUSAL = (
+    "SyncForeignChanges() is not available on a project attached with "
+    "FromOpenProject(). The host owns the cache's unit-of-work envelope "
+    "and save schedule; ending that envelope from a module would discard "
+    "or desynchronise the host's session. Make changes inside "
+    "Transaction() and return from Main() -- do not drive foreign sync "
+    "from a view."
+)
+
 _ATTACHED_VIEW_ABORT_REFUSAL = (
     "AbortSession() is not available on a project attached with "
     "FromOpenProject(). The open unit of work belongs to the host "
@@ -1253,6 +1262,105 @@ class FLExProject(object):
 
         usm = self.ObjectRepository(IUndoStackManager)
         usm.Refresh()
+
+    def SyncForeignChanges(self):
+        """
+        Ingest other LCM peers' committed changes without closing the session.
+
+        Under ``undoable=False`` (the FlexTools / MCP runner mode), the
+        session-long ``BeginNonUndoableTask()`` envelope opened at
+        ``OpenProject()`` holds ``CurrentDepth`` at 1, which makes
+        ``SaveChanges()`` refuse to call ``usm.Save()`` (#243). This method
+        temporarily ends that envelope, drives ``usm.Save()`` (which reaches
+        ``Commit()`` and foreign-change reconciliation on shared backends),
+        then reopens the envelope in a ``finally`` so callers can keep writing.
+
+        Unlike ``RefreshFromDisk()``, which only clears a pending-reconciliation
+        wedge, this wrapper is the supported mid-session save entry point when
+        the non-undoable envelope must stay open for the remainder of the run
+        (issue #292, FlexToolsMCP #96).
+
+        Raises:
+            FP_RuntimeError: On a view from ``FromOpenProject()`` (host owns
+                the envelope).
+            FP_ReadOnlyError: If the project is not write-enabled.
+            FP_TransactionError: If ``undoable=True``, if ``CurrentDepth`` is
+                0 (use ``SaveChanges()`` instead), or if depth is not exactly
+                1 in ``undoable=False`` mode.
+            FP_ProjectError: If the envelope could not be reopened after a
+                successful ``usm.Save()``.
+
+        Example::
+
+            project.OpenProject("MyProject", writeEnabled=True,
+                                 undoable=False)
+            # ... peer A committed; this session must see A's data ...
+            project.SyncForeignChanges()
+            # session envelope is open again; writes continue
+        """
+        if _IsAttachedView(self):
+            raise FP_RuntimeError(_ATTACHED_VIEW_SYNC_FOREIGN_REFUSAL)
+
+        if not self.writeEnabled:
+            raise FP_ReadOnlyError()
+
+        if self._undoable:
+            raise FP_TransactionError(
+                "SyncForeignChanges() is only for undoable=False sessions "
+                "(the session-long non-undoable envelope). Under "
+                "undoable=True, call SaveChanges() after "
+                "UndoableOperation()/Transaction() blocks exit "
+                "(CurrentDepth back to 0)."
+            )
+
+        log = logging.getLogger(__name__)
+        try:
+            depth = self.CurrentDepth
+        except Exception as e:
+            log.warning(
+                "SyncForeignChanges: could not read CurrentDepth (%s: %s); "
+                "proceeding without depth guard.",
+                type(e).__name__,
+                e,
+            )
+            depth = 1
+
+        if depth == 0:
+            raise FP_TransactionError(
+                "SyncForeignChanges() refused: CurrentDepth is 0. There is "
+                "no session-long non-undoable envelope to end and reopen. "
+                "Call SaveChanges() instead."
+            )
+        if depth != 1:
+            raise FP_TransactionError(
+                f"SyncForeignChanges() refused: CurrentDepth is {depth}, "
+                "expected 1 for undoable=False (the OpenProject envelope)."
+            )
+
+        ended_envelope = False
+        try:
+            if self.HasOpenSessionTask():
+                self.project.MainCacheAccessor.EndNonUndoableTask()
+                ended_envelope = True
+            else:
+                log.warning(
+                    "SyncForeignChanges: HasOpenSessionTask() read False at "
+                    "CurrentDepth == 1; calling usm.Save() without "
+                    "EndNonUndoableTask()."
+                )
+            usm = self.ObjectRepository(IUndoStackManager)
+            usm.Save()
+        finally:
+            if ended_envelope:
+                try:
+                    self.project.MainCacheAccessor.BeginNonUndoableTask()
+                except System.InvalidOperationException as e:
+                    raise FP_ProjectError(
+                        "SyncForeignChanges(): usm.Save() completed but the "
+                        "non-undoable session envelope could not be reopened "
+                        f"({e}). Close this session without relying on "
+                        "further writes."
+                    ) from e
 
     def AbortSession(self):
         """

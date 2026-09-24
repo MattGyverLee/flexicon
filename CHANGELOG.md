@@ -280,6 +280,17 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   the 4.4.0+ precedent. Live-verified on Target sandbox and installed FLEx
   projects; evidence in `specs/326-phonological-wrapper-members/evidence/`.
 
+### Added
+
+- **`FLExProject.SyncForeignChanges()` for mid-session foreign ingest**
+  (#292). Under `OpenProject(undoable=False)`, temporarily ends the
+  session-long non-undoable envelope, calls `IUndoStackManager.Save()` so
+  shared backends can reconcile peer commits, then reopens the envelope in
+  a `finally`. Refuses attached views, read-only sessions, and
+  `undoable=True` (use `SaveChanges()` at depth 0 there). Complements
+  `RefreshFromDisk()`, which clears reconciliation wedges but does not
+  drive this save path.
+
 ### Deprecated
 
 - **Four phonological rule symbols are deprecated and will be removed in
