@@ -50,6 +50,7 @@ from ..Shared.string_utils import normalize_text, normalize_match_key
 # Catalog parsing helpers (Phase 6d)
 from ..Shared.catalog import (
     CatalogImportResult,
+    basic_ipa_segment_is_suprasegmental_tone,
     find_catalog_file,
     parse_basic_ipa_info,
     parse_etic_gloss_list,
@@ -1748,7 +1749,7 @@ class PhonemeOperations(BaseOperations):
     # refuse-on-non-empty pattern instead.
 
     @OperationsMethod
-    def ImportCatalog(self, progress=None, force=False):
+    def ImportCatalog(self, progress=None, force=False, skip_tones=True):
         """
         Import the BasicIPAInfo segment catalog into this project's
         phoneme set.
@@ -1767,6 +1768,12 @@ class PhonemeOperations(BaseOperations):
                 existing phonemes; the default (force=False) refuses to
                 run on a non-empty set. Pass True to layer additional
                 segments onto an existing inventory.
+            skip_tones (bool): When True (default), skip BasicIPAInfo
+                segments whose ``<Features/>`` branch is empty. FW ships
+                seven tone entries at the head of the catalog; they are
+                suprasegmentals, not segmental phonemes (issue #202).
+                Pass False to restore the pre-#202 behaviour (create
+                featureless ``IPhPhoneme`` rows for those entries).
 
         Returns:
             CatalogImportResult: Created/skipped counts and any warnings.
@@ -1804,10 +1811,13 @@ class PhonemeOperations(BaseOperations):
               or value ids are recorded as warnings and the offending
               FeatureValuePair is skipped. The phoneme is still created
               with whatever pairs DID resolve.
-            - Segments with empty ``<Features/>`` (the seven tone entries
-              at the head of BasicIPAInfo.xml) are created without a
-              FeaturesOA struct -- MakeFeatStruc is only invoked when
-              there is at least one resolved spec.
+            - With ``skip_tones=True`` (default), tone entries (empty
+              ``<Features/>`` at the head of BasicIPAInfo.xml) are not
+              imported; they increment ``skipped_count`` and append a
+              warning. With ``skip_tones=False``, those entries are still
+              created without a FeaturesOA struct.
+            - MakeFeatStruc is only invoked when at least one feature
+              pair resolved for the segment.
 
         Example:
             >>> project.PhonFeatures.ImportCatalog()    # prerequisite
@@ -1928,6 +1938,16 @@ class PhonemeOperations(BaseOperations):
                     result.skipped_count += 1
                     continue
                 seen_code_points.add(seg.code_point_id)
+
+                if skip_tones and basic_ipa_segment_is_suprasegmental_tone(seg):
+                    result.skipped_count += 1
+                    result.warnings.append(
+                        f"Segment '{seg.representation}' "
+                        f"({seg.code_point_id or 'no codepoint'}): skipped "
+                        f"suprasegmental tone (empty <Features/>); pass "
+                        f"skip_tones=False to import as a featureless phoneme."
+                    )
+                    continue
 
                 # Resolve (feature, value) specs against the project's
                 # PhFeatureSystemOA. Missing references are warned and
