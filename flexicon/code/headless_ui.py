@@ -65,7 +65,7 @@ import System
 from System import DateTime
 
 from SIL.LCModel import ILcmUI, MessageType, FileSelection, YesNoCancel
-from SIL.LCModel.Utils import IThreadedProgress
+from SIL.LCModel.Utils import IThreadedProgress, SingleThreadedSynchronizeInvoke
 
 # FP_ConflictingSaveError lives in exceptions.py alongside every other FP_*
 # type so `except FP_RuntimeError` catches it too (see docs/EXCEPTION_HANDLING.md).
@@ -96,34 +96,35 @@ class HeadlessLcmUI(ILcmUI):
         """
         self._raise_on_conflicting_save = raise_on_conflicting_save
         self._last_activity = DateTime.Now
+        # Inline invoker: InvokeRequired is False, so LCM never marshals to a
+        # UI thread (#238) but SendPropChangedNotifications does not NRE once
+        # a change listener is registered (e.g. HermitCrab HCParser, #441).
+        self._synchronize_invoke = SingleThreadedSynchronizeInvoke()
 
     # -- Properties ---------------------------------------------------
 
     @property
     def SynchronizeInvoke(self):
         """
-        None - nothing may marshal to a UI thread that does not exist.
+        ``SingleThreadedSynchronizeInvoke`` -- runs LCM notification callbacks
+        inline on the calling thread.
 
-        Returning None is what keeps ``DisplayMessage`` off the deadlock path
-        described in the module docstring.
+        ``FwLcmUI`` marshals through a real UI pump and can deadlock headless
+        processes (#238). Returning ``None`` avoided that but breaks every
+        write once an ``IVwNotifyChange`` subscriber exists (HermitCrab parser,
+        issue #441): liblcm dereferences ``SynchronizeInvoke`` unguarded in
+        ``UnitOfWorkService.SendPropChangedNotifications`` and
+        ``UndoStack.DoTasksForEndOfPropChanged``.
 
-        CONTINGENCY (cycle-1 domain audit, issue #285): ``None`` here is
-        dereferenced unguarded at exactly two liblcm sites --
-        ``UnitOfWorkService.SendPropChangedNotifications``
-        (``UnitOfWorkService.cs:537``, reached via ``UnitOfWork.cs:307/422``
-        and ``UndoStack.cs:343``) and
-        ``UndoStack.DoTasksForEndOfPropChanged`` (``UndoStack.cs:383``). Both
-        are no-ops for flexicon TODAY only because (1) nothing in the current
-        Operations surface calls ``AddNotification`` to register an
-        ``IVwNotifyChange`` subscriber, and (2) nothing touches ``Scripture``,
-        liblcm's sole ``IPropertyChangeNotifier`` implementer. If a future
-        feature adds a change-watcher or touches Scripture, re-check both
-        call sites before assuming ``None`` is still safe here.
+        ``SingleThreadedSynchronizeInvoke.InvokeRequired`` is ``False``, so
+        ``SynchronizeInvokeExtensions.Invoke`` executes the action immediately
+        without cross-thread dispatch. ``HeadlessLcmUI.DisplayMessage`` still
+        logs directly and does not use this property.
         """
-        return None
+        return self._synchronize_invoke
 
     def get_SynchronizeInvoke(self):
-        return None
+        return self._synchronize_invoke
 
     @property
     def LastActivityTime(self):
