@@ -269,9 +269,21 @@ class TestPhase1NoMarkAPI:
     write-enabled project, _FLExTransaction degrades gracefully: it logs a
     warning and proceeds WITHOUT rollback, because raising would make every
     write impossible. The body still runs and any body exception still
-    propagates (no silent swallow). A strict opt-in mode that would fail fast
-    is tracked separately and is NOT the current default.
+    propagates (no silent swallow). Opt-in ``strict_transactions=True`` on
+    ``OpenProject()`` (issue #210) fail-fasts instead; default remains degraded.
     """
+
+    def test_strict_transactions_raises_when_mark_api_missing(self):
+        """Issue #210: strict mode refuses Phase 1 blocks with no rollback API."""
+        from flexicon.code.exceptions import FP_TransactionError
+        from flexicon.code.transaction import _FLExTransaction
+
+        project = _make_phase1_project_no_mark()
+        project._strict_transactions = True
+
+        with pytest.raises(FP_TransactionError, match="strict_transactions=True"):
+            with _FLExTransaction(project, "strict-no-mark", None, None):
+                pass  # pragma: no cover
 
     def test_none_mark_api_enters_without_raising(self):
         """

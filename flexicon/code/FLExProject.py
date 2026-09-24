@@ -267,7 +267,13 @@ class FLExProject(object):
     """
 
     def OpenProject(
-        self, projectName, writeEnabled=False, undoable=True, ui=None, progress=None
+        self,
+        projectName,
+        writeEnabled=False,
+        undoable=True,
+        strict_transactions=False,
+        ui=None,
+        progress=None,
     ):
         """
         Open a project. The project must be closed with `CloseProject()` to
@@ -282,6 +288,17 @@ class FLExProject(object):
             saved on a call to `CloseProject()`.
             LCM will raise an exception if changes are attempted without
             opening the project in this mode.
+
+        strict_transactions:
+            **Default: False.** When ``True`` on a write-enabled session,
+            entering ``Transaction()`` (or any ``_FLExTransaction`` constructed
+            with no LCM mark/rollback API) **raises** ``FP_TransactionError``
+            instead of proceeding without rollback capability. Use this when
+            partial mid-block writes are unacceptable and you prefer a clean
+            failure over degraded Phase 1 behaviour (issue #210). Ignored when
+            ``writeEnabled=False``. Does not change the default ``undoable=True``
+            path, where ``BaseOperations._TransactionCM`` uses real liblcm units
+            of work.
 
         undoable:
             **Default since 4.4.0: True.** Each write runs inside its own
@@ -390,6 +407,9 @@ class FLExProject(object):
 
         self.writeEnabled = writeEnabled
         self._undoable = undoable and writeEnabled  # Only meaningful if write-enabled
+        self._strict_transactions = bool(
+            strict_transactions and writeEnabled
+        )
         # Note: nesting depth of active _TransactionCM / UndoableOperation
         # blocks is intentionally NOT tracked here. A hand-maintained Python
         # counter (formerly `self._transaction_depth`) was issue #234: it

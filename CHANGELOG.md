@@ -16,6 +16,13 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 > 4.6.0, 4.7.0 and 4.8.0: no signature changes, no default's meaning
 > changes for a caller that passes it explicitly.
 
+### Added
+
+- **Opt-in ``strict_transactions`` on ``OpenProject()``** (#210). When
+  ``True`` on a write-enabled session, entering ``Transaction()`` without a
+  wired LCM rollback API raises ``FP_TransactionError`` instead of proceeding
+  with degraded Phase 1 behaviour. Default remains warn-and-continue.
+
 ### Fixed
 
 - **``POSOperations.Duplicate`` OS placement regression coverage** (#295). Mock
