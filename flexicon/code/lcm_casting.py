@@ -463,13 +463,9 @@ def _ensure_interfaces() -> None:
     # over CellsOS work at all -- uncast it matches nothing and the filter
     # silently yields an empty list.
     #
-    # IPartOfSpeech / ICmAnthroItem / ICmPossibility are already
-    # registered above. ILexEntryInflType, ICmCustomItem, IChkTerm and
-    # IConstituentChartCellPart are deliberately NOT registered: they are
-    # absent from tests/contract/snapshots/expected_contract.json, so
-    # importing them here would trip
-    # test_no_new_type_dependencies without a baseline regeneration and a
-    # live contract re-verification.
+    # IPartOfSpeech / ICmAnthroItem / ICmPossibility are already registered
+    # above. The four types below were deferred in #270 until the contract
+    # baseline covered their imports (#279).
     try:
         from SIL.LCModel import (
             ICmSemanticDomain,
@@ -478,6 +474,10 @@ def _ensure_interfaces() -> None:
             IMoMorphType,
             ICmAnnotationDefn,
             ILexEntryType,
+            ILexEntryInflType,
+            ICmCustomItem,
+            IChkTerm,
+            IConstituentChartCellPart,
             IConstChartRow,
             IConstChartTag,
             IConstChartWordGroup,
@@ -487,6 +487,8 @@ def _ensure_interfaces() -> None:
     except ImportError:
         ICmSemanticDomain = ICmLocation = ICmPerson = None
         IMoMorphType = ICmAnnotationDefn = ILexEntryType = None
+        ILexEntryInflType = ICmCustomItem = IChkTerm = None
+        IConstituentChartCellPart = None
         IConstChartRow = IConstChartTag = IConstChartWordGroup = None
         IConstChartMovedTextMarker = IConstChartClauseMarker = None
 
@@ -497,6 +499,10 @@ def _ensure_interfaces() -> None:
         ("MoMorphType", IMoMorphType),
         ("CmAnnotationDefn", ICmAnnotationDefn),
         ("LexEntryType", ILexEntryType),
+        ("LexEntryInflType", ILexEntryInflType),
+        ("CmCustomItem", ICmCustomItem),
+        ("ChkTerm", IChkTerm),
+        ("ConstituentChartCellPart", IConstituentChartCellPart),
         ("ConstChartRow", IConstChartRow),
         ("ConstChartTag", IConstChartTag),
         ("ConstChartWordGroup", IConstChartWordGroup),
