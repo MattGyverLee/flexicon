@@ -18,6 +18,12 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`DataNotebookOperations` record CRUD was broken on first use** (#302,
+  #328, #261). Top-level records now attach to
+  `ResearchNotebookOA.RecordsOC` (not the repository service), HVO
+  resolution uses `FLExProject.Object()`, `Title` is written as a bare
+  `ITsString` assignment, and body content uses `DescriptionOA` instead of
+  a nonexistent `Text` member. Offline ratchets pin the remediated paths.
 - **`OverlayOperations` inherited reorder on project overlays** (#303 close-out).
   ``ILangProject.OverlaysOC`` is an unordered owning collection; ``_GetSequence``
   now raises ``NotImplementedError`` so ``Sort`` / ``MoveUp`` / ``MoveDown`` /
