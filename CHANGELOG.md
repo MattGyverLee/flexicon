@@ -24,6 +24,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   resolution uses `FLExProject.Object()`, `Title` is written as a bare
   `ITsString` assignment, and body content uses `DescriptionOA` instead of
   a nonexistent `Text` member. Offline ratchets pin the remediated paths.
+- **`OverlayOperations` inherited reorder on project overlays** (#303 close-out).
+  ``ILangProject.OverlaysOC`` is an unordered owning collection; ``_GetSequence``
+  now raises ``NotImplementedError`` so ``Sort`` / ``MoveUp`` / ``MoveDown`` /
+  ``MoveToIndex`` fail honestly instead of no-oping via ``PossibilitiesOS``.
+  Docstrings for chart helpers now state project-scoped lookup (#303).
 - **`MSAOperations` had no wrapper to edit `SlotsRC` on an existing
   inflectional-affix MSA** (#258). Added `SetInflAffMsaSlots(sense, slots,
   replace=True)` so callers can replace or append template slots without raw
