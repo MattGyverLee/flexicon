@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Added
 
+- **Live regression for ``Allomorph.stem_name`` / ``StemNameRA`` round-trip**
+  (#377 item 1). Sena 3 sandbox tests assign a catalog ``IMoStemName`` and
+  re-read by HVO so the #352 read path is proven on set-valued data, not only
+  the unset case on Target.
 - **Opt-in ``strict_transactions`` on ``OpenProject()``** (#210). When
   ``True`` on a write-enabled session, entering ``Transaction()`` without a
   wired LCM rollback API raises ``FP_TransactionError`` instead of proceeding
