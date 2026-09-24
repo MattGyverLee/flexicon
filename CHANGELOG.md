@@ -59,6 +59,12 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   guard** (#339). Added an AST ratchet so the #257 public exports for morphological
   slot and phonological-feature Operations cannot disappear from `__init__.py` or
   the type stub without failing CI.
+- **`cast_to_concrete` silently no-opped on four #270 remainder types**
+  (#279). `LexEntryInflType`, `CmCustomItem`, `ChkTerm`, and
+  `ConstituentChartCellPart` are now registered in
+  `lcm_casting._interface_cache` with an updated LCM contract baseline.
+  `FLExProject` possibility helpers (`:4173` / `:4184`) remain an open API
+  decision on #279.
 - **`lcm_casting.py` had no module logger** (#281). A stray `import logging`
   line inside the module docstring never executed; the import and
   `logger = logging.getLogger(__name__)` now live at module scope, and
