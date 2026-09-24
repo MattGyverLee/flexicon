@@ -12,7 +12,7 @@ python -m pytest tests/operations/test_issue292_sync_foreign_changes_offline.py 
 
 ## Result
 
-PASS (8 tests).
+PASS: `2 passed, 6 skipped` (six guard-path tests skip when SIL.LCModel / pythonnet is unavailable on the pod; source ratchet + ruling doc tests always run).
 
 ## Live
 
