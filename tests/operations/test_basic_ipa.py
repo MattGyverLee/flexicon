@@ -173,6 +173,23 @@ class TestBasicIPACatalog:
             f"got {force_param.default!r}"
         )
 
+    def test_import_catalog_signature_accepts_skip_tones_keyword(self):
+        """
+        Static signature check: ImportCatalog exposes ``skip_tones`` with
+        default True so BasicIPA tone rows are skipped unless opted out
+        (issue #202).
+        """
+        from flexicon.code.Grammar.PhonemeOperations import PhonemeOperations
+
+        descriptor = PhonemeOperations.__dict__["ImportCatalog"]
+        underlying = getattr(descriptor, "func", descriptor)
+        params = inspect.signature(underlying).parameters
+        assert "skip_tones" in params, (
+            f"ImportCatalog signature is missing 'skip_tones' kwarg. "
+            f"Found parameters: {list(params)}"
+        )
+        assert params["skip_tones"].default is True
+
     def test_phonemes_operations_has_import_catalog(self, writable_project):
         """
         Light discoverability check: PhonemeOperations on a live project

@@ -380,6 +380,17 @@ class SegmentDefinition:
     feature_pairs: List[tuple] = field(default_factory=list)
 
 
+def basic_ipa_segment_is_suprasegmental_tone(segment):
+    """
+    Return True when a BasicIPAInfo segment is a tone (empty ``<Features/>``).
+
+    FW ships seven tone entries at the head of BasicIPAInfo.xml with no
+    feature-value pairs. They are suprasegmentals, not segmental phonemes
+    (issue #202).
+    """
+    return len(segment.feature_pairs) == 0
+
+
 def parse_basic_ipa_info(path):
     """
     Parse a BasicIPAInfo.xml-shaped segment catalog (root

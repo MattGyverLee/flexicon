@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **BasicIPA import no longer materializes tone rows as featureless phonemes**
+  (#202). ``PhonemeOperations.ImportCatalog`` skips catalog segments whose
+  ``<Features/>`` branch is empty by default (``skip_tones=True``); pass
+  ``skip_tones=False`` to restore the legacy behaviour.
 - **Notebook text links and record types used phantom LCM members** (#322).
   `DataNotebookOperations` now reads record types from
   `ResearchNotebookOA.RecTypesOA` (not `ILangProject.RecTypesOA`) and links
