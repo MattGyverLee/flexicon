@@ -267,7 +267,13 @@ class FLExProject(object):
     """
 
     def OpenProject(
-        self, projectName, writeEnabled=False, undoable=True, ui=None, progress=None
+        self,
+        projectName,
+        writeEnabled=False,
+        undoable=True,
+        strict_transactions=False,
+        ui=None,
+        progress=None,
     ):
         """
         Open a project. The project must be closed with `CloseProject()` to
@@ -282,6 +288,17 @@ class FLExProject(object):
             saved on a call to `CloseProject()`.
             LCM will raise an exception if changes are attempted without
             opening the project in this mode.
+
+        strict_transactions:
+            **Default: False.** When ``True`` on a write-enabled session,
+            entering ``Transaction()`` (or any ``_FLExTransaction`` constructed
+            with no LCM mark/rollback API) **raises** ``FP_TransactionError``
+            instead of proceeding without rollback capability. Use this when
+            partial mid-block writes are unacceptable and you prefer a clean
+            failure over degraded Phase 1 behaviour (issue #210). Ignored when
+            ``writeEnabled=False``. Does not change the default ``undoable=True``
+            path, where ``BaseOperations._TransactionCM`` uses real liblcm units
+            of work.
 
         undoable:
             **Default since 4.4.0: True.** Each write runs inside its own
@@ -390,6 +407,9 @@ class FLExProject(object):
 
         self.writeEnabled = writeEnabled
         self._undoable = undoable and writeEnabled  # Only meaningful if write-enabled
+        self._strict_transactions = bool(
+            strict_transactions and writeEnabled
+        )
         # Note: nesting depth of active _TransactionCM / UndoableOperation
         # blocks is intentionally NOT tracked here. A hand-maintained Python
         # counter (formerly `self._transaction_depth`) was issue #234: it
@@ -4988,13 +5008,23 @@ class FLExProject(object):
 
     def ListFieldPossibilities(self, senseOrEntry, fieldID):
         """
-        Returns the `PossibilitiesOS` for the given list field. This
-        is a list of `CmPossibility` objects.
-        Raises an exception if the field is not a list (single/Atomic
-        or multiple/Collection)
+        Returns the live ``PossibilitiesOS`` owning sequence for the given list
+        field (elements are ``ICmPossibility`` / base LCM interfaces, not
+        pre-cast concrete types).
 
-        Note: this returns the top-level `CmPossibility` objects. Subitems
-        can be found via the `SubPossibilitiesOS` attribute. Alternatively,
+        Raises an exception if the field is not a list (single/Atomic
+        or multiple/Collection).
+
+        This return value is **load-bearing for writes**: callers index the
+        sequence and assign into reference fields (e.g.
+        ``sense.StatusRA = status_poss[3]``). Do not wrap or copy into a Python
+        list inside flexicon.
+
+        For concrete types (e.g. ``LexEntryType``), apply the public
+        ``cast_to_concrete`` (#271) to individual elements after read.
+
+        Note: this returns the top-level ``CmPossibility`` objects. Subitems
+        can be found via the ``SubPossibilitiesOS`` attribute. Alternatively,
         a flat list of all possible options can be obtained with::
 
             options = project.UnpackNestedPossibilityList(possibilities,
@@ -5007,9 +5037,12 @@ class FLExProject(object):
 
     def ListFieldLookup(self, senseOrEntry, fieldID, value):
         """
-        Looks up the value (a string) in the `CmPossibilityList` for the
+        Looks up the value (a string) in the ``CmPossibilityList`` for the
         given field.
-        Returns the `CmPossibility` object, or `None` if it can't be found.
+
+        Returns the ``ICmPossibility`` from ``FindPossibilityByName``, or
+        ``None`` if it can't be found. The helper does **not** cast to a
+        concrete ClassName; use ``cast_to_concrete`` (#271) when you need one.
         """
 
         pList = self.ListFieldPossibilityList(senseOrEntry, fieldID)

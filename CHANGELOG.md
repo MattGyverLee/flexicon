@@ -16,12 +16,24 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 > 4.6.0, 4.7.0 and 4.8.0: no signature changes, no default's meaning
 > changes for a caller that passes it explicitly.
 
+### Added
+
+- **Opt-in ``strict_transactions`` on ``OpenProject()``** (#210). When
+  ``True`` on a write-enabled session, entering ``Transaction()`` without a
+  wired LCM rollback API raises ``FP_TransactionError`` instead of proceeding
+  with degraded Phase 1 behaviour. Default remains warn-and-continue.
+
 ### Fixed
 
 - **`ConstChartClauseMarkerOperations` exposed add-only `DependentClausesRS`**
   (#230). Added `InsertDependentClause` and `RemoveDependentClause` so callers
   can reorder or drop dependent clause markers without raw LCM (mirrors
   `SegmentOperations` AnalysesRS writers from #215).
+- **``POSOperations.Duplicate`` OS placement regression coverage** (#295). Mock
+  tests pin ``SubPossibilitiesOS`` / ``PossibilitiesOS`` ``IndexOf`` +
+  ``Insert`` for ``insert_after=True`` and ``Add`` for append, plus deep
+  subcategory recursion -- guarding the last legitimate #163-shaped OS site
+  against an OC-style "fix" that would silently drop positional insert.
 - **Possibility creation no longer requires raw ``CmPossibilityFactory`` overload
   guessing** (#341). ``PossibilityListOperations.CreateItemInListByName`` wraps
   ``FindList`` + ``CreateItem``; docstrings document the parameterless
@@ -51,6 +63,13 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   guard** (#339). Added an AST ratchet so the #257 public exports for morphological
   slot and phonological-feature Operations cannot disappear from `__init__.py` or
   the type stub without failing CI.
+- **`cast_to_concrete` silently no-opped on four #270 remainder types**
+  (#279). `LexEntryInflType`, `CmCustomItem`, `ChkTerm`, and
+  `ConstituentChartCellPart` are now registered in
+  `lcm_casting._interface_cache` with an updated LCM contract baseline.
+  **Gap 2 (API policy):** ``ListFieldPossibilities`` / ``ListFieldLookup`` keep
+  returning live LCM interfaces; docstrings now document ``cast_to_concrete``
+  for callers who need concrete types (#279 close-out).
 - **`lcm_casting.py` had no module logger** (#281). A stray `import logging`
   line inside the module docstring never executed; the import and
   `logger = logging.getLogger(__name__)` now live at module scope, and
@@ -75,6 +94,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `None` and setters never reached the LCM** (#329). `IRnGenericRec` exposes
   `StatusRA`, `TypeRA`, and `ConfidenceRA`, not bare `Status`/`Type`/`Confidence`;
   all read/write/sync/duplicate sites now use the real RA members.
+- **`DataNotebookOperations.GetSyncableProperties` sync keys verified against
+  `IRnGenericRec`** (#360). Offline ratchets confirm GSP guards
+  `TypeRA` / `StatusRA` / `ConfidenceRA` / `DateOfEvent` (not the phantom bare
+  names flagged in the #325 pattern audit); live smoke reads every notebook record
+  when a populated project is available.
 - **`ConfidenceOperations` phantom `ConfidenceRA` scans on wordform types**
   (#363). `GetAnalysesWithConfidence` now matches `ConfidenceRA` on research
   notebook records (`DataNotebook.GetAll()`); interlinear `IWfiAnalysis` has

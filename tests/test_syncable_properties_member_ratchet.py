@@ -83,6 +83,7 @@ _ALLOWLIST: dict[tuple[str, str, str], str] = {
 # ---------------------------------------------------------------------------
 
 _HASATTR_ITEM_RE = re.compile(r'hasattr\(item,\s*["\'](\w+)["\']\)')
+_HASATTR_RECORD_RE = re.compile(r'hasattr\(record,\s*["\'](\w+)["\']\)')
 
 
 def _load_baseline() -> dict[str, list[str]]:
@@ -229,6 +230,27 @@ class TestSyncablePropertiesMemberRatchet:
             "absent (ILexSense does not expose this field on FieldWorks 9+). "
             "See issue #325 R7."
         )
+
+    def test_datanotebook_gsp_hasattr_record_fields_on_irngenericrec(self):
+        """Issue #360: DataNotebook GetSyncableProperties resolves IRnGenericRec
+        and guards TypeRA / StatusRA / ConfidenceRA / DateOfEvent."""
+        ops_file = next(OPS_DIR.rglob("DataNotebookOperations.py"), None)
+        assert ops_file is not None, "DataNotebookOperations.py not found"
+
+        body = _extract_gsp_body(ops_file.read_text(encoding="utf-8"))
+        fields = list(dict.fromkeys(_HASATTR_RECORD_RE.findall(body)))
+        assert fields, "expected hasattr(record, ...) guards in GetSyncableProperties"
+
+        baseline = _load_baseline()
+        iface = "IRnGenericRec"
+        assert iface in baseline, f"{iface} missing from liblcm baseline"
+        props = baseline[iface]
+        for field in fields:
+            assert field in props, (
+                f"MISS -- DataNotebookOperations / {iface}: "
+                f"hasattr(record, '{field}') in GetSyncableProperties but "
+                f"'{field}' is absent from {iface} in the baseline snapshot."
+            )
 
     def test_donotpublishinrc_still_present_in_lexsense_gsp(self):
         """Regression guard: DoNotPublishInRC (a different field) must still
