@@ -73,6 +73,21 @@ class PossibilityListOperations(BaseOperations):
                 genre_list, "Folktale", "en", parent=narrative)
 
         project.CloseProject()
+
+    Creating items (avoid raw ``CmPossibilityFactory``)::
+
+        LCM exposes ``ICmPossibilityFactory.Create()`` with **no** arguments.
+        Calling ``Create(System.Guid, ICmPossibilityList)`` fails at runtime with
+        ``OverloadResolutionError`` (issue #341). Use flexicon wrappers instead:
+
+        - Generic lists: ``CreateItem(list, name)`` or
+          ``CreateItemInListByName("Text Genres", name)``
+        - Built-in specialized lists: ``project.Publications.Create(name)``,
+          ``project.Confidence.Create(name)``, etc.
+
+        Raw LCM is only needed for uncommon list types; mirror
+        ``CreateItem`` (create, add to ``PossibilitiesOS`` / ``SubPossibilitiesOS``,
+        then set ``Name``).
     """
 
     def __init__(self, project):
@@ -335,6 +350,44 @@ class PossibilityListOperations(BaseOperations):
         return None
 
     @OperationsMethod
+    def CreateItemInListByName(self, list_name, item_name, wsHandle=None, parent=None):
+        """
+        Create a new item in a possibility list identified by list name.
+
+        Convenience wrapper around :meth:`FindList` and :meth:`CreateItem` for
+        callers who know the list label (e.g. ``"Publication Types"``) and should
+        not call raw ``ICmPossibilityFactory`` overloads (issue #341).
+
+        Args:
+            list_name (str): The possibility list name (case-insensitive).
+            item_name (str): The name of the new item.
+            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            parent: Optional parent item or HVO for a subitem.
+
+        Returns:
+            ICmPossibility: The newly created item.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If list_name or item_name is None.
+            FP_ParameterError: If the list is not found or item_name is empty.
+
+        Example:
+            >>> pub_type = project.PossibilityLists.CreateItemInListByName(
+            ...     "Publication Types", "Themed vocabulary")
+        """
+        self._ValidateParam(list_name, "list_name")
+        self._ValidateParam(item_name, "item_name")
+
+        poss_list = self.FindList(list_name)
+        if poss_list is None:
+            raise FP_ParameterError(
+                f"Possibility list {list_name!r} not found"
+            )
+
+        return self.CreateItem(poss_list, item_name, wsHandle, parent)
+
+    @OperationsMethod
     def GetListName(self, list_or_hvo, wsHandle=None):
         """
         Get the name of a possibility list.
@@ -360,7 +413,7 @@ class PossibilityListOperations(BaseOperations):
             ...
 
         See Also:
-            SetListName, FindList
+            SetListName, FindList, CreateItemInListByName
         """
         self._ValidateParam(list_or_hvo, "list_or_hvo")
 
@@ -499,8 +552,12 @@ class PossibilityListOperations(BaseOperations):
             - Use SetItemName() to add names in other writing systems
             - New items have no abbreviation by default
 
+        Notes:
+            - Uses parameterless ``ICmPossibilityFactory.Create()``; do not pass
+              a GUID or list into the factory (issue #341).
+
         See Also:
-            DeleteItem, GetItems, FindItem, GetSubitems
+            DeleteItem, GetItems, FindItem, GetSubitems, CreateItemInListByName
         """
         self._EnsureWriteEnabled()
 
