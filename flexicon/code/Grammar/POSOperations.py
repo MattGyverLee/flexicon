@@ -1266,7 +1266,7 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         if isinstance(pos_or_hvo, int):
             obj = self.project.Object(pos_or_hvo)
         else:
-            obj = pos_or_hvo
+            obj = self._UnwrapLcmObject(pos_or_hvo)
 
         if getattr(obj, "ClassName", None) == "PartOfSpeech":
             return IPartOfSpeech(obj)

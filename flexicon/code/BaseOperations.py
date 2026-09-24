@@ -3370,6 +3370,25 @@ class BaseOperations:
                 if publication not in item.DoNotPublishInRC:
                     item.DoNotPublishInRC.Add(publication)
 
+    @staticmethod
+    def _UnwrapLcmObject(obj):
+        """
+        Peel LCMObjectWrapper-style wrappers before pythonnet interface casts.
+
+        Plain LCM objects pass through unchanged. Shared resolvers call this
+        so items from wrapper-returning ``GetAll()`` round-trip back into
+        Operations methods (issue #449).
+        """
+        if obj is None:
+            return obj
+        if hasattr(obj, "lcm_object"):
+            return obj.lcm_object
+        if hasattr(obj, "_obj") and not hasattr(obj, "Hvo"):
+            return obj._obj
+        if hasattr(obj, "_obj") and hasattr(obj._obj, "Hvo"):
+            return obj._obj
+        return obj
+
     def _ValidateParam(self, param: Any, param_name: str = "parameter") -> None:
         """
         Validate that a parameter is not None and not a stale LCM object.
