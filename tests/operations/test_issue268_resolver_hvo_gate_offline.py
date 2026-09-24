@@ -27,6 +27,9 @@ def test_issue268_live_gate_module_exists_with_all_gate_sites():
         "GetMorphType",
         "GetSubcategories",
         "GetEntryCount",
+        "AddSubcategory",
+        "Duplicate",
+        "SetMorphType",
     ):
         assert site in text, f"missing live gate for {site}"
     assert "isinstance(hvo, int)" in text

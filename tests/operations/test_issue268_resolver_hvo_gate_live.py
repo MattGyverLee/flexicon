@@ -5,7 +5,8 @@
 #   methods that previously had no automated coverage. Slice 1:
 #   GetCatalogSourceId, GetPhoneEnv. Slice 2 (cron): GetInflectionClasses,
 #   GetAffixSlots, GetFormAudio. Slice 3 (cron): GetMorphType,
-#   GetSubcategories, GetEntryCount.
+#   GetSubcategories, GetEntryCount. Slice 4 (cron): AddSubcategory,
+#   Duplicate, SetMorphType.
 #
 #   Platform: Python.NET, FieldWorks 9+
 #   Copyright 2026
@@ -236,3 +237,97 @@ class TestIssue268PosGetEntryCountHvoGate:
             assert count == 0
         finally:
             sandbox.POS.Delete(pos_obj)
+
+
+@pytest.mark.requires_live_project
+class TestIssue268PosAddSubcategoryHvoGate:
+    """
+    AddSubcategory is one of the POS __ResolveObject write sites with no
+    prior live HVO coverage. It mutates via SubPossibilitiesOS on the
+    resolved parent POS.
+    """
+
+    @pytest.mark.live_phase("POSOperations", "modify")
+    def test_add_subcategory_via_genuine_parent_hvo_int(self, target_sandbox):
+        sandbox = target_sandbox
+        parent = sandbox.POS.Create(f"{TEST_PREFIX}pos_addsub", "t268a")
+        sub_name = f"{TEST_PREFIX}child"
+        sub_abbr = "t268c"
+        try:
+            parent_hvo = parent.Hvo
+            assert isinstance(parent_hvo, int)
+            assert not hasattr(sandbox.Object(parent_hvo), "SubPossibilitiesOS"), (
+                "precondition failed: SubPossibilitiesOS reachable on bare "
+                "ICmObject view -- re-derive the gate site"
+            )
+
+            subcat = sandbox.POS.AddSubcategory(parent_hvo, sub_name, sub_abbr)
+            assert subcat is not None
+
+            subcats = sandbox.POS.GetSubcategories(parent_hvo, recursive=False)
+            assert any(sandbox.POS.GetName(s) == sub_name for s in subcats)
+        finally:
+            for sub in sandbox.POS.GetSubcategories(parent, recursive=True):
+                if sandbox.POS.GetName(sub).startswith(TEST_PREFIX):
+                    sandbox.POS.RemoveSubcategory(parent, sub)
+            sandbox.POS.Delete(parent)
+
+
+@pytest.mark.requires_live_project
+class TestIssue268PosDuplicateHvoGate:
+    """
+    Duplicate is one of the POS __ResolveObject write sites with no prior
+    live HVO coverage.
+    """
+
+    @pytest.mark.live_phase("POSOperations", "modify")
+    def test_duplicate_via_genuine_source_hvo_int(self, target_sandbox):
+        sandbox = target_sandbox
+        source = sandbox.POS.Create(f"{TEST_PREFIX}pos_dup", "t268d")
+        duplicate = None
+        try:
+            source_hvo = source.Hvo
+            assert isinstance(source_hvo, int)
+
+            duplicate = sandbox.POS.Duplicate(source_hvo, insert_after=True, deep=False)
+            assert duplicate is not None
+            dup_hvo = duplicate.Hvo
+            assert isinstance(dup_hvo, int)
+
+            assert sandbox.POS.GetName(dup_hvo) == sandbox.POS.GetName(source_hvo)
+        finally:
+            if duplicate is not None:
+                sandbox.POS.Delete(duplicate)
+            sandbox.POS.Delete(source)
+
+
+@pytest.mark.requires_live_project
+class TestIssue268AllomorphSetMorphTypeHvoGate:
+    """
+    SetMorphType is one of the AllomorphOperations __GetAllomorphObject
+    write sites with no prior live HVO coverage.
+    """
+
+    @pytest.mark.live_phase("AllomorphOperations", "modify")
+    def test_set_morph_type_via_genuine_hvo_int(self, target_sandbox):
+        sandbox = target_sandbox
+        entry = _make_entry(sandbox, "allo_setmt")
+        try:
+            allo = sandbox.Allomorphs.Create(
+                entry, f"{TEST_PREFIX}sm", morphType="suffix"
+            )
+            hvo = allo.Hvo
+            assert isinstance(hvo, int)
+            assert not hasattr(sandbox.Object(hvo), "MorphTypeRA"), (
+                "precondition failed: MorphTypeRA reachable on bare ICmObject "
+                "view -- re-derive the gate site"
+            )
+
+            current = sandbox.Allomorphs.GetMorphType(hvo)
+            sandbox.Allomorphs.SetMorphType(hvo, current)
+
+            after = sandbox.Allomorphs.GetMorphType(hvo)
+            assert after is not None
+            assert after.Hvo == current.Hvo
+        finally:
+            sandbox.LexEntry.Delete(entry)
