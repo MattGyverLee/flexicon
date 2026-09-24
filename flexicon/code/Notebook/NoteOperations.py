@@ -82,6 +82,59 @@ class NoteOperations(BaseOperations):
         """
         super().__init__(project)
 
+    def __GetDiscussionParent(self, note):
+        """Return the parent note for a threaded reply, if any (issue #323)."""
+        if not hasattr(note, "BeginObjectRA") or note.BeginObjectRA is None:
+            return None
+        try:
+            ICmBaseAnnotation(note.BeginObjectRA)
+            return note.BeginObjectRA
+        except Exception:
+            return None
+
+    def __AttachReply(self, parent_note, reply, insert_after=False, after_source=None):
+        """
+        Attach ``reply`` under ``parent_note`` using the LCM surface that exists.
+
+        ``ICmBaseAnnotation`` has no ``RepliesOS``; general discussion replies
+        live in ``LangProject.AnnotationsOC`` with ``BeginObjectRA`` pointing at
+        the parent note. ``IScrScriptureNote`` uses ``ResponsesOS``.
+        """
+        try:
+            scr_parent = IScrScriptureNote(parent_note)
+            if insert_after and after_source is not None:
+                idx = scr_parent.ResponsesOS.IndexOf(after_source)
+                scr_parent.ResponsesOS.Insert(idx + 1, reply)
+            else:
+                scr_parent.ResponsesOS.Add(reply)
+            return
+        except Exception:
+            pass
+
+        self.project.lp.AnnotationsOC.Add(reply)
+        reply.BeginObjectRA = parent_note
+
+    def __IterDirectReplies(self, note):
+        """Yield direct reply notes for ``note`` (issue #323)."""
+        try:
+            scr = IScrScriptureNote(note)
+            for reply in scr.ResponsesOS:
+                yield reply
+            return
+        except Exception:
+            pass
+
+        repos = self.project.project.ServiceLocator.GetService(
+            ICmBaseAnnotation
+        ).Repository
+        note_hvo = note.Hvo
+        for ann in repos.AllInstances():
+            if ann.Hvo == note_hvo:
+                continue
+            if hasattr(ann, "BeginObjectRA") and ann.BeginObjectRA is not None:
+                if ann.BeginObjectRA.Hvo == note_hvo:
+                    yield ann
+
     # --- Core CRUD Operations ---
 
     @wrap_enumerable
@@ -253,17 +306,15 @@ class NoteOperations(BaseOperations):
         self._ValidateParam(note, "note")
 
         # Remove from owner's collection. note.Owner is typed as
-        # ICmObject and does not expose AnnotationsOC / RepliesOS; cast
-        # to the concrete owner so the typed collection is reachable
-        # (the previous hasattr check silently no-opped for notes owned
-        # by IRnGenericRec or by a parent note).
+        # ICmObject and does not expose AnnotationsOC / ResponsesOS; cast
+        # to the concrete owner so the typed collection is reachable.
         with self._TransactionCM("Delete note"):
             owner = self._GetTypedOwner(note)
             if owner is not None:
                 if hasattr(owner, "AnnotationsOC") and note in owner.AnnotationsOC:
                     owner.AnnotationsOC.Remove(note)
-                elif hasattr(owner, "RepliesOS") and note in owner.RepliesOS:
-                    owner.RepliesOS.Remove(note)
+                elif hasattr(owner, "ResponsesOS") and note in owner.ResponsesOS:
+                    owner.ResponsesOS.Remove(note)
 
             # Removing from an owning collection (AnnotationsOC/RepliesOS)
             # already deletes the underlying CmObject -- calling
@@ -331,8 +382,9 @@ class NoteOperations(BaseOperations):
         # previous hasattr checks silently no-opped, leaving the
         # duplicate orphaned).
         source = item_or_hvo if not isinstance(item_or_hvo, int) else self.project.Object(item_or_hvo)
-        parent = self._GetTypedOwner(source)
-        if parent is None:
+        discussion_parent = self.__GetDiscussionParent(source)
+        owner = self._GetTypedOwner(source)
+        if discussion_parent is None and owner is None:
             raise FP_ParameterError("Note has no owning record or parent note")
 
         # Create new note using factory (auto-generates new GUID)
@@ -340,22 +392,24 @@ class NoteOperations(BaseOperations):
             factory = self.project.project.ServiceLocator.GetService(ICmBaseAnnotationFactory)
             duplicate = factory.Create()
 
-            # Determine insertion position
-            # Notes can be in AnnotationsOC (when parent is owner object) or RepliesOS (when parent is another note)
-            if insert_after:
-                # Insert after source note
-                if hasattr(parent, "RepliesOS"):
-                    source_index = parent.RepliesOS.IndexOf(source)
-                    parent.RepliesOS.Insert(source_index + 1, duplicate)
-                elif hasattr(parent, "AnnotationsOC"):
-                    # AnnotationsOC is unordered (OC); insert_after is a no-op, add at end
-                    parent.AnnotationsOC.Add(duplicate)
+            if discussion_parent is not None:
+                self.__AttachReply(
+                    discussion_parent,
+                    duplicate,
+                    insert_after=insert_after,
+                    after_source=source,
+                )
+            elif owner is not None and hasattr(owner, "ResponsesOS"):
+                if insert_after:
+                    idx = owner.ResponsesOS.IndexOf(source)
+                    owner.ResponsesOS.Insert(idx + 1, duplicate)
+                else:
+                    owner.ResponsesOS.Add(duplicate)
+            elif owner is not None and hasattr(owner, "AnnotationsOC"):
+                # AnnotationsOC is unordered (OC); insert_after is a no-op, add at end
+                owner.AnnotationsOC.Add(duplicate)
             else:
-                # Insert at end
-                if hasattr(parent, "RepliesOS"):
-                    parent.RepliesOS.Add(duplicate)
-                elif hasattr(parent, "AnnotationsOC"):
-                    parent.AnnotationsOC.Add(duplicate)
+                self.project.lp.AnnotationsOC.Add(duplicate)
 
             # Copy simple MultiString properties
             duplicate.Comment.CopyAlternatives(source.Comment)
@@ -381,15 +435,13 @@ class NoteOperations(BaseOperations):
 
             # Handle owned objects if deep=True
             if deep:
-                # Duplicate replies into the NEW duplicate (not the original's parent)
-                if hasattr(source, "RepliesOS"):
-                    for reply in source.RepliesOS:
-                        self._DuplicateReplyInto(reply, duplicate, deep=True)
+                for reply in self.__IterDirectReplies(source):
+                    self._DuplicateReplyInto(reply, duplicate, deep=True)
 
             return duplicate
 
     def _DuplicateReplyInto(self, source_reply, parent_note, deep=True):
-        """Duplicate a reply note into the specified parent note's RepliesOS."""
+        """Duplicate a reply note under ``parent_note`` (issue #323)."""
         # Every caller reaches this helper from inside Duplicate's own
         # "Duplicate note" bracket, so these mutations are already covered at
         # runtime and this bracket merely joins that transaction (nesting-aware
@@ -398,7 +450,7 @@ class NoteOperations(BaseOperations):
         with self._TransactionCM("Duplicate note reply"):
             factory = self.project.project.ServiceLocator.GetService(ICmBaseAnnotationFactory)
             dup_reply = factory.Create()
-            parent_note.RepliesOS.Add(dup_reply)
+            self.__AttachReply(parent_note, dup_reply)
 
             # Copy properties. "Source" was renamed to SourceRA in this LCM
             # version (see note in Duplicate() above) -- it is a reference,
@@ -411,9 +463,8 @@ class NoteOperations(BaseOperations):
             if hasattr(source_reply, "BeginObjectRA"):
                 dup_reply.BeginObjectRA = source_reply.BeginObjectRA
 
-            # Recurse into nested replies
-            if deep and hasattr(source_reply, "RepliesOS"):
-                for nested_reply in source_reply.RepliesOS:
+            if deep:
+                for nested_reply in self.__IterDirectReplies(source_reply):
                     self._DuplicateReplyInto(nested_reply, dup_reply, deep=True)
 
     # ========== SYNC INTEGRATION METHODS ==========
@@ -921,9 +972,8 @@ class NoteOperations(BaseOperations):
         """
         self._ValidateParam(note, "note")
 
-        if hasattr(note, "RepliesOS"):
-            for reply in note.RepliesOS:
-                yield reply
+        for reply in self.__IterDirectReplies(note):
+            yield reply
 
     @OperationsMethod
     def AddReply(self, parent_note, content, wsHandle=None):
@@ -980,9 +1030,7 @@ class NoteOperations(BaseOperations):
             factory = self.project.project.ServiceLocator.GetService(ICmBaseAnnotationFactory)
             reply = factory.Create()
 
-            # Add as reply to parent note (must be done before setting properties)
-            if hasattr(parent_note, "RepliesOS"):
-                parent_note.RepliesOS.Add(reply)
+            self.__AttachReply(parent_note, reply)
 
             # Set the content
             mkstr = TsStringUtils.MakeString(content, wsHandle)
