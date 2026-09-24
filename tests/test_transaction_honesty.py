@@ -13,6 +13,7 @@
 
 import logging
 import pathlib
+import re
 
 import pytest
 
@@ -111,7 +112,8 @@ class TestOneShotWarningAtOpenProject:
         _GetTransactionAPI on every call.
         """
         source = (REPO_ROOT / "flexicon" / "code" / "FLExProject.py").read_text(encoding="utf-8")
-        open_idx = source.index("def OpenProject(self, projectName")
+        # Whitespace-tolerant: the signature may be wrapped (it is since #375).
+        open_idx = re.search(r"def OpenProject\(\s*self,\s*projectName", source).start()
         close_idx = source.index("def CloseProject(self):")
         open_project_body = source[open_idx:close_idx]
 

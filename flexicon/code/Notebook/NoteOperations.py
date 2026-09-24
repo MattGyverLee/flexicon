@@ -912,13 +912,13 @@ class NoteOperations(BaseOperations):
 
         self._ValidateParam(note, "note")
 
-        if author is None or (isinstance(author, str) and not author.strip()):
-            agent = None
-        elif isinstance(author, str):
-            agent = self.project.Agents.Find(author)
-            if agent is None:
-                agent = self.project.Agents.Create(author)
-        else:
+        # Type validation stays outside the bracket so a bad argument raises
+        # before any undo task opens.
+        agent = None
+        author_name = None
+        if isinstance(author, str):
+            author_name = author.strip() or None
+        elif author is not None:
             try:
                 agent = ICmAgent(author)
             except Exception:
@@ -927,7 +927,13 @@ class NoteOperations(BaseOperations):
                     "string, or empty/None to clear"
                 )
 
+        # Find-or-create shares the bracket, so a new agent and the author
+        # link land as one undo step.
         with self._TransactionCM("Set note author"):
+            if author_name is not None:
+                agent = self.project.Agents.Find(author)
+                if agent is None:
+                    agent = self.project.Agents.Create(author)
             note.SourceRA = agent
 
     # --- Discussion/Threading Operations ---

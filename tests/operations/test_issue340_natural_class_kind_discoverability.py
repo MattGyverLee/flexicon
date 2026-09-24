@@ -45,12 +45,25 @@ class _FakeProject:
     def Object(self, hvo):
         return hvo
 
+    def Transaction(self, label="transaction"):
+        # AddPhoneme runs inside a write transaction.
+        import contextlib
+
+        return contextlib.nullcontext()
+
+
+class _FakeRC(list):
+    """List with the LCM reference-collection Add() that AddPhoneme calls."""
+
+    def Add(self, item):
+        self.append(item)
+
 
 class _FakeSegmentsNC:
     ClassName = "PhNCSegments"
 
     def __init__(self):
-        self.SegmentsRC = []
+        self.SegmentsRC = _FakeRC()
 
 
 class _FakeFeaturesNC:

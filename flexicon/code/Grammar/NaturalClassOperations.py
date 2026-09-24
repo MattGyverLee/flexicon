@@ -13,6 +13,7 @@
 
 # Import BaseOperations parent class
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
+from ..lcm_casting import cast_to_concrete
 
 # Import FLEx LCM types
 from SIL.LCModel import (
@@ -113,9 +114,13 @@ class NaturalClassOperations(BaseOperations):
         Returns:
             IPhNaturalClass: The natural class object.
         """
+        # project.Object() -- and callers holding a base-typed reference -- give
+        # an ICmObject-typed view, on which Name and
+        # FeaturesOA are invisible; cast to PhNCSegments/PhNCFeatures so the
+        # type-mismatch guards and their error messages can read them.
         if isinstance(nc_or_hvo, int):
-            return self.project.Object(nc_or_hvo)
-        return nc_or_hvo
+            nc_or_hvo = self.project.Object(nc_or_hvo)
+        return cast_to_concrete(nc_or_hvo)
 
     def __GetPhonemeObject(self, phoneme_or_hvo):
         """

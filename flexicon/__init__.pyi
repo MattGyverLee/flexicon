@@ -41,7 +41,7 @@ from .code.FLExProject import (
     FP_WritingSystemError,
 )
 
-from .code.headless_ui import HeadlessLcmUI
+from .code.headless_ui import HeadlessLcmUI, HeadlessThreadedProgress
 
 # Grammar Operations
 from .code.Grammar.POSOperations import (
@@ -359,6 +359,7 @@ __all__ = [
     "FilterOperations",
     "GramCatOperations",
     "HeadlessLcmUI",
+    "HeadlessThreadedProgress",
     "InflectionFeatureOperations",
     "LexEntryOperations",
     "LexReferenceOperations",

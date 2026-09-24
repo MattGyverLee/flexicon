@@ -60,6 +60,7 @@ behaviour.
 
 import logging
 
+import clr
 import System
 from System import DateTime
 
@@ -237,254 +238,151 @@ class HeadlessLcmUI(ILcmUI):
         return YesNoCancel.OkNo
 
 
-class HeadlessThreadedProgress(IThreadedProgress):
+# ---------------------------------------------------------------------------
+# HeadlessThreadedProgress
+#
+# This cannot be a Python subclass of IThreadedProgress. IThreadedProgress
+# inherits IProgress, which declares a .NET event (Canceling), and pythonnet
+# 3.x cannot emit event members on a derived type: the class statement
+# raises "Method 'add_Canceling' ... does not have an implementation" and
+# takes `import flexicon` down with it (regression of issue #289).
+# FieldWorks ships no public no-UI implementation (its NullThreadedProgress
+# lives in test assemblies), so the type is compiled once per process from
+# the C# below -- the same shape as FieldWorks' NullThreadedProgress.
+# ---------------------------------------------------------------------------
+
+_HEADLESS_PROGRESS_CS = r"""
+using System;
+using System.ComponentModel;
+using SIL.LCModel.Utils;
+
+namespace Flexicon.Headless
+{
+    /// IThreadedProgress that runs work on the calling thread with no UI.
+    public class HeadlessThreadedProgress : IThreadedProgress, IDisposable
+    {
+        private string m_title = "";
+        private string m_message = "";
+
+        public event CancelEventHandler Canceling;
+
+        public HeadlessThreadedProgress()
+        {
+            Maximum = 100;
+            StepSize = 1;
+        }
+
+        public string Title
+        {
+            get { return m_title; }
+            set { m_title = value ?? ""; }
+        }
+
+        public string Message
+        {
+            get { return m_message; }
+            set { m_message = value ?? ""; }
+        }
+
+        public int Position { get; set; }
+        public int StepSize { get; set; }
+        public int Minimum { get; set; }
+        public int Maximum { get; set; }
+        public bool IsIndeterminate { get; set; }
+        public bool AllowCancel { get; set; }
+        public bool IsCanceling { get; set; }
+        public bool Canceled { get; private set; }
+        public bool IsDisposed { get; private set; }
+
+        // No UI thread to marshal to; callers run work directly.
+        public ISynchronizeInvoke SynchronizeInvoke { get { return null; } }
+
+        public void Step(int amount)
+        {
+            Position += amount;
+        }
+
+        // Nothing here ever cancels; present so the event is not flagged unused.
+        internal bool HasCancelingHandlers { get { return Canceling != null; } }
+
+        public object RunTask(Func<IThreadedProgress, object[], object> backgroundTask,
+            params object[] parameters)
+        {
+            return RunTask(true, backgroundTask, parameters);
+        }
+
+        // useSeparateThread is ignored: headless callers have no message pump
+        // to keep responsive, so the task always runs on the calling thread.
+        public object RunTask(bool useSeparateThread,
+            Func<IThreadedProgress, object[], object> backgroundTask,
+            params object[] parameters)
+        {
+            if (backgroundTask == null)
+                return null;
+            return backgroundTask(this, parameters);
+        }
+
+        public void Dispose()
+        {
+            IsDisposed = true;
+        }
+    }
+}
+"""
+
+
+def _compile_headless_progress():
     """
-    ``IThreadedProgress`` that runs work on the calling thread with no UI.
+    Compile ``_HEADLESS_PROGRESS_CS`` in memory and return the .NET type.
 
-    FieldWorks' ``ProgressDialogWithTask`` allocates a WinForms ``Form`` and
-    forces a Win32 handle on construction (issue #289). ``OpenProject`` now
-    defaults to this class instead, mirroring FieldWorks' own
-    ``NullThreadedProgress`` console tools.
+    Uses CodeDom, available because FieldWorks 9 runs on .NET Framework 4.8.
+    Compile errors are raised with csc's messages so a mismatch with a future
+    LCM ``IThreadedProgress`` surface names the member at fault.
     """
+    from Microsoft.CSharp import CSharpCodeProvider
+    from System.CodeDom.Compiler import CompilerParameters
 
-    __namespace__ = "Flexicon.Headless"
+    lcm_utils_path = clr.GetClrType(IThreadedProgress).Assembly.Location
 
-    def __init__(self):
-        self._title = ""
-        self._message = ""
-        self._minimum = 0
-        self._maximum = 100
-        self._position = 0
-        self._step_size = 1
-        self._is_indeterminate = False
-        self._allow_cancel = False
-        self._cancel_button_text = ""
-        self._cancel_label_text = ""
-        self._restartable = False
-        self._is_canceling = False
-        self._canceled = False
-        self._is_disposed = False
+    params = CompilerParameters()
+    params.GenerateInMemory = True
+    params.GenerateExecutable = False
+    params.ReferencedAssemblies.Add("System.dll")
+    params.ReferencedAssemblies.Add(lcm_utils_path)
 
-    # -- IDisposable (via concrete ProgressDialogWithTask; safe no-op here) --
+    provider = CSharpCodeProvider()
+    try:
+        results = provider.CompileAssemblyFromSource(params, _HEADLESS_PROGRESS_CS)
+    finally:
+        provider.Dispose()
 
-    def Dispose(self):
-        self._is_disposed = True
+    if results.Errors.HasErrors:
+        messages = "; ".join(
+            str(e) for e in results.Errors if not e.IsWarning
+        )
+        raise FP_ParameterError(
+            f"Could not compile HeadlessThreadedProgress against "
+            f"{lcm_utils_path}: {messages}"
+        )
 
-    def get_IsDisposed(self):
-        return self._is_disposed
+    return results.CompiledAssembly.GetType(
+        "Flexicon.Headless.HeadlessThreadedProgress", True
+    )
 
-    @property
-    def IsDisposed(self):
-        return self._is_disposed
 
-    # -- IProgress / IThreadedProgress surface ---------------------------
+def _load_headless_progress_class():
+    _compile_headless_progress()
+    # pythonnet indexes assemblies as they load, so the in-memory one is
+    # importable by namespace as soon as CompileAssemblyFromSource returns.
+    from Flexicon.Headless import HeadlessThreadedProgress as compiled
 
-    @property
-    def SynchronizeInvoke(self):
-        return None
+    return compiled
 
-    def get_SynchronizeInvoke(self):
-        return None
 
-    @property
-    def Title(self):
-        return self._title
-
-    @Title.setter
-    def Title(self, value):
-        self._title = value or ""
-
-    def get_Title(self):
-        return self._title
-
-    def set_Title(self, value):
-        self.Title = value
-
-    @property
-    def Message(self):
-        return self._message
-
-    @Message.setter
-    def Message(self, value):
-        self._message = value or ""
-
-    def get_Message(self):
-        return self._message
-
-    def set_Message(self, value):
-        self.Message = value
-
-    @property
-    def Minimum(self):
-        return self._minimum
-
-    @Minimum.setter
-    def Minimum(self, value):
-        self._minimum = int(value)
-
-    def get_Minimum(self):
-        return self._minimum
-
-    def set_Minimum(self, value):
-        self.Minimum = value
-
-    @property
-    def Maximum(self):
-        return self._maximum
-
-    @Maximum.setter
-    def Maximum(self, value):
-        self._maximum = int(value)
-
-    def get_Maximum(self):
-        return self._maximum
-
-    def set_Maximum(self, value):
-        self.Maximum = value
-
-    @property
-    def Position(self):
-        return self._position
-
-    @Position.setter
-    def Position(self, value):
-        self._position = int(value)
-
-    def get_Position(self):
-        return self._position
-
-    def set_Position(self, value):
-        self.Position = value
-
-    @property
-    def StepSize(self):
-        return self._step_size
-
-    @StepSize.setter
-    def StepSize(self, value):
-        self._step_size = int(value)
-
-    def get_StepSize(self):
-        return self._step_size
-
-    def set_StepSize(self, value):
-        self.StepSize = value
-
-    @property
-    def IsIndeterminate(self):
-        return self._is_indeterminate
-
-    @IsIndeterminate.setter
-    def IsIndeterminate(self, value):
-        self._is_indeterminate = bool(value)
-
-    def get_IsIndeterminate(self):
-        return self._is_indeterminate
-
-    def set_IsIndeterminate(self, value):
-        self.IsIndeterminate = value
-
-    @property
-    def AllowCancel(self):
-        return self._allow_cancel
-
-    @AllowCancel.setter
-    def AllowCancel(self, value):
-        self._allow_cancel = bool(value)
-
-    def get_AllowCancel(self):
-        return self._allow_cancel
-
-    def set_AllowCancel(self, value):
-        self.AllowCancel = value
-
-    @property
-    def CancelButtonText(self):
-        return self._cancel_button_text
-
-    @CancelButtonText.setter
-    def CancelButtonText(self, value):
-        self._cancel_button_text = value or ""
-
-    def get_CancelButtonText(self):
-        return self._cancel_button_text
-
-    def set_CancelButtonText(self, value):
-        self.CancelButtonText = value
-
-    @property
-    def CancelLabelText(self):
-        return self._cancel_label_text
-
-    @CancelLabelText.setter
-    def CancelLabelText(self, value):
-        self._cancel_label_text = value or ""
-
-    def get_CancelLabelText(self):
-        return self._cancel_label_text
-
-    def set_CancelLabelText(self, value):
-        self.CancelLabelText = value
-
-    @property
-    def Restartable(self):
-        return self._restartable
-
-    @Restartable.setter
-    def Restartable(self, value):
-        self._restartable = bool(value)
-
-    def get_Restartable(self):
-        return self._restartable
-
-    def set_Restartable(self, value):
-        self.Restartable = value
-
-    @property
-    def Canceled(self):
-        return self._canceled
-
-    def get_Canceled(self):
-        return self._canceled
-
-    @property
-    def IsCanceling(self):
-        return self._is_canceling
-
-    @IsCanceling.setter
-    def IsCanceling(self, value):
-        self._is_canceling = bool(value)
-
-    def get_IsCanceling(self):
-        return self._is_canceling
-
-    def set_IsCanceling(self, value):
-        self.IsCanceling = value
-
-    def Step(self, amount):
-        self._position += int(amount)
-
-    def RunTask(self, *args):
-        """
-        Run ``task(self, args)`` synchronously on the calling thread.
-
-        Accepts both ``RunTask(task, args)`` and
-        ``RunTask(useSeparateThread, task, args)`` overloads.
-        """
-        if len(args) == 2:
-            task, task_args = args[0], args[1]
-        elif len(args) == 3:
-            use_separate_thread, task, task_args = args
-            if use_separate_thread:
-                logger.debug(
-                    "HeadlessThreadedProgress.RunTask: ignoring "
-                    "useSeparateThread=True; running on caller thread."
-                )
-        else:
-            raise FP_ParameterError(
-                f"RunTask expected 2 or 3 arguments, got {len(args)}"
-            )
-
-        if task is not None:
-            task(self, task_args)
-        return not self._canceled
+# IThreadedProgress that runs work on the calling thread with no UI.
+#
+# FieldWorks' ProgressDialogWithTask allocates a WinForms Form and forces a
+# Win32 handle on construction (issue #289); OpenProject defaults to this
+# class instead. RunTask(task, args) and RunTask(useSeparateThread, task,
+# args) both run task(progress, args) synchronously and return its result.
+HeadlessThreadedProgress = _load_headless_progress_class()

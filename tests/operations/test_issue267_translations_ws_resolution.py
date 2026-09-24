@@ -543,10 +543,13 @@ class TestTranslationsOCSharedIndexCache:
         import flexicon.code.Lexicon.ExampleOperations as example_ops_module
 
         real_resolve = example_ops_module._resolve_ws_handle
-        seen_cache_ids = []
+        # Hold the dicts themselves: comparing id()s of dicts that were
+        # already freed is unreliable, since CPython reuses the address
+        # and the second call's fresh dict can get the first one's id.
+        seen_caches = []
 
         def _spy(target_ws_by_id, tgt_ws_id, _index_cache=None):
-            seen_cache_ids.append(id(_index_cache))
+            seen_caches.append(_index_cache)
             return real_resolve(target_ws_by_id, tgt_ws_id, _index_cache=_index_cache)
 
         monkeypatch.setattr(example_ops_module, "_resolve_ws_handle", _spy)
@@ -556,7 +559,8 @@ class TestTranslationsOCSharedIndexCache:
         _apply(ops, [_trans_entry({"en-us": "a"})])
         _apply(ops, [_trans_entry({"en-us": "b"})])
 
-        assert len(set(seen_cache_ids)) == 2, (
+        assert len(seen_caches) == 2
+        assert seen_caches[0] is not seen_caches[1], (
             "Each ApplySyncableProperties call must build its own "
             "_ws_resolve_cache; reusing one across calls would be an "
             "instance-level leak, not a per-apply-call memoization."

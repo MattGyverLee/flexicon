@@ -20,6 +20,7 @@ import System
 from SIL.LCModel import (
     IDsConstChart,
     IDsConstChartFactory,
+    ICmOverlay,
     ICmOverlayFactory,
     ICmPossibility,
     ICmPossibilityFactory,
@@ -149,9 +150,14 @@ class OverlayOperations(PossibilityItemOperations):
                 raise FP_ParameterError(
                     f"HVO {overlay_or_hvo} does not refer to a valid Overlay"
                 )
-            from ..lcm_casting import cast_to_concrete
-
-            return cast_to_concrete(obj)
+            # Cast directly: CmOverlay is not in cast_to_concrete's map, so
+            # that call returned the bare ICmObject and GetName(hvo) raised
+            # "'ICmObject' object has no attribute 'Name'".
+            if obj.ClassName != "CmOverlay":
+                raise FP_ParameterError(
+                    f"HVO {overlay_or_hvo} is a {obj.ClassName}, not an Overlay"
+                )
+            return ICmOverlay(obj)
         return overlay_or_hvo
 
     def __ResolvePossList(self, poss_list_or_hvo):

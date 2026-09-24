@@ -42,6 +42,7 @@ from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import string utilities
 from ..Shared.string_utils import normalize_text, normalize_match_key
+from ..Shared.gendate_utils import gendate_from_input
 
 
 class DataNotebookOperations(BaseOperations):
@@ -228,22 +229,24 @@ class DataNotebookOperations(BaseOperations):
         (one paragraph per line). An empty ``content`` clears the
         paragraphs.
         """
-        if record.DescriptionOA is None:
-            text_factory = self.project.project.ServiceLocator.GetService(
-                IStTextFactory
-            )
-            record.DescriptionOA = text_factory.Create()
-        sttext = record.DescriptionOA
-        while sttext.ParagraphsOS.Count > 0:
-            sttext.ParagraphsOS.Remove(sttext.ParagraphsOS[0])
-        if content:
-            para_factory = self.project.project.ServiceLocator.GetService(
-                IStTxtParaFactory
-            )
-            for line in content.splitlines() or [content]:
-                new_para = para_factory.Create()
-                sttext.ParagraphsOS.Add(new_para)
-                new_para.Contents = TsStringUtils.MakeString(line, wsHandle)
+        # Callers already hold a transaction; re-entering joins it.
+        with self._TransactionCM("Set record content"):
+            if record.DescriptionOA is None:
+                text_factory = self.project.project.ServiceLocator.GetService(
+                    IStTextFactory
+                )
+                record.DescriptionOA = text_factory.Create()
+            sttext = record.DescriptionOA
+            while sttext.ParagraphsOS.Count > 0:
+                sttext.ParagraphsOS.Remove(sttext.ParagraphsOS[0])
+            if content:
+                para_factory = self.project.project.ServiceLocator.GetService(
+                    IStTxtParaFactory
+                )
+                for line in content.splitlines() or [content]:
+                    new_para = para_factory.Create()
+                    sttext.ParagraphsOS.Add(new_para)
+                    new_para.Contents = TsStringUtils.MakeString(line, wsHandle)
 
     def _CopyRecordContent(self, source, duplicate):
         """Deep-copy body paragraphs (call inside a transaction).
@@ -252,23 +255,25 @@ class DataNotebookOperations(BaseOperations):
         and all writing-system runs (same idiom as
         ``TextOperations.Duplicate``).
         """
-        source_st = source.DescriptionOA
-        if source_st is None or source_st.ParagraphsOS.Count == 0:
-            return
-        text_factory = self.project.project.ServiceLocator.GetService(
-            IStTextFactory
-        )
-        if duplicate.DescriptionOA is None:
-            duplicate.DescriptionOA = text_factory.Create()
-        para_factory = self.project.project.ServiceLocator.GetService(
-            IStTxtParaFactory
-        )
-        for para in source_st.ParagraphsOS:
-            contents = IStTxtPara(para).Contents
-            if contents:
-                new_para = para_factory.Create()
-                duplicate.DescriptionOA.ParagraphsOS.Add(new_para)
-                new_para.Contents = contents
+        # Callers already hold a transaction; re-entering joins it.
+        with self._TransactionCM("Copy record content"):
+            source_st = source.DescriptionOA
+            if source_st is None or source_st.ParagraphsOS.Count == 0:
+                return
+            text_factory = self.project.project.ServiceLocator.GetService(
+                IStTextFactory
+            )
+            if duplicate.DescriptionOA is None:
+                duplicate.DescriptionOA = text_factory.Create()
+            para_factory = self.project.project.ServiceLocator.GetService(
+                IStTxtParaFactory
+            )
+            for para in source_st.ParagraphsOS:
+                contents = IStTxtPara(para).Contents
+                if contents:
+                    new_para = para_factory.Create()
+                    duplicate.DescriptionOA.ParagraphsOS.Add(new_para)
+                    new_para.Contents = contents
 
     # --- Core CRUD Operations ---
 
@@ -1015,7 +1020,8 @@ class DataNotebookOperations(BaseOperations):
             record_or_hvo: The notebook record object (IRnGenericRec) or its HVO.
 
         Returns:
-            DateTime: The event date, or None if not set.
+            GenDate: The event date (SIL.LCModel.Core.Cellar.GenDate), or
+            None if not set.
 
         Raises:
             FP_NullParameterError: If record_or_hvo is None.
@@ -1024,8 +1030,8 @@ class DataNotebookOperations(BaseOperations):
         Example:
             >>> record = project.DataNotebook.Find("Interview 1")
             >>> event_date = project.DataNotebook.GetDateOfEvent(record)
-            >>> if event_date:
-            ...     print(f"Event: {event_date.ToString('yyyy-MM-dd')}")
+            >>> if event_date is not None:
+            ...     print(f"Event: {event_date.Year}-{event_date.Month:02}-{event_date.Day:02}")
             ... else:
             ...     print("Event date not set")
             Event: 2024-01-15
@@ -1033,7 +1039,9 @@ class DataNotebookOperations(BaseOperations):
         Notes:
             - Can be different from creation/modification dates
             - Useful for documenting when fieldwork occurred
-            - Returns None if not set
+            - Returns None if not set. An unset DateOfEvent is an empty
+              GenDate struct, which is truthy under pythonnet, so IsEmpty
+              is checked explicitly.
 
         See Also:
             SetDateOfEvent, GetDateCreated
@@ -1041,40 +1049,14 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         try:
-            if hasattr(record, "DateOfEvent") and record.DateOfEvent:
-                return record.DateOfEvent
+            if hasattr(record, "DateOfEvent"):
+                event_date = record.DateOfEvent
+                if event_date is not None and not event_date.IsEmpty:
+                    return event_date
         except (AttributeError, System.NullReferenceException) as e:
             pass
 
         return None
-
-    @staticmethod
-    def _GenDateStringFromInput(date):
-        """
-        Normalize caller date input to a string assignable to a GenDate field.
-
-        IRnGenericRec.DateOfEvent is CLR-typed GenDate, not System.DateTime.
-        PersonOperations.SetDateOfBirth uses the same string-assignment pattern.
-        """
-        if isinstance(date, str):
-            try:
-                parsed = DateTime.Parse(date.strip())
-            except (System.FormatException, ValueError, TypeError) as e:
-                raise FP_ParameterError(
-                    f"Invalid date format: {date}. Use 'YYYY-MM-DD' or "
-                    f"'YYYY-MM-DD HH:MM:SS' - {e}"
-                )
-        elif isinstance(date, DateTime):
-            parsed = date
-        else:
-            raise FP_ParameterError(
-                f"Invalid date type: {type(date).__name__}. "
-                "Use a System.DateTime or date string."
-            )
-
-        if parsed.Hour == 0 and parsed.Minute == 0 and parsed.Second == 0:
-            return parsed.ToString("yyyy-MM-dd")
-        return parsed.ToString("yyyy-MM-dd HH:mm:ss")
 
     @OperationsMethod
     def SetDateOfEvent(self, record_or_hvo, date):
@@ -1108,7 +1090,10 @@ class DataNotebookOperations(BaseOperations):
         Notes:
             - Accepts DateTime object or string format
             - String format: "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS"
-            - Stored as a GenDate string on the LCM object (not System.DateTime)
+            - Stored as an exact AD GenDate (IRnGenericRec.DateOfEvent is not
+              System.DateTime, and pythonnet converts neither a str nor a
+              DateTime to GenDate -- issue #330). GenDate has no time
+              component, so any time of day is dropped.
             - Represents when the documented event occurred
             - Independent of creation/modification dates
 
@@ -1123,10 +1108,10 @@ class DataNotebookOperations(BaseOperations):
 
         # Validation/normalization stays outside the bracket: a malformed date
         # must raise before any undo task opens (D5/P3).
-        gen_date_str = self._GenDateStringFromInput(date)
+        gen_date = gendate_from_input(date)
 
         with self._TransactionCM("Set record date of event"):
-            record.DateOfEvent = gen_date_str
+            record.DateOfEvent = gen_date
 
     # --- Hierarchy Operations ---
 
@@ -2445,8 +2430,10 @@ class DataNotebookOperations(BaseOperations):
         Searches for records whose DateOfEvent falls within the specified range.
 
         Args:
-            start_date: Start date (DateTime or string "YYYY-MM-DD"). None means no start limit.
-            end_date: End date (DateTime or string "YYYY-MM-DD"). None means no end limit.
+            start_date: Start date (GenDate, DateTime or string "YYYY-MM-DD").
+                None means no start limit.
+            end_date: End date (GenDate, DateTime or string "YYYY-MM-DD").
+                None means no end limit.
 
         Returns:
             list: List of IRnGenericRec objects matching the date criteria.
@@ -2470,27 +2457,33 @@ class DataNotebookOperations(BaseOperations):
             - Searches DateOfEvent, not DateCreated/Modified
             - Records without DateOfEvent are excluded
             - Both dates are inclusive
-            - Accepts DateTime objects or date strings
+            - Accepts GenDate, DateTime objects or date strings
+            - Bounds are compared as GenDates at day resolution; a stored
+              non-exact date ("before"/"after"/"approximately") uses
+              GenDate's own ordering
 
         See Also:
             FindByResearcher, FindByType, GetDateOfEvent
         """
-        # Convert string dates to DateTime if needed
-        if start_date and isinstance(start_date, str):
-            start_date = DateTime.Parse(start_date)
-        if end_date and isinstance(end_date, str):
-            end_date = DateTime.Parse(end_date)
+        # DateOfEvent is a GenDate, whose relational operators only accept
+        # another GenDate -- comparing it with a DateTime raises TypeError.
+        # Normalize both bounds up front so a bad bound raises
+        # FP_ParameterError before any iteration.
+        if start_date is not None:
+            start_date = gendate_from_input(start_date)
+        if end_date is not None:
+            end_date = gendate_from_input(end_date)
 
         results = []
         for record in self.GetAll():
             event_date = self.GetDateOfEvent(record)
-            if not event_date:
+            if event_date is None:
                 continue
 
             # Check if date falls within range
-            if start_date and event_date < start_date:
+            if start_date is not None and event_date < start_date:
                 continue
-            if end_date and event_date > end_date:
+            if end_date is not None and event_date > end_date:
                 continue
 
             results.append(record)

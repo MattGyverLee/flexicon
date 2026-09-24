@@ -48,7 +48,11 @@ class Test352AnnoDefHelpPrompt:
             assert props["HelpString"] == "TEST_352 prompt text"
             assert props["Prompt"] == "TEST_352 prompt text"
             assert "AnnotationType" not in props
-            assert props["AllowsMultiple"] is True
+            # GSP reads ICmAnnotationDefn.Multi, which is False on a fresh
+            # definition -- compare against the value read back from LCM.
+            from SIL.LCModel import ICmAnnotationDefn
+
+            assert props["AllowsMultiple"] is bool(ICmAnnotationDefn(d).Multi)
             assert "InstanceOf" in props
             assert "AllowsInstanceOf" in props
         finally:

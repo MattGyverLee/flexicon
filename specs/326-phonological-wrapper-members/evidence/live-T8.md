@@ -44,6 +44,15 @@ Full output: `specs/326-phonological-wrapper-members/evidence/T8-live-output.txt
 
 ### 3. Live suite: T8's own independent re-query (additional evidence, not a substitute for #2)
 
+> [NOTE] 2026-09-23: `tests/operations/test_issue326_t8_verification_live.py`
+> was T8 scratch and was intentionally never committed
+> (`reviews/T11-archivist.md:55`, `reviews/T8-verification.md:25,55`), so the
+> command below cannot be re-run from the repo. To re-verify #326, run the
+> committed file from step 2, `tests/operations/test_phonological_wrappers_live.py`
+> (context links + metathesis parts read back via the wrappers). It passed
+> live on 2026-09-23 (3/3, `run_mode: live`); see
+> `specs/issue-289-headless-progress/evidence/live-import-regression.md`.
+
 ```powershell
 cd C:/Github/flexicon-326
 $env:FLEXLIBS_REQUIRE_LIVE = "1"

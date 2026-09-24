@@ -30,6 +30,7 @@ from ..FLExProject import (
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key
+from ..Shared.gendate_utils import gendate_from_input
 
 
 class PersonOperations(BaseOperations):
@@ -528,11 +529,13 @@ class PersonOperations(BaseOperations):
 
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
-            date_str (str): Date of birth as string (e.g., "1985-03-15")
+            date_str (str): Date of birth as string (e.g., "1985-03-15"); a
+                System.DateTime is also accepted
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
             FP_NullParameterError: If person_or_hvo or date_str is None
+            FP_ParameterError: If date_str does not parse as a date
 
         Example:
             >>> person = project.Person.Find("John Smith")
@@ -542,10 +545,11 @@ class PersonOperations(BaseOperations):
             >>> project.Person.SetDateOfBirth(person, "")
 
         Notes:
-            - Accepts various date formats
+            - Accepts any format System.DateTime.Parse does
             - ISO format (YYYY-MM-DD) recommended
             - Can be empty string to clear
-            - Invalid dates may raise FLEx internal errors
+            - Stored as an exact AD GenDate; ICmPerson.DateOfBirth is not a
+              string field, and assigning a str raised TypeError (issue #330)
 
         See Also:
             GetDateOfBirth
@@ -557,9 +561,12 @@ class PersonOperations(BaseOperations):
 
         person = self.__ResolveObject(person_or_hvo)
 
-        # DateOfBirth is a GenDate field - set as string
+        # Parse outside the bracket so a malformed date raises before any
+        # undo task opens.
+        gen_date = gendate_from_input(date_str, allow_empty=True)
+
         with self._TransactionCM("Set person date of birth"):
-            person.DateOfBirth = date_str
+            person.DateOfBirth = gen_date
 
     # --- Contact Information ---
 
