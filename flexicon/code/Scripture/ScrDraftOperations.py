@@ -27,7 +27,6 @@ from ..FLExProject import (
     FP_ParameterError,
 )
 
-
 class ScrDraftOperations(BaseOperations):
     """
     This class provides operations for managing Scripture drafts/versions in a
@@ -139,7 +138,8 @@ class ScrDraftOperations(BaseOperations):
             - Draft is added to Scripture.ArchivedDraftsOC
             - Draft GUID is auto-generated
             - Description should be descriptive and unique
-            - Type parameter is for categorization (not strictly enforced)
+            - Type selects the LCM ScrDraftType (saved version, consultant
+              check, or back translation)
 
         See Also:
             Delete, Find, GetDescription
@@ -155,6 +155,8 @@ class ScrDraftOperations(BaseOperations):
         if not scripture:
             raise FP_ParameterError("Project does not have Scripture enabled")
 
+        draft_type = self.__CoerceDraftType(type)
+
         with self._TransactionCM("Create draft"):
             # IScrDraftFactory exposes no no-arg Create() -- only
             # Create(description[, ...]) (live-proven TypeError; issue
@@ -162,7 +164,11 @@ class ScrDraftOperations(BaseOperations):
             # ArchivedDraftsOC itself, so only Add when it did not
             # (compare by HVO: proxies have no stable identity).
             factory = self.project.project.ServiceLocator.GetService(IScrDraftFactory)
-            new_draft = factory.Create(description)
+            try:
+                new_draft = factory.Create(description, draft_type)
+            except TypeError:
+                new_draft = factory.Create(description)
+                new_draft.Type = draft_type
 
             if new_draft.Hvo not in {d.Hvo for d in scripture.ArchivedDraftsOC}:
                 scripture.ArchivedDraftsOC.Add(new_draft)
@@ -173,11 +179,6 @@ class ScrDraftOperations(BaseOperations):
             # it from the description argument; re-assert it so a later
             # refactor of the factory call cannot silently drop it.
             new_draft.Description = description
-
-            # The `type` parameter is accepted for compatibility but not
-            # applied: mapping the "saved_version"/"consultant_check"/
-            # "back_translation" labels onto the ScrDraftType enum is out
-            # of scope (the LCM enum is not exposed via pythonnet here).
 
             return new_draft
 
@@ -429,3 +430,30 @@ class ScrDraftOperations(BaseOperations):
             return None
 
         return self.project.lp.TranslatedScriptureOA
+
+    def __CoerceDraftType(self, type_label):
+        """
+        Map a user-facing draft-type label to ScrDraftType.
+
+        Raises:
+            FP_ParameterError: If the label is unknown or empty after strip.
+        """
+        if type_label is None:
+            raise FP_ParameterError("Draft type cannot be None")
+        key = str(type_label).strip().lower()
+        if not key:
+            raise FP_ParameterError("Draft type cannot be empty")
+        from SIL.LCModel import ScrDraftType
+
+        by_label = {
+            "saved_version": ScrDraftType.SavedVersion,
+            "consultant_check": ScrDraftType.ConsultantCheck,
+            "back_translation": ScrDraftType.BackTranslation,
+        }
+        try:
+            return by_label[key]
+        except KeyError:
+            allowed = ", ".join(sorted(by_label))
+            raise FP_ParameterError(
+                f"Unknown draft type {type_label!r}; expected one of: {allowed}"
+            )

@@ -1340,7 +1340,7 @@ def sena3_sandbox():
             project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=False)
         except Exception as exc:
             sandbox.__exit__(None, None, None)
-            pytest.skip(
+            _unavailable(
                 f"OpenProject rejected sandbox path {fwdata_path}: {exc}"
             )
         yield project
