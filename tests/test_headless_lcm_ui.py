@@ -10,7 +10,8 @@
 #              SynchronizeInvoke) implemented and behaving non-destructively.
 #            - ConflictingSave() raises FP_ConflictingSaveError and never
 #              returns True.
-#            - No member marshals through ISynchronizeInvoke.
+#            - SynchronizeInvoke is SingleThreadedSynchronizeInvoke (inline,
+#              no cross-thread marshal; issue #441).
 #            - Default: FLExLCM.OpenProject(name) with no ui= now constructs
 #              HeadlessLcmUI (issue #285 flipped the default; FwLcmUI remains
 #              reachable via an explicit ui=).
@@ -45,9 +46,19 @@ def _import_headless_ui():
         # here so this test exercises the real hierarchy placement.
         from flexicon.code.exceptions import FP_ConflictingSaveError, FP_RuntimeError
         from SIL.LCModel import ILcmUI, MessageType, FileSelection, YesNoCancel
+        from SIL.LCModel.Utils import SingleThreadedSynchronizeInvoke
     except Exception as exc:  # pragma: no cover - environment-dependent
         pytest.skip(f"SIL.LCModel / HeadlessLcmUI not available: {exc}")
-    return HeadlessLcmUI, FP_ConflictingSaveError, ILcmUI, MessageType, FileSelection, YesNoCancel, FP_RuntimeError
+    return (
+        HeadlessLcmUI,
+        FP_ConflictingSaveError,
+        ILcmUI,
+        MessageType,
+        FileSelection,
+        YesNoCancel,
+        FP_RuntimeError,
+        SingleThreadedSynchronizeInvoke,
+    )
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -96,7 +107,7 @@ class TestHeadlessLcmUISurface:
         It must NOT be a bare Exception subclass defined locally in
         headless_ui.py.
         """
-        _, FP_ConflictingSaveError, _, _, _, _, FP_RuntimeError = _import_headless_ui()
+        _, FP_ConflictingSaveError, _, _, _, _, FP_RuntimeError, _ = _import_headless_ui()
         assert issubclass(FP_ConflictingSaveError, FP_RuntimeError)
 
     def test_conflicting_save_never_returns_true(self):
@@ -111,7 +122,7 @@ class TestHeadlessLcmUISurface:
         assert result is False
 
     def test_display_message_does_not_raise(self):
-        HeadlessLcmUI, _, _, MessageType, _, _, _ = _import_headless_ui()
+        HeadlessLcmUI, _, _, MessageType, _, _, _, _ = _import_headless_ui()
         ui = HeadlessLcmUI()
         for level in (MessageType.Info, MessageType.Warning, MessageType.Error):
             ui.DisplayMessage(level, "a message", "a caption", "")
@@ -153,12 +164,12 @@ class TestHeadlessLcmUISurface:
         assert ui.RestoreLinkedFilesInProjectFolder() is False
 
     def test_cannot_restore_linked_files_returns_okno(self):
-        HeadlessLcmUI, _, _, _, _, YesNoCancel, _ = _import_headless_ui()
+        HeadlessLcmUI, _, _, _, _, YesNoCancel, _, _ = _import_headless_ui()
         ui = HeadlessLcmUI()
         assert ui.CannotRestoreLinkedFilesToOriginalLocation() == YesNoCancel.OkNo
 
     def test_choose_files_to_use_returns_ok_keep_newer(self):
-        HeadlessLcmUI, _, _, _, FileSelection, _, _ = _import_headless_ui()
+        HeadlessLcmUI, _, _, _, FileSelection, _, _, _ = _import_headless_ui()
         ui = HeadlessLcmUI()
         assert ui.ChooseFilesToUse() == FileSelection.OkKeepNewer
 
@@ -167,44 +178,66 @@ class TestHeadlessLcmUISurface:
         ui = HeadlessLcmUI()
         assert ui.LastActivityTime is not None
 
-    def test_synchronize_invoke_is_none(self):
+    def test_synchronize_invoke_is_single_threaded_inline_invoker(self):
         """
-        SynchronizeInvoke must be None: nothing may marshal to a UI thread
-        that does not exist in a headless process.
+        Issue #441: a real invoker so SendPropChangedNotifications does not NRE
+        once HermitCrab registers a change listener; InvokeRequired is False
+        so LCM still runs callbacks inline (#238).
         """
-        HeadlessLcmUI, *_ = _import_headless_ui()
+        HeadlessLcmUI, *_, SingleThreadedSynchronizeInvoke = _import_headless_ui()
         ui = HeadlessLcmUI()
-        assert ui.SynchronizeInvoke is None
+        invoker = ui.SynchronizeInvoke
+        assert invoker is not None
+        assert isinstance(invoker, SingleThreadedSynchronizeInvoke)
+        assert invoker is ui.get_SynchronizeInvoke()
+        assert invoker.InvokeRequired is False
 
 
 # ---------------------------------------------------------------------------
-# No member touches ISynchronizeInvoke
+# HeadlessLcmUI must not marshal to a UI thread (#238); invoker is inline (#441)
 # ---------------------------------------------------------------------------
 
 
 class TestNoSynchronizeInvokeMarshalling:
     """
-    Static + runtime evidence that HeadlessLcmUI never marshals through
-    ISynchronizeInvoke (the deadlock path described in issue #238).
+    Static + runtime evidence that HeadlessLcmUI never cross-thread marshals
+    through ISynchronizeInvoke (issue #238) while exposing a non-null invoker
+    for LCM notification paths (issue #441).
     """
 
-    def test_source_never_calls_invoke_or_begin_invoke(self):
+    def test_python_source_never_calls_control_invoke_or_begin_invoke(self):
         """
-        No member should call .Invoke(/.BeginInvoke( -- the two entry
+        No Python member should call .Invoke(/.BeginInvoke( -- the two entry
         points FwLcmUI uses to marshal onto a (nonexistent) UI thread.
         """
         content = HEADLESS_UI_SOURCE.read_text(encoding="utf-8")
-        assert ".Invoke(" not in content
-        assert ".BeginInvoke(" not in content
+        python_part = content.split("_HEADLESS_PROGRESS_CS", 1)[0]
+        assert ".Invoke(" not in python_part
+        assert ".BeginInvoke(" not in python_part
 
-    def test_synchronize_invoke_property_returns_none_not_a_stub_object(self):
-        HeadlessLcmUI, *_ = _import_headless_ui()
+    def test_lcm_synchronize_invoke_extensions_runs_inline(self):
+        """
+        Same path as UnitOfWorkService.SendPropChangedNotifications: must not
+        NullReferenceException and must run the delegate on this thread.
+        """
+        try:
+            from System import Action
+            from SIL.LCModel.Utils import SynchronizeInvokeExtensions
+        except Exception as exc:  # pragma: no cover - environment-dependent
+            pytest.skip(f"CLR / SIL.LCModel not available: {exc}")
+
+        HeadlessLcmUI, *_, SingleThreadedSynchronizeInvoke = _import_headless_ui()
         ui = HeadlessLcmUI()
-        # Explicitly not some Mock/dummy ISynchronizeInvoke implementation --
-        # a real None, so any caller that tries to use it fails fast rather
-        # than silently marshalling through a fake.
-        assert ui.SynchronizeInvoke is None
-        assert ui.get_SynchronizeInvoke() is None
+        invoker = ui.SynchronizeInvoke
+        assert isinstance(invoker, SingleThreadedSynchronizeInvoke)
+
+        ran = []
+
+        def _record():
+            ran.append(True)
+
+        SynchronizeInvokeExtensions.Invoke(invoker, Action(_record))
+        assert ran == [True]
 
 
 # ---------------------------------------------------------------------------
