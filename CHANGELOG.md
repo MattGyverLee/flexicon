@@ -25,6 +25,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`ConstChartClauseMarkerOperations` exposed add-only `DependentClausesRS`**
+  (#230). Added `InsertDependentClause` and `RemoveDependentClause` so callers
+  can reorder or drop dependent clause markers without raw LCM (mirrors
+  `SegmentOperations` AnalysesRS writers from #215).
 - **``POSOperations.Duplicate`` OS placement regression coverage** (#295). Mock
   tests pin ``SubPossibilitiesOS`` / ``PossibilitiesOS`` ``IndexOf`` +
   ``Insert`` for ``insert_after=True`` and ``Add`` for append, plus deep
