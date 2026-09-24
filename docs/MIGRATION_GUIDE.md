@@ -428,21 +428,77 @@ pos = project.Senses.GetPartOfSpeechObject(sense)     # just the category behind
 
 Use `project.MSA.*` to build one.
 
-### [WARN] Clean-up: stray feature-structure types written by `GramCat.Create`
+### [WARN] Hand clean-up: stray feature-structure types from pre-#276 `GramCat.Create`
 
-If your project was ever written to by `GramCat.Create`, it contains stray
-`IFsFeatStrucType` entries carrying whatever name you passed -- they surface
-in FLEx under **Grammar > Features** as unexplained entries in the type list
-(for example "1st person" sitting alongside "tCommonAgr"). They are harmless
-to analysis output, since nothing reads a type absent a `TypeRA` reference,
-but they corrupt the Features inventory as presented to a linguist.
+Issue #293 documents the follow-up to the #276 behaviour fix. The old
+`GramCat.Create` wrote one stray `IFsFeatStrucType` per call into
+`LangProject.MsFeatureSystemOA.TypesOC`. flexicon no longer creates these,
+but **already-written strays remain** until a linguist removes them in FLEx.
 
-**Clean these up by hand in FLEx. No automatic cleanup is offered, and none
-should be attempted.** A stray is indistinguishable from a type legitimately
-created by `InflectionFeatures.TypeCreate`, and one may since have been wired
-up via `TypeRA`. Deciding which is which requires a human looking at the
-specific project -- delete only the entries you recognise as category names
-that were never meant to be feature-structure types.
+#### How to tell whether you are affected
+
+You are affected if **either** is true:
+
+1. **Project data:** the FLEx project was ever modified by
+   `project.GramCat.Create(...)` (or direct `GramCatOperations.Create`) while
+   running flexicon **before issue #276** (approximately flexicon 4.6.x and
+   earlier in the 4.x line). Expect **one stray per successful `Create` call**.
+2. **Scripts only:** your codebase still contains `GramCat.Create(` (see the
+   detect recipe below). That does not prove strays exist in every project you
+   open today, but any project those scripts ever wrote to should be checked.
+
+This guide does **not** claim how many strays exist in any particular
+project; no orphan scan was run (see
+`specs/276-gramcat-collection/evidence/domain-ruling.md`, Q4).
+
+#### Where to look in FLEx
+
+Open **Grammar > Features**. Strays appear as **top-level entries in the
+feature *type* list** (not under a POS category). Names often look like
+**part-of-speech or grammatical-category labels** you once passed to
+`GramCat.Create` -- for example **"1st person"** or **"Transitive"** sitting
+alongside legitimate structural types such as **"tCommonAgr"**. That
+juxtaposition is the usual clue.
+
+They are harmless to analysis output when nothing references them (nothing
+reads a type absent a `TypeRA` reference), but they **corrupt the Features
+inventory as presented** to a linguist.
+
+#### How to check a candidate before deleting
+
+For each suspicious type name:
+
+1. Ask whether you (or an old script) ever meant that string to be a **feature-
+   structure type** created via `InflectionFeatures.TypeCreate`. If yes, treat
+   it as legitimate unless you have other evidence.
+2. In FLEx, attempt to delete the entry from the Features UI. If the type is
+   **referenced** (for example by a `TypeRA` on a feature structure), FLEx
+   **warns or blocks** deletion -- **stop and investigate**; do not force-remove
+   from a script.
+3. When in doubt, **keep the entry** and rename or document it after consulting
+   the project owner.
+
+#### How to remove a confirmed stray
+
+Remove it **only through the FLEx UI** (Grammar > Features). Do **not** delete
+`IFsFeatStrucType` objects from Python, bulk SQL, or a one-off script. flexicon
+provides **no** auto-migration tool for this, and **none is planned**:
+
+- A stray is **indistinguishable** from a type legitimately created by
+  `InflectionFeatures.TypeCreate`.
+- A stray may since have been **referenced** via `TypeRA`; automated deletion
+  risks breaking live analysis data.
+
+#### What to do going forward
+
+| Intent | API |
+|--------|-----|
+| List-level grammatical category (Part of Speech) | `project.POS.Create(name, abbreviation)` or `project.POS.AddSubcategory(parent, name, abbreviation)` |
+| Genuine feature-structure type | `project.InflectionFeatures.TypeCreate(name, abbreviation)` |
+| Sense "Grammatical Info." (MSA composite) | `project.MSA.*` / `project.Senses.GetGrammaticalInfo(sense)` |
+
+`project.GramCat.Create` now **raises** `FP_ParameterError` and writes nothing
+(see above).
 
 ### Migration: Detect-and-Fix Recipe
 
