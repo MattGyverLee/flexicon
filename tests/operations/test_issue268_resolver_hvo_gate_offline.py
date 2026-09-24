@@ -30,6 +30,8 @@ def test_issue268_live_gate_module_exists_with_all_gate_sites():
         "AddSubcategory",
         "Duplicate",
         "SetMorphType",
+        "RemoveSubcategory",
+        "SetFormAudio",
     ):
         assert site in text, f"missing live gate for {site}"
     assert "isinstance(hvo, int)" in text

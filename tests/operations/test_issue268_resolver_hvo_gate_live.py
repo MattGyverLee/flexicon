@@ -6,7 +6,8 @@
 #   GetCatalogSourceId, GetPhoneEnv. Slice 2 (cron): GetInflectionClasses,
 #   GetAffixSlots, GetFormAudio. Slice 3 (cron): GetMorphType,
 #   GetSubcategories, GetEntryCount. Slice 4 (cron): AddSubcategory,
-#   Duplicate, SetMorphType.
+#   Duplicate, SetMorphType. Slice 5 (cron): RemoveSubcategory,
+#   SetFormAudio.
 #
 #   Platform: Python.NET, FieldWorks 9+
 #   Copyright 2026
@@ -329,5 +330,95 @@ class TestIssue268AllomorphSetMorphTypeHvoGate:
             after = sandbox.Allomorphs.GetMorphType(hvo)
             assert after is not None
             assert after.Hvo == current.Hvo
+        finally:
+            sandbox.LexEntry.Delete(entry)
+
+
+def _first_audio_ws_handle(sandbox):
+    for tag in sorted(sandbox.GetAllVernacularWSs()):
+        if "audio" in tag.lower():
+            return sandbox.WSHandle(tag)
+    return None
+
+
+@pytest.mark.requires_live_project
+class TestIssue268PosRemoveSubcategoryHvoGate:
+    """
+    RemoveSubcategory resolves parent and subcategory via __ResolveObject
+    (two HVO entry sites on one public method).
+    """
+
+    @pytest.mark.live_phase("POSOperations", "modify")
+    def test_remove_subcategory_via_genuine_hvo_ints(self, target_sandbox):
+        sandbox = target_sandbox
+        parent = sandbox.POS.Create(f"{TEST_PREFIX}pos_rmsub", "t268r")
+        sub_name = f"{TEST_PREFIX}rmsub_child"
+        sub_abbr = "t268r"
+        try:
+            subcat = sandbox.POS.AddSubcategory(parent, sub_name, sub_abbr)
+            parent_hvo = parent.Hvo
+            sub_hvo = subcat.Hvo
+            assert isinstance(parent_hvo, int)
+            assert isinstance(sub_hvo, int)
+            assert not hasattr(sandbox.Object(parent_hvo), "SubPossibilitiesOS"), (
+                "precondition failed: SubPossibilitiesOS reachable on bare "
+                "ICmObject view for parent -- re-derive the gate site"
+            )
+            assert not hasattr(sandbox.Object(sub_hvo), "SubPossibilitiesOS"), (
+                "precondition failed: SubPossibilitiesOS reachable on bare "
+                "ICmObject view for subcategory -- re-derive the gate site"
+            )
+
+            sandbox.POS.RemoveSubcategory(parent_hvo, sub_hvo)
+
+            subcats = sandbox.POS.GetSubcategories(parent_hvo, recursive=False)
+            assert not any(
+                sandbox.POS.GetName(s) == sub_name for s in subcats
+            ), "subcategory still present after RemoveSubcategory(hvo, hvo)"
+        finally:
+            for sub in sandbox.POS.GetSubcategories(parent, recursive=True):
+                if sandbox.POS.GetName(sub).startswith(TEST_PREFIX):
+                    sandbox.POS.RemoveSubcategory(parent, sub)
+            sandbox.POS.Delete(parent)
+
+
+@pytest.mark.requires_live_project
+class TestIssue268AllomorphSetFormAudioHvoGate:
+    """
+    SetFormAudio is one of the AllomorphOperations __GetAllomorphObject
+    write sites with no prior live HVO coverage.
+    """
+
+    @pytest.mark.live_phase("AllomorphOperations", "modify")
+    def test_set_form_audio_via_genuine_hvo_int(self, target_sandbox):
+        sandbox = target_sandbox
+        audio_ws = _first_audio_ws_handle(sandbox)
+        if audio_ws is None:
+            pytest.skip(
+                "Target sandbox has no audio writing system; "
+                "SetFormAudio cannot be exercised live."
+            )
+
+        entry = _make_entry(sandbox, "allo_setaud")
+        internal_path = "LinkedFiles/AudioVisual/TEST_268_setformaudio.wav"
+        try:
+            allo = sandbox.Allomorphs.Create(
+                entry, f"{TEST_PREFIX}sfa", morphType="suffix"
+            )
+            hvo = allo.Hvo
+            assert isinstance(hvo, int)
+            assert not hasattr(sandbox.Object(hvo), "Form"), (
+                "precondition failed: Form reachable on bare ICmObject view "
+                "-- re-derive the gate site"
+            )
+
+            stored = sandbox.Allomorphs.SetFormAudio(hvo, internal_path, audio_ws)
+            assert stored is not None
+
+            after = sandbox.Allomorphs.GetFormAudio(hvo, audio_ws)
+            assert after == internal_path, (
+                f"audio path did not round-trip via HVO entry: "
+                f"expected {internal_path!r}, got {after!r}"
+            )
         finally:
             sandbox.LexEntry.Delete(entry)
