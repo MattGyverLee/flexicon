@@ -16,6 +16,14 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 > 4.6.0, 4.7.0 and 4.8.0: no signature changes, no default's meaning
 > changes for a caller that passes it explicitly.
 
+### Fixed
+
+- **``ExampleOperations`` HVO resolvers cast to concrete interfaces** (#455).
+  ``__GetExampleObject`` and ``__GetSenseObject`` no longer return a bare
+  ``ICmObject`` view from ``project.Object(hvo)``, so publication helpers
+  that read ``DoNotPublishInRC`` work when callers pass an HVO int
+  (promoted from #284 re-triage).
+
 ### Added
 
 - **Live regression for ``Allomorphs.RemoveOrphaned`` duplicate-lexeme purge**
