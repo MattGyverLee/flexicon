@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`ConstChartClauseMarkerOperations` exposed add-only `DependentClausesRS`**
+  (#230). Added `InsertDependentClause` and `RemoveDependentClause` so callers
+  can reorder or drop dependent clause markers without raw LCM (mirrors
+  `SegmentOperations` AnalysesRS writers from #215).
 - **Possibility creation no longer requires raw ``CmPossibilityFactory`` overload
   guessing** (#341). ``PossibilityListOperations.CreateItemInListByName`` wraps
   ``FindList`` + ``CreateItem``; docstrings document the parameterless
