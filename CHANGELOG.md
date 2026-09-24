@@ -22,6 +22,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   ``True`` on a write-enabled session, entering ``Transaction()`` without a
   wired LCM rollback API raises ``FP_TransactionError`` instead of proceeding
   with degraded Phase 1 behaviour. Default remains warn-and-continue.
+- **Live HVO-entry gates for three more shared-resolver read paths** (#268,
+  slice 2). ``POSOperations.GetInflectionClasses``, ``GetAffixSlots``, and
+  ``AllomorphOperations.GetFormAudio`` now have the same int-HVO live tests as
+  slice 1, pinning the ClassName cast axis where silent ``hasattr`` drops
+  would otherwise regress.
 
 ### Fixed
 
