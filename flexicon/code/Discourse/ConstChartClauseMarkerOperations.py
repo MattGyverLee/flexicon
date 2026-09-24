@@ -104,7 +104,8 @@ class ConstChartClauseMarkerOperations(BaseOperations):
             - Markers can have dependent clauses attached
 
         See Also:
-            Delete, Find, GetWordGroup, AddDependentClause
+            Delete, Find, GetWordGroup, AddDependentClause,
+            InsertDependentClause, RemoveDependentClause
         """
         self._EnsureWriteEnabled()
 
@@ -317,7 +318,8 @@ class ConstChartClauseMarkerOperations(BaseOperations):
             - Used to mark embedded or subordinate clauses
 
         See Also:
-            AddDependentClause, GetWordGroup
+            AddDependentClause, InsertDependentClause, RemoveDependentClause,
+            GetWordGroup
         """
         self._ValidateParam(marker_or_hvo, "marker_or_hvo")
 
@@ -363,7 +365,8 @@ class ConstChartClauseMarkerOperations(BaseOperations):
             - Circular dependencies should be avoided
 
         See Also:
-            GetDependentClauses, Create
+            GetDependentClauses, InsertDependentClause, RemoveDependentClause,
+            Create
         """
         self._EnsureWriteEnabled()
 
@@ -382,6 +385,96 @@ class ConstChartClauseMarkerOperations(BaseOperations):
             if clause_marker not in marker.DependentClausesRS:
                 with self._TransactionCM("Add dependent clause"):
                     marker.DependentClausesRS.Add(clause_marker)
+
+    @OperationsMethod
+    def InsertDependentClause(self, marker_or_hvo, index, clause_marker):
+        """
+        Insert a dependent clause marker at a given index in DependentClausesRS.
+
+        Mirrors ``SegmentOperations.InsertAnalysis`` for reference-sequence
+        ordering (issue #230 / #215 pattern).
+
+        Args:
+            marker_or_hvo: Either an IConstChartClauseMarker object or its HVO.
+            index: 0-based index at which to insert (may equal ``Count`` to append).
+            clause_marker: IConstChartClauseMarker to insert.
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with write enabled.
+            FP_NullParameterError: If marker_or_hvo or clause_marker is None.
+            FP_ParameterError: If index is out of range or clause_marker is invalid.
+
+        Example:
+            >>> deps = project.ConstChartClauseMarkers.GetDependentClauses(main)
+            >>> project.ConstChartClauseMarkers.InsertDependentClause(
+            ...     main, 0, dep_marker)
+
+        See Also:
+            AddDependentClause, RemoveDependentClause, GetDependentClauses
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(marker_or_hvo, "marker_or_hvo")
+        self._ValidateParam(clause_marker, "clause_marker")
+
+        if not isinstance(clause_marker, IConstChartClauseMarker):
+            raise FP_ParameterError(
+                "clause_marker must be an IConstChartClauseMarker object"
+            )
+
+        marker = self.__ResolveObject(marker_or_hvo)
+
+        if not hasattr(marker, "DependentClausesRS"):
+            raise FP_ParameterError(
+                "Clause marker does not expose DependentClausesRS"
+            )
+
+        count = marker.DependentClausesRS.Count
+        if not isinstance(index, int) or index < 0 or index > count:
+            raise FP_ParameterError(
+                f"index must be between 0 and {count} (inclusive); got {index!r}"
+            )
+
+        with self._TransactionCM("Insert dependent clause"):
+            marker.DependentClausesRS.Insert(index, clause_marker)
+
+    @OperationsMethod
+    def RemoveDependentClause(self, marker_or_hvo, index):
+        """
+        Remove the dependent clause marker at a given index from DependentClausesRS.
+
+        Args:
+            marker_or_hvo: Either an IConstChartClauseMarker object or its HVO.
+            index: 0-based index within DependentClausesRS to remove.
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with write enabled.
+            FP_NullParameterError: If marker_or_hvo is None.
+            FP_ParameterError: If index is out of range.
+
+        Example:
+            >>> project.ConstChartClauseMarkers.RemoveDependentClause(main, 0)
+
+        See Also:
+            InsertDependentClause, AddDependentClause, GetDependentClauses
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(marker_or_hvo, "marker_or_hvo")
+
+        marker = self.__ResolveObject(marker_or_hvo)
+
+        if not hasattr(marker, "DependentClausesRS"):
+            raise FP_ParameterError(
+                "Clause marker does not expose DependentClausesRS"
+            )
+
+        count = marker.DependentClausesRS.Count
+        if not isinstance(index, int) or index < 0 or index >= count:
+            raise FP_ParameterError(
+                f"index must be between 0 and {count - 1} (inclusive); got {index!r}"
+            )
+
+        with self._TransactionCM("Remove dependent clause"):
+            marker.DependentClausesRS.RemoveAt(index)
 
     # --- Private Helper Methods ---
 
