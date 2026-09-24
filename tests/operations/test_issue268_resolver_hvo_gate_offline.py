@@ -24,6 +24,9 @@ def test_issue268_live_gate_module_exists_with_all_gate_sites():
         "GetInflectionClasses",
         "GetAffixSlots",
         "GetFormAudio",
+        "GetMorphType",
+        "GetSubcategories",
+        "GetEntryCount",
     ):
         assert site in text, f"missing live gate for {site}"
     assert "isinstance(hvo, int)" in text
@@ -31,4 +34,6 @@ def test_issue268_live_gate_module_exists_with_all_gate_sites():
     assert "PhoneEnvRC" in text
     assert "InflectionClassesOC" in text
     assert "AffixSlotsOC" in text
+    assert "MorphTypeRA" in text
+    assert "SubPossibilitiesOS" in text
     assert "requires_live_project" in text
