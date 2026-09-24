@@ -12,7 +12,6 @@
 
 """
 LCM Object Casting Utilities for pythonnet.
-import logging
 
 This module provides utilities for casting LCM objects from their base interface
 types to their concrete derived interfaces. This is necessary because pythonnet
@@ -75,6 +74,10 @@ Note:
     at module load time. This is important because SIL.LCModel may not be
     available until after FLExInit has run.
 """
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Interface cache - populated on first use
 _interface_cache = {}
@@ -609,13 +612,23 @@ def cast_to_concrete(obj):
     # Look up the interface type
     interface_type = _interface_cache.get(class_name)
     if interface_type is None:
+        logger.debug(
+            "cast_to_concrete: ClassName %r is not in the interface cache; "
+            "returning object unchanged (issue #281 / #279)",
+            class_name,
+        )
         return obj
 
     # Cast to the concrete interface
     try:
         return interface_type(obj)
     except Exception:
-        # If casting fails for any reason, return original
+        logger.debug(
+            "cast_to_concrete: cast to %r failed for ClassName %r; "
+            "returning object unchanged",
+            interface_type,
+            class_name,
+        )
         return obj
 
 

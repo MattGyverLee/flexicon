@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`lcm_casting.py` had no module logger** (#281). A stray `import logging`
+  line inside the module docstring never executed; the import and
+  `logger = logging.getLogger(__name__)` now live at module scope, and
+  unregistered `ClassName` no-ops in `cast_to_concrete` emit `logger.debug`
+  to aid diagnosis of silent cast skips (#279).
 - **`DataNotebookOperations` record CRUD was broken on first use** (#302,
   #328, #261). Top-level records now attach to
   `ResearchNotebookOA.RecordsOC` (not the repository service), HVO
