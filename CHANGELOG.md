@@ -18,6 +18,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`MakeFeatStruc` accepts plain feature and value names** (#265). Non-GUID
+  strings resolve in the owner-appropriate feature system (morphological vs
+  phonological) using the same analysis-WS casefold rules as ``Find``; ambiguous
+  names raise ``FP_ParameterError`` instead of picking silently.
 - **Possibility creation no longer requires raw ``CmPossibilityFactory`` overload
   guessing** (#341). ``PossibilityListOperations.CreateItemInListByName`` wraps
   ``FindList`` + ``CreateItem``; docstrings document the parameterless
