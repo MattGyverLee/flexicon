@@ -18,10 +18,19 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Added
 
+- **Live regression for ``Allomorph.stem_name`` / ``StemNameRA`` round-trip**
+  (#377 item 1). Sena 3 sandbox tests assign a catalog ``IMoStemName`` and
+  re-read by HVO so the #352 read path is proven on set-valued data, not only
+  the unset case on Target.
 - **Opt-in ``strict_transactions`` on ``OpenProject()``** (#210). When
   ``True`` on a write-enabled session, entering ``Transaction()`` without a
   wired LCM rollback API raises ``FP_TransactionError`` instead of proceeding
   with degraded Phase 1 behaviour. Default remains warn-and-continue.
+- **Live HVO-entry gates for three more shared-resolver read paths** (#268,
+  slice 2). ``POSOperations.GetInflectionClasses``, ``GetAffixSlots``, and
+  ``AllomorphOperations.GetFormAudio`` now have the same int-HVO live tests as
+  slice 1, pinning the ClassName cast axis where silent ``hasattr`` drops
+  would otherwise regress.
 
 ### Fixed
 
@@ -31,6 +40,18 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   (lexeme-form promotion artifact) and purges invalid stale list entries
   (``IsValidObject`` false). MorphRA-aware unused-allomorph sweeps and the
   other #231 cleanup families remain open.
+- **`HeadlessLcmUI.SynchronizeInvoke` no longer returns ``None``** (#441).
+  HermitCrab's ``HCParser`` registers an LCM change listener; with a null
+  invoker every write after parsing raised ``NullReferenceException`` in
+  ``SendPropChangedNotifications``. The default headless UI now exposes
+  ``SingleThreadedSynchronizeInvoke`` (``InvokeRequired`` is ``False``), so
+  notifications run inline on the calling thread without reviving the
+  ``FwLcmUI`` deadlock path (#238).
+- **Duplicate lexeme-form allomorphs can be removed from ``AlternateFormsOS``**
+  (#231, slice 1). ``project.Allomorphs.RemoveOrphaned(entry=None, progress=None)``
+  drops alternates whose ``Hvo`` matches the owning entry's ``LexemeFormOA``
+  (lexeme-form promotion artifact). MorphRA-aware unused-allomorph sweeps and
+  the other #231 cleanup families remain open.
 - **`MakeFeatStruc` accepts plain feature and value names** (#265). Non-GUID
   strings resolve in the owner-appropriate feature system (morphological vs
   phonological) using the same analysis-WS casefold rules as ``Find``; ambiguous

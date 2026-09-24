@@ -15,12 +15,25 @@ LIVE_GATE = (
 )
 
 
-def test_issue268_live_gate_module_exists_with_both_sites():
+def test_issue268_live_gate_module_exists_with_all_gate_sites():
     assert LIVE_GATE.is_file(), "missing live gate module for #268"
     text = LIVE_GATE.read_text(encoding="utf-8")
-    assert "GetCatalogSourceId" in text
-    assert "GetPhoneEnv" in text
+    for site in (
+        "GetCatalogSourceId",
+        "GetPhoneEnv",
+        "GetInflectionClasses",
+        "GetAffixSlots",
+        "GetFormAudio",
+        "GetMorphType",
+        "GetSubcategories",
+        "GetEntryCount",
+    ):
+        assert site in text, f"missing live gate for {site}"
     assert "isinstance(hvo, int)" in text
     assert "CatalogSourceId" in text
     assert "PhoneEnvRC" in text
+    assert "InflectionClassesOC" in text
+    assert "AffixSlotsOC" in text
+    assert "MorphTypeRA" in text
+    assert "SubPossibilitiesOS" in text
     assert "requires_live_project" in text
