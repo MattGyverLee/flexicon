@@ -21,3 +21,19 @@
   ChangeAffixVariant, MorphRule Delete/Duplicate); PhonologicalRules = 0 in Sena 3.
   Out of scope: MorphRule template Delete / __DuplicateAffixTemplate take a bare owner from
   _GetObject(Owner.Hvo); needs its own issue (user to approve filing).
+- 2026-09-24 cycle 2 done: live write-path tests (60489a8) 10 pass + 1 xfail (affix-template owner bug);
+  independent live re-run 16 pass / 1 xfail, run_mode=live. The off-by-one is now explained: the stale ratchet
+  tests/operations/test_issue251_msa_feature_sync.py::test_get_msa_object_hasattr_calls_are_allowlisted
+  looks for the removed hasattr(_obj) unwrap. QC 94/100 APPROVE. Domain: the wrapper round-trip contract must also go
+  into docs/ARCHITECTURE_WRAPPERS.md (+ new-wrapper checklist) and docs/API_DESIGN_PHILOSOPHY.md.
+  Waiting on the user: file the affix-template owner bug (domain says P2, cycle 1 proposed P1), and file the
+  wrapper __eq__/__hash__-by-Hvo follow-up?
+- 2026-09-24 cycle 3 done (lex-programmer): the off-by-one flagged by cycle 2 verification was the stale
+  ratchet test_get_msa_object_hasattr_calls_are_allowlisted (asserted "at least one hasattr()" for the
+  removed hasattr(_obj) unwrap); it is now updated to assert zero-or-allowlisted hasattr() calls plus a
+  positive check that __GetMsaObject routes through self._UnwrapLcm. Added the round-trip contract section
+  to docs/ARCHITECTURE_WRAPPERS.md, a new-wrapper checklist item there and in
+  docs/API_DESIGN_PHILOSOPHY.md's "Creating a new wrapper" list, and a Rule 1 cross-reference; Category 13
+  in docs/API_ISSUES_CATEGORIZED.md left unchanged (already consistent). Offline:
+  48 passed (test_issue251_msa_feature_sync.py + test_449_wrapper_resolver_unwrap.py, not
+  requires_live_project).
