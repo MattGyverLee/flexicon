@@ -16,6 +16,15 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 > 4.6.0, 4.7.0 and 4.8.0: no signature changes, no default's meaning
 > changes for a caller that passes it explicitly.
 
+### Fixed
+
+- **`LocationOperations`` geo helpers fail loud instead of silent no-op** (#453).
+  ``ICmLocation`` / ``CmLocation`` has no coordinate or elevation fields in the
+  LCM; ``SetCoordinates`` and ``SetElevation`` now raise ``FP_ParameterError``
+  rather than opening a transaction that only bumps ``DateModified``. Reads
+  return ``None`` without probing phantom ``DateOfEvent`` / ``Elevation``
+  members.
+
 ### Added
 
 - **Live regression for ``Allomorphs.RemoveOrphaned`` duplicate-lexeme purge**
