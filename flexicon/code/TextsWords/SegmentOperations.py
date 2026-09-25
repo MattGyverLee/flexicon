@@ -1099,9 +1099,20 @@ class SegmentOperations(BaseOperations):
 
         para = para1
 
-        segments_list = list(para.SegmentsOS)
-        idx1 = segments_list.index(seg1)
-        idx2 = segments_list.index(seg2)
+        # Adjacent indices by HVO (issue #525). SegmentsOS can yield bare
+        # interface views while __GetSegmentObject returns cast handles.
+        seg1_hvo = seg1.Hvo
+        seg2_hvo = seg2.Hvo
+        idx1 = idx2 = None
+        for i, seg in enumerate(para.SegmentsOS):
+            if seg.Hvo == seg1_hvo:
+                idx1 = i
+            if seg.Hvo == seg2_hvo:
+                idx2 = i
+        if idx1 is None or idx2 is None:
+            raise FP_ParameterError(
+                "One or both segments are not in the paragraph SegmentsOS"
+            )
 
         # Ensure seg1 is the earlier segment
         if idx1 > idx2:
@@ -1161,8 +1172,11 @@ class SegmentOperations(BaseOperations):
             para.Contents = bldr.GetString()
 
             # --- Step 2: remove seg2 from SegmentsOS if it still exists ---
-            if seg2 in list(para.SegmentsOS):
-                para.SegmentsOS.Remove(seg2)
+            # Membership by HVO (issue #525); same gap as Exists (#523).
+            for seg in para.SegmentsOS:
+                if seg.Hvo == seg2.Hvo:
+                    para.SegmentsOS.Remove(seg)
+                    break
 
             return seg1
 
