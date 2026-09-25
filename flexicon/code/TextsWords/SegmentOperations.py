@@ -1348,8 +1348,14 @@ class SegmentOperations(BaseOperations):
         para_obj = self.__GetParagraphObject(paragraph_or_hvo)
         segment_obj = self.__GetSegmentObject(segment_or_hvo)
 
-        segments_list = list(para_obj.SegmentsOS)
-        return segment_obj in segments_list
+        # Membership by HVO (issue #523). SegmentsOS yields bare interface
+        # views while __GetSegmentObject may return cast_to_concrete handles;
+        # Python ``in`` then false-negates for the same LCM segment.
+        target_hvo = segment_obj.Hvo
+        for seg in para_obj.SegmentsOS:
+            if seg.Hvo == target_hvo:
+                return True
+        return False
 
     @OperationsMethod
     def GetBeginOffset(self, segment_or_hvo):
