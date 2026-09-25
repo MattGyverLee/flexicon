@@ -133,8 +133,8 @@ class NaturalClassOperations(BaseOperations):
             IPhPhoneme: The phoneme object.
         """
         if isinstance(phoneme_or_hvo, int):
-            return self.project.Object(phoneme_or_hvo)
-        return phoneme_or_hvo
+            return cast_to_concrete(self.project.Object(phoneme_or_hvo))
+        return cast_to_concrete(phoneme_or_hvo)
 
     def __SetNameAndAbbreviation(self, nc, name, abbreviation):
         """
