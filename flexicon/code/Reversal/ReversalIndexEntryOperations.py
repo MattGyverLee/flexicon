@@ -346,13 +346,9 @@ class ReversalIndexEntryOperations(BaseOperations):
         self._ValidateParam(hvo, "hvo")
 
         try:
-            obj = self.project.Object(hvo)
-            if isinstance(obj, IReversalIndexEntry):
-                return obj
+            return self.__ResolveObject(hvo)
         except Exception:
-            pass
-
-        return None
+            return None
 
     # --- Property Access ---
 
