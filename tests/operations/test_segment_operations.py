@@ -813,19 +813,36 @@ class TestSegmentAnalysesRSWriteMethods:
     # --- ReplaceAnalysis ---
 
     def test_ReplaceAnalysis_finds_and_replaces_old_token(self, writable_ops):
-        old_tok, new_tok = object(), object()
+        from unittest.mock import Mock
+
+        old_tok = Mock(Hvo=101)
+        new_tok = Mock(Hvo=202)
         seg = self._make_segment(["a", old_tok, "b"])
 
         writable_ops.ReplaceAnalysis(seg, old_tok, new_tok)
 
         assert list(seg.AnalysesRS) == ["a", new_tok, "b"]
 
+    def test_ReplaceAnalysis_finds_by_hvo_not_python_identity(self, writable_ops):
+        from unittest.mock import Mock
+
+        old_tok = Mock(Hvo=101)
+        new_tok = Mock(Hvo=202)
+        alias = Mock(Hvo=101)
+        seg = self._make_segment(["a", old_tok, "b"])
+
+        writable_ops.ReplaceAnalysis(seg, alias, new_tok)
+
+        assert list(seg.AnalysesRS) == ["a", new_tok, "b"]
+
     def test_ReplaceAnalysis_raises_when_old_not_found(self, writable_ops):
+        from unittest.mock import Mock
+
         from flexicon.code.FLExProject import FP_ParameterError
 
         seg = self._make_segment(["a", "b"])
         with pytest.raises(FP_ParameterError):
-            writable_ops.ReplaceAnalysis(seg, object(), object())
+            writable_ops.ReplaceAnalysis(seg, Mock(Hvo=999), Mock(Hvo=1000))
 
     def test_ReplaceAnalysis_raises_on_none_old(self, writable_ops):
         from flexicon.code.FLExProject import FP_NullParameterError

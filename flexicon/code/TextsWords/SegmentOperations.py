@@ -828,12 +828,19 @@ class SegmentOperations(BaseOperations):
         old_obj = self.__GetAnalysisObject(old_analysis_or_hvo)
         new_obj = self.__GetAnalysisObject(new_analysis_or_hvo)
 
-        analyses = list(segment_obj.AnalysesRS)
-        if old_obj not in analyses:
+        # Membership by HVO (issue #528). AnalysesRS can yield interface views
+        # while __GetAnalysisObject may return a different Python wrapper for
+        # the same token; ``in`` / list.index then false-negative.
+        old_hvo = old_obj.Hvo
+        index = None
+        for i, token in enumerate(segment_obj.AnalysesRS):
+            if token.Hvo == old_hvo:
+                index = i
+                break
+        if index is None:
             raise FP_ParameterError(
                 "old_analysis_or_hvo was not found in the segment's AnalysesRS"
             )
-        index = analyses.index(old_obj)
 
         with self._TransactionCM("Replace segment analysis"):
             segment_obj.AnalysesRS[index] = new_obj
