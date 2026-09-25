@@ -4003,8 +4003,8 @@ class LexSenseOperations(BaseOperations):
             ILexEntry: The resolved entry object.
         """
         if isinstance(entry_or_hvo, int):
-            return self.project.Object(entry_or_hvo)
-        return entry_or_hvo
+            return cast_to_concrete(self.project.Object(entry_or_hvo))
+        return cast_to_concrete(entry_or_hvo)
 
     def __GetSenseObject(self, sense_or_hvo):
         """
@@ -4017,8 +4017,8 @@ class LexSenseOperations(BaseOperations):
             ILexSense: The resolved sense object.
         """
         if isinstance(sense_or_hvo, int):
-            return self.project.Object(sense_or_hvo)
-        return sense_or_hvo
+            return cast_to_concrete(self.project.Object(sense_or_hvo))
+        return cast_to_concrete(sense_or_hvo)
 
     def __GetSemanticDomainObject(self, domain_or_hvo):
         """
@@ -4031,8 +4031,8 @@ class LexSenseOperations(BaseOperations):
             ICmSemanticDomain: The resolved semantic domain object.
         """
         if isinstance(domain_or_hvo, int):
-            return self.project.Object(domain_or_hvo)
-        return domain_or_hvo
+            return cast_to_concrete(self.project.Object(domain_or_hvo))
+        return cast_to_concrete(domain_or_hvo)
 
     def __WSHandleAnalysis(self, wsHandle):
         """

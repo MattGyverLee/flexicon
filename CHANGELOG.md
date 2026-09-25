@@ -23,6 +23,18 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   ``ICmObject`` view from ``project.Object(hvo)``, so publication helpers
   that read ``DoNotPublishInRC`` work when callers pass an HVO int
   (promoted from #284 re-triage).
+- **``LexSenseOperations`` HVO resolvers cast to concrete interfaces** (#457).
+  ``__GetSenseObject``, ``__GetEntryObject``, and ``__GetSemanticDomainObject``
+  no longer return a bare ``ICmObject`` view from ``project.Object(hvo)``, so
+  gloss, definition, MSA, and semantic-domain helpers work when callers pass
+  an HVO int (promoted from #284 re-triage).
+
+- **`LocationOperations`` geo helpers fail loud instead of silent no-op** (#453).
+  ``ICmLocation`` / ``CmLocation`` has no coordinate or elevation fields in the
+  LCM; ``SetCoordinates`` and ``SetElevation`` now raise ``FP_ParameterError``
+  rather than opening a transaction that only bumps ``DateModified``. Reads
+  return ``None`` without probing phantom ``DateOfEvent`` / ``Elevation``
+  members.
 
 ### Added
 
