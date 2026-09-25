@@ -567,9 +567,10 @@ class MorphRuleOperations(BaseOperations):
                 with self._TransactionCM("Delete compound rule"):
                     morph_data.CompoundRulesOS.Remove(rule)
         elif class_name == "MoInflAffixTemplate":
-            # Template is owned by a PartOfSpeech
-            owner = self._GetObject(rule.Owner.Hvo)
-            if hasattr(owner, "AffixTemplatesOS"):
+            # AffixTemplatesOS lives on IPartOfSpeech, not on the base
+            # ICmObject returned from .Owner / _GetObject(Hvo). (issue #467)
+            owner = self._GetTypedOwner(rule)
+            if owner is not None and hasattr(owner, "AffixTemplatesOS"):
                 with self._TransactionCM("Delete affix template"):
                     owner.AffixTemplatesOS.Remove(rule)
         elif class_name in ("MoAdhocProhibGr", "MoAdhocProhibMorph", "MoAdhocProhibAllomorph"):
@@ -980,7 +981,9 @@ class MorphRuleOperations(BaseOperations):
         with self._TransactionCM("Duplicate affix template"):
             duplicate = factory.Create()
 
-            owner = self._GetObject(source.Owner.Hvo)
+            owner = self._GetTypedOwner(source)
+            if owner is None:
+                raise FP_ParameterError("Affix template has no owning Part of Speech")
 
             if insert_after:
                 idx = owner.AffixTemplatesOS.IndexOf(source)

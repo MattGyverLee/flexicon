@@ -42,6 +42,7 @@ def _make_affix_template_fixture():
     project.writeEnabled = True
 
     owner = Mock()
+    owner.ClassName = "PartOfSpeech"
     owner.AffixTemplatesOS = Mock()
     owner.AffixTemplatesOS.IndexOf = Mock(return_value=0)
     owner.AffixTemplatesOS.Insert = Mock()
@@ -49,7 +50,7 @@ def _make_affix_template_fixture():
 
     source = Mock()
     source.ClassName = "MoInflAffixTemplate"
-    source.Owner = Mock(Hvo=555)
+    source.Owner = owner
     source.StratumRA = None
     source.PrefixSlotsRS = [Mock(name="slot1"), Mock(name="slot2")]
     source.SuffixSlotsRS = []

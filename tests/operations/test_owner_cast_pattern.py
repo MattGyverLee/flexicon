@@ -253,6 +253,18 @@ _SITES = [
         ("ConstChartRowOperations", "MoveTo"),
         "RowsOS",
     ),
+    (
+        "MorphRuleOperations.Delete (affix template)",
+        "flexicon.code.Grammar.MorphRuleOperations",
+        ("MorphRuleOperations", "Delete"),
+        "AffixTemplatesOS",
+    ),
+    (
+        "MorphRuleOperations.__DuplicateAffixTemplate",
+        "flexicon.code.Grammar.MorphRuleOperations",
+        ("MorphRuleOperations", "__DuplicateAffixTemplate"),
+        "AffixTemplatesOS",
+    ),
 ]
 
 
