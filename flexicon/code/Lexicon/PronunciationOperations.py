@@ -38,6 +38,7 @@ from ..FLExProject import (
 
 # Import string utilities
 from ..Shared.string_utils import normalize_text
+from ..lcm_casting import cast_to_concrete
 
 
 class PronunciationOperations(BaseOperations):
@@ -1026,8 +1027,8 @@ class PronunciationOperations(BaseOperations):
             ILexEntry: The resolved entry object.
         """
         if isinstance(entry_or_hvo, int):
-            return self.project.Object(entry_or_hvo)
-        return entry_or_hvo
+            return cast_to_concrete(self.project.Object(entry_or_hvo))
+        return cast_to_concrete(entry_or_hvo)
 
     def __GetPronunciationObject(self, pronunciation_or_hvo):
         """
@@ -1040,8 +1041,8 @@ class PronunciationOperations(BaseOperations):
             ILexPronunciation: The resolved pronunciation object.
         """
         if isinstance(pronunciation_or_hvo, int):
-            return self.project.Object(pronunciation_or_hvo)
-        return pronunciation_or_hvo
+            return cast_to_concrete(self.project.Object(pronunciation_or_hvo))
+        return cast_to_concrete(pronunciation_or_hvo)
 
     def __WSHandle(self, wsHandle):
         """

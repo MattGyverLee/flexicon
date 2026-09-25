@@ -24,6 +24,23 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   and related rule accessors work when callers pass an HVO int (promoted from
   #284 re-triage).
 
+- **``AllomorphOperations.__GetEntryObject`` casts to concrete** (#463).
+  HVO int callers no longer receive a bare ``ICmObject`` view from
+  ``project.Object(hvo)``, so ``GetAll(entry_hvo)`` and ``Create(entry_hvo, ...)``
+  can read ``LexemeFormOA`` and ``AlternateFormsOS`` (promoted from #284
+  re-triage).
+
+- **``PronunciationOperations`` HVO resolvers cast to concrete interfaces** (#459).
+  ``__GetPronunciationObject`` and ``__GetEntryObject`` no longer return a bare
+  ``ICmObject`` view from ``project.Object(hvo)``, so form, media, location, and
+  entry-collection helpers work when callers pass an HVO int (promoted from #284
+  re-triage).
+
+- **``ExampleOperations`` HVO resolvers cast to concrete interfaces** (#455).
+  ``__GetExampleObject`` and ``__GetSenseObject`` no longer return a bare
+  ``ICmObject`` view from ``project.Object(hvo)``, so publication helpers
+  that read ``DoNotPublishInRC`` work when callers pass an HVO int
+  (promoted from #284 re-triage).
 - **``LexSenseOperations`` HVO resolvers cast to concrete interfaces** (#457).
   ``__GetSenseObject``, ``__GetEntryObject``, and ``__GetSemanticDomainObject``
   no longer return a bare ``ICmObject`` view from ``project.Object(hvo)``, so
