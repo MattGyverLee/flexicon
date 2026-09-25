@@ -342,12 +342,11 @@ class ParagraphOperations(BaseOperations):
         if owner is None:
             raise FP_ParameterError("Paragraph has no valid owner text")
 
-        # Get parent IText — StText.Owner is the IText container.
-        # Cast via IText so ContentsOA and ParagraphsOS are accessible when
-        # the result is passed to InsertAt / Create.
-        parent_text = IText(owner.Owner) if owner.Owner is not None else None
-        if parent_text is None:
+        # StText -> IText (issue #517). Raw owner.Owner is ICmObject; route through
+        # __GetTextObject for #508 / #275 ClassName cast (same shape as #515).
+        if owner.Owner is None:
             raise FP_ParameterError("Cannot determine parent text for paragraph")
+        parent_text = self.__GetTextObject(owner.Owner)
 
         # Get source properties
         wsHandle = self.__WSHandle(None)
