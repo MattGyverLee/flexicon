@@ -150,7 +150,7 @@ class MorphRuleOperations(BaseOperations):
         use GetAllAdhocCoProhibitions() separately.
 
         Returns:
-            Generator[CompoundRule | AffixTemplate]: Each item is a
+            EnumerableWrapper[CompoundRule | AffixTemplate]: Each item is a
                 ``CompoundRule`` or ``AffixTemplate`` wrapper object (NOT a
                 raw ``IMoCompoundRule``/``IMoInflAffixTemplate``), yielded
                 from ``GetAllCompoundRules()`` then ``GetAllAffixTemplates()``.
