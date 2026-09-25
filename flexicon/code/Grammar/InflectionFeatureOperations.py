@@ -1571,8 +1571,8 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
             IMoInflClass: The resolved inflection class object.
         """
         if isinstance(ic_or_hvo, int):
-            return self.project.Object(ic_or_hvo)
-        return ic_or_hvo
+            return cast_to_concrete(self.project.Object(ic_or_hvo))
+        return cast_to_concrete(ic_or_hvo)
 
     def __ResolveFeatureStructure(self, fs_or_hvo):
         """
@@ -1585,8 +1585,8 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
             IFsFeatStruc: The resolved feature structure object.
         """
         if isinstance(fs_or_hvo, int):
-            return self.project.Object(fs_or_hvo)
-        return fs_or_hvo
+            return cast_to_concrete(self.project.Object(fs_or_hvo))
+        return cast_to_concrete(fs_or_hvo)
 
     def __ResolveFeature(self, feature_or_hvo):
         """
@@ -1599,8 +1599,8 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
             IFsFeatureDefn: The resolved feature definition object.
         """
         if isinstance(feature_or_hvo, int):
-            return self.project.Object(feature_or_hvo)
-        return feature_or_hvo
+            return cast_to_concrete(self.project.Object(feature_or_hvo))
+        return cast_to_concrete(feature_or_hvo)
 
     def __ResolveFeatureSystem(self, fs_or_hvo):
         """
@@ -1613,8 +1613,8 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
             IFsFeatureSystem: The resolved feature system object.
         """
         if isinstance(fs_or_hvo, int):
-            return self.project.Object(fs_or_hvo)
-        return fs_or_hvo
+            return cast_to_concrete(self.project.Object(fs_or_hvo))
+        return cast_to_concrete(fs_or_hvo)
 
     # ========== SYNC INTEGRATION METHODS ==========
 

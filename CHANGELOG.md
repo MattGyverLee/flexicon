@@ -18,6 +18,12 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **``InflectionFeatureOperations`` HVO resolvers cast to concrete interfaces** (#486).
+  ``__ResolveInflectionClass``, ``__ResolveFeatureStructure``, ``__ResolveFeature``,
+  and ``__ResolveFeatureSystem`` no longer return a bare ``ICmObject`` view from
+  ``project.Object(hvo)``, so inflection-class name helpers and feature read paths
+  work when callers pass an HVO int (promoted from #284 re-triage).
+
 - **``PhonologicalRuleOperations.__ResolveObject`` casts to concrete** (#461).
   HVO int callers no longer receive a bare ``ICmObject`` view from
   ``project.Object(hvo)``, so ``GetName``, ``SetName``, ``GetDescription``,
