@@ -483,11 +483,12 @@ class PronunciationOperations(BaseOperations):
         if len(pronunciation_list) != current_count:
             raise FP_ParameterError(f"Pronunciation list must contain all {current_count} pronunciations")
 
-        # Clear and re-add in new order
+        pronunciations = [
+            self.__GetPronunciationObject(pron) for pron in pronunciation_list
+        ]
+
         with self._TransactionCM("Reorder pronunciations"):
-            entry.PronunciationsOS.Clear()
-            for pron in pronunciation_list:
-                entry.PronunciationsOS.Add(pron)
+            self._ApplySequenceOrder(entry.PronunciationsOS, pronunciations)
 
     # --- Form Management ---
 

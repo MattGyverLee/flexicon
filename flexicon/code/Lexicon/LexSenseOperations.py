@@ -859,13 +859,12 @@ class LexSenseOperations(BaseOperations):
             sense = self.__GetSenseObject(sense_or_hvo)
             resolved_senses.append(sense)
 
-        with self._TransactionCM("Reorder senses"):
-            # Clear current senses
-            entry.SensesOS.Clear()
+        ordered_set = set(resolved_senses)
+        tail = [s for s in entry.SensesOS if s not in ordered_set]
+        desired_order = resolved_senses + tail
 
-            # Add in new order
-            for sense in resolved_senses:
-                entry.SensesOS.Add(sense)
+        with self._TransactionCM("Reorder senses"):
+            self._ApplySequenceOrder(entry.SensesOS, desired_order)
 
     # --- Lookup ---
 

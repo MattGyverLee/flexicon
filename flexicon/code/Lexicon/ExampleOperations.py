@@ -705,10 +705,7 @@ class ExampleOperations(BaseOperations):
             raise FP_ParameterError("Example list must contain exactly the same examples as the sense")
 
         with self._TransactionCM("Reorder examples"):
-            # Clear and re-add in new order
-            sense.ExamplesOS.Clear()
-            for example in examples:
-                sense.ExamplesOS.Add(example)
+            self._ApplySequenceOrder(sense.ExamplesOS, examples)
 
     @OperationsMethod
     def GetExample(self, example_or_hvo, wsHandle=None):
