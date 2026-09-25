@@ -96,12 +96,28 @@ class ParagraphOperations(BaseOperations):
         """
         self._ValidateParam(text_or_hvo, "text_or_hvo")
 
+        # Casts by ClassName BEFORE returning (issue #508, generalising
+        # #275 / TextOperations.__GetTextObject): self.project.Object()
+        # returns a bare ICmObject, so isinstance(obj, IText) is False even
+        # for a genuine text and the pass-through branch must not return an
+        # uncast view (Defect 1 from #275).
         if isinstance(text_or_hvo, int):
+            obj = self.project.Object(text_or_hvo)
+            if getattr(obj, "ClassName", None) == "Text":
+                try:
+                    return IText(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IText):
+                return obj
+            raise FP_ParameterError(
+                f"HVO {text_or_hvo} does not refer to a text object"
+            )
+        if getattr(text_or_hvo, "ClassName", None) == "Text":
             try:
-                obj = self.project.Object(text_or_hvo)
-                return IText(obj)
-            except (AttributeError, System.InvalidCastException) as e:
-                raise FP_ParameterError(f"Invalid text HVO: {text_or_hvo}") from e
+                return IText(text_or_hvo)
+            except Exception:
+                pass
         return text_or_hvo
 
     def __GetParagraphObject(self, para_or_hvo):
