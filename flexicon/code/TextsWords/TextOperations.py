@@ -364,7 +364,9 @@ class TextOperations(BaseOperations):
             - DateTime properties: DateCreated, DateModified
             - Reference Collection properties: GenresRC (GUIDs)
             - Owned-container properties: media_uris (list of
-              {"uri": str, "file_guid": str|None} dicts, R4)
+              {"uri": str, "file_guid": str|None} dicts, R4). ``file_guid``
+              is always None on this LCM: ``ICmMediaURI`` exposes only
+              ``MediaURI`` (no ``MediaFileRA``; live reflection 2026-09-25)
             - Does NOT include owned sequences (paragraphs) - those are children
 
         R4 note: MediaFilesOA is on the concrete DomainImpl.Text, NOT on the

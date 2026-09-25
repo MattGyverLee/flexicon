@@ -36,6 +36,7 @@
       "ICmAnthroItemFactory",
       "ICmBaseAnnotation",
       "ICmBaseAnnotationFactory",
+      "ICmBaseAnnotationRepository",
       "ICmCustomItem",
       "ICmDomainQ",
       "ICmDomainQFactory",
@@ -96,6 +97,7 @@
       "IFsFeatStrucFactory",
       "IFsFeatStrucType",
       "IFsFeatStrucTypeFactory",
+      "IFsFeatureSystem",
       "IFsSymFeatVal",
       "IFsSymFeatValFactory",
       "ILangProject",
@@ -189,6 +191,7 @@
       "IReversalIndexRepository",
       "IRnGenericRec",
       "IRnGenericRecFactory",
+      "IRnResearchNbk",
       "IScrBook",
       "IScrBookAnnotations",
       "IScrBookAnnotationsFactory",
@@ -246,6 +249,7 @@
       "Opinions",
       "PartOfSpeechTags",
       "ReversalIndexEntryTags",
+      "ScrDraftType",
       "SpecialWritingSystemCodes",
       "TextTags",
       "WfiAnalysisTags",
@@ -286,6 +290,7 @@
     "SIL.LCModel.Utils": [
       "IThreadedProgress",
       "ReflectionHelper",
+      "SingleThreadedSynchronizeInvoke",
       "WorkerThreadException"
     ],
     "SIL.WritingSystems": [
@@ -670,6 +675,7 @@
   ],
   "repositories": [
     "ICmAnnotationDefnRepository",
+    "ICmBaseAnnotationRepository",
     "ICmFileRepository",
     "ICmObjectRepository",
     "ICmPersonRepository",
@@ -726,6 +732,7 @@
     "IFsFeatDefn",
     "IFsFeatStruc",
     "IFsFeatStrucType",
+    "IFsFeatureSystem",
     "IFsSymFeatVal",
     "IFwMetaDataCacheManaged",
     "ILangProject",
@@ -777,6 +784,7 @@
     "IReversalIndex",
     "IReversalIndexEntry",
     "IRnGenericRec",
+    "IRnResearchNbk",
     "IScrBook",
     "IScrBookAnnotations",
     "IScrDraft",
@@ -837,6 +845,8 @@
     "ReflectionHelper",
     "ReversalIndexEntryTags",
     "SandboxGenericMSA",
+    "ScrDraftType",
+    "SingleThreadedSynchronizeInvoke",
     "Sldr",
     "SpecialWritingSystemCodes",
     "StartupException",
@@ -863,6 +873,7 @@
           "TsStringUtils"
         ],
         "SIL.LCModel": [
+          "IFsClosedFeature",
           "IFsClosedValue",
           "IFsClosedValue",
           "IFsClosedValueFactory",
@@ -871,6 +882,7 @@
           "IFsComplexValue",
           "IFsComplexValueFactory",
           "IFsComplexValueFactory",
+          "IFsFeatDefn",
           "IFsFeatStruc",
           "IFsFeatStruc",
           "IFsFeatStrucFactory",
@@ -879,6 +891,8 @@
           "IFsFeatStrucFactory"
         ],
         "SIL.LCModel.Core.KernelInterfaces": [
+          "ITsString",
+          "ITsString",
           "ITsString"
         ]
       },
@@ -1275,6 +1289,34 @@
         }
       }
     },
+    "code/Grammar/affix_template.py": {
+      "imports": {
+        "SIL.LCModel": [
+          "IPartOfSpeech",
+          "PartOfSpeechTags"
+        ],
+        "SIL.LCModel.Core.KernelInterfaces": [
+          "ITsString",
+          "ITsString"
+        ]
+      },
+      "type_usage": {
+        "PartOfSpeechTags": {
+          "properties": [
+            "kClassId"
+          ],
+          "methods": []
+        }
+      }
+    },
+    "code/Grammar/compound_rule.py": {
+      "imports": {
+        "SIL.LCModel.Core.KernelInterfaces": [
+          "ITsString"
+        ]
+      },
+      "type_usage": {}
+    },
     "code/Grammar/EnvironmentOperations.py": {
       "imports": {
         "SIL.LCModel": [
@@ -1396,13 +1438,19 @@
         }
       }
     },
-    "code/Grammar/POSOperations.py": {
+    "code/Grammar/PhonemeOperations.py": {
       "imports": {
         "SIL.LCModel": [
-          "ILexEntryRepository",
-          "IMoInflAffixSlotFactory",
-          "IPartOfSpeech",
-          "IPartOfSpeechFactory"
+          "ICmObjectRepository",
+          "IFsClosedFeature",
+          "IFsClosedValue",
+          "IFsClosedValueFactory",
+          "IFsFeatStruc",
+          "IFsFeatStrucFactory",
+          "IPhCode",
+          "IPhCodeFactory",
+          "IPhPhoneme",
+          "IPhPhonemeFactory"
         ],
         "SIL.LCModel.Core.KernelInterfaces": [
           "ITsString"
@@ -1452,19 +1500,30 @@
         }
       }
     },
-    "code/Grammar/PhonemeOperations.py": {
+    "code/Grammar/phonological_rule.py": {
+      "imports": {
+        "SIL.LCModel.Core.KernelInterfaces": [
+          "ITsString"
+        ]
+      },
+      "type_usage": {}
+    },
+    "code/Grammar/PhonologicalRuleOperations.py": {
       "imports": {
         "SIL.LCModel": [
           "ICmObjectRepository",
-          "IFsClosedFeature",
-          "IFsClosedValue",
-          "IFsClosedValueFactory",
-          "IFsFeatStruc",
-          "IFsFeatStrucFactory",
-          "IPhCode",
-          "IPhCodeFactory",
-          "IPhPhoneme",
-          "IPhPhonemeFactory"
+          "IPhFeatureConstraint",
+          "IPhFeatureConstraintFactory",
+          "IPhIterationContextFactory",
+          "IPhRegularRuleFactory",
+          "IPhSegRuleRHSFactory",
+          "IPhSegmentRuleFactory",
+          "IPhSequenceContext",
+          "IPhSequenceContextFactory",
+          "IPhSimpleContextBdryFactory",
+          "IPhSimpleContextNC",
+          "IPhSimpleContextNCFactory",
+          "IPhSimpleContextSegFactory"
         ],
         "SIL.LCModel.Core.KernelInterfaces": [
           "ITsString"
@@ -1484,22 +1543,13 @@
         }
       }
     },
-    "code/Grammar/PhonologicalRuleOperations.py": {
+    "code/Grammar/POSOperations.py": {
       "imports": {
         "SIL.LCModel": [
-          "ICmObjectRepository",
-          "IPhFeatureConstraint",
-          "IPhFeatureConstraintFactory",
-          "IPhIterationContextFactory",
-          "IPhRegularRuleFactory",
-          "IPhSegRuleRHSFactory",
-          "IPhSegmentRuleFactory",
-          "IPhSequenceContext",
-          "IPhSequenceContextFactory",
-          "IPhSimpleContextBdryFactory",
-          "IPhSimpleContextNC",
-          "IPhSimpleContextNCFactory",
-          "IPhSimpleContextSegFactory"
+          "ILexEntryRepository",
+          "IMoInflAffixSlotFactory",
+          "IPartOfSpeech",
+          "IPartOfSpeechFactory"
         ],
         "SIL.LCModel.Core.KernelInterfaces": [
           "ITsString"
@@ -1543,37 +1593,130 @@
         }
       }
     },
-    "code/Grammar/affix_template.py": {
+    "code/headless_ui.py": {
       "imports": {
         "SIL.LCModel": [
-          "IPartOfSpeech",
-          "PartOfSpeechTags"
+          "FileSelection",
+          "ILcmUI",
+          "MessageType",
+          "YesNoCancel"
         ],
-        "SIL.LCModel.Core.KernelInterfaces": [
-          "ITsString",
-          "ITsString"
+        "SIL.LCModel.Utils": [
+          "IThreadedProgress",
+          "SingleThreadedSynchronizeInvoke"
         ]
       },
       "type_usage": {
-        "PartOfSpeechTags": {
+        "MessageType": {
           "properties": [
-            "kClassId"
+            "Error",
+            "Warning"
+          ],
+          "methods": []
+        },
+        "FileSelection": {
+          "properties": [
+            "OkKeepNewer"
+          ],
+          "methods": []
+        },
+        "YesNoCancel": {
+          "properties": [
+            "OkNo"
           ],
           "methods": []
         }
       }
     },
-    "code/Grammar/compound_rule.py": {
+    "code/lcm_casting.py": {
       "imports": {
-        "SIL.LCModel.Core.KernelInterfaces": [
-          "ITsString"
+        "SIL.LCModel": [
+          "IChkTerm",
+          "ICmAnnotationDefn",
+          "ICmAnthroItem",
+          "ICmBaseAnnotation",
+          "ICmCustomItem",
+          "ICmLocation",
+          "ICmPerson",
+          "ICmPossibility",
+          "ICmPossibilityList",
+          "ICmSemanticDomain",
+          "IConstChartClauseMarker",
+          "IConstChartMovedTextMarker",
+          "IConstChartRow",
+          "IConstChartTag",
+          "IConstChartWordGroup",
+          "IConstituentChartCellPart",
+          "IDsConstChart",
+          "IFsClosedFeature",
+          "IFsClosedValue",
+          "IFsComplexFeature",
+          "IFsComplexValue",
+          "IFsFeatStruc",
+          "IFsFeatureSystem",
+          "ILangProject",
+          "ILexEntry",
+          "ILexEntryInflType",
+          "ILexEntryRef",
+          "ILexEntryType",
+          "ILexEtymology",
+          "ILexExampleSentence",
+          "ILexPronunciation",
+          "ILexRefType",
+          "ILexReference",
+          "ILexSense",
+          "IMoAdhocProhibGr",
+          "IMoAffixAllomorph",
+          "IMoAffixForm",
+          "IMoAlloAdhocProhib",
+          "IMoDerivAffMsa",
+          "IMoEndoCompound",
+          "IMoExoCompound",
+          "IMoInflAffMsa",
+          "IMoInflAffixTemplate",
+          "IMoInflClass",
+          "IMoMorphAdhocProhib",
+          "IMoMorphType",
+          "IMoStemAllomorph",
+          "IMoStemMsa",
+          "IMoUnclassifiedAffixMsa",
+          "IPartOfSpeech",
+          "IPhCode",
+          "IPhFeatureConstraint",
+          "IPhMetathesisRule",
+          "IPhMetathesisRuleFactory",
+          "IPhNCFeatures",
+          "IPhNCSegments",
+          "IPhPhoneme",
+          "IPhRegularRule",
+          "IPhRegularRuleFactory",
+          "IPhSegRuleRHS",
+          "IPhSegRuleRHSFactory",
+          "IPhSimpleContextNC",
+          "IPhSimpleContextNCFactory",
+          "IPhSimpleContextSeg",
+          "IPhSimpleContextSegFactory",
+          "IRnGenericRec",
+          "IRnResearchNbk",
+          "IScrBook",
+          "IScrScriptureNote",
+          "IScrSection",
+          "IScrTxtPara",
+          "ISegment",
+          "IStText",
+          "IStTxtPara",
+          "IText",
+          "IWfiAnalysis",
+          "IWfiMorphBundle",
+          "IWfiWordform"
         ]
       },
       "type_usage": {}
     },
-    "code/Grammar/phonological_rule.py": {
+    "code/Lexicon/allomorph.py": {
       "imports": {
         "SIL.LCModel.Core.KernelInterfaces": [
+          "ITsString",
           "ITsString"
         ]
       },
@@ -1583,6 +1726,7 @@
       "imports": {
         "SIL.LCModel": [
           "ILexEntry",
+          "ILexEntryRepository",
           "IMoAffixAllomorph",
           "IMoAffixAllomorph",
           "IMoAffixAllomorphFactory",
@@ -1922,15 +2066,6 @@
         }
       }
     },
-    "code/Lexicon/allomorph.py": {
-      "imports": {
-        "SIL.LCModel.Core.KernelInterfaces": [
-          "ITsString",
-          "ITsString"
-        ]
-      },
-      "type_usage": {}
-    },
     "code/Lists/AgentOperations.py": {
       "imports": {
         "SIL.LCModel": [
@@ -1998,6 +2133,29 @@
             "kClassId"
           ],
           "methods": []
+        }
+      }
+    },
+    "code/Lists/possibility_item_base.py": {
+      "imports": {
+        "SIL.LCModel": [
+          "ICmPossibilityFactory"
+        ],
+        "SIL.LCModel.Core.KernelInterfaces": [
+          "ITsString"
+        ],
+        "SIL.LCModel.Core.Text": [
+          "TsStringUtils"
+        ]
+      },
+      "type_usage": {
+        "TsStringUtils": {
+          "properties": [
+            "MakeString"
+          ],
+          "methods": [
+            "MakeString"
+          ]
         }
       }
     },
@@ -2076,28 +2234,17 @@
         }
       }
     },
-    "code/Lists/possibility_item_base.py": {
+    "code/Notebook/annotation.py": {
       "imports": {
-        "SIL.LCModel": [
-          "ICmPossibilityFactory"
-        ],
         "SIL.LCModel.Core.KernelInterfaces": [
           "ITsString"
         ],
-        "SIL.LCModel.Core.Text": [
-          "TsStringUtils"
+        "SIL.LCModel": [
+          "ICmBaseAnnotation",
+          "IScrScriptureNote"
         ]
       },
-      "type_usage": {
-        "TsStringUtils": {
-          "properties": [
-            "MakeString"
-          ],
-          "methods": [
-            "MakeString"
-          ]
-        }
-      }
+      "type_usage": {}
     },
     "code/Notebook/AnthropologyOperations.py": {
       "imports": {
@@ -2172,9 +2319,6 @@
         ],
         "SIL.LCModel.Core.Text": [
           "TsStringUtils"
-        ],
-        "SIL.LCModel.Core.Cellar": [
-          "GenDate"
         ]
       },
       "type_usage": {
@@ -2195,6 +2339,7 @@
           "ICmAnnotationDefn",
           "ICmBaseAnnotation",
           "ICmBaseAnnotationFactory",
+          "ICmBaseAnnotationRepository",
           "ICmPossibility",
           "IScrScriptureNote",
           "IScrScriptureNoteFactory"
@@ -2245,18 +2390,6 @@
           ]
         }
       }
-    },
-    "code/Notebook/annotation.py": {
-      "imports": {
-        "SIL.LCModel.Core.KernelInterfaces": [
-          "ITsString"
-        ],
-        "SIL.LCModel": [
-          "ICmBaseAnnotation",
-          "IScrScriptureNote"
-        ]
-      },
-      "type_usage": {}
     },
     "code/Reversal/ReversalIndexEntryOperations.py": {
       "imports": {
@@ -2353,7 +2486,8 @@
         "SIL.LCModel": [
           "IScrDraft",
           "IScrDraftFactory",
-          "IScripture"
+          "IScripture",
+          "ScrDraftType"
         ]
       },
       "type_usage": {}
@@ -2447,6 +2581,29 @@
         }
       }
     },
+    "code/Shared/catalog_backed.py": {
+      "imports": {
+        "SIL.LCModel.Core.KernelInterfaces": [
+          "ITsString"
+        ],
+        "SIL.LCModel.Core.Text": [
+          "TsStringUtils"
+        ],
+        "SIL.LCModel.Application.ApplicationServices": [
+          "XmlList"
+        ]
+      },
+      "type_usage": {
+        "TsStringUtils": {
+          "properties": [
+            "MakeString"
+          ],
+          "methods": [
+            "MakeString"
+          ]
+        }
+      }
+    },
     "code/Shared/FilterOperations.py": {
       "imports": {
         "SIL.LCModel": [
@@ -2466,6 +2623,21 @@
         ]
       },
       "type_usage": {}
+    },
+    "code/Shared/gendate_utils.py": {
+      "imports": {
+        "SIL.LCModel.Core.Cellar": [
+          "GenDate"
+        ]
+      },
+      "type_usage": {
+        "GenDate": {
+          "properties": [
+            "PrecisionType"
+          ],
+          "methods": []
+        }
+      }
     },
     "code/Shared/MediaOperations.py": {
       "imports": {
@@ -2491,44 +2663,6 @@
           "methods": [
             "MakeString"
           ]
-        }
-      }
-    },
-    "code/Shared/catalog_backed.py": {
-      "imports": {
-        "SIL.LCModel.Core.KernelInterfaces": [
-          "ITsString"
-        ],
-        "SIL.LCModel.Core.Text": [
-          "TsStringUtils"
-        ],
-        "SIL.LCModel.Application.ApplicationServices": [
-          "XmlList"
-        ]
-      },
-      "type_usage": {
-        "TsStringUtils": {
-          "properties": [
-            "MakeString"
-          ],
-          "methods": [
-            "MakeString"
-          ]
-        }
-      }
-    },
-    "code/Shared/gendate_utils.py": {
-      "imports": {
-        "SIL.LCModel.Core.Cellar": [
-          "GenDate"
-        ]
-      },
-      "type_usage": {
-        "GenDate": {
-          "properties": [
-            "PrecisionType"
-          ],
-          "methods": []
         }
       }
     },
@@ -2689,6 +2823,15 @@
         }
       }
     },
+    "code/System/phonological_context.py": {
+      "imports": {
+        "SIL.LCModel": [
+          "IPhNaturalClass",
+          "IPhPhoneme"
+        ]
+      },
+      "type_usage": {}
+    },
     "code/System/ProjectSettingsOperations.py": {
       "imports": {
         "SIL.LCModel": [
@@ -2730,15 +2873,6 @@
         ],
         "SIL.WritingSystems": [
           "WritingSystemDefinition"
-        ]
-      },
-      "type_usage": {}
-    },
-    "code/System/phonological_context.py": {
-      "imports": {
-        "SIL.LCModel": [
-          "IPhNaturalClass",
-          "IPhPhoneme"
         ]
       },
       "type_usage": {}
@@ -2981,109 +3115,6 @@
         }
       }
     },
-    "code/headless_ui.py": {
-      "imports": {
-        "SIL.LCModel": [
-          "FileSelection",
-          "ILcmUI",
-          "MessageType",
-          "YesNoCancel"
-        ],
-        "SIL.LCModel.Utils": [
-          "IThreadedProgress"
-        ]
-      },
-      "type_usage": {
-        "MessageType": {
-          "properties": [
-            "Error",
-            "Warning"
-          ],
-          "methods": []
-        },
-        "FileSelection": {
-          "properties": [
-            "OkKeepNewer"
-          ],
-          "methods": []
-        },
-        "YesNoCancel": {
-          "properties": [
-            "OkNo"
-          ],
-          "methods": []
-        }
-      }
-    },
-    "code/lcm_casting.py": {
-      "imports": {
-        "SIL.LCModel": [
-          "IChkTerm",
-          "ICmAnnotationDefn",
-          "ICmAnthroItem",
-          "ICmCustomItem",
-          "ICmLocation",
-          "ICmPerson",
-          "ICmPossibility",
-          "ICmSemanticDomain",
-          "IConstChartClauseMarker",
-          "IConstChartMovedTextMarker",
-          "IConstChartRow",
-          "IConstChartTag",
-          "IConstChartWordGroup",
-          "IConstituentChartCellPart",
-          "IDsConstChart",
-          "IFsClosedValue",
-          "IFsComplexFeature",
-          "IFsComplexValue",
-          "IFsFeatStruc",
-          "ILangProject",
-          "ILexEntry",
-          "ILexEntryInflType",
-          "ILexEntryRef",
-          "ILexEntryType",
-          "ILexRefType",
-          "ILexSense",
-          "IMoAdhocProhibGr",
-          "IMoAffixAllomorph",
-          "IMoAffixForm",
-          "IMoAlloAdhocProhib",
-          "IMoDerivAffMsa",
-          "IMoEndoCompound",
-          "IMoExoCompound",
-          "IMoInflAffMsa",
-          "IMoInflAffixTemplate",
-          "IMoInflClass",
-          "IMoMorphAdhocProhib",
-          "IMoMorphType",
-          "IMoStemAllomorph",
-          "IMoStemMsa",
-          "IMoUnclassifiedAffixMsa",
-          "IPartOfSpeech",
-          "IPhMetathesisRule",
-          "IPhMetathesisRuleFactory",
-          "IPhNCFeatures",
-          "IPhNCSegments",
-          "IPhPhoneme",
-          "IPhRegularRule",
-          "IPhRegularRuleFactory",
-          "IPhSegRuleRHS",
-          "IPhSegRuleRHSFactory",
-          "IPhSimpleContextNC",
-          "IPhSimpleContextNCFactory",
-          "IPhSimpleContextSeg",
-          "IPhSimpleContextSegFactory",
-          "IRnGenericRec",
-          "IStText",
-          "IStTxtPara",
-          "IText",
-          "IWfiAnalysis",
-          "IWfiMorphBundle",
-          "IWfiWordform"
-        ]
-      },
-      "type_usage": {}
-    },
     "code/transaction.py": {
       "imports": {
         "SIL.LCModel.Infrastructure": [
@@ -3159,12 +3190,12 @@
   },
   "summary": {
     "total_files_with_lcm_deps": 81,
-    "total_unique_imports": 264,
+    "total_unique_imports": 269,
     "total_modules": 14,
     "total_factories": 83,
-    "total_repositories": 17,
-    "total_interfaces": 110,
-    "total_classes": 54,
+    "total_repositories": 18,
+    "total_interfaces": 112,
+    "total_classes": 56,
     "total_type_usages_tracked": 36
   }
 }

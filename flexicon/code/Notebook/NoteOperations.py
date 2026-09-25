@@ -18,6 +18,7 @@ from SIL.LCModel import (
     ICmAgent,
     ICmBaseAnnotation,
     ICmBaseAnnotationFactory,
+    ICmBaseAnnotationRepository,
     ICmAnnotationDefn,
     ICmPossibility,
 )
@@ -100,19 +101,23 @@ class NoteOperations(BaseOperations):
         live in ``LangProject.AnnotationsOC`` with ``BeginObjectRA`` pointing at
         the parent note. ``IScrScriptureNote`` uses ``ResponsesOS``.
         """
-        try:
-            scr_parent = IScrScriptureNote(parent_note)
-            if insert_after and after_source is not None:
-                idx = scr_parent.ResponsesOS.IndexOf(after_source)
-                scr_parent.ResponsesOS.Insert(idx + 1, reply)
-            else:
-                scr_parent.ResponsesOS.Add(reply)
-            return
-        except Exception:
-            pass
+        # Reached only from inside a caller's bracket (Duplicate / AddReply),
+        # so this transaction joins that one (nesting-aware per B1). Stated
+        # anyway so the site is grep-auditable per D5.
+        with self._TransactionCM("Attach note reply"):
+            try:
+                scr_parent = IScrScriptureNote(parent_note)
+                if insert_after and after_source is not None:
+                    idx = scr_parent.ResponsesOS.IndexOf(after_source)
+                    scr_parent.ResponsesOS.Insert(idx + 1, reply)
+                else:
+                    scr_parent.ResponsesOS.Add(reply)
+                return
+            except Exception:
+                pass
 
-        self.project.lp.AnnotationsOC.Add(reply)
-        reply.BeginObjectRA = parent_note
+            self.project.lp.AnnotationsOC.Add(reply)
+            reply.BeginObjectRA = parent_note
 
     def __IterDirectReplies(self, note):
         """Yield direct reply notes for ``note`` (issue #323)."""
@@ -124,9 +129,12 @@ class NoteOperations(BaseOperations):
         except Exception:
             pass
 
+        # The repository is its own service; GetService(ICmBaseAnnotation)
+        # raises ActivationException (no instance registered for an object
+        # interface). Live-proven 2026-09-25.
         repos = self.project.project.ServiceLocator.GetService(
-            ICmBaseAnnotation
-        ).Repository
+            ICmBaseAnnotationRepository
+        )
         note_hvo = note.Hvo
         for ann in repos.AllInstances():
             if ann.Hvo == note_hvo:
@@ -173,7 +181,7 @@ class NoteOperations(BaseOperations):
         self._ValidateParam(owner_object, "owner_object")
 
         # Get the annotation repository
-        anno_repos = self.project.project.ServiceLocator.GetService(ICmBaseAnnotation).Repository
+        anno_repos = self.project.project.ServiceLocator.GetService(ICmBaseAnnotationRepository)
 
         # Find all annotations for this object
         for annotation in anno_repos.AllInstances():

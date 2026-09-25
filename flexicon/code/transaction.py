@@ -273,7 +273,9 @@ class _FLExTransaction:
             return self
 
         if self._mark_fn is None:
-            if getattr(self._project, "_strict_transactions", False):
+            # ``is True``: OpenProject stores a real bool, and a Mock test
+            # double would otherwise auto-create a truthy attribute.
+            if getattr(self._project, "_strict_transactions", False) is True:
                 raise FP_TransactionError(
                     "Transaction rollback API is unavailable (mark_fn is "
                     "None) but OpenProject(..., strict_transactions=True) "

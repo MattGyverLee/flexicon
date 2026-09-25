@@ -6,7 +6,8 @@
 #   Copyright 2026
 #
 
-from types import SimpleNamespace
+import sys
+from types import ModuleType, SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -22,7 +23,19 @@ class _NamedLcm:
 
 
 @pytest.fixture
-def ops():
+def ops(monkeypatch):
+    # The name resolvers import IFsClosedFeature / IFsFeatDefn / ITsString
+    # at call time; with real pythonnet loaded those casts reject the
+    # SimpleNamespace fakes below. Swap in identity-cast stub modules via
+    # monkeypatch so sys.modules is restored after each test.
+    identity = lambda obj: obj
+    lcmodel = ModuleType("SIL.LCModel")
+    lcmodel.IFsClosedFeature = identity
+    lcmodel.IFsFeatDefn = identity
+    kernel = ModuleType("SIL.LCModel.Core.KernelInterfaces")
+    kernel.ITsString = identity
+    monkeypatch.setitem(sys.modules, "SIL.LCModel", lcmodel)
+    monkeypatch.setitem(sys.modules, "SIL.LCModel.Core.KernelInterfaces", kernel)
     return BaseOperations(MagicMock())
 
 
@@ -35,7 +48,7 @@ class TestGuidVsNameRouting:
 
     def test_name_operand_requires_domain(self, ops):
         with pytest.raises(FP_ParameterError, match="owner"):
-            ops.__ResolveFeatStrucOperand("person", domain=None, operand_role="feature")
+            ops._BaseOperations__ResolveFeatStrucOperand("person", domain=None, operand_role="feature")
 
 
 class TestFeatStrucOperandDomain:

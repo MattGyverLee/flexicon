@@ -512,6 +512,63 @@ def _ensure_interfaces() -> None:
         if _iface is not None:
             _interface_cache[_class_name] = _iface
 
+    # HVO-resolver targets (4.10.0 release gate). The #455-#508 resolver
+    # fixes route `project.Object(hvo)` through cast_to_concrete(), but
+    # these ClassNames were never registered, so the cast was a total-
+    # function miss and every resolver below still returned a bare
+    # ICmObject -- caught only by the live HVO gates. The set was taken
+    # empirically from cache misses logged across the full live suite,
+    # plus a static sweep of every cast_to_concrete(self.project.Object())
+    # resolver's documented return interface.
+    try:
+        from SIL.LCModel import (
+            ICmPossibilityList,
+            ICmBaseAnnotation,
+            IFsClosedFeature,
+            IFsFeatureSystem,
+            ILexExampleSentence,
+            ILexPronunciation,
+            ILexReference,
+            ILexEtymology,
+            IPhCode,
+            IPhFeatureConstraint,
+            IRnResearchNbk,
+            IScrBook,
+            IScrSection,
+            IScrTxtPara,
+            IScrScriptureNote,
+            ISegment,
+        )
+    except ImportError:
+        ICmPossibilityList = ICmBaseAnnotation = None
+        IFsClosedFeature = IFsFeatureSystem = None
+        ILexExampleSentence = ILexPronunciation = ILexReference = None
+        ILexEtymology = IPhCode = IPhFeatureConstraint = None
+        IRnResearchNbk = None
+        IScrBook = IScrSection = IScrTxtPara = IScrScriptureNote = None
+        ISegment = None
+
+    for _class_name, _iface in (
+        ("CmPossibilityList", ICmPossibilityList),
+        ("CmBaseAnnotation", ICmBaseAnnotation),
+        ("FsClosedFeature", IFsClosedFeature),
+        ("FsFeatureSystem", IFsFeatureSystem),
+        ("LexExampleSentence", ILexExampleSentence),
+        ("LexPronunciation", ILexPronunciation),
+        ("LexReference", ILexReference),
+        ("LexEtymology", ILexEtymology),
+        ("PhCode", IPhCode),
+        ("PhFeatureConstraint", IPhFeatureConstraint),
+        ("RnResearchNbk", IRnResearchNbk),
+        ("ScrBook", IScrBook),
+        ("ScrSection", IScrSection),
+        ("ScrTxtPara", IScrTxtPara),
+        ("ScrScriptureNote", IScrScriptureNote),
+        ("Segment", ISegment),
+    ):
+        if _iface is not None:
+            _interface_cache[_class_name] = _iface
+
     _interfaces_loaded = True
 
 
