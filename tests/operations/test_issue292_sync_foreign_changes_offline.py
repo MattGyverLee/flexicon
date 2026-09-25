@@ -67,14 +67,14 @@ class TestIssue292SyncForeignChangesOffline:
     def test_undoable_mode_refused(self):
         FLExProject, _, _, FP_TransactionError = _import_flexproject()
         project = _bare_project(FLExProject, undoable=True)
-        project.CurrentDepth = MagicMock(return_value=1)
+        project.project.ActionHandlerAccessor.CurrentDepth = 1  # CurrentDepth is a read-only property (#243)
         with pytest.raises(FP_TransactionError, match="undoable=False"):
             project.SyncForeignChanges()
 
     def test_depth_zero_refused(self):
         FLExProject, _, _, FP_TransactionError = _import_flexproject()
         project = _bare_project(FLExProject, undoable=False)
-        project.CurrentDepth = MagicMock(return_value=0)
+        project.project.ActionHandlerAccessor.CurrentDepth = 0  # CurrentDepth is a read-only property (#243)
         project.HasOpenSessionTask = MagicMock(return_value=False)
         with pytest.raises(FP_TransactionError, match="SaveChanges"):
             project.SyncForeignChanges()
@@ -82,7 +82,7 @@ class TestIssue292SyncForeignChangesOffline:
     def test_end_save_begin_sequence_at_depth_one(self):
         FLExProject, _, _, _ = _import_flexproject()
         project = _bare_project(FLExProject, undoable=False)
-        project.CurrentDepth = MagicMock(return_value=1)
+        project.project.ActionHandlerAccessor.CurrentDepth = 1  # CurrentDepth is a read-only property (#243)
         project.HasOpenSessionTask = MagicMock(return_value=True)
         mock_usm = MagicMock()
         project.ObjectRepository = MagicMock(return_value=mock_usm)
@@ -107,7 +107,7 @@ class TestIssue292SyncForeignChangesOffline:
     def test_reopens_envelope_when_save_raises(self):
         FLExProject, _, _, _ = _import_flexproject()
         project = _bare_project(FLExProject, undoable=False)
-        project.CurrentDepth = MagicMock(return_value=1)
+        project.project.ActionHandlerAccessor.CurrentDepth = 1  # CurrentDepth is a read-only property (#243)
         project.HasOpenSessionTask = MagicMock(return_value=True)
         mock_usm = MagicMock()
         mock_usm.Save.side_effect = RuntimeError("save failed")

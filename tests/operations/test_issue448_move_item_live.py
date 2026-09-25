@@ -31,15 +31,17 @@ def test_move_pos_subcategory_to_top_and_back(target_sandbox):
         pos_list,
         f"{TEST_PREFIX}Parent",
         "en",
-        abbreviation=f"{TEST_PREFIX}P",
     )
+    # CreateItem takes no abbreviation; set it separately.
+    pl.SetItemAbbreviation(parent, f"{TEST_PREFIX}P", "en")
     child = pl.CreateItem(
         pos_list,
         f"{TEST_PREFIX}Child",
         "en",
-        abbreviation=f"{TEST_PREFIX}C",
         parent=parent,
     )
+    # CreateItem takes no abbreviation; set it separately.
+    pl.SetItemAbbreviation(child, f"{TEST_PREFIX}C", "en")
     child_guid = pl.GetItemGuid(child)
 
     try:

@@ -1590,7 +1590,10 @@ class PossibilityListOperations(BaseOperations):
             return False
         if getattr(owner, "ClassName", None) == "CmPossibilityList":
             return False
-        return hasattr(owner, "SubPossibilitiesOS")
+        # ``.Owner`` is a bare ICmObject view with no SubPossibilitiesOS, so
+        # probe the concrete interface (live-proven 2026-09-25: without the
+        # cast GetParentItem always returned None).
+        return hasattr(cast_to_concrete(owner), "SubPossibilitiesOS")
 
     def __GetListOwner(self, item):
         """

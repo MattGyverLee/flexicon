@@ -25,6 +25,16 @@ class TestIssue231RemoveOrphanedDuplicateLexemeLive:
     reaches a real AlternateFormsOS on a sandbox copy of Target.
     """
 
+    @pytest.mark.skip(
+        reason=(
+            "Setup cannot be built through the LCM API: AlternateFormsOS is an "
+            "owning sequence, so AlternateFormsOS.Add(entry.LexemeFormOA) MOVES "
+            "the lexeme (LexemeFormOA becomes None) instead of duplicating it. "
+            "Live-proven on a Target sandbox 2026-09-25 (before: lexeme 10443, "
+            "alts []; after: LexemeFormOA None, alts [10443]). Needs a fixture "
+            "carrying the #231 state from a real project file."
+        )
+    )
     @pytest.mark.live_phase("AllomorphOperations", "modify")
     def test_remove_duplicate_lexeme_via_entry_hvo_int(self, target_sandbox):
         sandbox = target_sandbox

@@ -11,6 +11,8 @@
 #   Copyright 2025
 #
 
+import warnings
+
 # Import BaseOperations parent class
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key
@@ -26,6 +28,11 @@ from SIL.LCModel import (
 from ..FLExProject import (
     FP_ParameterError,
 )
+
+# Draft-type labels with no LCM ScrDraftType member. Accepted as a silent
+# no-op before 4.10.0; now warn and create a saved version. Removed in v5.0.0.
+_DEPRECATED_DRAFT_TYPE_LABELS = frozenset({"consultant_check", "back_translation"})
+
 
 class ScrDraftOperations(BaseOperations):
     """
@@ -114,7 +121,10 @@ class ScrDraftOperations(BaseOperations):
         Args:
             description (str): Description of the draft (e.g., "First Draft - Jan 2025")
             type (str, optional): Draft type. Defaults to "saved_version".
-                Types: "saved_version", "consultant_check", "back_translation"
+                Types: "saved_version", "imported_version" -- the two
+                members of the LCM ``ScrDraftType`` enum.
+                "consultant_check" and "back_translation" are deprecated
+                (no LCM member; they create a saved version and warn).
 
         Returns:
             IScrDraft: The newly created draft object
@@ -128,18 +138,18 @@ class ScrDraftOperations(BaseOperations):
             >>> # Create a saved version
             >>> draft = project.ScrDrafts.Create("First Draft - January 2025")
 
-            >>> # Create a consultant check draft
-            >>> check = project.ScrDrafts.Create(
-            ...     "Consultant Review - February 2025",
-            ...     "consultant_check"
+            >>> # Record an imported version
+            >>> imported = project.ScrDrafts.Create(
+            ...     "Imported from Paratext - February 2025",
+            ...     "imported_version"
             ... )
 
         Notes:
             - Draft is added to Scripture.ArchivedDraftsOC
             - Draft GUID is auto-generated
             - Description should be descriptive and unique
-            - Type selects the LCM ScrDraftType (saved version, consultant
-              check, or back translation)
+            - Type selects the LCM ScrDraftType (saved or imported
+              version)
 
         See Also:
             Delete, Find, GetDescription
@@ -435,6 +445,15 @@ class ScrDraftOperations(BaseOperations):
         """
         Map a user-facing draft-type label to ScrDraftType.
 
+        The LCM ``ScrDraftType`` enum has exactly two members,
+        ``SavedVersion`` and ``ImportedVersion`` (live reflection,
+        2026-09-25). The labels ``"consultant_check"`` and
+        ``"back_translation"`` were accepted before 4.10.0 as a silent
+        no-op that left the draft a saved version; they still create a
+        saved version, now with a ``DeprecationWarning``, and are removed
+        in v5.0.0. Members are read lazily, per label, so a member absent
+        from the installed LCM can never break an unrelated label.
+
         Raises:
             FP_ParameterError: If the label is unknown or empty after strip.
         """
@@ -446,14 +465,25 @@ class ScrDraftOperations(BaseOperations):
         from SIL.LCModel import ScrDraftType
 
         by_label = {
-            "saved_version": ScrDraftType.SavedVersion,
-            "consultant_check": ScrDraftType.ConsultantCheck,
-            "back_translation": ScrDraftType.BackTranslation,
+            "saved_version": "SavedVersion",
+            "imported_version": "ImportedVersion",
         }
+        if key in _DEPRECATED_DRAFT_TYPE_LABELS:
+            warnings.warn(
+                f"ScrDrafts.Create type {key!r} has no LCM ScrDraftType "
+                f"member (the enum is SavedVersion / ImportedVersion only); "
+                f"it creates a saved version, as it always has. The label "
+                f"is deprecated and will be removed in v5.0.0 -- pass "
+                f"'saved_version' instead.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            key = "saved_version"
         try:
-            return by_label[key]
+            member = by_label[key]
         except KeyError:
             allowed = ", ".join(sorted(by_label))
             raise FP_ParameterError(
                 f"Unknown draft type {type_label!r}; expected one of: {allowed}"
             )
+        return getattr(ScrDraftType, member)

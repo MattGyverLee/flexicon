@@ -27,7 +27,7 @@ class TestIssue455ExampleDoNotPublishInHvoGate:
         sandbox = target_sandbox
         entry = sandbox.LexEntry.Create(f"{TEST_PREFIX}entry")
         try:
-            sense = sandbox.LexSense.Create(entry, f"{TEST_PREFIX}sense")
+            sense = sandbox.Senses.Create(entry, f"{TEST_PREFIX}sense")
             example = sandbox.Examples.Create(sense, f"{TEST_PREFIX}ex")
             hvo = example.Hvo
             assert isinstance(hvo, int), (

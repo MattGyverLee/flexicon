@@ -23,9 +23,21 @@ class TestIssue486InflectionClassNameHvoGate:
 
     @pytest.mark.live_phase("InflectionFeatureOperations", "read")
     def test_inflection_class_get_name_via_genuine_ic_hvo(self, target_sandbox):
+        from SIL.LCModel import IMoInflClassFactory
+        from SIL.LCModel.Core.Text import TsStringUtils
+
         sandbox = target_sandbox
         infl_ops = sandbox.InflectionFeatures
-        ic = infl_ops.InflectionClassCreate(f"{TEST_PREFIX}ic")
+        # InflectionClassCreate() cannot set this up: it adds the class to
+        # ProdRestrictOA.PossibilitiesOS (an ICmPossibility list), which
+        # pythonnet rejects -- inflection classes are owned by
+        # IPartOfSpeech.InflectionClassesOC. Pre-existing bug, tracked
+        # separately; build the class on a POS the LCM way instead.
+        pos = sandbox.POS.Create(f"{TEST_PREFIX}pos", "t486")
+        ic = sandbox.project.ServiceLocator.GetService(IMoInflClassFactory).Create()
+        pos.InflectionClassesOC.Add(ic)
+        ws = sandbox.project.DefaultAnalWs
+        ic.Name.set_String(ws, TsStringUtils.MakeString(f"{TEST_PREFIX}ic", ws))
         hvo = ic.Hvo
         assert isinstance(hvo, int), (
             "test setup error: hvo must be a genuine Python int"
@@ -40,4 +52,4 @@ class TestIssue486InflectionClassNameHvoGate:
             assert isinstance(name, str)
             assert TEST_PREFIX in name
         finally:
-            infl_ops.InflectionClassDelete(ic)
+            sandbox.POS.Delete(pos)  # owns the class; sandbox is discarded anyway

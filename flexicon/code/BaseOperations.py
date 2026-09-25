@@ -790,18 +790,22 @@ class BaseOperations:
                 "desired_order must contain exactly the same objects as the sequence"
             )
 
-        for target_index in range(count):
-            current_index = target_index
-            target_item = desired_order[target_index]
-            for j in range(target_index, count):
-                if sequence[j] == target_item:
-                    current_index = j
-                    break
+        # Every caller reaches this from inside its own Reorder bracket, so
+        # this transaction joins that one (nesting-aware per B1). Stated
+        # anyway so the site is grep-auditable per D5.
+        with self._TransactionCM("Apply sequence order"):
+            for target_index in range(count):
+                current_index = target_index
+                target_item = desired_order[target_index]
+                for j in range(target_index, count):
+                    if sequence[j] == target_item:
+                        current_index = j
+                        break
 
-            if current_index != target_index:
-                sequence.MoveTo(
-                    current_index, current_index, sequence, target_index
-                )
+                if current_index != target_index:
+                    sequence.MoveTo(
+                        current_index, current_index, sequence, target_index
+                    )
 
     @OperationsMethod
     def MoveUp(self, parent_or_hvo, item, positions=1):
@@ -3047,7 +3051,8 @@ class BaseOperations:
         return matches[0]
 
     def _FindFeaturesByName(self, name, domain):
-        from SIL.LCModel import IFsClosedFeature, IFsFeatDefn, ITsString
+        from SIL.LCModel import IFsClosedFeature, IFsFeatDefn
+        from SIL.LCModel.Core.KernelInterfaces import ITsString
 
         from flexicon.code.Shared.string_utils import normalize_match_key
 
@@ -3078,7 +3083,7 @@ class BaseOperations:
         return matches
 
     def _FindFeatureValuesByName(self, name, domain, feature):
-        from SIL.LCModel import ITsString
+        from SIL.LCModel.Core.KernelInterfaces import ITsString
 
         from flexicon.code.Shared.string_utils import normalize_match_key
 

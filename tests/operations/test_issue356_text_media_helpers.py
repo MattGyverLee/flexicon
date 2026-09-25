@@ -75,8 +75,12 @@ class TestIssue356TextMediaHelpersLive:
 
             props = text_ops.GetSyncableProperties(refetched)
             assert props.get("media_uris"), f"GSP missing media_uris: {props.keys()}"
+            # ICmMediaURI exposes only MediaURI (live reflection, 2026-09-25);
+            # there is no MediaFileRA, so file_guid is always None. Assert the
+            # URI itself round-trips through the LCM instead.
             assert any(
-                e.get("file_guid") for e in props["media_uris"]
+                e.get("uri", "").endswith("TEST_356_probe.png")
+                for e in props["media_uris"]
             ), props["media_uris"]
         finally:
             text_ops.Delete(text)

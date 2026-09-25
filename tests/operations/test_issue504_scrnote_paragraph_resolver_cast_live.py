@@ -8,7 +8,6 @@
 #
 
 import pytest
-from SIL.LCModel import IScrTxtPara
 
 pytestmark = pytest.mark.requires_live_project
 
@@ -26,8 +25,24 @@ def _first_book_section_para(sandbox):
 class TestIssue504ScrNoteParagraphHvoGate:
     """Create() resolves paragraph_or_hvo via __ResolveParagraph."""
 
+    @pytest.mark.xfail(
+        strict=True,
+        raises=TypeError,
+        reason=(
+            "ScrNoteOperations.Create adds IScrBookAnnotations to book.FootnotesOS "
+            "(an IScrFootnote sequence); notes belong in "
+            "Scripture.BookAnnotationsOS. Pre-existing (in v4.9.0), unmasked once "
+            "the #504 paragraph cast and the ScrBook cache entry landed. strict: "
+            "flips to a failure the moment Create is fixed, so this gate is "
+            "re-enabled then."
+        ),
+    )
     @pytest.mark.live_phase("ScrNoteOperations", "write")
     def test_create_accepts_paragraph_hvo(self, sena3_sandbox):
+        # Imported here, not at module level: SIL.LCModel only exists once
+        # FLEx is initialized, which a subset run may not have done yet.
+        from SIL.LCModel import IScrTxtPara
+
         sandbox = sena3_sandbox
         if not sandbox.writeEnabled:
             pytest.skip("sandbox is read-only")

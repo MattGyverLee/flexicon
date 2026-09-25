@@ -220,7 +220,7 @@ def _make_project_for_entry_count(entry_repo_instances):
     """
     project = Mock()
     project.writeEnabled = True
-    project.Object = Mock(side_effect=lambda hvo: Mock(Hvo=hvo))
+    project.Object = Mock(side_effect=lambda hvo: _lcm_mock(hvo))
 
     mock_repo = Mock()
     mock_repo.AllInstances = Mock(return_value=entry_repo_instances)
@@ -235,6 +235,20 @@ def _make_project_for_entry_count(entry_repo_instances):
     project.lp.PartsOfSpeechOA = Mock()
     project.lp.PartsOfSpeechOA.PossibilitiesOS = []
     return project
+
+
+def _lcm_mock(hvo):
+    """Return a Mock that looks like a raw LCM object, not a wrapper.
+
+    A bare ``Mock()`` auto-creates ``lcm_object`` / ``_obj``, so
+    ``BaseOperations._UnwrapLcmObject`` (issue #449) would peel it into a
+    different Mock with a different ``Hvo``. Deleting them keeps the
+    resolver's pass-through path, as for a real ``IPartOfSpeech``.
+    """
+    obj = Mock(Hvo=hvo)
+    del obj.lcm_object
+    del obj._obj
+    return obj
 
 
 def _make_mock_entry_with_pos(pos_hvo):
@@ -265,8 +279,8 @@ class TestGetEntryCount:
         noun_hvo = 100
         verb_hvo = 200
 
-        noun_pos = Mock(Hvo=noun_hvo)
-        verb_pos = Mock(Hvo=verb_hvo)
+        noun_pos = _lcm_mock(noun_hvo)
+        verb_pos = _lcm_mock(verb_hvo)
 
         entry1, msa1 = _make_mock_entry_with_pos(noun_hvo)
         entry2, msa2 = _make_mock_entry_with_pos(noun_hvo)
@@ -298,8 +312,8 @@ class TestGetEntryCount:
         """GetEntryCount returns 0 when no entries are tagged with the POS."""
         POSOperations = self._import_ops()
 
-        rare_pos = Mock(Hvo=999)
-        other_pos = Mock(Hvo=111)
+        rare_pos = _lcm_mock(999)
+        other_pos = _lcm_mock(111)
 
         entry1, msa1 = _make_mock_entry_with_pos(111)
         pos_map = {id(msa1): other_pos}
@@ -319,7 +333,7 @@ class TestGetEntryCount:
         """GetEntryCount returns 0 when the lexicon is empty."""
         POSOperations = self._import_ops()
 
-        noun_pos = Mock(Hvo=100)
+        noun_pos = _lcm_mock(100)
         project = _make_project_for_entry_count([])
         ops = POSOperations(project)
 
@@ -343,9 +357,9 @@ class TestGetEntryCount:
         proper_noun_hvo = 101
         common_noun_hvo = 102
 
-        noun_pos = Mock(Hvo=noun_hvo)
-        proper_noun_pos = Mock(Hvo=proper_noun_hvo)
-        common_noun_pos = Mock(Hvo=common_noun_hvo)
+        noun_pos = _lcm_mock(noun_hvo)
+        proper_noun_pos = _lcm_mock(proper_noun_hvo)
+        common_noun_pos = _lcm_mock(common_noun_hvo)
 
         entry1, msa1 = _make_mock_entry_with_pos(noun_hvo)
         entry2, msa2 = _make_mock_entry_with_pos(proper_noun_hvo)
@@ -382,8 +396,8 @@ class TestGetEntryCount:
         noun_hvo = 100
         proper_noun_hvo = 101
 
-        noun_pos = Mock(Hvo=noun_hvo)
-        proper_noun_pos = Mock(Hvo=proper_noun_hvo)
+        noun_pos = _lcm_mock(noun_hvo)
+        proper_noun_pos = _lcm_mock(proper_noun_hvo)
 
         # Only the subcategory has entries; the parent has none.
         entry1, msa1 = _make_mock_entry_with_pos(proper_noun_hvo)
@@ -412,7 +426,7 @@ class TestGetEntryCount:
         POSOperations = self._import_ops()
 
         noun_hvo = 100
-        noun_pos = Mock(Hvo=noun_hvo)
+        noun_pos = _lcm_mock(noun_hvo)
 
         msa_a = Mock()
         msa_b = Mock()

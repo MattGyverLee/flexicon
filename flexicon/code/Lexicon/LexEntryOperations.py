@@ -433,7 +433,12 @@ class LexEntryOperations(BaseOperations):
                     self.project.Senses._deep_copy_sense_to(sense, new_entry)
 
                 # Duplicate alternate forms (allomorphs) using correct factory type
+                from ..lcm_casting import cast_to_concrete
+
                 for allomorph in source_entry.AlternateFormsOS:
+                    # AlternateFormsOS yields the base IMoForm view, which has
+                    # no PhoneEnvRC; cast so the environment copy below works.
+                    allomorph = cast_to_concrete(allomorph)
                     class_name = allomorph.ClassName
                     if class_name == "MoAffixAllomorph":
                         allomorph_factory = self.project.project.ServiceLocator.GetService(IMoAffixAllomorphFactory)

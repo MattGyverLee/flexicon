@@ -11,12 +11,195 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+---
+
+## [4.10.0] - 2026-09-25
+
+> **A repair release: HVO callers get the same concrete object as
+> everyone else, and moves/reorders stop deleting what they move.** The
+> #455-#508 resolver fixes only took effect once 16 missing ClassNames
+> were registered in `cast_to_concrete` at the release gate -- see the
+> first Fixed entry. Two pre-existing failures ship as Known issues.
+>
 > **Contains a `BREAKING (behavioural)` entry -- read it before upgrading.**
 > Ships as a **minor** bump, not `v5.0.0`, per the precedent set by 4.4.0,
 > 4.6.0, 4.7.0 and 4.8.0: no signature changes, no default's meaning
 > changes for a caller that passes it explicitly.
 
+### Added
+
+- **Live gate for ``Allomorphs.RemoveOrphaned`` duplicate-lexeme purge**
+  (#231, slice 3) -- **skipped, not proven.** The gate injects the lexeme
+  form into ``AlternateFormsOS``, but that is an owning sequence: ``Add``
+  moves the lexeme (``LexemeFormOA`` becomes ``None``) instead of
+  duplicating it (live-proven 2026-09-25). The duplicate state cannot be
+  built through the LCM API, so the gate is skipped until a fixture
+  carrying real #231 data exists. The slice 1--2 logic is covered offline
+  only.
+- **Live regression for ``Allomorph.stem_name`` / ``StemNameRA`` round-trip**
+  (#377 item 1). Sena 3 sandbox tests assign a catalog ``IMoStemName`` and
+  re-read by HVO so the #352 read path is proven on set-valued data, not only
+  the unset case on Target.
+- **Opt-in ``strict_transactions`` on ``OpenProject()``** (#210). When
+  ``True`` on a write-enabled session, entering ``Transaction()`` without a
+  wired LCM rollback API raises ``FP_TransactionError`` instead of proceeding
+  with degraded Phase 1 behaviour. Default remains warn-and-continue.
+- **Live HVO-entry gates for three more shared-resolver read paths** (#268,
+  slice 2). ``POSOperations.GetInflectionClasses``, ``GetAffixSlots``, and
+  ``AllomorphOperations.GetFormAudio`` now have the same int-HVO live tests as
+  slice 1, pinning the ClassName cast axis where silent ``hasattr`` drops
+  would otherwise regress.
+
+- **`FLExProject.SyncForeignChanges()` for mid-session foreign ingest**
+  (#292). Under `OpenProject(undoable=False)`, temporarily ends the
+  session-long non-undoable envelope, calls `IUndoStackManager.Save()` so
+  shared backends can reconcile peer commits, then reopens the envelope in
+  a `finally`. Refuses attached views, read-only sessions, and
+  `undoable=True` (use `SaveChanges()` at depth 0 there). Complements
+  `RefreshFromDisk()`, which clears reconciliation wedges but does not
+  drive this save path.
+
+- **`POSOperations.CreateAffixSlot` / `MorphRuleOperations.AddSlotToTemplate`**
+  (#255). New wrappers create an `IMoInflAffixSlot` owned by a part of
+  speech and insert it into a template's `PrefixSlotsRS` /
+  `SuffixSlotsRS` / `ProcliticSlotsRS` / `EncliticSlotsRS`. A slot is
+  obligatory (`optional=False`) unless the caller opts in; a slot may be
+  added to any template belonging to its owning category or a descendant
+  category (`IPartOfSpeech.AllAffixSlots`), not only the exact same
+  category.
+
+- **`LexEntryOperations.GetAllComplexFormTypes` / `FindComplexFormType`**
+  (#305). Wrappers over `LexDbOA.ComplexEntryTypesOA` so callers can list
+  or look up complex-form types (compound, idiom, ...) without reaching
+  through `project.lexDB` directly.
+
+- **`FLExProject.GetMultiStringDict`** (#346). Reads a multilingual string
+  field into `{ws_id: text}` across every writing system in the project,
+  skipping empty alternatives. Added alongside a regression guard so
+  `Operations` classes cannot call a `Get*Dict` helper that does not
+  exist on `FLExProject`.
+
+- **`PhonemeOperations.GetName`** (#343). Sibling alias for
+  `GetRepresentation`, for callers used to a `GetName` accessor on other
+  `*Operations` classes.
+
+- **`LexSenseOperations.GetMSA`** (#343). Returns the sense's attached
+  `IMoMorphSynAnalysis` (`MorphoSyntaxAnalysisRA`), or `None`.
+
+- **`POSOperations.GetDefaultFeatures` / `SetDefaultFeatures` and the
+  inherent-feature-value counterparts** (#294). Public Get/Set wrappers
+  over `DefaultFeaturesOA` delegate to the same C4 feature-struct
+  machinery already used by `GetSyncableProperties` /
+  `ApplySyncableProperties`, so callers no longer need raw LCM access to
+  read or write a part of speech's default/inherent feature structure.
+
+- **`FLExProject.ScrNotes` / `ScrSections` / `ScrTxtParas` /
+  `ScrAnnotations`** (#310). Four lazy accessor properties, matching the
+  existing `ScrBooks` / `ScrDrafts` pattern, so Scripture note, section,
+  paragraph, and annotation operations are reachable the same way as the
+  rest of the Scripture module.
+
+- **`FLExProject.DefaultVernacularWs` / `DefaultAnalysisWs`** (#314).
+  Int-handle properties aliasing `GetDefaultVernacularWSHandle()` /
+  `GetDefaultAnalysisWSHandle()`, fulfilling the `core.types.FlexProject`
+  protocol (now `@runtime_checkable`) for callers that need the raw WS
+  handle used by multistring APIs.
+
+### Changed
+
+- **BREAKING (behavioural): `PhonemeOperations.__ApplyFeatures` now
+  defaults to `on_unresolved="raise"`.** Task T9 of
+  `specs/feature-structure-sync-gap`, closes #253. A feature or value
+  GUID that does not resolve to an object in the target project now
+  raises `FP_ParameterError` (naming the GUID) during
+  `PhonemeOperations.ApplySyncableProperties`, instead of being silently
+  skipped and leaving the synced `FeaturesOA` quietly incomplete. This
+  aligns phonemes with `NaturalClassOperations` (contract C7) and with
+  the policy T6/T7/T8 already shipped for MSAs, POSes and allomorphs;
+  `on_unresolved="skip"` remains available as an explicit opt-in for
+  callers that genuinely want best-effort application.
+
+  Shipped together with the two enablers the silent path depended on:
+  `__GetPhonemeObject` now casts the `project.Object(...)` result to
+  `IPhPhoneme` (a bare base-interface view has no `FeaturesOA`), and
+  `ApplySyncableProperties` gates on key presence of `Features`/
+  `FeaturesGuid` rather than truthiness -- threading `FeaturesGuid`
+  through so the newly-created structure preserves its identity.
+
+  **Behaviour change.** A sync run against a target whose feature
+  system lacks a referenced feature/value GUID now fails loudly instead
+  of writing a silently-incomplete feature structure. Callers relying
+  on the old silent-skip must pass `on_unresolved="skip"` explicitly,
+  or catch `FP_ParameterError`.
+
+  Live-verified on the Target sandbox in
+  `specs/feature-structure-sync-gap/evidence/live-T9.md`.
+
+- **BREAKING (behavioural): `PhonologicalRule.metathesis_parts` now reads
+  the real LCM model** (#326). The property previously read nonexistent
+  `LeftPartOfMetathesisOS` / `RightPartOfMetathesisOS` fields and returned
+  `([], [])` unconditionally. Live reflection confirmed the real structure:
+  a single `StrucDescOS` sequence sliced by four switch index/limit fields
+  (`LeftSwitchIndex`, `LeftSwitchLimit`, `RightSwitchIndex`,
+  `RightSwitchLimit`). Now reads `StrucDescOS` and extracts the two parts
+  using those indices. Returns `(left_parts, right_parts)` tuple of
+  `ContextCollection` items. **No signature change; same-name property, new
+  return value.** Code relying on the property returning empty collections
+  will now receive populated ones. Code calling `has_metathesis_parts` and
+  then iterating `.metathesis_parts` will now see real contexts instead of
+  none.
+
+  Similarly, `PhonologicalContext.segment` and `.natural_class` now read
+  the real `FeatureStructureRA` field (instead of nonexistent `SegmentRA` /
+  `NaturalClassRA`) and cast/return `IPhPhoneme` / `IPhNaturalClass`
+  respectively. **No signature change.** Code using these properties will now
+  receive real phoneme and natural-class objects instead of `None`.
+
+  **Behaviour change, not a signature change;** ships as a minor bump per
+  the 4.4.0+ precedent. Live-verified on Target sandbox and installed FLEx
+  projects; evidence in `specs/326-phonological-wrapper-members/evidence/`.
+
 ### Fixed
+
+- **HVO resolvers now actually cast: 16 ClassNames registered in the
+  `cast_to_concrete` interface cache.** The #455-#508 resolver series routed
+  `project.Object(hvo)` through `cast_to_concrete()`, but `CmPossibilityList`,
+  `CmBaseAnnotation`, `FsClosedFeature`, `FsFeatureSystem`,
+  `LexExampleSentence`, `LexPronunciation`, `LexReference`, `LexEtymology`,
+  `PhCode`, `PhFeatureConstraint`, `RnResearchNbk`, `ScrBook`, `ScrSection`,
+  `ScrTxtPara`, `ScrScriptureNote` and `Segment` were never registered, so
+  the cast was a silent miss and those resolvers still returned a bare
+  `ICmObject` (`AttributeError` on `Form`, `AnalysesRS`, `Name`,
+  `SectionsOS`, `FootnotesOS`, ...). Found by the live HVO gates; the set was
+  taken from cache misses logged across the full live suite plus a static
+  sweep of every resolver. `cast_to_concrete()` itself now also returns the
+  concrete interface for these types.
+- **`ScrDrafts.Create` raised `AttributeError` on every call** (#377
+  follow-up). The LCM `ScrDraftType` enum has only `SavedVersion` and
+  `ImportedVersion`; the type map named nonexistent `ConsultantCheck` /
+  `BackTranslation` members. Adds the `"imported_version"` label.
+  `"consultant_check"` / `"back_translation"` are deprecated (see below).
+- **`MakeFeatStruc` name operands raised `ImportError`** (#265 follow-up).
+  The name resolvers imported `ITsString` from `SIL.LCModel` instead of
+  `SIL.LCModel.Core.KernelInterfaces`; value names on closed features also
+  depended on the `FsClosedFeature` cache entry above. Now covered live.
+- **Note replies and `Notes.GetAll` raised `ActivationException`** (#323
+  follow-up). Both asked the service locator for `ICmBaseAnnotation` (an
+  object interface) instead of `ICmBaseAnnotationRepository`.
+- **`PossibilityLists.GetParentItem` always returned `None`** (#448
+  follow-up). The owner check probed `SubPossibilitiesOS` on the bare
+  `.Owner` view; it now casts first, which also fixes list lookup for
+  nested items.
+- **`LexEntry.Duplicate(deep=True)` raised `AttributeError` on entries with
+  allomorphs.** `AlternateFormsOS` items are cast before `PhoneEnvRC` is
+  copied.
+- **`_ApplySequenceOrder` (#470) and note-reply attachment (#323) mutated
+  the LCM outside a `_TransactionCM` bracket.** Both now bracket (joining
+  the caller's transaction), per the write-path ratchet.
+- **`strict_transactions` guard** only fires for a real `True` (a Mock
+  test double no longer trips it). No behaviour change for real projects.
+- `Texts.GetSyncableProperties`: `media_uris[].file_guid` is always `None`
+  on this LCM (`ICmMediaURI` exposes only `MediaURI`).
 
 - **``PhonFeatureOperations.__ResolveObject`` casts to concrete** (#490).
   HVO int callers no longer receive a bare ``ICmObject`` view from
@@ -69,29 +252,6 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   rather than opening a transaction that only bumps ``DateModified``. Reads
   return ``None`` without probing phantom ``DateOfEvent`` / ``Elevation``
   members.
-
-### Added
-
-- **Live regression for ``Allomorphs.RemoveOrphaned`` duplicate-lexeme purge**
-  (#231, slice 3). Sandbox test injects a lexeme-form duplicate into
-  ``AlternateFormsOS``, sweeps via ``entry=<int HVO>``, and re-reads the entry
-  from the LCM so the slice 1--2 logic is proven on a real project copy, not
-  mocks alone.
-- **Live regression for ``Allomorph.stem_name`` / ``StemNameRA`` round-trip**
-  (#377 item 1). Sena 3 sandbox tests assign a catalog ``IMoStemName`` and
-  re-read by HVO so the #352 read path is proven on set-valued data, not only
-  the unset case on Target.
-- **Opt-in ``strict_transactions`` on ``OpenProject()``** (#210). When
-  ``True`` on a write-enabled session, entering ``Transaction()`` without a
-  wired LCM rollback API raises ``FP_TransactionError`` instead of proceeding
-  with degraded Phase 1 behaviour. Default remains warn-and-continue.
-- **Live HVO-entry gates for three more shared-resolver read paths** (#268,
-  slice 2). ``POSOperations.GetInflectionClasses``, ``GetAffixSlots``, and
-  ``AllomorphOperations.GetFormAudio`` now have the same int-HVO live tests as
-  slice 1, pinning the ClassName cast axis where silent ``hasattr`` drops
-  would otherwise regress.
-
-### Fixed
 
 - **Spurious allomorphs can be removed from ``AlternateFormsOS``** (#231).
   ``project.Allomorphs.RemoveOrphaned(entry=None, progress=None)`` drops
@@ -358,72 +518,203 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   guard added because whether FLEx's UI enforces this is not derivable
   from static reflection.
 
-### Changed
+- **`FLExProject.pyi` declared the wrong `writeEnabled` casing** (#263).
+  The stub said `WriteEnabled: bool`; runtime `FLExProject.writeEnabled`
+  is lowercase (per this project's own convention). Type checkers and IDE
+  autocomplete now match the real attribute; no runtime alias was added.
 
-- **BREAKING (behavioural): `PhonemeOperations.__ApplyFeatures` now
-  defaults to `on_unresolved="raise"`.** Task T9 of
-  `specs/feature-structure-sync-gap`, closes #253. A feature or value
-  GUID that does not resolve to an object in the target project now
-  raises `FP_ParameterError` (naming the GUID) during
-  `PhonemeOperations.ApplySyncableProperties`, instead of being silently
-  skipped and leaving the synced `FeaturesOA` quietly incomplete. This
-  aligns phonemes with `NaturalClassOperations` (contract C7) and with
-  the policy T6/T7/T8 already shipped for MSAs, POSes and allomorphs;
-  `on_unresolved="skip"` remains available as an explicit opt-in for
-  callers that genuinely want best-effort application.
+- **`DataNotebookOperations.GetResearchers` / `AddResearcher` /
+  `RemoveResearcher` guarded a phantom `Researchers` name, and
+  `GetParticipants` / `AddParticipant` read a phantom `Participants`
+  collection** (#319). `IRnGenericRec` has `ResearchersRC` (not
+  `Researchers`), so the `hasattr` guards were always false and every
+  researcher read/write silently no-oped. Participants are not a direct
+  collection on the record at all: they live on `ParticipantsOC`
+  (`IRnRoledPartic` groups), each with its own `ParticipantsRC`;
+  `GetParticipants` now flattens and de-dupes people across every role
+  group, and `AddParticipant` targets the record's default
+  (no-specific-role) group. Role information (`RoleRA`) is not yet
+  surfaced by the flattened read.
 
-  Shipped together with the two enablers the silent path depended on:
-  `__GetPhonemeObject` now casts the `project.Object(...)` result to
-  `IPhPhoneme` (a bare base-interface view has no `FeaturesOA`), and
-  `ApplySyncableProperties` gates on key presence of `Features`/
-  `FeaturesGuid` rather than truthiness -- threading `FeaturesGuid`
-  through so the newly-created structure preserves its identity.
+- **`clone_properties()` cloned derived, rebuilt-per-access LCM
+  properties as if they were real collections** (#321). The old predicate
+  was pure duck-typing (`hasattr(value, "Count") and hasattr(value,
+  "Add")`), which also matches computed views such as
+  `ILexEntry.AllSenses`, `.MorphTypes`, `.PublishIn`,
+  `.ShowMainEntryIn`, `.MinimalLexReferences`, and the universal
+  `ICmObject.ReferringObjects` -- `Clear()` against any of these silently
+  no-ops because they have no backing store to clear. The collection-clone
+  branch now additionally requires an `OS` / `OC` / `OA` / `RS` / `RC` /
+  `RA` name suffix (LCM's own naming convention for genuine owned/
+  reference members), structurally excluding the derived properties
+  instead of relying on duck-typing alone. This is the mechanism behind
+  the 29 live `Duplicate()` failures across natural classes, phonological
+  features/rules, and phonemes that the #318-#321 cycle 3 review flagged
+  as needing a live re-run.
 
-  **Behaviour change.** A sync run against a target whose feature
-  system lacks a referenced feature/value GUID now fails loudly instead
-  of writing a silently-incomplete feature structure. Callers relying
-  on the old silent-skip must pass `on_unresolved="skip"` explicitly,
-  or catch `FP_ParameterError`.
+- **`WfiAnalysisOperations` / `PhonemeOperations` reorder helpers claimed
+  an order that does not exist** (#301). `IWfiWordform.AnalysesOC` and
+  `IPhPhonemeSet.PhonemesOC` are unordered `ILcmOwningCollection`s, not
+  `...OS` sequences; `_GetSequence` now raises `NotImplementedError` for
+  `Sort` / `MoveUp` / `MoveDown` / `MoveToIndex` on both instead of
+  silently reading a nonexistent `AnalysesOS` / `PhonemesOS`.
 
-  Live-verified on the Target sandbox in
-  `specs/feature-structure-sync-gap/evidence/live-T9.md`.
+- **`OverlayOperations.Create` always raised** (#309). It inherited
+  `PossibilityItemOperations.Create`, whose `_get_list_object()` always
+  returned `None` for project-scoped overlays. `Create`, `GetAll`,
+  `Delete`, `Find`, and plain-string `GetName` / `SetName` are re-rooted
+  on `ILangProject.OverlaysOC` / `ICmOverlayFactory`, and `Create` now
+  takes an explicit `poss_list` (`PossListRA`).
 
-- **BREAKING (behavioural): `PhonologicalRule.metathesis_parts` now reads
-  the real LCM model** (#326). The property previously read nonexistent
-  `LeftPartOfMetathesisOS` / `RightPartOfMetathesisOS` fields and returned
-  `([], [])` unconditionally. Live reflection confirmed the real structure:
-  a single `StrucDescOS` sequence sliced by four switch index/limit fields
-  (`LeftSwitchIndex`, `LeftSwitchLimit`, `RightSwitchIndex`,
-  `RightSwitchLimit`). Now reads `StrucDescOS` and extracts the two parts
-  using those indices. Returns `(left_parts, right_parts)` tuple of
-  `ContextCollection` items. **No signature change; same-name property, new
-  return value.** Code relying on the property returning empty collections
-  will now receive populated ones. Code calling `has_metathesis_parts` and
-  then iterating `.metathesis_parts` will now see real contexts instead of
-  none.
+- **`ConstChartClauseMarkerOperations.Create` / `Find` / `GetAll` used a
+  nonexistent `IConstChartRow.ClauseMarkersOS`** (#324). Every `Create`
+  call silently failed to attach the new marker, and `Find` / `GetAll`
+  always returned empty. Markers are now added to `row.CellsOS`, the same
+  cell-part model already used for word groups, tags, and moved-text
+  markers, with `ColumnRA` copied from the associated word group.
 
-  Similarly, `PhonologicalContext.segment` and `.natural_class` now read
-  the real `FeatureStructureRA` field (instead of nonexistent `SegmentRA` /
-  `NaturalClassRA`) and cast/return `IPhPhoneme` / `IPhNaturalClass`
-  respectively. **No signature change.** Code using these properties will now
-  receive real phoneme and natural-class objects instead of `None`.
+- **`WfiMorphBundleOperations.GetMSA` / `GetInflectionClass` raised
+  `AttributeError` when reached through an HVO** (#345). The bundle,
+  analysis, sense, morph, and MSA resolvers now route their HVO path
+  through `cast_to_concrete()` instead of returning the bare
+  `project.Object()` view.
 
-  **Behaviour change, not a signature change;** ships as a minor bump per
-  the 4.4.0+ precedent. Live-verified on Target sandbox and installed FLEx
-  projects; evidence in `specs/326-phonological-wrapper-members/evidence/`.
+- **`DataNotebookOperations.GetParentRecord` / `Duplicate` sub-record
+  detection never matched a real owner** (#347). Both did
+  `isinstance(record.Owner, IRnGenericRec)` on the raw, uncast `.Owner`,
+  which pythonnet always types as the base `ICmObject` -- the check was
+  always false, so every `Duplicate()` (top-level or sub-record) inserted
+  into `ResearchNotebookOA.RecordsOC` instead of the correct parent's
+  `SubRecordsOS`. Both now resolve the owner through the same
+  `_GetTypedOwner()` helper `Delete()` already used for the identical
+  shape under issue #133.
 
-### Added
+- **`ParagraphOperations.GetSyncableProperties` raised `AttributeError`
+  on every non-empty paragraph** (#351). It called
+  `item.Contents.get_WritingSystemAt(0)`; `IStTxtPara.Contents` is a bare
+  `ITsString` with no such accessor (measured live: 205 of 205 `StTxtPara`
+  failed on a populated project). The writing system now comes from run
+  0's text properties (`get_Properties(0).GetIntPropValues(1, 0)[0]`),
+  the same idiom already used by `SegmentOperations.GetSyncableProperties`.
 
-- **`FLExProject.SyncForeignChanges()` for mid-session foreign ingest**
-  (#292). Under `OpenProject(undoable=False)`, temporarily ends the
-  session-long non-undoable envelope, calls `IUndoStackManager.Save()` so
-  shared backends can reconcile peer commits, then reopens the envelope in
-  a `finally`. Refuses attached views, read-only sessions, and
-  `undoable=True` (use `SaveChanges()` at depth 0 there). Complements
-  `RefreshFromDisk()`, which clears reconciliation wedges but does not
-  drive this save path.
+- **`TextOperations.GetMediaFiles` / `AddMediaFile` used a phantom
+  `MediaFilesOC`** (#356). Realigned with the R4 sync path:
+  `cast_to_concrete(text).MediaFilesOA.MediaURIsOC` /
+  `ICmMediaContainerFactory` + `ICmMediaURIFactory`, replacing the
+  nonexistent collection and the `ICmFolderFactory` / `ICmMediaFactory`
+  construction path.
+
+- **`ConstChartClauseMarkerOperations.GetWordGroup` read a nonexistent
+  `WordGroupRA`** (#357). `IConstChartClauseMarker` has no `WordGroupRA`
+  (that member belongs only to `IConstChartMovedTextMarker`); the method
+  now navigates the marker's owning row `CellsOS` to find the word group
+  whose `ColumnRA` matches the marker's, the same association `Create`
+  already relies on (#324).
+
+- **`OverlayOperations.GetVisible` / `SetVisible` / `GetChart` guarded
+  phantom `IsVisibleRA` and `ChartRA` members** (#364). `ICmOverlay` has
+  neither; the dead `hasattr` branches are removed, `SetVisible` no-ops
+  (with a debug log) when the project's `ICmOverlay` has no `Hidden`
+  member instead of silently succeeding, and `GetChart` walks the
+  ownership chain via `OwnerOfClass` only.
+
+- **New lexicon entries, senses, subsenses, and examples were publishable
+  everywhere by default** (#338). FLEx models publication membership as
+  an exclusion collection (`DoNotPublishInRC`); a freshly created item
+  has an empty exclusion set and is therefore visible in every
+  publication until a caller opts it out. A new
+  `BaseOperations._DefaultExcludeFromAllPublications` helper seeds every
+  new entry, blank sense, added sense, subsense, and example with every
+  known publication excluded, so callers opt an item into the
+  publication(s) they intend instead of having to remember to opt
+  everything else out.
+
+  **Behaviour change:** newly created lexicon items that are not
+  explicitly added back to a publication no longer appear there, matching
+  FLEx's own hidden-until-published default.
+
+- **`AnthropologyOperations.GetSyncableProperties` raised `AttributeError`
+  on every call** (#349). It called `self.__ResolveObject(item)`, a
+  helper `AnthropologyOperations` never defines (name-mangled to a
+  nonexistent `_AnthropologyOperations__ResolveObject`); switched to the
+  class's existing `__GetItemObject` resolver.
+
+- **`PossibilityListOperations.MoveItem`, `PublicationOperations.SetIsDefault`,
+  notebook region assignment, section moves, and chart-row moves deleted
+  the item they were meant to relocate** (#448, #471, #472, #473).
+  Several move/re-parent paths did `old_owning_sequence.Remove(item)`
+  followed by `new_owning_sequence.Add(item)`; on an LCM owning sequence,
+  `Remove()` deletes the ownee rather than detaching it, so the "move"
+  destroyed the object instead of relocating it. Affected:
+  `PossibilityListOperations.MoveItem` (POS subclasses and other
+  `CmPossibility` subitems, #448), `ExampleOperations.MoveMediaFile` /
+  `LexSenseOperations.MovePicture` (#471), `PublicationOperations.SetIsDefault`
+  and DataNotebook region assignment (#472), and cross-book
+  `ScrSectionOperations` section moves plus cross-chart
+  `ConstChartRowOperations` row moves (#473). All now re-parent with a
+  single `Add` / `Insert` into the destination sequence (or `MoveTo`
+  within the same sequence), never `Remove`-then-`Add`.
+
+- **Five `Reorder()` methods used `Clear()` on an owning sequence, which
+  deletes every child** (#470). `BaseOperations._ApplySequenceOrder` now
+  reorders in place via `MoveTo` only, validating that `desired_order`
+  contains exactly the sequence's current members. `LexSense`'s partial
+  reorder keeps any unlisted senses at the end instead of dropping them.
+
+- **Items returned by `GetAll()` on `AllomorphOperations`,
+  `MSAOperations`, `MorphRuleOperations` (and its `GetAllCompoundRules` /
+  `GetAllAffixTemplates` / `GetAllAffixTemplatesForPOS` siblings), and
+  `PhonologicalRuleOperations` could not be passed back into another
+  Operations method** (#449). Those `GetAll()` methods return
+  `LCMObjectWrapper` / `PythonicWrapper` items; feeding one into a sibling
+  resolver raised `TypeError: object does not implement I<Interface>`
+  (pythonnet cannot cast a Python wrapper) or silently failed an
+  equality-based lookup (`sequence[i] == item`, `IndexOf(item)`,
+  `Remove(item)`). Shared `_UnwrapLcmObject` / `_UnwrapLcm` helpers now
+  peel the wrapper back to the raw LCM object at every affected resolver,
+  including `BaseOperations._GetObject` / `MoveUp` / `MoveDown` /
+  `MoveToIndex` / `MoveBefore` / `MoveAfter` / `Swap` /
+  `_FindCommonSequence` and `LexSenseOperations.SetGrammaticalInfo`.
+
+- **`LCMObjectWrapper` / `PythonicWrapper` equality and hashing compared
+  Python object identity, not the underlying LCM record** (#468). A
+  wrapper returned from `GetAll()` never compared equal to the raw LCM
+  object it wrapped, so `wrapper in sequence` / index-based lookups
+  failed even when the wrapper and the raw object were the same
+  repository entry. Both wrapper classes now implement `__eq__` /
+  `__hash__` on the object's `Hvo` (via a shared `lcm_identity_hvo()` helper).
+
+- **HVO resolvers across eleven more `Operations` classes route through
+  `cast_to_concrete`** (#465, #467, #481, #483, #492, #493, #500, #502,
+  #504, #506, #508), continuing the #284 promotion sweep already covered
+  above (#455-#490): `SegmentOperations` (#465), the affix-template owner
+  resolution in `MorphRuleOperations.Delete` / duplicate (#467),
+  `LexReferenceOperations` (#481), the phoneme resolver in
+  `NaturalClassOperations.AddPhoneme` (#483), `PossibilityListOperations`
+  (#492), four Scripture resolvers across `ScrAnnotationsOperations`,
+  `ScrNoteOperations`, `ScrSectionOperations`, and `ScrTxtParaOperations`
+  (#493), `WordformOperations` (#500), `WfiGlossOperations` (#502),
+  `ScrNoteOperations.__ResolveParagraph` (#504), `FindByHvo` on
+  `ConstChartOperations` / `ReversalIndexEntryOperations` (#506), and the
+  Paragraph / Discourse text resolver aligned with `TextOperations`
+  (#508). As with the earlier entries in this series, HVO int callers no
+  longer receive a bare `ICmObject` view from `project.Object(hvo)`.
+
+- **`NaturalClassOperations.AddPhoneme` / `RemovePhoneme` guarded a
+  feature-based class with a bare `hasattr(nc, "SegmentsRC")` check and no
+  way for a caller to branch first** (#340). Added
+  `IsFeatureBased(nc_or_hvo)` / `IsSegmentBased(nc_or_hvo)` capability
+  checks; `AddPhoneme` / `RemovePhoneme` now route their guard through
+  `IsSegmentBased` and name the alternative (`SetFeatures` /
+  `CreateFeatureBased`) in the error message instead of just rejecting.
 
 ### Deprecated
+
+- **`ScrDrafts.Create` type labels `"consultant_check"` and
+  `"back_translation"` are deprecated and will be removed in v5.0.0.**
+  The LCM `ScrDraftType` enum has no such members. Before 4.10.0 the
+  labels were a silent no-op that created a saved version; they still do,
+  now with a `DeprecationWarning`. Pass `"saved_version"` instead.
 
 - **Four phonological rule symbols are deprecated and will be removed in
   v5.0.0** (#326): `PhonologicalRule.has_redup_parts`, `.redup_parts`,
@@ -443,6 +734,16 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   Aliases and `cast_to_concrete()` exceptions referencing the nonexistent
   type are similarly scheduled for removal at v5.0.0 but are tracked
   separately in the main flexlibs2 alias removal.
+
+### Known issues
+
+Pre-existing (present in 4.9.0 and earlier), not regressions:
+
+- `InflectionFeatures.InflectionClassCreate` adds the class to the
+  production-restrictions list instead of a part of speech's
+  `InflectionClassesOC`, and fails on every call.
+- `ScrNotes.Create` adds the annotations container to `book.FootnotesOS`
+  instead of `Scripture.BookAnnotationsOS`, and fails on every call.
 
 ---
 

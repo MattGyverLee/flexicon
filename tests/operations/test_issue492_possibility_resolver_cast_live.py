@@ -32,8 +32,9 @@ class TestIssue492PossibilityItemNameHvoGate:
             pos_list,
             f"{TEST_PREFIX}POS",
             "en",
-            abbreviation=f"{TEST_PREFIX}P",
         )
+        # CreateItem takes no abbreviation; set it separately.
+        pl.SetItemAbbreviation(item, f"{TEST_PREFIX}P", "en")
         try:
             hvo = item.Hvo
             assert isinstance(hvo, int), (
@@ -76,4 +77,5 @@ class TestIssue492PossibilityListNameHvoGate:
 
         name = pl.GetListName(hvo)
         assert isinstance(name, str)
-        assert name == "Parts of Speech"
+        # FindList matches case-insensitively; Target spells it "Parts Of Speech".
+        assert name.casefold() == "parts of speech"
