@@ -29,6 +29,7 @@ from ..FLExProject import (
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key
+from ..lcm_casting import cast_to_concrete
 
 # --- WfiGlossOperations Class ---
 
@@ -131,6 +132,42 @@ class WfiGlossOperations(BaseOperations):
         # caller passed an IAnalysis-typed reference (issue #212).
         return IWfiGloss(gloss)
 
+    def __ResolveAnalysis(self, analysis_or_hvo):
+        """
+        Resolve HVO or object to IWfiAnalysis.
+
+        Casts by ``ClassName`` before returning (issue #502, generalising
+        #275 / #269). ``self.project.Object(hvo)`` returns a bare
+        ``ICmObject``; ``isinstance(obj, IWfiAnalysis)`` is False even for
+        a genuine analysis, so the old inline HVO guards rejected every real
+        HVO. ``cast_to_concrete`` widens to the concrete interface.
+
+        Args:
+            analysis_or_hvo: Either an IWfiAnalysis object or an HVO (int).
+
+        Returns:
+            IWfiAnalysis: The resolved analysis object.
+
+        Raises:
+            FP_ParameterError: If HVO does not refer to a wordform analysis.
+        """
+        if isinstance(analysis_or_hvo, int):
+            obj = self.project.Object(analysis_or_hvo)
+            if getattr(obj, "ClassName", None) == "WfiAnalysis":
+                try:
+                    return cast_to_concrete(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IWfiAnalysis):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a wordform analysis")
+        if getattr(analysis_or_hvo, "ClassName", None) == "WfiAnalysis":
+            try:
+                return cast_to_concrete(analysis_or_hvo)
+            except Exception:
+                pass
+        return analysis_or_hvo
+
     # --- Core CRUD Operations ---
 
     @wrap_enumerable
@@ -172,13 +209,7 @@ class WfiGlossOperations(BaseOperations):
         """
         self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
 
-        # Resolve to analysis object
-        if isinstance(analysis_or_hvo, int):
-            analysis = self.project.Object(analysis_or_hvo)
-            if not isinstance(analysis, IWfiAnalysis):
-                raise FP_ParameterError("HVO does not refer to a wordform analysis")
-        else:
-            analysis = analysis_or_hvo
+        analysis = self.__ResolveAnalysis(analysis_or_hvo)
 
         # Yield all glosses from the Meanings collection
         for gloss in analysis.MeaningsOC:
@@ -233,13 +264,7 @@ class WfiGlossOperations(BaseOperations):
         if not form or not form.strip():
             raise FP_ParameterError("Gloss form cannot be empty")
 
-        # Resolve to analysis object
-        if isinstance(analysis_or_hvo, int):
-            analysis = self.project.Object(analysis_or_hvo)
-            if not isinstance(analysis, IWfiAnalysis):
-                raise FP_ParameterError("HVO does not refer to a wordform analysis")
-        else:
-            analysis = analysis_or_hvo
+        analysis = self.__ResolveAnalysis(analysis_or_hvo)
 
         wsHandle = self.__WSHandle(wsHandle)
 
@@ -737,13 +762,7 @@ class WfiGlossOperations(BaseOperations):
         if not form or not form.strip():
             return None
 
-        # Resolve to analysis object
-        if isinstance(analysis_or_hvo, int):
-            analysis = self.project.Object(analysis_or_hvo)
-            if not isinstance(analysis, IWfiAnalysis):
-                raise FP_ParameterError("HVO does not refer to a wordform analysis")
-        else:
-            analysis = analysis_or_hvo
+        analysis = self.__ResolveAnalysis(analysis_or_hvo)
 
         wsHandle = self.__WSHandle(wsHandle)
 
@@ -831,13 +850,7 @@ class WfiGlossOperations(BaseOperations):
         """
         self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
 
-        # Resolve to analysis object
-        if isinstance(analysis_or_hvo, int):
-            analysis = self.project.Object(analysis_or_hvo)
-            if not isinstance(analysis, IWfiAnalysis):
-                raise FP_ParameterError("HVO does not refer to a wordform analysis")
-        else:
-            analysis = analysis_or_hvo
+        analysis = self.__ResolveAnalysis(analysis_or_hvo)
 
         return analysis.MeaningsOC.Count
 
@@ -941,13 +954,7 @@ class WfiGlossOperations(BaseOperations):
         # Resolve to a concrete IWfiGloss (issue #212)
         source_gloss = self.__ResolveGloss(gloss_or_hvo)
 
-        # Resolve to target analysis object
-        if isinstance(target_analysis_or_hvo, int):
-            target_analysis = self.project.Object(target_analysis_or_hvo)
-            if not isinstance(target_analysis, IWfiAnalysis):
-                raise FP_ParameterError("HVO does not refer to a wordform analysis")
-        else:
-            target_analysis = target_analysis_or_hvo
+        target_analysis = self.__ResolveAnalysis(target_analysis_or_hvo)
 
         with self._TransactionCM("Copy gloss"):
             # Create new gloss
