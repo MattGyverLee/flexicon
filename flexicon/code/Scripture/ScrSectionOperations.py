@@ -30,6 +30,7 @@ from SIL.LCModel.Core.Text import TsStringUtils
 from ..FLExProject import (
     FP_ParameterError,
 )
+from ..lcm_casting import cast_to_concrete
 
 
 class ScrSectionOperations(BaseOperations):
@@ -517,11 +518,14 @@ class ScrSectionOperations(BaseOperations):
             FP_ParameterError: If HVO doesn't refer to a Scripture book
         """
         if isinstance(book_or_hvo, int):
-            obj = self.project.Object(book_or_hvo)
-            if not isinstance(obj, IScrBook):
+            obj = cast_to_concrete(self.project.Object(book_or_hvo))
+            if not (
+                isinstance(obj, IScrBook)
+                or getattr(obj, "ClassName", None) == "ScrBook"
+            ):
                 raise FP_ParameterError("HVO does not refer to a Scripture book")
             return obj
-        return book_or_hvo
+        return cast_to_concrete(book_or_hvo)
 
     def __WSHandle(self, wsHandle):
         """
