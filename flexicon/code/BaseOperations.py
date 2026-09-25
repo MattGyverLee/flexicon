@@ -760,6 +760,47 @@ class BaseOperations:
 
             return count
 
+    def _ApplySequenceOrder(self, sequence, desired_order):
+        """
+        Reorder an LCM owning sequence to match ``desired_order`` using MoveTo.
+
+        Never uses ``Clear()`` -- on an owning sequence, Clear deletes every
+        child object (issue #470).
+
+        Args:
+            sequence: LCM owning sequence (``Count``, indexing, ``MoveTo``).
+            desired_order: Every current member exactly once, in target order.
+
+        Raises:
+            FP_ParameterError: If ``desired_order`` length or membership does
+                not match the sequence.
+        """
+        count = sequence.Count
+        if len(desired_order) != count:
+            raise FP_ParameterError(
+                f"desired_order length {len(desired_order)} does not match "
+                f"sequence count {count}"
+            )
+
+        current = [sequence[i] for i in range(count)]
+        if set(current) != set(desired_order):
+            raise FP_ParameterError(
+                "desired_order must contain exactly the same objects as the sequence"
+            )
+
+        for target_index in range(count):
+            current_index = target_index
+            target_item = desired_order[target_index]
+            for j in range(target_index, count):
+                if sequence[j] == target_item:
+                    current_index = j
+                    break
+
+            if current_index != target_index:
+                sequence.MoveTo(
+                    current_index, current_index, sequence, target_index
+                )
+
     @OperationsMethod
     def MoveUp(self, parent_or_hvo, item, positions=1):
         """

@@ -530,10 +530,7 @@ class WfiMorphBundleOperations(BaseOperations):
             raise FP_ParameterError("Bundle list must contain exactly the same bundles as the analysis")
 
         with self._TransactionCM("Reorder morph bundles"):
-            # Clear and re-add in new order
-            analysis.MorphBundlesOS.Clear()
-            for bundle in bundle_list:
-                analysis.MorphBundlesOS.Add(bundle)
+            self._ApplySequenceOrder(analysis.MorphBundlesOS, list(bundle_list))
 
     # ==================== FORM & GLOSS OPERATIONS ====================
 
