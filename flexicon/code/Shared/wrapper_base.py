@@ -74,11 +74,38 @@ Usage Notes:
     - Never access _obj or _concrete directly in subclasses
     - External code should use the public `lcm_object` property (not
       `_obj`/`_concrete`) to reach the raw LCM object for casting
+    - Equality and hashing use LCM ``Hvo`` (see ``lcm_identity_hvo``) so
+      ``wrapper == raw_object`` and ``wrapper in sequence`` work when the
+      underlying object is the same repository entry
     - Use get_property() for safe access with defaults
     - Use class_type property to check the concrete type
 """
 
 from ..lcm_casting import cast_to_concrete
+
+
+def lcm_identity_hvo(obj):
+    """
+    Return the LCM ``Hvo`` used for wrapper equality and hashing.
+
+    Accepts ``LCMObjectWrapper``, ``PythonicWrapper``, or a raw LCM object.
+    Returns ``None`` when no Hvo can be resolved (non-LCM values).
+    """
+    if obj is None:
+        return None
+    if isinstance(obj, LCMObjectWrapper):
+        target = obj.lcm_object
+    elif type(obj).__name__ == "PythonicWrapper":
+        try:
+            target = object.__getattribute__(obj, "_obj")
+        except AttributeError:
+            return None
+    else:
+        target = obj
+    hvo = getattr(target, "Hvo", None)
+    if hvo is None:
+        return None
+    return int(hvo)
 
 
 class LCMObjectWrapper:
@@ -293,6 +320,21 @@ class LCMObjectWrapper:
             return getattr(self, prop_name)
         except AttributeError:
             return default
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        self_hvo = lcm_identity_hvo(self)
+        other_hvo = lcm_identity_hvo(other)
+        if self_hvo is None or other_hvo is None:
+            return NotImplemented
+        return self_hvo == other_hvo
+
+    def __hash__(self):
+        hvo = lcm_identity_hvo(self)
+        if hvo is None:
+            raise TypeError(f"{type(self).__name__} is not hashable without an Hvo")
+        return hash(hvo)
 
     def __repr__(self):
         """
