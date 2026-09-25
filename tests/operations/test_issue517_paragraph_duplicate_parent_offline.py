@@ -29,11 +29,13 @@ def _duplicate_block(text: str) -> str:
 
 
 def test_issue517_duplicate_routes_sttext_owner_through_gettext():
-    block = _duplicate_block(PARAGRAPH_OPS.read_text(encoding="utf-8"))
+    source = PARAGRAPH_OPS.read_text(encoding="utf-8")
+    block = _duplicate_block(source)
     assert "_GetTypedOwner(para_obj)" in block
-    assert "__GetTextObject(owner.Owner)" in block
+    assert "GetOwningText(para_obj)" in block
     assert "IText(owner.Owner)" not in block
-    assert "issue #517" in block
+    owning = source[source.index("def GetOwningText") : source.index("def InsertAt")]
+    assert "__GetTextObject(st_text.Owner)" in owning
 
 
 def test_issue517_live_gate_module_exists():
