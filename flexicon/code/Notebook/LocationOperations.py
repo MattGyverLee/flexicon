@@ -968,26 +968,18 @@ class LocationOperations(BaseOperations):
         # Get current parent
         old_parent = self.GetRegion(location)
 
-        # Remove from old parent
-        with self._TransactionCM("Set location region"):
-            if old_parent:
-                old_parent.SubPossibilitiesOS.Remove(location)
-            else:
-                # Remove from top-level list
-                location_list = self.project.lp.LocationsOA
-                if location_list and location in location_list.PossibilitiesOS:
-                    location_list.PossibilitiesOS.Remove(location)
+        if old_parent == new_parent:
+            return
 
-            # Add to new parent
+        # Re-parent via Add only -- LcmOwningSequence.Remove deletes the ownee (#472).
+        with self._TransactionCM("Set location region"):
             if new_parent:
                 new_parent.SubPossibilitiesOS.Add(location)
             else:
-                # Add to top-level list
                 location_list = self.project.lp.LocationsOA
                 if location_list:
                     location_list.PossibilitiesOS.Add(location)
 
-            # Update modification date
             location.DateModified = DateTime.Now
 
     @OperationsMethod
