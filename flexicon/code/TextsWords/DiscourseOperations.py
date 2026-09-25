@@ -1075,18 +1075,13 @@ class DiscourseOperations(BaseOperations):
         """
         chart_obj = self.__GetChartObject(chart_or_hvo)
 
-        # Navigate up the ownership chain to find the text
-        # Chart -> StText -> Text
-        owner = chart_obj.Owner  # This should be StText
-        if owner:
-            text_owner = owner.Owner  # This should be IText
-            if text_owner:
-                try:
-                    return IText(text_owner)
-                except (TypeError, System.InvalidCastException) as e:
-                    raise FP_ParameterError("Chart owner is not a valid text")
-
-        raise FP_ParameterError("Chart has no valid owning text")
+        # Navigate Chart -> StText -> IText (issue #515). Raw .Owner returns
+        # ICmObject, so cast the StText owner before reading .Owner for the
+        # text (same pattern as ParagraphOperations.Duplicate parent lookup).
+        st_text = self._GetTypedOwner(chart_obj)
+        if st_text is None or st_text.Owner is None:
+            raise FP_ParameterError("Chart has no valid owning text")
+        return self.__GetTextObject(st_text.Owner)
 
     @OperationsMethod
     def GetGuid(self, chart_or_hvo):
