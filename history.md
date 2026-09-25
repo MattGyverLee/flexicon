@@ -10,6 +10,48 @@ None
 
 ## History
 
+### 2026-09-25 - v4.10.0: the HVO path stops being second-class
+
+A repair release: about sixty fixes merged between 4.9.0 and this cut,
+dominated by one bug class. An operation handed an HVO resolved it with
+`project.Object(hvo)`, received the gate-limited `ICmObject` view, and then
+failed -- or, behind a `hasattr` guard, silently did nothing -- on the first
+type-specific member it touched. A long series of per-resolver fixes
+(#455-#508) routed those resolvers through `cast_to_concrete()`.
+
+**The fixes did not work, and only the live tier could say so.** Every
+one merged green offline. The release gate's first full live run failed
+25 tests, and the largest cluster had a single cause:
+`cast_to_concrete()` is an allow-list keyed on `ClassName`, and sixteen of
+the classes those resolvers needed had never been registered. A miss is
+total and silent by design -- the object comes back unchanged -- so each
+"fix" was a no-op that read as a fix. The missing set was not guessed. The
+live suite was re-run with every cache miss logged against its call site,
+cross-checked against a static sweep of every resolver's documented return
+type, and the union registered. That sequence -- measure the misses, then
+fix -- is worth repeating the next time a shared helper silently degrades.
+
+**The live run also found four operations that had never worked.**
+`ScrDrafts.Create` named enum members the LCM does not have (the
+`ScrDraftType` enum is `SavedVersion` / `ImportedVersion`, nothing more).
+`MakeFeatStruc`'s new name operands imported `ITsString` from the wrong
+namespace. Note replies asked the service locator for an object interface
+instead of its repository. `PossibilityLists.GetParentItem` probed the bare
+`.Owner` view and always answered `None`. Each had shipped, or was about to,
+on offline evidence alone.
+
+**Two it found are older than this release and are recorded, not fixed.**
+`InflectionClassCreate` and `ScrNotes.Create` have always put their object
+in the wrong owning collection. Both need an API decision, not a cast, so
+they ship as known issues with their live gates parked honestly: the
+ScrNote gate is a strict xfail that flips the moment `Create` is fixed.
+
+**Also:** moves and reorders stop deleting what they move (an LCM owning
+sequence's `Remove`/`Clear` destroys, it does not detach; #470-#473,
+#448); the offline suite's test-order pollution -- four test modules
+leaking stub modules into `sys.modules` -- is contained, which un-hid
+twenty-odd real failures behind a collection error.
+
 ### 2026-09-19 - v4.9.0: the parser becomes reachable, read-only
 
 Makes the FieldWorks morphological parser addressable from a script as
