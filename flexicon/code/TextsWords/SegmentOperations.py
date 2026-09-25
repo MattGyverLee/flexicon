@@ -187,7 +187,12 @@ class SegmentOperations(BaseOperations):
                 IWfiGloss, or IPunctuationForm) or its HVO integer.
 
         Returns:
-            IAnalysis: The analysis object.
+            ``IAnalysis``: The analysis object. The HVO path returns
+            ``project.Object(hvo)`` without ``cast_to_concrete`` (polymorphic
+            wordform / analysis / gloss / punctuation types). Callers that
+            need concrete analysis interfaces must cast per issue #212; this
+            helper stays deliberately generic (issue #494).
+
         """
         if isinstance(analysis_or_hvo, int):
             return self.project.Object(analysis_or_hvo)

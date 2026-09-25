@@ -630,7 +630,10 @@ class ScrNoteOperations(BaseOperations):
             para_or_hvo: Either an IScrTxtPara object or an HVO (int)
 
         Returns:
-            IScrTxtPara: The resolved paragraph object
+            ``IScrTxtPara``: The resolved paragraph. The HVO path validates
+            with ``isinstance(obj, IScrTxtPara)`` but does not call
+            ``cast_to_concrete``; the sole caller binds the result without
+            reading subtype-only members (issue #494 contract-only row).
 
         Raises:
             FP_ParameterError: If HVO doesn't refer to a Scripture paragraph

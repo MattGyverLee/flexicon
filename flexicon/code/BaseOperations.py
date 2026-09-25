@@ -2953,6 +2953,13 @@ class BaseOperations:
         Resolve one ``_MakeFeatStruc`` feature/value operand: an HVO
         (``int``), a GUID (``str``), a plain feature/value name (``str``,
         issue #265), or an already-resolved LCM object/wrapper.
+
+        Returns:
+            Polymorphic LCM object for the operand. HVO and GUID paths use
+            ``project.Object(...)`` and return the bare pythonnet view (often
+            ``ICmObject``); this helper intentionally does **not** cast --
+            downstream ``_MakeFeatStruc`` logic accepts several concrete
+            operand types and must not narrow here (issue #494).
         """
         if isinstance(raw, int) and not isinstance(raw, bool):
             return self.project.Object(raw)
