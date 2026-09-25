@@ -2618,7 +2618,8 @@ class LexSenseOperations(BaseOperations):
             >>> project.Senses.MovePicture(pictures[1], sense1, other_sense)
 
         Notes:
-            - Picture is removed from source PicturesOS and added to destination PicturesOS
+            - LCM re-parents on a single ``Add`` to the destination owning
+              sequence; do not ``Remove`` then ``Add`` (that deletes the picture)
             - Caption and file reference are preserved
             - The physical image file is NOT moved/copied
             - Cannot move to the same sense (returns False)
@@ -2652,8 +2653,7 @@ class LexSenseOperations(BaseOperations):
             raise FP_ParameterError("Picture not found in source sense's picture collection")
 
         with self._TransactionCM("Move picture"):
-            # Move the picture (remove from source, add to destination)
-            from_sense.PicturesOS.Remove(picture)
+            # LCM owning sequences re-parent on Add; Remove deletes (#471).
             to_sense.PicturesOS.Add(picture)
 
             logger.info(f"Moved picture from sense {from_sense.Guid} to sense {to_sense.Guid}")
