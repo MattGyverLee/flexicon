@@ -157,6 +157,48 @@ class DiscourseOperations(BaseOperations):
                 pass
         return text_or_hvo
 
+    def __CastChartView(self, obj):
+        """
+        Cast a chart LCM object to IDsConstChart or IDsChart when possible.
+
+        ``project.Object(hvo)`` returns a bare ``ICmObject``; ClassName dispatch
+        is required before pythonnet will expose chart-specific members (#275).
+        """
+        class_name = getattr(obj, "ClassName", None)
+        if class_name == "DsConstChart":
+            try:
+                return IDsConstChart(obj)
+            except Exception:
+                pass
+        if class_name == "DsChart":
+            try:
+                return IDsChart(obj)
+            except Exception:
+                pass
+        if isinstance(obj, IDsConstChart):
+            return obj
+        try:
+            return IDsConstChart(obj)
+        except (
+            TypeError,
+            System.InvalidCastException,
+            KeyError,
+            AttributeError,
+            System.Collections.Generic.KeyNotFoundException,
+        ):
+            pass
+        try:
+            return IDsChart(obj)
+        except (
+            TypeError,
+            System.InvalidCastException,
+            KeyError,
+            AttributeError,
+            System.Collections.Generic.KeyNotFoundException,
+        ):
+            pass
+        return obj
+
     def __GetChartObject(self, chart_or_hvo):
         """
         Resolve chart_or_hvo to chart object (IConstChart or IDsChart).
@@ -173,29 +215,18 @@ class DiscourseOperations(BaseOperations):
         """
         self._ValidateParam(chart_or_hvo, "chart_or_hvo")
 
+        # Casts by ClassName BEFORE returning (issue #510, generalising #275 /
+        # ConstChartOperations.__ResolveObject): pass-through must not return an
+        # uncast ``project.Object(hvo)`` view (Defect 1 from #275).
         if isinstance(chart_or_hvo, int):
-            try:
-                obj = self.project.Object(chart_or_hvo)
-                # Try to cast to IDsConstChart first (most common)
-                try:
-                    return IDsConstChart(obj)
-                except (
-                    TypeError,
-                    System.InvalidCastException,
-                    KeyError,
-                    AttributeError,
-                    System.Collections.Generic.KeyNotFoundException,
-                ):
-                    # Fall back to IDsChart for discourse charts
-                    return IDsChart(obj)
-            except (
-                TypeError,
-                System.InvalidCastException,
-                KeyError,
-                AttributeError,
-                System.Collections.Generic.KeyNotFoundException,
-            ) as e:
+            obj = self.project.Object(chart_or_hvo)
+            class_name = getattr(obj, "ClassName", None)
+            if class_name not in ("DsConstChart", "DsChart"):
                 raise FP_ParameterError(f"Invalid chart HVO: {chart_or_hvo}")
+            return self.__CastChartView(obj)
+        class_name = getattr(chart_or_hvo, "ClassName", None)
+        if class_name in ("DsConstChart", "DsChart"):
+            return self.__CastChartView(chart_or_hvo)
         return chart_or_hvo
 
     def __GetRowObject(self, row_or_hvo):
@@ -214,18 +245,23 @@ class DiscourseOperations(BaseOperations):
         """
         self._ValidateParam(row_or_hvo, "row_or_hvo")
 
+        # Casts by ClassName BEFORE returning (issue #510, generalising
+        # ConstChartRowOperations.__ResolveObject / #275 Defect 1).
         if isinstance(row_or_hvo, int):
+            obj = self.project.Object(row_or_hvo)
+            if getattr(obj, "ClassName", None) == "ConstChartRow":
+                try:
+                    return IConstChartRow(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IConstChartRow):
+                return obj
+            raise FP_ParameterError(f"Invalid row HVO: {row_or_hvo}")
+        if getattr(row_or_hvo, "ClassName", None) == "ConstChartRow":
             try:
-                obj = self.project.Object(row_or_hvo)
-                return IConstChartRow(obj)
-            except (
-                TypeError,
-                System.InvalidCastException,
-                KeyError,
-                AttributeError,
-                System.Collections.Generic.KeyNotFoundException,
-            ) as e:
-                raise FP_ParameterError(f"Invalid row HVO: {row_or_hvo}")
+                return IConstChartRow(row_or_hvo)
+            except Exception:
+                pass
         return row_or_hvo
 
     # --- Chart Management Operations ---
