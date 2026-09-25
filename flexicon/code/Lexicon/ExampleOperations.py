@@ -41,6 +41,7 @@ from ..FLExProject import (
 
 # Import string utilities
 from ..Shared.string_utils import normalize_text
+from ..lcm_casting import cast_to_concrete
 
 
 class ExampleOperations(BaseOperations):
@@ -1701,8 +1702,8 @@ class ExampleOperations(BaseOperations):
             ILexSense: The resolved sense object.
         """
         if isinstance(sense_or_hvo, int):
-            return self.project.Object(sense_or_hvo)
-        return sense_or_hvo
+            return cast_to_concrete(self.project.Object(sense_or_hvo))
+        return cast_to_concrete(sense_or_hvo)
 
     def __GetExampleObject(self, example_or_hvo):
         """
@@ -1715,8 +1716,8 @@ class ExampleOperations(BaseOperations):
             ILexExampleSentence: The resolved example object.
         """
         if isinstance(example_or_hvo, int):
-            return self.project.Object(example_or_hvo)
-        return example_or_hvo
+            return cast_to_concrete(self.project.Object(example_or_hvo))
+        return cast_to_concrete(example_or_hvo)
 
     def __WSHandle(self, wsHandle):
         """
