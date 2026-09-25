@@ -47,6 +47,8 @@ from ..FLExProject import (
 # Import string utilities
 from ..Shared.string_utils import normalize_text, normalize_match_key
 
+from ..lcm_casting import cast_to_concrete
+
 # Catalog parsing helpers (Phase 6d)
 from ..Shared.catalog import (
     CatalogImportResult,
@@ -1340,8 +1342,8 @@ class PhonemeOperations(BaseOperations):
             IPhCode: The resolved code object.
         """
         if isinstance(code_or_hvo, int):
-            return self.project.Object(code_or_hvo)
-        return code_or_hvo
+            return cast_to_concrete(self.project.Object(code_or_hvo))
+        return cast_to_concrete(code_or_hvo)
 
     # ========== SYNC INTEGRATION METHODS ==========
 
