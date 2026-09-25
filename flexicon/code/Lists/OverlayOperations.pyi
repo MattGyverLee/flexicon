@@ -10,7 +10,8 @@ from ..BaseOperations import BaseOperations
 class OverlayOperations(BaseOperations[Any]):
     """OverlayOperations operations"""
 
-    # Inherited from PossibilityItemOperations.GetAll (list[ICmPossibility]).
+    # list[ICmOverlay] (ILangProject.OverlaysOC); LCM objects are typed Any
+    # so the stub does not require SIL.LCModel.
     def GetAll(self) -> List[Any]: ...
     def Find(self, *args: Any, **kwargs: Any) -> Optional[Any]: ...
     def Exists(self, *args: Any, **kwargs: Any) -> bool: ...
