@@ -381,9 +381,7 @@ class SegmentOperations(BaseOperations):
         segment_obj = self.__GetSegmentObject(segment_or_hvo)
         ws = self.__WSHandleVern(wsHandle)
 
-        para = segment_obj.Paragraph
-        if para is None:
-            raise FP_ParameterError("Segment has no owning paragraph; cannot write BaselineText")
+        para = self.GetOwningParagraph(segment_obj)
         begin = segment_obj.BeginOffset
         end = segment_obj.EndOffset
         # The builder work is pure in-memory string assembly on a TsStrBldr;
@@ -1001,9 +999,7 @@ class SegmentOperations(BaseOperations):
                 f"(exclusive); got {offset_within_segment}"
             )
 
-        para = seg.Paragraph
-        if para is None:
-            raise FP_ParameterError("Segment has no owning paragraph")
+        para = self.GetOwningParagraph(seg)
 
         absolute_offset = seg.BeginOffset + offset_within_segment
 
@@ -1092,12 +1088,16 @@ class SegmentOperations(BaseOperations):
                 f"got {translation_policy!r}"
             )
 
-        if seg1.Owner != seg2.Owner:
+        # Compare typed paragraph owners by HVO (issue #521). Raw seg.Owner is
+        # ICmObject; reference inequality can spuriously fail adjacent segments.
+        para1 = self._GetTypedOwner(seg1)
+        para2 = self._GetTypedOwner(seg2)
+        if para1 is None or para2 is None:
+            raise FP_ParameterError("Segments have no valid owner paragraph")
+        if para1.Hvo != para2.Hvo:
             raise FP_ParameterError("Segments must be in the same paragraph")
 
-        para = self._GetTypedOwner(seg1)
-        if para is None:
-            raise FP_ParameterError("Segments have no valid owner paragraph")
+        para = para1
 
         segments_list = list(para.SegmentsOS)
         idx1 = segments_list.index(seg1)
@@ -1277,6 +1277,43 @@ class SegmentOperations(BaseOperations):
             para.Contents = snapshot
 
         return para.SegmentsOS
+
+    @OperationsMethod
+    def GetOwningParagraph(self, segment_or_hvo):
+        """
+        Get the paragraph that owns a segment.
+
+        Retrieves the ``IStTxtPara`` object that contains the segment via the
+        typed owner chain (issue #521).
+
+        Args:
+            segment_or_hvo: The ISegment object or HVO.
+
+        Returns:
+            IStTxtPara: The paragraph that owns the segment.
+
+        Raises:
+            FP_NullParameterError: If segment_or_hvo is None.
+            FP_ParameterError: If the segment does not exist or has no owner.
+
+        Example:
+            >>> para = project.Paragraphs.Create(text, "Hello world.")
+            >>> seg = project.Segments.AppendSentence(para, "Second sentence.")
+            >>> owner = project.Segments.GetOwningParagraph(seg)
+            >>> assert owner.Hvo == para.Hvo
+
+        Notes:
+            - Accepts segment HVO and raw ``project.Object(hvo)`` views (#275)
+            - Prefer this over ``segment.Paragraph`` / raw ``segment.Owner``
+
+        See Also:
+            MergeSegments, SplitSegment, SetBaselineText, Delete
+        """
+        segment_obj = self.__GetSegmentObject(segment_or_hvo)
+        para = self._GetTypedOwner(segment_obj)
+        if para is None:
+            raise FP_ParameterError("Segment has no valid owning paragraph")
+        return para
 
     # ========== QUERY/VALIDATION METHODS ==========
 
