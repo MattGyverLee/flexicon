@@ -36,6 +36,7 @@ from ..FLExProject import (
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key
+from ..lcm_casting import cast_to_concrete
 
 # --- Spelling Status Enum ---
 
@@ -98,6 +99,42 @@ class WordformOperations(BaseOperations):
         if wsHandle is None:
             return self.project.project.DefaultVernWs
         return self.project._FLExProject__WSHandle(wsHandle, self.project.project.DefaultVernWs)
+
+    def __ResolveWordform(self, wordform_or_hvo):
+        """
+        Resolve HVO or object to IWfiWordform.
+
+        Casts by ``ClassName`` before returning (issue #500, generalising
+        #275 / #269). ``self.project.Object(hvo)`` returns a bare
+        ``ICmObject``; ``isinstance(obj, IWfiWordform)`` is False even for
+        a genuine wordform, so the old inline HVO guards rejected every real
+        HVO. ``cast_to_concrete`` widens to the concrete interface.
+
+        Args:
+            wordform_or_hvo: Either an IWfiWordform object or an HVO (int).
+
+        Returns:
+            IWfiWordform: The resolved wordform object.
+
+        Raises:
+            FP_ParameterError: If HVO does not refer to a wordform.
+        """
+        if isinstance(wordform_or_hvo, int):
+            obj = self.project.Object(wordform_or_hvo)
+            if getattr(obj, "ClassName", None) == "WfiWordform":
+                try:
+                    return cast_to_concrete(obj)
+                except Exception:
+                    pass
+            if isinstance(obj, IWfiWordform):
+                return obj
+            raise FP_ParameterError("HVO does not refer to a wordform")
+        if getattr(wordform_or_hvo, "ClassName", None) == "WfiWordform":
+            try:
+                return cast_to_concrete(wordform_or_hvo)
+            except Exception:
+                pass
+        return wordform_or_hvo
 
     @wrap_enumerable
     @OperationsMethod
@@ -205,13 +242,7 @@ class WordformOperations(BaseOperations):
         """
         self._EnsureWriteEnabled()
 
-        # Resolve to wordform object
-        if isinstance(wordform_or_hvo, int):
-            wordform = self.project.Object(wordform_or_hvo)
-            if not isinstance(wordform, IWfiWordform):
-                raise FP_ParameterError("HVO does not refer to a wordform")
-        else:
-            wordform = wordform_or_hvo
+        wordform = self.__ResolveWordform(wordform_or_hvo)
 
         # LCM Delete() removes the object from the repository
         with self._TransactionCM("Delete wordform"):
@@ -317,13 +348,7 @@ class WordformOperations(BaseOperations):
         See Also:
             SetForm, Find
         """
-        # Resolve to wordform object
-        if isinstance(wordform_or_hvo, int):
-            wordform = self.project.Object(wordform_or_hvo)
-            if not isinstance(wordform, IWfiWordform):
-                raise FP_ParameterError("HVO does not refer to a wordform")
-        else:
-            wordform = wordform_or_hvo
+        wordform = self.__ResolveWordform(wordform_or_hvo)
 
         wsHandle = self.__WSHandle(wsHandle)
 
@@ -364,13 +389,7 @@ class WordformOperations(BaseOperations):
         self._ValidateParam(wordform_or_hvo, "wordform_or_hvo")
         self._ValidateParam(form, "form")
 
-        # Resolve to wordform object
-        if isinstance(wordform_or_hvo, int):
-            wordform = self.project.Object(wordform_or_hvo)
-            if not isinstance(wordform, IWfiWordform):
-                raise FP_ParameterError("HVO does not refer to a wordform")
-        else:
-            wordform = wordform_or_hvo
+        wordform = self.__ResolveWordform(wordform_or_hvo)
 
         wsHandle = self.__WSHandle(wsHandle)
 
@@ -408,13 +427,7 @@ class WordformOperations(BaseOperations):
         See Also:
             SetSpellingStatus, SpellingStatusStates
         """
-        # Resolve to wordform object
-        if isinstance(wordform_or_hvo, int):
-            wordform = self.project.Object(wordform_or_hvo)
-            if not isinstance(wordform, IWfiWordform):
-                raise FP_ParameterError("HVO does not refer to a wordform")
-        else:
-            wordform = wordform_or_hvo
+        wordform = self.__ResolveWordform(wordform_or_hvo)
 
         return wordform.SpellingStatus
 
@@ -452,13 +465,7 @@ class WordformOperations(BaseOperations):
         if status not in (SpellingStatusStates.UNDECIDED, SpellingStatusStates.INCORRECT, SpellingStatusStates.CORRECT):
             raise FP_ParameterError(f"Invalid spelling status: {status}. Must be 0, 1, or 2.")
 
-        # Resolve to wordform object
-        if isinstance(wordform_or_hvo, int):
-            wordform = self.project.Object(wordform_or_hvo)
-            if not isinstance(wordform, IWfiWordform):
-                raise FP_ParameterError("HVO does not refer to a wordform")
-        else:
-            wordform = wordform_or_hvo
+        wordform = self.__ResolveWordform(wordform_or_hvo)
 
         with self._TransactionCM("Set wordform spelling status"):
             wordform.SpellingStatus = status
@@ -492,13 +499,7 @@ class WordformOperations(BaseOperations):
         See Also:
             GetAll, Find
         """
-        # Resolve to wordform object
-        if isinstance(wordform_or_hvo, int):
-            wordform = self.project.Object(wordform_or_hvo)
-            if not isinstance(wordform, IWfiWordform):
-                raise FP_ParameterError("HVO does not refer to a wordform")
-        else:
-            wordform = wordform_or_hvo
+        wordform = self.__ResolveWordform(wordform_or_hvo)
 
         return list(wordform.AnalysesOC)
 
@@ -529,13 +530,7 @@ class WordformOperations(BaseOperations):
         See Also:
             GetOccurrences, GetAll
         """
-        # Resolve to wordform object
-        if isinstance(wordform_or_hvo, int):
-            wordform = self.project.Object(wordform_or_hvo)
-            if not isinstance(wordform, IWfiWordform):
-                raise FP_ParameterError("HVO does not refer to a wordform")
-        else:
-            wordform = wordform_or_hvo
+        wordform = self.__ResolveWordform(wordform_or_hvo)
 
         # OccurrencesInTexts is IEnumerable[ISegment] (no .Count). The sibling
         # GetOccurrences method already materializes via list() -- match it
@@ -571,13 +566,7 @@ class WordformOperations(BaseOperations):
         See Also:
             GetOccurrenceCount, GetAll
         """
-        # Resolve to wordform object
-        if isinstance(wordform_or_hvo, int):
-            wordform = self.project.Object(wordform_or_hvo)
-            if not isinstance(wordform, IWfiWordform):
-                raise FP_ParameterError("HVO does not refer to a wordform")
-        else:
-            wordform = wordform_or_hvo
+        wordform = self.__ResolveWordform(wordform_or_hvo)
 
         return list(wordform.OccurrencesInTexts)
 
@@ -608,13 +597,7 @@ class WordformOperations(BaseOperations):
         See Also:
             GetForm, GetSpellingStatus
         """
-        # Resolve to wordform object
-        if isinstance(wordform_or_hvo, int):
-            wordform = self.project.Object(wordform_or_hvo)
-            if not isinstance(wordform, IWfiWordform):
-                raise FP_ParameterError("HVO does not refer to a wordform")
-        else:
-            wordform = wordform_or_hvo
+        wordform = self.__ResolveWordform(wordform_or_hvo)
 
         return wordform.Checksum
 
@@ -726,13 +709,7 @@ class WordformOperations(BaseOperations):
         """
         self._EnsureWriteEnabled()
 
-        # Resolve to wordform object
-        if isinstance(wordform_or_hvo, int):
-            wordform = self.project.Object(wordform_or_hvo)
-            if not isinstance(wordform, IWfiWordform):
-                raise FP_ParameterError("HVO does not refer to a wordform")
-        else:
-            wordform = wordform_or_hvo
+        wordform = self.__ResolveWordform(wordform_or_hvo)
 
         with self._TransactionCM("Approve wordform spelling"):
             wordform.SpellingStatus = SpellingStatusStates.CORRECT
@@ -810,13 +787,7 @@ class WordformOperations(BaseOperations):
 
         self._ValidateParam(item_or_hvo, "item_or_hvo")
 
-        # Resolve to wordform object
-        if isinstance(item_or_hvo, int):
-            source = self.project.Object(item_or_hvo)
-            if not isinstance(source, IWfiWordform):
-                raise FP_ParameterError("HVO does not refer to a wordform")
-        else:
-            source = item_or_hvo
+        source = self.__ResolveWordform(item_or_hvo)
 
         with self._TransactionCM("Duplicate wordform"):
             # Create new wordform using factory (auto-generates new GUID)
