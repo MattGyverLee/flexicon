@@ -28,6 +28,7 @@ from ..FLExProject import (
     FP_ParameterError,
 )
 from ..BaseOperations import BaseOperations, OperationsMethod
+from ..lcm_casting import cast_to_concrete
 from ..Shared.string_utils import normalize_match_key
 
 
@@ -1530,11 +1531,14 @@ class PossibilityListOperations(BaseOperations):
             FP_ParameterError: If HVO doesn't refer to a possibility list.
         """
         if isinstance(list_or_hvo, int):
-            obj = self.project.Object(list_or_hvo)
-            if not isinstance(obj, ICmPossibilityList):
+            obj = cast_to_concrete(self.project.Object(list_or_hvo))
+            if not (
+                isinstance(obj, ICmPossibilityList)
+                or getattr(obj, "ClassName", None) == "CmPossibilityList"
+            ):
                 raise FP_ParameterError("HVO does not refer to a possibility list")
             return obj
-        return list_or_hvo
+        return cast_to_concrete(list_or_hvo)
 
     def __ResolveItem(self, item_or_hvo):
         """
@@ -1550,11 +1554,14 @@ class PossibilityListOperations(BaseOperations):
             FP_ParameterError: If HVO doesn't refer to a possibility item.
         """
         if isinstance(item_or_hvo, int):
-            obj = self.project.Object(item_or_hvo)
-            if not isinstance(obj, ICmPossibility):
+            obj = cast_to_concrete(self.project.Object(item_or_hvo))
+            if not (
+                isinstance(obj, ICmPossibility)
+                or getattr(obj, "ClassName", None) == "CmPossibility"
+            ):
                 raise FP_ParameterError("HVO does not refer to a possibility item")
             return obj
-        return item_or_hvo
+        return cast_to_concrete(item_or_hvo)
 
     def __WSHandle(self, wsHandle):
         """
