@@ -8,4 +8,4 @@ python -m pytest tests/operations/test_issue525_merge_segments_hvo_offline.py -m
 
 **run_mode:** offline (no live_status.json for this slice)
 
-**Pass/fail:** PASS (pending run)
+**Pass/fail:** PASS -- 3 passed (`python3 -m pytest ... -q`)
