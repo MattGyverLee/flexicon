@@ -18,6 +18,12 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **``AllomorphOperations.__GetEntryObject`` casts to concrete** (#463).
+  HVO int callers no longer receive a bare ``ICmObject`` view from
+  ``project.Object(hvo)``, so ``GetAll(entry_hvo)`` and ``Create(entry_hvo, ...)``
+  can read ``LexemeFormOA`` and ``AlternateFormsOS`` (promoted from #284
+  re-triage).
+
 - **``PronunciationOperations`` HVO resolvers cast to concrete interfaces** (#459).
   ``__GetPronunciationObject`` and ``__GetEntryObject`` no longer return a bare
   ``ICmObject`` view from ``project.Object(hvo)``, so form, media, location, and
