@@ -762,6 +762,47 @@ class BaseOperations:
 
             return count
 
+    def _ApplySequenceOrder(self, sequence, desired_order):
+        """
+        Reorder an LCM owning sequence to match ``desired_order`` using MoveTo.
+
+        Never uses ``Clear()`` -- on an owning sequence, Clear deletes every
+        child object (issue #470).
+
+        Args:
+            sequence: LCM owning sequence (``Count``, indexing, ``MoveTo``).
+            desired_order: Every current member exactly once, in target order.
+
+        Raises:
+            FP_ParameterError: If ``desired_order`` length or membership does
+                not match the sequence.
+        """
+        count = sequence.Count
+        if len(desired_order) != count:
+            raise FP_ParameterError(
+                f"desired_order length {len(desired_order)} does not match "
+                f"sequence count {count}"
+            )
+
+        current = [sequence[i] for i in range(count)]
+        if set(current) != set(desired_order):
+            raise FP_ParameterError(
+                "desired_order must contain exactly the same objects as the sequence"
+            )
+
+        for target_index in range(count):
+            current_index = target_index
+            target_item = desired_order[target_index]
+            for j in range(target_index, count):
+                if sequence[j] == target_item:
+                    current_index = j
+                    break
+
+            if current_index != target_index:
+                sequence.MoveTo(
+                    current_index, current_index, sequence, target_index
+                )
+
     @OperationsMethod
     def MoveUp(self, parent_or_hvo, item, positions=1):
         """
@@ -3442,6 +3483,25 @@ class BaseOperations:
             for publication in publications.GetAll():
                 if publication not in item.DoNotPublishInRC:
                     item.DoNotPublishInRC.Add(publication)
+
+    @staticmethod
+    def _UnwrapLcmObject(obj):
+        """
+        Peel LCMObjectWrapper-style wrappers before pythonnet interface casts.
+
+        Plain LCM objects pass through unchanged. Shared resolvers call this
+        so items from wrapper-returning ``GetAll()`` round-trip back into
+        Operations methods (issue #449).
+        """
+        if obj is None:
+            return obj
+        if hasattr(obj, "lcm_object"):
+            return obj.lcm_object
+        if hasattr(obj, "_obj") and not hasattr(obj, "Hvo"):
+            return obj._obj
+        if hasattr(obj, "_obj") and hasattr(obj._obj, "Hvo"):
+            return obj._obj
+        return obj
 
     def _ValidateParam(self, param: Any, param_name: str = "parameter") -> None:
         """

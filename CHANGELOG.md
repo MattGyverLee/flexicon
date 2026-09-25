@@ -16,8 +16,51 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 > 4.6.0, 4.7.0 and 4.8.0: no signature changes, no default's meaning
 > changes for a caller that passes it explicitly.
 
+### Fixed
+
+- **``PhonologicalRuleOperations.__ResolveObject`` casts to concrete** (#461).
+  HVO int callers no longer receive a bare ``ICmObject`` view from
+  ``project.Object(hvo)``, so ``GetName``, ``SetName``, ``GetDescription``,
+  and related rule accessors work when callers pass an HVO int (promoted from
+  #284 re-triage).
+
+- **``AllomorphOperations.__GetEntryObject`` casts to concrete** (#463).
+  HVO int callers no longer receive a bare ``ICmObject`` view from
+  ``project.Object(hvo)``, so ``GetAll(entry_hvo)`` and ``Create(entry_hvo, ...)``
+  can read ``LexemeFormOA`` and ``AlternateFormsOS`` (promoted from #284
+  re-triage).
+
+- **``PronunciationOperations`` HVO resolvers cast to concrete interfaces** (#459).
+  ``__GetPronunciationObject`` and ``__GetEntryObject`` no longer return a bare
+  ``ICmObject`` view from ``project.Object(hvo)``, so form, media, location, and
+  entry-collection helpers work when callers pass an HVO int (promoted from #284
+  re-triage).
+
+- **``ExampleOperations`` HVO resolvers cast to concrete interfaces** (#455).
+  ``__GetExampleObject`` and ``__GetSenseObject`` no longer return a bare
+  ``ICmObject`` view from ``project.Object(hvo)``, so publication helpers
+  that read ``DoNotPublishInRC`` work when callers pass an HVO int
+  (promoted from #284 re-triage).
+- **``LexSenseOperations`` HVO resolvers cast to concrete interfaces** (#457).
+  ``__GetSenseObject``, ``__GetEntryObject``, and ``__GetSemanticDomainObject``
+  no longer return a bare ``ICmObject`` view from ``project.Object(hvo)``, so
+  gloss, definition, MSA, and semantic-domain helpers work when callers pass
+  an HVO int (promoted from #284 re-triage).
+
+- **`LocationOperations`` geo helpers fail loud instead of silent no-op** (#453).
+  ``ICmLocation`` / ``CmLocation`` has no coordinate or elevation fields in the
+  LCM; ``SetCoordinates`` and ``SetElevation`` now raise ``FP_ParameterError``
+  rather than opening a transaction that only bumps ``DateModified``. Reads
+  return ``None`` without probing phantom ``DateOfEvent`` / ``Elevation``
+  members.
+
 ### Added
 
+- **Live regression for ``Allomorphs.RemoveOrphaned`` duplicate-lexeme purge**
+  (#231, slice 3). Sandbox test injects a lexeme-form duplicate into
+  ``AlternateFormsOS``, sweeps via ``entry=<int HVO>``, and re-reads the entry
+  from the LCM so the slice 1--2 logic is proven on a real project copy, not
+  mocks alone.
 - **Live regression for ``Allomorph.stem_name`` / ``StemNameRA`` round-trip**
   (#377 item 1). Sena 3 sandbox tests assign a catalog ``IMoStemName`` and
   re-read by HVO so the #352 read path is proven on set-valued data, not only

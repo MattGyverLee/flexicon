@@ -859,13 +859,12 @@ class LexSenseOperations(BaseOperations):
             sense = self.__GetSenseObject(sense_or_hvo)
             resolved_senses.append(sense)
 
-        with self._TransactionCM("Reorder senses"):
-            # Clear current senses
-            entry.SensesOS.Clear()
+        ordered_set = set(resolved_senses)
+        tail = [s for s in entry.SensesOS if s not in ordered_set]
+        desired_order = resolved_senses + tail
 
-            # Add in new order
-            for sense in resolved_senses:
-                entry.SensesOS.Add(sense)
+        with self._TransactionCM("Reorder senses"):
+            self._ApplySequenceOrder(entry.SensesOS, desired_order)
 
     # --- Lookup ---
 
@@ -2623,7 +2622,8 @@ class LexSenseOperations(BaseOperations):
             >>> project.Senses.MovePicture(pictures[1], sense1, other_sense)
 
         Notes:
-            - Picture is removed from source PicturesOS and added to destination PicturesOS
+            - LCM re-parents on a single ``Add`` to the destination owning
+              sequence; do not ``Remove`` then ``Add`` (that deletes the picture)
             - Caption and file reference are preserved
             - The physical image file is NOT moved/copied
             - Cannot move to the same sense (returns False)
@@ -2657,8 +2657,7 @@ class LexSenseOperations(BaseOperations):
             raise FP_ParameterError("Picture not found in source sense's picture collection")
 
         with self._TransactionCM("Move picture"):
-            # Move the picture (remove from source, add to destination)
-            from_sense.PicturesOS.Remove(picture)
+            # LCM owning sequences re-parent on Add; Remove deletes (#471).
             to_sense.PicturesOS.Add(picture)
 
             logger.info(f"Moved picture from sense {from_sense.Guid} to sense {to_sense.Guid}")
@@ -4008,8 +4007,8 @@ class LexSenseOperations(BaseOperations):
             ILexEntry: The resolved entry object.
         """
         if isinstance(entry_or_hvo, int):
-            return self.project.Object(entry_or_hvo)
-        return entry_or_hvo
+            return cast_to_concrete(self.project.Object(entry_or_hvo))
+        return cast_to_concrete(entry_or_hvo)
 
     def __GetSenseObject(self, sense_or_hvo):
         """
@@ -4022,8 +4021,8 @@ class LexSenseOperations(BaseOperations):
             ILexSense: The resolved sense object.
         """
         if isinstance(sense_or_hvo, int):
-            return self.project.Object(sense_or_hvo)
-        return sense_or_hvo
+            return cast_to_concrete(self.project.Object(sense_or_hvo))
+        return cast_to_concrete(sense_or_hvo)
 
     def __GetSemanticDomainObject(self, domain_or_hvo):
         """
@@ -4036,8 +4035,8 @@ class LexSenseOperations(BaseOperations):
             ICmSemanticDomain: The resolved semantic domain object.
         """
         if isinstance(domain_or_hvo, int):
-            return self.project.Object(domain_or_hvo)
-        return domain_or_hvo
+            return cast_to_concrete(self.project.Object(domain_or_hvo))
+        return cast_to_concrete(domain_or_hvo)
 
     def __WSHandleAnalysis(self, wsHandle):
         """

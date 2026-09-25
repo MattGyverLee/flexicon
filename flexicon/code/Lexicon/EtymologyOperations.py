@@ -637,10 +637,7 @@ class EtymologyOperations(BaseOperations):
             raise FP_ParameterError("Etymology list must contain exactly the same etymologies as the entry")
 
         with self._TransactionCM("Reorder etymologies"):
-            # Clear and re-add in new order
-            entry.EtymologyOS.Clear()
-            for etymology in etymologies:
-                entry.EtymologyOS.Add(etymology)
+            self._ApplySequenceOrder(entry.EtymologyOS, etymologies)
 
     # --- Source Language Operations ---
 

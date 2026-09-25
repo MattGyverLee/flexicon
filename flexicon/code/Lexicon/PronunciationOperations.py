@@ -38,6 +38,7 @@ from ..FLExProject import (
 
 # Import string utilities
 from ..Shared.string_utils import normalize_text
+from ..lcm_casting import cast_to_concrete
 
 
 class PronunciationOperations(BaseOperations):
@@ -483,11 +484,12 @@ class PronunciationOperations(BaseOperations):
         if len(pronunciation_list) != current_count:
             raise FP_ParameterError(f"Pronunciation list must contain all {current_count} pronunciations")
 
-        # Clear and re-add in new order
+        pronunciations = [
+            self.__GetPronunciationObject(pron) for pron in pronunciation_list
+        ]
+
         with self._TransactionCM("Reorder pronunciations"):
-            entry.PronunciationsOS.Clear()
-            for pron in pronunciation_list:
-                entry.PronunciationsOS.Add(pron)
+            self._ApplySequenceOrder(entry.PronunciationsOS, pronunciations)
 
     # --- Form Management ---
 
@@ -811,7 +813,8 @@ class PronunciationOperations(BaseOperations):
             >>> project.Pronunciations.MoveMediaFile(media_files[1], pron1, other_pron)
 
         Notes:
-            - Media is removed from source MediaFilesOS and added to destination
+            - LCM re-parents on a single ``Add`` to the destination owning
+              sequence; do not ``Remove`` then ``Add`` (that deletes the media)
             - File reference and description are preserved
             - The physical media file is NOT moved/copied
             - Cannot move to the same pronunciation (no-op, returns False)
@@ -847,9 +850,8 @@ class PronunciationOperations(BaseOperations):
         if media not in from_pron.MediaFilesOS:
             raise FP_ParameterError("Media file not found in source pronunciation's media collection")
 
-        # Move the media (remove from source, add to destination)
         with self._TransactionCM("Move media file"):
-            from_pron.MediaFilesOS.Remove(media)
+            # LCM owning sequences re-parent on Add; Remove deletes (#471).
             to_pron.MediaFilesOS.Add(media)
 
             logger.info(f"Moved media from pronunciation {from_pron.Guid} to pronunciation {to_pron.Guid}")
@@ -1026,8 +1028,8 @@ class PronunciationOperations(BaseOperations):
             ILexEntry: The resolved entry object.
         """
         if isinstance(entry_or_hvo, int):
-            return self.project.Object(entry_or_hvo)
-        return entry_or_hvo
+            return cast_to_concrete(self.project.Object(entry_or_hvo))
+        return cast_to_concrete(entry_or_hvo)
 
     def __GetPronunciationObject(self, pronunciation_or_hvo):
         """
@@ -1040,8 +1042,8 @@ class PronunciationOperations(BaseOperations):
             ILexPronunciation: The resolved pronunciation object.
         """
         if isinstance(pronunciation_or_hvo, int):
-            return self.project.Object(pronunciation_or_hvo)
-        return pronunciation_or_hvo
+            return cast_to_concrete(self.project.Object(pronunciation_or_hvo))
+        return cast_to_concrete(pronunciation_or_hvo)
 
     def __WSHandle(self, wsHandle):
         """

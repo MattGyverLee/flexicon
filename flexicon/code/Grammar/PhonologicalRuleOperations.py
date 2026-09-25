@@ -41,6 +41,7 @@ from ..Shared.rule_patterns import Seg, NC, Boundary
 from ..FLExProject import (
     FP_ParameterError,
 )
+from ..lcm_casting import cast_to_concrete
 
 
 class PhonologicalRuleOperations(BaseOperations):
@@ -1432,11 +1433,12 @@ class PhonologicalRuleOperations(BaseOperations):
         # Uses the shared BaseOperations._UnwrapLcm isinstance-based helper
         # rather than duck-typing on ``_obj``/``_concrete``, since raw
         # pythonnet objects should not be probed with hasattr() for
-        # attributes they don't have.
+        # attributes they don't have. Then cast_to_concrete so HVO callers
+        # get IPhRegularRule / IPhMetathesisRule members (issue #461).
         rule_or_hvo = self._UnwrapLcm(rule_or_hvo)
         if isinstance(rule_or_hvo, int):
-            return self.project.Object(rule_or_hvo)
-        return rule_or_hvo
+            rule_or_hvo = self.project.Object(rule_or_hvo)
+        return cast_to_concrete(rule_or_hvo)
 
     # ========== SYNC INTEGRATION METHODS ==========
 

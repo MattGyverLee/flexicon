@@ -137,3 +137,35 @@ class TestAllomorphRemoveOrphanedDuplicates:
         assert result.kept_count == 0
         assert entry.AlternateFormsOS == []
         assert result.removed[0].reason == "invalid_stale"
+
+
+class TestAllomorphRemoveOrphanedProgress:
+    def test_progress_callback_invoked_per_entry(self):
+        entries = [
+            FakeEntry(1, lexeme=FakeAllomorph(10), alternates=[]),
+            FakeEntry(2, lexeme=FakeAllomorph(20), alternates=[]),
+            FakeEntry(3, lexeme=FakeAllomorph(30), alternates=[]),
+        ]
+        ops = _make_ops(entries)
+        progress = Mock()
+
+        ops.RemoveOrphaned(progress=progress)
+
+        assert progress.call_count == 3
+        assert progress.call_args_list == [
+            ((1, 3),),
+            ((2, 3),),
+            ((3, 3),),
+        ]
+
+    def test_progress_callback_exception_is_swallowed(self):
+        lexeme = FakeAllomorph(10)
+        duplicate = FakeAllomorph(10)
+        entry = FakeEntry(1, lexeme=lexeme, alternates=[duplicate])
+        ops = _make_ops([entry])
+        progress = Mock(side_effect=RuntimeError("boom"))
+
+        result = ops.RemoveOrphaned(progress=progress)
+
+        assert result.removed_count == 1
+        progress.assert_called_once_with(1, 1)

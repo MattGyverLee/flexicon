@@ -589,8 +589,7 @@ class ConstChartRowOperations(BaseOperations):
                         # Moving backward - use index directly
                         source_chart.RowsOS.MoveTo(current_index, current_index, source_chart.RowsOS, index)
             else:
-                # Moving to different chart - remove from source and add to target
-                source_chart.RowsOS.Remove(row)
+                # Re-parent via Insert only -- LcmOwningSequence.Remove deletes (#473).
                 target_chart.RowsOS.Insert(index, row)
 
     # --- Private Helper Methods ---

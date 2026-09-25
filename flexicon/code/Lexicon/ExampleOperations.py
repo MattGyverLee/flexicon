@@ -41,6 +41,7 @@ from ..FLExProject import (
 
 # Import string utilities
 from ..Shared.string_utils import normalize_text
+from ..lcm_casting import cast_to_concrete
 
 
 class ExampleOperations(BaseOperations):
@@ -705,10 +706,7 @@ class ExampleOperations(BaseOperations):
             raise FP_ParameterError("Example list must contain exactly the same examples as the sense")
 
         with self._TransactionCM("Reorder examples"):
-            # Clear and re-add in new order
-            sense.ExamplesOS.Clear()
-            for example in examples:
-                sense.ExamplesOS.Add(example)
+            self._ApplySequenceOrder(sense.ExamplesOS, examples)
 
     @OperationsMethod
     def GetExample(self, example_or_hvo, wsHandle=None):
@@ -1412,7 +1410,8 @@ class ExampleOperations(BaseOperations):
             ...             exampleOps.MoveMediaFile(media_files[0], example2, other_example)
 
         Notes:
-            - Media is removed from source MediaFilesOS and added to destination
+            - LCM re-parents on a single ``Add`` to the destination owning
+              sequence; do not ``Remove`` then ``Add`` (that deletes the media)
             - File reference and description are preserved
             - The physical media file is NOT moved/copied
             - Cannot move to the same example (returns False)
@@ -1454,8 +1453,7 @@ class ExampleOperations(BaseOperations):
             raise FP_ParameterError("Destination example does not support media files")
 
         with self._TransactionCM("Move media file"):
-            # Move the media (remove from source, add to destination)
-            from_example.MediaFilesOS.Remove(media)
+            # LCM owning sequences re-parent on Add; Remove deletes (#471).
             to_example.MediaFilesOS.Add(media)
 
             logger.info(f"Moved media from example {from_example.Guid} to example {to_example.Guid}")
@@ -1701,8 +1699,8 @@ class ExampleOperations(BaseOperations):
             ILexSense: The resolved sense object.
         """
         if isinstance(sense_or_hvo, int):
-            return self.project.Object(sense_or_hvo)
-        return sense_or_hvo
+            return cast_to_concrete(self.project.Object(sense_or_hvo))
+        return cast_to_concrete(sense_or_hvo)
 
     def __GetExampleObject(self, example_or_hvo):
         """
@@ -1715,8 +1713,8 @@ class ExampleOperations(BaseOperations):
             ILexExampleSentence: The resolved example object.
         """
         if isinstance(example_or_hvo, int):
-            return self.project.Object(example_or_hvo)
-        return example_or_hvo
+            return cast_to_concrete(self.project.Object(example_or_hvo))
+        return cast_to_concrete(example_or_hvo)
 
     def __WSHandle(self, wsHandle):
         """

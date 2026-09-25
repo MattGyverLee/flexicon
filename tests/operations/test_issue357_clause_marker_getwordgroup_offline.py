@@ -87,19 +87,19 @@ def _load_const_chart_clause_marker_ops(monkeypatch):
     sil_lcm.IConstChartRow = type("IConstChartRow", (), {})
     sil_lcm.IConstChartWordGroup = _IConstChartWordGroup
 
-    sys.modules["flexicon"] = flexicon
-    sys.modules["flexicon.code"] = flexicon_code
-    sys.modules["flexicon.code.Discourse"] = flexicon_discourse
-    sys.modules["flexicon.code.FLExProject"] = flexicon_flex
-    sys.modules["flexicon.code.BaseOperations"] = base_ops
-    sys.modules["SIL"] = types.ModuleType("SIL")
-    sys.modules["SIL.LCModel"] = sil_lcm
+    monkeypatch.setitem(sys.modules, "flexicon", flexicon)
+    monkeypatch.setitem(sys.modules, "flexicon.code", flexicon_code)
+    monkeypatch.setitem(sys.modules, "flexicon.code.Discourse", flexicon_discourse)
+    monkeypatch.setitem(sys.modules, "flexicon.code.FLExProject", flexicon_flex)
+    monkeypatch.setitem(sys.modules, "flexicon.code.BaseOperations", base_ops)
+    monkeypatch.setitem(sys.modules, "SIL", types.ModuleType("SIL"))
+    monkeypatch.setitem(sys.modules, "SIL.LCModel", sil_lcm)
 
     mod_name = "flexicon.code.Discourse.ConstChartClauseMarkerOperations"
     spec = importlib.util.spec_from_file_location(mod_name, _ops_module_path())
     mod = importlib.util.module_from_spec(spec)
     mod.__package__ = "flexicon.code.Discourse"
-    sys.modules[mod_name] = mod
+    monkeypatch.setitem(sys.modules, mod_name, mod)
     assert spec.loader is not None
     spec.loader.exec_module(mod)
     return mod, _IConstChartWordGroup

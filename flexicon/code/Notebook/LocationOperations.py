@@ -17,6 +17,14 @@ logger = logging.getLogger(__name__)
 
 import math
 
+# CmLocation adds only Alias beyond CmPossibility in MasterLCModel.xml; there
+# is no LCM storage for geographic coordinates or elevation (issue #453).
+_LCM_LOCATION_GEO_UNSUPPORTED = (
+    "ICmLocation has no coordinate or elevation fields in the LCM (issue #453): "
+    "CmLocation exposes only Alias beyond CmPossibility; historical "
+    "DateOfEvent/GenDate and Elevation access never reached the database."
+)
+
 # Import FLEx LCM types
 from SIL.LCModel import (
     ICmLocation,
@@ -575,31 +583,17 @@ class LocationOperations(BaseOperations):
             ...     print("Location coordinates not set")
 
         Notes:
-            - Returns None if either latitude or longitude is not set
-            - Latitude range: -90 (South Pole) to +90 (North Pole)
-            - Longitude range: -180 (West) to +180 (East)
-            - Coordinates are stored as GenDate fields in LCM
-            - Use decimal degrees format (not degrees/minutes/seconds)
+            - Always returns None today: the LCM ``CmLocation`` class has no
+              latitude/longitude fields (issue #453).
+            - Use decimal degrees format (not degrees/minutes/seconds) if a
+              future storage path is added.
 
         See Also:
             SetCoordinates, GetElevation, FindByCoordinates
         """
         self._ValidateParam(location_or_hvo, "location_or_hvo")
 
-        location = self.__ResolveObject(location_or_hvo)
-
-        # Coordinates are stored in GenDate fields
-        # Latitude in GenDate.GenDateVal1
-        # Longitude in GenDate.GenDateVal2
-        if hasattr(location, "DateOfEvent") and location.DateOfEvent:
-            date_info = location.DateOfEvent
-            if hasattr(date_info, "GenDateVal1") and hasattr(date_info, "GenDateVal2"):
-                lat = date_info.GenDateVal1
-                lon = date_info.GenDateVal2
-                # Check if valid coordinates (both non-zero or explicitly set)
-                if lat != 0 or lon != 0:
-                    return (float(lat), float(lon))
-
+        self.__ResolveObject(location_or_hvo)
         return None
 
     @OperationsMethod
@@ -615,7 +609,8 @@ class LocationOperations(BaseOperations):
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If location_or_hvo, latitude, or longitude is None.
-            FP_ParameterError: If location doesn't exist or coordinates are invalid.
+            FP_ParameterError: If location doesn't exist, coordinates are invalid,
+                or the LCM model provides no coordinate storage (issue #453).
 
         Example:
             >>> location = project.Location.Find("Barasana Village")
@@ -634,8 +629,6 @@ class LocationOperations(BaseOperations):
             - Longitude must be between -180 and +180
             - Use negative values for South latitude and West longitude
             - Use decimal degrees, not degrees/minutes/seconds
-            - Coordinates are stored in GenDate fields
-            - Use (0, 0) to clear coordinates (though this is valid for Gulf of Guinea)
 
         See Also:
             GetCoordinates, SetElevation, FindByCoordinates
@@ -658,28 +651,8 @@ class LocationOperations(BaseOperations):
         if lon < -180 or lon > 180:
             raise FP_ParameterError(f"Longitude must be between -180 and +180 (got {lon})")
 
-        location = self.__ResolveObject(location_or_hvo)
-
-        # Create or update GenDate for coordinates
-        with self._TransactionCM("Set location coordinates"):
-            if not hasattr(location, "DateOfEvent") or not location.DateOfEvent:
-                # Need to create GenDate - this may require factory
-                # For now, set directly if property exists
-                if hasattr(location, "DateOfEvent"):
-                    # Try to initialize the GenDate object
-                    # NOTE: unreachable -- ICmLocation has no DateOfEvent
-                    # (live reflection, 2026-09-23). GenDate lives in
-                    # SIL.LCModel.Core.Cellar, not SIL.LCModel.
-                    from SIL.LCModel.Core.Cellar import GenDate
-
-                    location.DateOfEvent = GenDate()
-
-            if hasattr(location, "DateOfEvent") and location.DateOfEvent:
-                location.DateOfEvent.GenDateVal1 = int(lat * 10000)  # Store with precision
-                location.DateOfEvent.GenDateVal2 = int(lon * 10000)
-
-            # Update modification date
-            location.DateModified = DateTime.Now
+        self.__ResolveObject(location_or_hvo)
+        raise FP_ParameterError(_LCM_LOCATION_GEO_UNSUPPORTED)
 
     @OperationsMethod
     def GetElevation(self, location_or_hvo):
@@ -708,26 +681,16 @@ class LocationOperations(BaseOperations):
             ...     print("Elevation not recorded")
 
         Notes:
-            - Returns None if elevation is not set
-            - Elevation is in meters above sea level
-            - Negative values indicate below sea level
-            - Stored as an integer
-            - Typical range: -500 to +9000 meters for inhabited areas
+            - Always returns None today: the LCM ``CmLocation`` class has no
+              ``Elevation`` field (issue #453).
+            - Elevation is in meters above sea level when a storage path exists.
 
         See Also:
             SetElevation, GetCoordinates
         """
         self._ValidateParam(location_or_hvo, "location_or_hvo")
 
-        location = self.__ResolveObject(location_or_hvo)
-
-        # Elevation might be stored in a numeric field
-        # Check if the field exists and has a value
-        if hasattr(location, "Elevation"):
-            elev = location.Elevation
-            if elev != 0:  # Assume 0 means not set
-                return int(elev)
-
+        self.__ResolveObject(location_or_hvo)
         return None
 
     @OperationsMethod
@@ -742,7 +705,8 @@ class LocationOperations(BaseOperations):
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If location_or_hvo or elevation is None.
-            FP_ParameterError: If location doesn't exist or elevation is invalid.
+            FP_ParameterError: If location doesn't exist, elevation is invalid,
+                or the LCM model provides no elevation storage (issue #453).
 
         Example:
             >>> location = project.Location.Find("Barasana Village")
@@ -784,17 +748,8 @@ class LocationOperations(BaseOperations):
         if elev < -500 or elev > 10000:
             logger.warning(f"Elevation {elev} is outside typical range (-500 to 10000m)")
 
-        location = self.__ResolveObject(location_or_hvo)
-
-        # Set elevation if field exists
-        with self._TransactionCM("Set location elevation"):
-            if hasattr(location, "Elevation"):
-                location.Elevation = elev
-            else:
-                logger.warning("Elevation field not available on ICmLocation")
-
-            # Update modification date
-            location.DateModified = DateTime.Now
+        self.__ResolveObject(location_or_hvo)
+        raise FP_ParameterError(_LCM_LOCATION_GEO_UNSUPPORTED)
 
     # --- Description ---
 
@@ -1013,26 +968,18 @@ class LocationOperations(BaseOperations):
         # Get current parent
         old_parent = self.GetRegion(location)
 
-        # Remove from old parent
-        with self._TransactionCM("Set location region"):
-            if old_parent:
-                old_parent.SubPossibilitiesOS.Remove(location)
-            else:
-                # Remove from top-level list
-                location_list = self.project.lp.LocationsOA
-                if location_list and location in location_list.PossibilitiesOS:
-                    location_list.PossibilitiesOS.Remove(location)
+        if old_parent == new_parent:
+            return
 
-            # Add to new parent
+        # Re-parent via Add only -- LcmOwningSequence.Remove deletes the ownee (#472).
+        with self._TransactionCM("Set location region"):
             if new_parent:
                 new_parent.SubPossibilitiesOS.Add(location)
             else:
-                # Add to top-level list
                 location_list = self.project.lp.LocationsOA
                 if location_list:
                     location_list.PossibilitiesOS.Add(location)
 
-            # Update modification date
             location.DateModified = DateTime.Now
 
     @OperationsMethod
@@ -1244,21 +1191,6 @@ class LocationOperations(BaseOperations):
             if hasattr(source, "Description"):
                 duplicate.Description.CopyAlternatives(source.Description)
 
-            # Copy coordinates and elevation
-            coords = self.GetCoordinates(source)
-            if coords:
-                lat, lon = coords
-                self.SetCoordinates(duplicate, lat, lon)
-
-            if hasattr(source, "DateOfEvent") and source.DateOfEvent:
-                if hasattr(duplicate, "DateOfEvent"):
-                    duplicate.DateOfEvent = source.DateOfEvent
-
-            elevation = self.GetElevation(source)
-            if elevation is not None:
-                if hasattr(duplicate, "Elevation"):
-                    duplicate.Elevation = elevation
-
             # Set creation date
             duplicate.DateCreated = DateTime.Now
 
@@ -1288,20 +1220,6 @@ class LocationOperations(BaseOperations):
             dup_loc.Abbreviation.CopyAlternatives(source_loc.Abbreviation)
             if hasattr(source_loc, "Description"):
                 dup_loc.Description.CopyAlternatives(source_loc.Description)
-
-            coords = self.GetCoordinates(source_loc)
-            if coords:
-                lat, lon = coords
-                self.SetCoordinates(dup_loc, lat, lon)
-
-            if hasattr(source_loc, "DateOfEvent") and source_loc.DateOfEvent:
-                if hasattr(dup_loc, "DateOfEvent"):
-                    dup_loc.DateOfEvent = source_loc.DateOfEvent
-
-            elevation = self.GetElevation(source_loc)
-            if elevation is not None:
-                if hasattr(dup_loc, "Elevation"):
-                    dup_loc.Elevation = elevation
 
             dup_loc.DateCreated = DateTime.Now
 

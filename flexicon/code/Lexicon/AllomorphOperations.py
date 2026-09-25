@@ -72,6 +72,7 @@ from ..Shared.string_utils import normalize_text
 # Import shared morph-type resolution utilities (single source of truth
 # shared with LexEntryOperations.Create -- see issue #213/#214)
 from ..Shared.morph_type_utils import find_morph_type, is_stem_morph_type, morph_type_not_found_error
+from ..lcm_casting import cast_to_concrete
 
 # Import wrapper classes
 from .allomorph import Allomorph
@@ -1552,8 +1553,8 @@ class AllomorphOperations(BaseOperations):
             ILexEntry: The resolved entry object.
         """
         if isinstance(entry_or_hvo, int):
-            return self.project.Object(entry_or_hvo)
-        return entry_or_hvo
+            entry_or_hvo = self.project.Object(entry_or_hvo)
+        return cast_to_concrete(entry_or_hvo)
 
     def __GetAllomorphObject(self, allomorph_or_hvo):
         """
@@ -1599,7 +1600,7 @@ class AllomorphOperations(BaseOperations):
         if isinstance(allomorph_or_hvo, int):
             obj = self.project.Object(allomorph_or_hvo)
         else:
-            obj = allomorph_or_hvo
+            obj = self._UnwrapLcmObject(allomorph_or_hvo)
 
         class_name = getattr(obj, "ClassName", None)
         if class_name == "MoStemAllomorph":

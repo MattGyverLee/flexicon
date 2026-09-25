@@ -453,22 +453,23 @@ class ScrSectionOperations(BaseOperations):
         if index < 0 or index > target_book.SectionsOS.Count:
             raise FP_ParameterError(f"Index {index} out of range (0-{target_book.SectionsOS.Count})")
 
-        # Get current owner
         current_book = section.Owner
 
-        # If moving within same book, adjust for removal
-        if current_book == target_book:
-            current_index = target_book.SectionsOS.IndexOf(section)
-            if current_index < index:
-                index -= 1
-
         with self._TransactionCM("Move section"):
-            # Remove from current location
-            if current_book:
-                current_book.SectionsOS.Remove(section)
-
-            # Insert at new location
-            target_book.SectionsOS.Insert(index, section)
+            if current_book == target_book:
+                current_index = target_book.SectionsOS.IndexOf(section)
+                if current_index != -1 and current_index != index:
+                    if current_index < index:
+                        target_book.SectionsOS.MoveTo(
+                            current_index, current_index, target_book.SectionsOS, index + 1
+                        )
+                    else:
+                        target_book.SectionsOS.MoveTo(
+                            current_index, current_index, target_book.SectionsOS, index
+                        )
+            else:
+                # Re-parent via Insert only -- LcmOwningSequence.Remove deletes (#473).
+                target_book.SectionsOS.Insert(index, section)
 
     # --- Private Helper Methods ---
 

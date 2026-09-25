@@ -359,21 +359,20 @@ class PublicationOperations(PossibilityItemOperations):
         if not pub_list:
             return
 
-        # To make a publication default, move it to the first position
+        seq = pub_list.PossibilitiesOS
         with self._TransactionCM("Set default publication"):
+            if publication not in seq:
+                return
+            current_index = seq.IndexOf(publication)
             if is_default:
-                # Remove from current position
-                if publication in pub_list.PossibilitiesOS:
-                    pub_list.PossibilitiesOS.Remove(publication)
-                # Insert at first position
-                pub_list.PossibilitiesOS.Insert(0, publication)
-            else:
-                # If removing default status, move to end
-                if publication in pub_list.PossibilitiesOS:
-                    current_index = pub_list.PossibilitiesOS.IndexOf(publication)
-                    if current_index == 0:  # Is currently default
-                        pub_list.PossibilitiesOS.Remove(publication)
-                        pub_list.PossibilitiesOS.Add(publication)
+                if current_index == 0:
+                    return
+                seq.MoveTo(current_index, current_index, seq, 0)
+            elif current_index == 0:
+                last_index = seq.Count - 1
+                if last_index <= 0:
+                    return
+                seq.MoveTo(0, 0, seq, last_index + 1)
 
     # --- Formatting Properties ---
 
