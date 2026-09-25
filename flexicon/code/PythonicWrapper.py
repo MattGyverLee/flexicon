@@ -153,14 +153,23 @@ class PythonicWrapper:
         return str(obj)
 
     def __eq__(self, other):
-        obj = object.__getattribute__(self, "_obj")
-        if isinstance(other, PythonicWrapper):
-            return obj == object.__getattribute__(other, "_obj")
-        return obj == other
+        from .Shared.wrapper_base import lcm_identity_hvo
+
+        if other is None:
+            return False
+        self_hvo = lcm_identity_hvo(self)
+        other_hvo = lcm_identity_hvo(other)
+        if self_hvo is None or other_hvo is None:
+            return NotImplemented
+        return self_hvo == other_hvo
 
     def __hash__(self):
-        obj = object.__getattribute__(self, "_obj")
-        return hash(obj)
+        from .Shared.wrapper_base import lcm_identity_hvo
+
+        hvo = lcm_identity_hvo(self)
+        if hvo is None:
+            raise TypeError("PythonicWrapper is not hashable without an Hvo")
+        return hash(hvo)
 
     def __iter__(self):
         """Allow iteration if wrapped object is iterable."""
