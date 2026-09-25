@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **``PhonFeatureOperations.__ResolveObject`` casts to concrete** (#490).
+  HVO int callers no longer receive a bare ``ICmObject`` view from
+  ``project.Object(hvo)``, so ``GetName`` / ``GetValues`` and related read
+  paths work when callers pass an HVO int (promoted from #284 re-triage).
+
 - **``PhonemeOperations.__GetCodeObject`` casts to concrete** (#488).
   HVO int callers no longer receive a bare ``ICmObject`` view from
   ``project.Object(hvo)``, so ``RemoveCode(phoneme_hvo, code_hvo)`` can

@@ -1092,8 +1092,8 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         need to call LCM property setters on the result.
         """
         if isinstance(obj_or_hvo, int):
-            return self.project.Object(obj_or_hvo)
-        return obj_or_hvo
+            return cast_to_concrete(self.project.Object(obj_or_hvo))
+        return cast_to_concrete(obj_or_hvo)
 
     def __Unwrap(self, obj):
         """
