@@ -26,8 +26,8 @@ class TestIssue457LexSenseGlossHvoGate:
         sandbox = target_sandbox
         entry = sandbox.LexEntry.Create(f"{TEST_PREFIX}entry")
         try:
-            sense = sandbox.LexSense.Create(entry, f"{TEST_PREFIX}sense")
-            sandbox.LexSense.SetGloss(sense, f"{TEST_PREFIX}gloss")
+            sense = sandbox.Senses.Create(entry, f"{TEST_PREFIX}sense")
+            sandbox.Senses.SetGloss(sense, f"{TEST_PREFIX}gloss")
             hvo = sense.Hvo
             assert isinstance(hvo, int), (
                 "test setup error: hvo must be a genuine Python int"
@@ -37,7 +37,7 @@ class TestIssue457LexSenseGlossHvoGate:
                 "-- re-derive the gate site"
             )
 
-            gloss = sandbox.LexSense.GetGloss(hvo)
+            gloss = sandbox.Senses.GetGloss(hvo)
             assert isinstance(gloss, str)
             assert TEST_PREFIX in gloss
         finally:

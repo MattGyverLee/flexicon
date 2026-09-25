@@ -262,7 +262,7 @@ _SITES = [
     (
         "MorphRuleOperations.__DuplicateAffixTemplate",
         "flexicon.code.Grammar.MorphRuleOperations",
-        ("MorphRuleOperations", "__DuplicateAffixTemplate"),
+        ("MorphRuleOperations", "_MorphRuleOperations__DuplicateAffixTemplate"),  # name-mangled private method
         "AffixTemplatesOS",
     ),
 ]

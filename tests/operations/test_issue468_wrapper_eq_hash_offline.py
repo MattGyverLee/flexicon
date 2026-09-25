@@ -26,7 +26,34 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 
+_STUBBED_MODULES = (
+    "flexicon",
+    "flexicon.code",
+    "flexicon.code.Shared",
+    "flexicon.code.lcm_casting",
+    "flexicon.code.Shared.lcm_constants",
+    "flexicon.code.Shared.wrapper_base",
+    "flexicon.code.PythonicWrapper",
+)
+
+
 def _load_wrapper_modules():
+    # Snapshot and restore every sys.modules key the stubs touch. Leaving the
+    # stub lcm_casting in place broke collection of every later module that
+    # imports the real one (same bug class as #476). The loaded modules keep
+    # their import-time bindings, so restoring afterwards is safe.
+    saved = {name: sys.modules.get(name) for name in _STUBBED_MODULES}
+    try:
+        return _load_wrapper_modules_stubbed()
+    finally:
+        for name, module in saved.items():
+            if module is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = module
+
+
+def _load_wrapper_modules_stubbed():
     for name in ("flexicon", "flexicon.code", "flexicon.code.Shared"):
         if name not in sys.modules:
             sys.modules[name] = types.ModuleType(name)

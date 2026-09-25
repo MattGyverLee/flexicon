@@ -111,20 +111,10 @@ class TestMorphRuleOperationsWrapperWritesLive:
             "Deleted rule's Hvo still present in a fresh GetAll() re-query"
         )
 
-    @pytest.mark.xfail(
-        reason=(
-            "Known separate bug, out of #449's scope (cycle1 sweep, "
-            "MorphRuleOperations.Delete): the MoInflAffixTemplate branch "
-            "resolves the owner via self._GetObject(rule.Owner.Hvo), which "
-            "returns a bare ICmObject lacking AffixTemplatesOS. Delete "
-            "silently no-ops regardless of whether a wrapper is unwrapped "
-            "-- needs a typed-owner resolver (_GetTypedOwner), not "
-            "_UnwrapLcm. Tracked for a follow-up issue."
-        ),
-        strict=False,
-    )
+    # Formerly xfail: the MoInflAffixTemplate Delete owner bug was fixed
+    # by #467 (_GetTypedOwner); this now passes live and guards it.
     @pytest.mark.live_phase("MorphRuleOperations", "delete")
-    def test_delete_affix_template_via_wrapper_is_a_known_noop(self, sena3_sandbox):
+    def test_delete_affix_template_via_wrapper_deletes(self, sena3_sandbox):
         project = sena3_sandbox
         templates = [r for r in project.MorphRules.GetAll() if r.class_type == "MoInflAffixTemplate"]
         assert templates, "Sena 3 sandbox has no affix templates to test."
@@ -136,8 +126,8 @@ class TestMorphRuleOperationsWrapperWritesLive:
 
         after_templates = [r for r in project.MorphRules.GetAll() if r.class_type == "MoInflAffixTemplate"]
         assert len(after_templates) == before_count - 1, (
-            "Expected the affix template to actually be deleted, but the "
-            "known owner-resolution bug makes Delete a silent no-op."
+            "Expected the affix template to actually be deleted (Delete "
+            "silently no-opped on an uncast owner before #467)."
         )
 
 

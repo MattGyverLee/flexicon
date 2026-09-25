@@ -367,7 +367,7 @@ class TestMergeSegments:
             writable_project.Segments.SetFreeTranslation(seg2, "Trans two.")
 
             survivor = writable_project.Segments.MergeSegments(seg1, seg2)
-            assert survivor is seg1
+            assert survivor.Hvo == seg1.Hvo  # pythonnet proxies have no stable identity
             merged_trans = writable_project.Segments.GetFreeTranslation(survivor)
             assert "Trans one." in merged_trans
             assert "Trans two." in merged_trans
@@ -387,7 +387,7 @@ class TestMergeSegments:
             survivor = writable_project.Segments.MergeSegments(
                 seg1, seg2, translation_policy="discard"
             )
-            assert survivor is seg1
+            assert survivor.Hvo == seg1.Hvo  # pythonnet proxies have no stable identity
             trans = writable_project.Segments.GetFreeTranslation(survivor)
             assert "Drop this." not in trans
         finally:
@@ -455,7 +455,7 @@ class TestMergeSegments:
         text, para, seg1, seg2 = self._make_para_with_two_segments(writable_project)
         try:
             survivor = writable_project.Segments.MergeSegments(seg1, seg2)
-            assert survivor is seg1
+            assert survivor.Hvo == seg1.Hvo  # pythonnet proxies have no stable identity
         finally:
             _cleanup_text(writable_project, text)
 

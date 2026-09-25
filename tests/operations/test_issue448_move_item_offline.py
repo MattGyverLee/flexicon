@@ -19,6 +19,36 @@ from unittest.mock import MagicMock, Mock
 import pytest
 
 
+_STUB_PREFIXES = ("flexicon", "SIL", "System")
+
+
+def _is_stubbed_name(name):
+    return any(name == p or name.startswith(p + ".") for p in _STUB_PREFIXES)
+
+
+@pytest.fixture(autouse=True)
+def _restore_stubbed_sys_modules():
+    """Undo the loader's sys.modules stubs after every test.
+
+    The loaders below install stub ``flexicon`` / ``SIL`` / ``System``
+    modules (no ``__file__``) directly into sys.modules. Leaving them in
+    place poisoned every later test module that imports the real package
+    ("unknown location" ImportErrors, stub BaseOperations leaking into
+    other suites) -- same bug class as #476. The loaded module keeps its
+    import-time bindings, so restoring afterwards is safe.
+    """
+    saved = {n: m for n, m in sys.modules.items() if _is_stubbed_name(n)}
+    try:
+        yield
+    finally:
+        for name in [n for n in sys.modules if _is_stubbed_name(n)]:
+            if name not in saved:
+                del sys.modules[name]
+        for name, module in saved.items():
+            if sys.modules.get(name) is not module:
+                sys.modules[name] = module
+
+
 def _ops_module_path() -> Path:
     return (
         Path(__file__).resolve().parents[2]
