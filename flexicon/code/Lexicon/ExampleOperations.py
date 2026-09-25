@@ -1413,7 +1413,8 @@ class ExampleOperations(BaseOperations):
             ...             exampleOps.MoveMediaFile(media_files[0], example2, other_example)
 
         Notes:
-            - Media is removed from source MediaFilesOS and added to destination
+            - LCM re-parents on a single ``Add`` to the destination owning
+              sequence; do not ``Remove`` then ``Add`` (that deletes the media)
             - File reference and description are preserved
             - The physical media file is NOT moved/copied
             - Cannot move to the same example (returns False)
@@ -1455,8 +1456,7 @@ class ExampleOperations(BaseOperations):
             raise FP_ParameterError("Destination example does not support media files")
 
         with self._TransactionCM("Move media file"):
-            # Move the media (remove from source, add to destination)
-            from_example.MediaFilesOS.Remove(media)
+            # LCM owning sequences re-parent on Add; Remove deletes (#471).
             to_example.MediaFilesOS.Add(media)
 
             logger.info(f"Moved media from example {from_example.Guid} to example {to_example.Guid}")
