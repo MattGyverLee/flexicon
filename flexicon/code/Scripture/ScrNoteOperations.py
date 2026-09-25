@@ -636,11 +636,14 @@ class ScrNoteOperations(BaseOperations):
             FP_ParameterError: If HVO doesn't refer to a Scripture paragraph
         """
         if isinstance(para_or_hvo, int):
-            obj = self.project.Object(para_or_hvo)
-            if not isinstance(obj, IScrTxtPara):
+            obj = cast_to_concrete(self.project.Object(para_or_hvo))
+            if not (
+                isinstance(obj, IScrTxtPara)
+                or getattr(obj, "ClassName", None) == "ScrTxtPara"
+            ):
                 raise FP_ParameterError("HVO does not refer to a Scripture paragraph")
             return obj
-        return para_or_hvo
+        return cast_to_concrete(para_or_hvo)
 
     def __WSHandle(self, wsHandle):
         """
