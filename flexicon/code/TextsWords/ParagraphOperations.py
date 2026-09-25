@@ -342,11 +342,7 @@ class ParagraphOperations(BaseOperations):
         if owner is None:
             raise FP_ParameterError("Paragraph has no valid owner text")
 
-        # StText -> IText (issue #517). Raw owner.Owner is ICmObject; route through
-        # __GetTextObject for #508 / #275 ClassName cast (same shape as #515).
-        if owner.Owner is None:
-            raise FP_ParameterError("Cannot determine parent text for paragraph")
-        parent_text = self.__GetTextObject(owner.Owner)
+        parent_text = self.GetOwningText(para_obj)
 
         # Get source properties
         wsHandle = self.__WSHandle(None)
@@ -715,6 +711,46 @@ class ParagraphOperations(BaseOperations):
 
         # Return segment count
         return para_obj.SegmentsOS.Count
+
+    @OperationsMethod
+    def GetOwningText(self, paragraph_or_hvo):
+        """
+        Get the text that owns a paragraph.
+
+        Retrieves the IText object that contains the paragraph via the
+        paragraph's StText owner.
+
+        Args:
+            paragraph_or_hvo: Either an IStTxtPara object or its HVO (integer).
+
+        Returns:
+            IText: The text object that owns the paragraph.
+
+        Raises:
+            FP_NullParameterError: If paragraph_or_hvo is None.
+            FP_ParameterError: If the paragraph does not exist or has no owner.
+
+        Example:
+            >>> text = project.Texts.Create("Genesis")
+            >>> para = project.Paragraphs.Create(text, "In the beginning...")
+            >>> owner = project.Paragraphs.GetOwningText(para)
+            >>> assert owner.Hvo == text.Hvo
+
+        Notes:
+            - Paragraphs live under a text's StText contents
+            - Accepts paragraph HVO and raw ``project.Object(hvo)`` views (#519)
+
+        See Also:
+            GetAll, Duplicate, Create
+        """
+        para_obj = self.__GetParagraphObject(paragraph_or_hvo)
+
+        # Paragraph -> StText -> IText (issue #519). Raw .Owner returns ICmObject;
+        # cast StText before reading .Owner for the text (#515 / #517 pattern).
+        st_text = self._GetTypedOwner(para_obj)
+        if st_text is None or st_text.Owner is None:
+            raise FP_ParameterError("Paragraph has no valid owning text")
+        return self.__GetTextObject(st_text.Owner)
 
     @OperationsMethod
     def InsertAt(self, text_or_hvo, index, content, wsHandle=None):
