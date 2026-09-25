@@ -448,7 +448,7 @@ class DiscourseOperations(BaseOperations):
         # Get the owner and remove the chart. The ownership capability check
         # stays OUTSIDE the transaction so an unremovable chart raises without
         # opening an empty undo task.
-        owner = chart_obj.Owner
+        owner = self._GetTypedOwner(chart_obj)
         if owner and hasattr(owner, "ChartsOC"):
             with self._TransactionCM("Delete chart"):
                 owner.ChartsOC.Remove(chart_obj)
@@ -808,7 +808,7 @@ class DiscourseOperations(BaseOperations):
         # Get the owner (chart) and remove the row. The ownership capability
         # check stays OUTSIDE the transaction so an unremovable row raises
         # without opening an empty undo task.
-        owner = row_obj.Owner
+        owner = self._GetTypedOwner(row_obj)
         if owner and hasattr(owner, "RowsOS"):
             with self._TransactionCM("Delete chart row"):
                 owner.RowsOS.Remove(row_obj)
@@ -1180,7 +1180,7 @@ class DiscourseOperations(BaseOperations):
 
         # Get source chart and parent
         source = self.__GetChartObject(item_or_hvo)
-        parent = source.Owner  # This is the StText
+        parent = self._GetTypedOwner(source)
 
         with self._TransactionCM("Duplicate chart"):
             # Create new chart using factory (auto-generates new GUID)
@@ -1190,7 +1190,7 @@ class DiscourseOperations(BaseOperations):
             # ADD TO PARENT FIRST.
             # ChartsOC is an unordered ILcmOwningCollection; insert_after has no
             # semantic meaning and is ignored.
-            if hasattr(parent, "ChartsOC"):
+            if parent is not None and hasattr(parent, "ChartsOC"):
                 parent.ChartsOC.Add(duplicate)
 
             # Copy MultiString properties (AFTER adding to parent)
