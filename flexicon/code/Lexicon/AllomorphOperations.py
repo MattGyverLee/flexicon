@@ -201,6 +201,13 @@ class AllomorphOperations(BaseOperations):
             - Use where() for complex custom filtering
             - Individual items are Allomorph wrapper objects with properties like
               form, environment, is_stem_allomorph, is_affix_allomorph
+            - Items can be passed straight back into other AllomorphOperations
+              methods (e.g. ``GetForm(item)``, ``SetForm(item, ...)``,
+              ``Delete(item)``) -- the resolver unwraps the wrapper internally
+              (issue #449). A caller performing a direct pythonnet cast, e.g.
+              ``IMoStemAllomorph(item)``, must use ``item.lcm_object`` instead
+              (``IMoStemAllomorph(item.lcm_object)``), since pythonnet cannot
+              cast a Python wrapper instance.
 
         See Also:
             Create, GetForm, AllomorphCollection, Allomorph
@@ -1579,13 +1586,17 @@ class AllomorphOperations(BaseOperations):
         depend on it never raising.
 
         Args:
-            allomorph_or_hvo: Either an IMoForm object or an HVO (int).
+            allomorph_or_hvo: Either an IMoForm object, an HVO (int), or
+                an ``Allomorph`` wrapper item from ``GetAll()`` (issue
+                #449) -- unwrapped to the raw LCM object before casting,
+                since pythonnet cannot cast a Python wrapper instance.
 
         Returns:
             IMoForm: The resolved allomorph, cast to its concrete
             interface when its ``ClassName`` is one of the two
             recognised allomorph subtypes; returned unchanged otherwise.
         """
+        allomorph_or_hvo = self._UnwrapLcm(allomorph_or_hvo)
         if isinstance(allomorph_or_hvo, int):
             obj = self.project.Object(allomorph_or_hvo)
         else:

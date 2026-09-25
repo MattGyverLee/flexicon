@@ -150,7 +150,17 @@ class MorphRuleOperations(BaseOperations):
         use GetAllAdhocCoProhibitions() separately.
 
         Returns:
-            EnumerableWrapper[IMoCompoundRule | IMoInflAffixTemplate]: Each compound rule or affix template object.
+            Generator[CompoundRule | AffixTemplate]: Each item is a
+                ``CompoundRule`` or ``AffixTemplate`` wrapper object (NOT a
+                raw ``IMoCompoundRule``/``IMoInflAffixTemplate``), yielded
+                from ``GetAllCompoundRules()`` then ``GetAllAffixTemplates()``.
+                Items can be passed straight back into other
+                MorphRuleOperations methods (e.g. ``GetName(item)``,
+                ``Delete(item)``, ``SetStratum(item, ...)``) -- resolvers
+                unwrap the wrapper internally (issue #449). A caller
+                performing a direct pythonnet cast, e.g.
+                ``IMoInflAffixTemplate(item)``, must use ``item.lcm_object``
+                instead.
 
         Example:
             >>> ruleOps = MorphRuleOperations(project)
@@ -187,6 +197,10 @@ class MorphRuleOperations(BaseOperations):
             - MoExoCompound: head is outside (e.g., exocentric compounds)
             - Returns empty collection if no morphological data defined
             - Returns CompoundRuleCollection (supports filtering and chaining)
+            - Items can be passed straight back into other
+              MorphRuleOperations methods -- resolvers unwrap the wrapper
+              internally (issue #449). A direct pythonnet cast needs
+              ``item.lcm_object``.
 
         See Also:
             CreateCompoundRule, GetAll, CompoundRuleCollection
@@ -222,6 +236,10 @@ class MorphRuleOperations(BaseOperations):
             - Subcategories are included (full hierarchy walk)
             - Returns AffixTemplateCollection (supports filtering and chaining)
             - Use with_prefix_slots(), with_suffix_slots(), etc. for filtering
+            - Items can be passed straight back into other
+              MorphRuleOperations methods -- resolvers unwrap the wrapper
+              internally (issue #449). A direct pythonnet cast needs
+              ``item.lcm_object``.
 
         See Also:
             GetAllAffixTemplatesForPOS, CreateAffixTemplate, GetAll, AffixTemplateCollection
@@ -262,6 +280,10 @@ class MorphRuleOperations(BaseOperations):
             - Does not include templates from sub-categories
             - Use GetAllAffixTemplates() to get templates from all POS
             - Returns AffixTemplateCollection (supports filtering and chaining)
+            - Items can be passed straight back into other
+              MorphRuleOperations methods -- resolvers unwrap the wrapper
+              internally (issue #449). A direct pythonnet cast needs
+              ``item.lcm_object``.
 
         See Also:
             GetAllAffixTemplates, CreateAffixTemplate, AffixTemplateCollection
@@ -1113,7 +1135,17 @@ class MorphRuleOperations(BaseOperations):
         A ``PartOfSpeech`` is cast to ``IPartOfSpeech``. ``Owner`` and
         ``project.Object`` can both be a bare ``ICmObject``, which does
         not expose category members such as ``AllAffixSlots``.
+
+        ``rule_or_hvo`` may also be a ``CompoundRule``/``AffixTemplate``
+        wrapper item from ``GetAll()``/``GetAllCompoundRules()``/
+        ``GetAllAffixTemplates()``/``GetAllAffixTemplatesForPOS()``
+        (issue #449); such wrappers are unwrapped to their raw LCM object
+        before any further processing, since a wrapper cannot be compared
+        against or removed/indexed within a raw LCM sequence, and
+        assigning through a wrapper's proxied setters (e.g.
+        ``rule.StratumRA = ...``) is a silent no-op.
         """
+        rule_or_hvo = self._UnwrapLcm(rule_or_hvo)
         if isinstance(rule_or_hvo, int):
             obj = self.project.Object(rule_or_hvo)
         else:

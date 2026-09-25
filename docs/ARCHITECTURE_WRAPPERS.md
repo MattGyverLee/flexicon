@@ -216,6 +216,74 @@ if rule.class_type == 'PhRegularRule':
 
 ---
 
+## The Round-Trip Contract
+
+Every item returned by a wrapper-producing `GetAll()` (or similar
+collection-returning method) on an Operations class must be usable as an
+argument to **any** method on that same Operations class -- unmodified,
+no manual unwrap required. Concretely:
+
+```python
+for a in project.Allomorphs.GetAll(entry):
+    form = project.Allomorphs.GetForm(a)   # `a` is an Allomorph wrapper --
+                                            # this just works.
+```
+
+This holds for `AllomorphOperations`, `MSAOperations`,
+`MorphRuleOperations` (`GetAll`/`GetAllCompoundRules`/
+`GetAllAffixTemplates`/`GetAllAffixTemplatesForPOS`), and
+`PhonologicalRuleOperations`, plus the cross-module callers that accept
+one of those wrapper types: `WfiMorphBundleOperations.SetMorph`/`SetMSA`,
+`LexSenseOperations.SetGrammaticalInfo`, and `BaseOperations`'
+`MoveUp`/`MoveDown`/`MoveToIndex`/`MoveBefore`/`MoveAfter`/`Swap`.
+
+### Why it works: `BaseOperations._UnwrapLcm`
+
+Wrapper instances (`LCMObjectWrapper` subclasses, `PythonicWrapper`) are
+plain Python objects. pythonnet cannot cast one to an LCM interface
+(`IMoStemAllomorph(wrapper)` raises `TypeError`), and a wrapper defines no
+`__eq__` against a raw LCM object, so `sequence[i] == item`,
+`IndexOf(item)`, and `Remove(item)` all silently fail to find it. Every
+private resolver that performs one of those operations calls
+`self._UnwrapLcm(obj)` first -- an `isinstance` check against the two
+known wrapper types (never `hasattr()`, since both wrapper types proxy
+unknown attribute access to the wrapped LCM object via `__getattr__`,
+which makes `hasattr()` probes unreliable for telling a wrapper from a raw
+object). `_UnwrapLcm` returns `.lcm_object` for an `LCMObjectWrapper`,
+`.unwrap()` for a `PythonicWrapper`, and passes anything else (`int`,
+`str`, `None`, a raw LCM object) through unchanged. See
+`flexicon/code/BaseOperations.py::_UnwrapLcm` and
+`docs/API_ISSUES_CATEGORIZED.md`, Category 13, for the full defect history
+(issue #449).
+
+### Caller-side casts still need the raw object
+
+A caller that wants to perform its **own** pythonnet interface cast on a
+wrapped item -- rather than calling an Operations method -- must reach
+through the public `lcm_object` property first:
+
+```python
+from SIL.LCModel import IMoStemAllomorph
+IMoStemAllomorph(a.lcm_object)   # NOT IMoStemAllomorph(a)
+```
+
+This is the same escape-hatch precedent as `cast_to_concrete()` (Rule 1,
+`docs/API_DESIGN_PHILOSOPHY.md`): the wrapper hides casting for you inside
+Operations methods, but a caller who has stepped outside that API and
+needs the raw object back can always get it explicitly.
+
+### New-wrapper checklist item
+
+When adding a wrapper whose collection-returning methods can hand back
+wrapped items: **every resolver that later accepts one of those items
+back -- for a cast, an equality/`IndexOf`/`Remove` check, or any other
+raw-LCM-sequence operation -- must call `self._UnwrapLcm(...)` before
+that operation.** Skipping this step reproduces issue #449: the method
+either raises `TypeError` on the cast or silently fails to find the item
+in the sequence.
+
+---
+
 ## Creating Domain-Specific Wrappers
 
 ### Pattern: Phonological Rules Wrapper

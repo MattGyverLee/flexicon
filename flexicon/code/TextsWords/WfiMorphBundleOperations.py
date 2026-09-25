@@ -1558,12 +1558,17 @@ class WfiMorphBundleOperations(BaseOperations):
         the field-confusion bug issue #254 exists to eliminate.
 
         Args:
-            morph_or_hvo: Either an IMoForm object or an HVO (int).
+            morph_or_hvo: Either an IMoForm object, an HVO (int), or an
+                ``Allomorph`` wrapper item from ``GetAll()`` (unwrapped
+                internally before casting, issue #449 -- pythonnet cannot
+                cast a Python wrapper instance, and ``cast_to_concrete``
+                returns a wrapper unchanged rather than casting it).
 
         Returns:
             IMoForm: The resolved allomorph object (not type-checked here;
                 SetMorph performs the IMoForm guard after calling this).
         """
+        morph_or_hvo = self._UnwrapLcm(morph_or_hvo)
         if isinstance(morph_or_hvo, int):
             return cast_to_concrete(self.project.Object(morph_or_hvo))
         return cast_to_concrete(morph_or_hvo)
@@ -1573,11 +1578,14 @@ class WfiMorphBundleOperations(BaseOperations):
         Resolve HVO or object to IMoMorphSynAnalysis.
 
         Args:
-            msa_or_hvo: Either an IMoMorphSynAnalysis object or an HVO (int).
+            msa_or_hvo: Either an IMoMorphSynAnalysis object, an HVO (int),
+                or a ``MorphosyntaxAnalysis`` wrapper item from ``GetAll()``
+                (unwrapped internally before casting, issue #449).
 
         Returns:
             IMoMorphSynAnalysis: The resolved MSA object.
         """
+        msa_or_hvo = self._UnwrapLcm(msa_or_hvo)
         if isinstance(msa_or_hvo, int):
             return cast_to_concrete(self.project.Object(msa_or_hvo))
         return cast_to_concrete(msa_or_hvo)

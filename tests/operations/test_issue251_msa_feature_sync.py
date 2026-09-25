@@ -255,34 +255,38 @@ class TestMSASyncStatic:
     # feature_struct_props) is correct for GetSyncableProperties/
     # ApplySyncableProperties/__CaptureFeatureStrucProp/
     # __ApplyFeatureStrucProp -- those four have NO legitimate reason to
-    # call hasattr on anything. __GetMsaObject is different: it has ONE
-    # hasattr call (`hasattr(msa_or_hvo, "_obj")`, MSAOperations.py:1144)
-    # that is a Python-level wrapper-unwrap, not a probe for a subtype-
-    # declared LCM member -- a blanket ban would force deleting working
-    # code. The rule this test encodes instead (per lead ruling 1):
-    # hasattr() on a SUBTYPE-DECLARED LCM member (e.g. MsFeaturesOA,
-    # InflFeatsOA) is forbidden; hasattr() on "_obj", "ClassName", "Hvo"
-    # -- all present regardless of concrete ClassName -- is permitted.
+    # call hasattr on anything. __GetMsaObject used to be different: it
+    # had ONE hasattr call (`hasattr(msa_or_hvo, "_obj")`) that was a
+    # Python-level wrapper-unwrap, not a probe for a subtype-declared LCM
+    # member. Issue #449 (cycle 1) replaced that ad-hoc hasattr probe with
+    # `self._UnwrapLcm(msa_or_hvo)` (MSAOperations.py, top of
+    # __GetMsaObject, ``msa_or_hvo = self._UnwrapLcm(msa_or_hvo)``) --
+    # BaseOperations._UnwrapLcm does the unwrap via `isinstance` checks
+    # against the two known wrapper types, not hasattr(), so
+    # __GetMsaObject now has ZERO hasattr() calls of its own. The rule
+    # this test encodes (per lead ruling 1): hasattr() on a
+    # SUBTYPE-DECLARED LCM member (e.g. MsFeaturesOA, InflFeatsOA) is
+    # forbidden; hasattr() on "_obj", "ClassName", "Hvo" -- all present
+    # regardless of concrete ClassName -- is permitted if it appears at
+    # all. Zero hasattr() calls is now the expected, passing shape.
     _ALLOWED_HASATTR_ATTRS = frozenset({"_obj", "ClassName", "Hvo"})
 
     def test_get_msa_object_hasattr_calls_are_allowlisted(self):
         """
-        D5 / T6b item 4: every hasattr() call inside __GetMsaObject must
-        target only "_obj" / "ClassName" / "Hvo" -- never a subtype-
-        declared member. MSAOperations.py:1144's
-        `hasattr(msa_or_hvo, "_obj")` is confirmed legitimate (wrapper
-        unwrap); this test would fail loudly if a future edit added a
-        hasattr probe on something like "MsFeaturesOA" instead of the
-        ClassName-driven cast table that follows it.
+        D5 / T6b item 4, updated for issue #449: __GetMsaObject no longer
+        does its own hasattr()-based wrapper unwrap -- cycle 1 of #449
+        routed it through `self._UnwrapLcm(msa_or_hvo)` instead (an
+        isinstance-based unwrap in BaseOperations, not a hasattr probe).
+        So this test now asserts two things: (1) any hasattr() call that
+        *does* still appear inside __GetMsaObject must target only
+        "_obj" / "ClassName" / "Hvo" -- never a subtype-declared member
+        (zero such calls is fine and is the current, expected shape); and
+        (2) __GetMsaObject actually routes its wrapper-unwrap through
+        `self._UnwrapLcm(...)`, so a future edit can't silently reintroduce
+        an ad-hoc hasattr("_obj") probe without this test failing.
         """
         src = _private_method_source("_MSAOperations__GetMsaObject")
         names = _hasattr_second_args(src)
-        assert names, (
-            "expected at least one hasattr() call in __GetMsaObject "
-            "(the _obj wrapper-unwrap at :1144) -- if this is empty the "
-            "method changed shape and this test's premise needs "
-            "re-examining, not deleting."
-        )
         for attr in names:
             assert attr in self._ALLOWED_HASATTR_ATTRS, (
                 f"__GetMsaObject calls hasattr(x, {attr!r}) -- only "
@@ -290,6 +294,11 @@ class TestMSASyncStatic:
                 f"A subtype-declared LCM member must be discriminated "
                 f"via .ClassName + explicit cast, never hasattr (D5)."
             )
+        assert "self._UnwrapLcm(" in src, (
+            "__GetMsaObject must route its wrapper-unwrap through "
+            "BaseOperations._UnwrapLcm (issue #449), not a hasattr() "
+            "probe on '_obj' or any other ad-hoc shape check."
+        )
 
     def test_resolve_feature_struc_owner_hasattr_calls_are_allowlisted(self):
         """

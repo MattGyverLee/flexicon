@@ -37,6 +37,13 @@ objects, or for collections that stay legitimately polymorphic (e.g.
 unchanged -- it is strictly safer than the `ILexEntry(x)` workaround users
 otherwise land on, which throws on a legitimately-`ILexSense` element.
 
+The round-trip contract (every item a `GetAll()`-family method hands back
+must work when passed straight into another method on that same Operations
+class) is part of this rule: it is what "cast internally" means from the
+caller's side. See `docs/ARCHITECTURE_WRAPPERS.md`, "The round-trip
+contract", for the mechanism (`BaseOperations._UnwrapLcm`) and issue #449
+for the defect it fixed.
+
 ## Rule 2 -- Maximize Functionality in Simple Queries
 
 ```python
@@ -170,7 +177,14 @@ class PhonologicalRule:
 2. **Identify** the base interface and concrete types
 3. **Follow** the pattern from `flexicon/code/Shared/wrapper_base.py`
 4. **Add** type capability checks and convenience properties
-5. **Consult** if the wrapper needs special handling beyond the standard
+5. **Route every resolver through `BaseOperations._UnwrapLcm`** before it
+   performs a pythonnet interface cast, an equality/`IndexOf`/`Remove`
+   check, or any other raw-LCM-sequence operation -- if the new wrapper's
+   `GetAll()` (or any other collection-returning method) can hand back
+   wrapped items, every method that accepts one of those items back must
+   unwrap it first. See `docs/ARCHITECTURE_WRAPPERS.md`, "The round-trip
+   contract" (issue #449).
+6. **Consult** if the wrapper needs special handling beyond the standard
    pattern
 
 ## Smart Collections Pattern

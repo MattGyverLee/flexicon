@@ -135,6 +135,12 @@ class PhonologicalRuleOperations(BaseOperations):
             - Use rule.input_contexts instead of accessing StrucDescOS
             - Returns empty collection if no phonological data defined
             - Type breakdown is visible when printed
+            - Items can be passed straight back into other
+              PhonologicalRuleOperations methods (e.g. ``Delete(item)``,
+              ``WireRule(item, ...)``) -- resolvers unwrap the wrapper
+              internally (issue #449). A caller performing a direct
+              pythonnet cast, e.g. ``IPhRegularRule(item)``, must use
+              ``item.lcm_object`` instead.
 
         See Also:
             Create, Find, RuleCollection, PhonologicalRule
@@ -1422,13 +1428,16 @@ class PhonologicalRuleOperations(BaseOperations):
         Returns:
             IPhPhonRule: The resolved rule object.
         """
+        # Unwrap PhonologicalRule / PythonicWrapper wrappers (from GetAll())
+        # so collection operations see the raw IPhSegmentRule (issue #449).
+        # Uses the shared BaseOperations._UnwrapLcm isinstance-based helper
+        # rather than duck-typing on ``_obj``/``_concrete``, since raw
+        # pythonnet objects should not be probed with hasattr() for
+        # attributes they don't have. Then cast_to_concrete so HVO callers
+        # get IPhRegularRule / IPhMetathesisRule members (issue #461).
+        rule_or_hvo = self._UnwrapLcm(rule_or_hvo)
         if isinstance(rule_or_hvo, int):
             rule_or_hvo = self.project.Object(rule_or_hvo)
-        # Unwrap PhonologicalRule wrappers (from GetAll()) so collection
-        # operations see the raw IPhSegmentRule. Duck-typed for any
-        # LCMObjectWrapper subclass without importing the class.
-        elif hasattr(rule_or_hvo, "_obj") and hasattr(rule_or_hvo, "_concrete"):
-            rule_or_hvo = rule_or_hvo._obj
         return cast_to_concrete(rule_or_hvo)
 
     # ========== SYNC INTEGRATION METHODS ==========

@@ -1016,6 +1016,58 @@ if any executable `Sldr.Initialize(...)` call appears outside
 
 ---
 
+## Category 13: Wrapper objects from GetAll() reaching a raw pythonnet resolver (issue #449)
+
+Four `GetAll()`-family methods return `LCMObjectWrapper` items instead of
+raw LCM objects: `AllomorphOperations.GetAll`, `MSAOperations.GetAll`,
+`MorphRuleOperations.GetAll`/`GetAllCompoundRules`/
+`GetAllAffixTemplates`/`GetAllAffixTemplatesForPOS`, and
+`PhonologicalRuleOperations.GetAll`. Feeding one of those items straight
+back into another Operations method used to crash or silently no-op,
+because pythonnet cannot cast a plain Python wrapper object to an
+interface (`TypeError: object does not implement IMoAffixAllomorph`), and
+wrapper instances define no `__eq__` against a raw LCM object (so
+`sequence[i] == item`, `IndexOf(item)`, and `Remove(item)` all silently
+fail to find the item).
+
+```python
+# WRONG (raised TypeError before the fix):
+for a in project.Allomorphs.GetAll(entry):
+    form = project.Allomorphs.GetForm(a)   # a is an Allomorph wrapper
+
+# FIXED: GetForm (and every other resolver-backed method on
+# AllomorphOperations, MSAOperations, MorphRuleOperations,
+# PhonologicalRuleOperations, WfiMorphBundleOperations.SetMorph/SetMSA,
+# LexSenseOperations.SetGrammaticalInfo, and BaseOperations'
+# MoveUp/MoveDown/MoveToIndex/MoveBefore/MoveAfter/Swap) now unwraps the
+# wrapper internally via BaseOperations._UnwrapLcm, so the call above just
+# works.
+
+# A caller that wants to perform its OWN pythonnet interface cast still
+# needs the raw object, via the public `lcm_object` property:
+from SIL.LCModel import IMoStemAllomorph
+IMoStemAllomorph(a.lcm_object)   # NOT IMoStemAllomorph(a)
+```
+
+Fix: a single `BaseOperations._UnwrapLcm(obj)` helper -- `LCMObjectWrapper`
+-> `.lcm_object`, `PythonicWrapper` -> `PythonicWrapper.unwrap()`, anything
+else (int, str, None, raw LCM object) passed through unchanged -- applied
+at every private resolver reachable with a wrapper. Uses `isinstance`
+checks, not `hasattr` duck-typing, since both wrapper types proxy unknown
+attribute access to the wrapped LCM object.
+
+Known follow-on, deliberately left open by this fix: `MorphRuleOperations`
+has two bare-owner bugs unrelated to wrappers --
+`Delete()`'s `MoInflAffixTemplate` branch and `__DuplicateAffixTemplate`
+both call `self._GetObject(rule.Owner.Hvo)` / `source.Owner.Hvo`, which
+returns a bare `ICmObject` lacking `AffixTemplatesOS`, so the template
+branch of `Delete` silently deletes nothing and `__DuplicateAffixTemplate`
+raises `AttributeError`. That defect occurs with or without a wrapper and
+needs a typed-owner resolver (`_GetTypedOwner`), not `_UnwrapLcm`; tracked
+separately.
+
+---
+
 ## Summary Statistics
 
 ### By Status (Updated):

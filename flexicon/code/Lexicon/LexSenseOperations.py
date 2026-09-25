@@ -1634,7 +1634,11 @@ class LexSenseOperations(BaseOperations):
 
         Args:
             sense_or_hvo: The ILexSense object or HVO.
-            msa: The IMoMorphSynAnalysis object to set.
+            msa: The IMoMorphSynAnalysis object to set, or a
+                ``MorphosyntaxAnalysis`` wrapper item from
+                ``MSAOperations.GetAll()`` (unwrapped internally, issue
+                #449) -- assigning a wrapper directly to
+                ``MorphoSyntaxAnalysisRA`` raises a pythonnet TypeError.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -1662,6 +1666,7 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(sense_or_hvo, "sense_or_hvo")
 
         sense = self.__GetSenseObject(sense_or_hvo)
+        msa = self._UnwrapLcm(msa)
 
         with self._TransactionCM("Set sense grammatical info"):
             sense.MorphoSyntaxAnalysisRA = msa
