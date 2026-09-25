@@ -41,6 +41,7 @@ from ..Shared.rule_patterns import Seg, NC, Boundary
 from ..FLExProject import (
     FP_ParameterError,
 )
+from ..lcm_casting import cast_to_concrete
 
 
 class PhonologicalRuleOperations(BaseOperations):
@@ -1422,13 +1423,13 @@ class PhonologicalRuleOperations(BaseOperations):
             IPhPhonRule: The resolved rule object.
         """
         if isinstance(rule_or_hvo, int):
-            return self.project.Object(rule_or_hvo)
+            rule_or_hvo = self.project.Object(rule_or_hvo)
         # Unwrap PhonologicalRule wrappers (from GetAll()) so collection
         # operations see the raw IPhSegmentRule. Duck-typed for any
         # LCMObjectWrapper subclass without importing the class.
-        if hasattr(rule_or_hvo, "_obj") and hasattr(rule_or_hvo, "_concrete"):
-            return rule_or_hvo._obj
-        return rule_or_hvo
+        elif hasattr(rule_or_hvo, "_obj") and hasattr(rule_or_hvo, "_concrete"):
+            rule_or_hvo = rule_or_hvo._obj
+        return cast_to_concrete(rule_or_hvo)
 
     # ========== SYNC INTEGRATION METHODS ==========
 
