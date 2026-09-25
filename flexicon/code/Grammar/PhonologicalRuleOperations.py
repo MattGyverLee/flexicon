@@ -1283,7 +1283,15 @@ class PhonologicalRuleOperations(BaseOperations):
         )
 
     def __ResolveFeature(self, feature_or_hvo):
-        """Resolve a feature argument (object/HVO/wrapper) to its LCM object."""
+        """
+        Resolve a feature argument (object/HVO/wrapper) to its LCM object.
+
+        Returns:
+            The underlying LCM object. The HVO path uses ``project.Object(hvo)``
+            without ``cast_to_concrete`` -- a generic, possibly uncast view.
+            Callers in this module only pass the result into LCM APIs that
+            accept ``ICmObject``; do not add eager casting here (issue #494).
+        """
         if isinstance(feature_or_hvo, int):
             return self.project.Object(feature_or_hvo)
         if hasattr(feature_or_hvo, "_obj") and hasattr(feature_or_hvo, "_concrete"):
@@ -1293,11 +1301,18 @@ class PhonologicalRuleOperations(BaseOperations):
         return feature_or_hvo
 
     def __ResolveLcmObject(self, obj_or_hvo):
-        """Resolve an HVO or wrapper to its underlying LCM object.
+        """
+        Resolve an HVO or wrapper to its underlying LCM object.
 
         Identity-preserving for plain LCM objects (important for
-        IPhFeatureConstraint sharing: the same constraint object must
+        ``IPhFeatureConstraint`` sharing: the same constraint object must
         round-trip unchanged so alpha-variable identity holds).
+
+        Returns:
+            The exact LCM instance passed in or loaded by HVO. The HVO path
+            uses ``project.Object(hvo)`` without casting so object identity
+            is preserved; casting would break alpha-variable sharing (issue
+            #494).
         """
         if isinstance(obj_or_hvo, int):
             return self.project.Object(obj_or_hvo)
