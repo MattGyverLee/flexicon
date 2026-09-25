@@ -18,6 +18,11 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **``PhonemeOperations.__GetCodeObject`` casts to concrete** (#488).
+  HVO int callers no longer receive a bare ``ICmObject`` view from
+  ``project.Object(hvo)``, so ``RemoveCode(phoneme_hvo, code_hvo)`` can
+  resolve ``CodesOS`` membership (promoted from #284 re-triage).
+
 - **``InflectionFeatureOperations`` HVO resolvers cast to concrete interfaces** (#486).
   ``__ResolveInflectionClass``, ``__ResolveFeatureStructure``, ``__ResolveFeature``,
   and ``__ResolveFeatureSystem`` no longer return a bare ``ICmObject`` view from
