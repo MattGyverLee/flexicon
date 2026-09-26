@@ -361,10 +361,21 @@ class LexSenseOperations(BaseOperations):
 
             # Determine insertion position
             if insert_after:
-                # Insert after source sense
                 if hasattr(parent, "SensesOS"):
-                    source_index = parent.SensesOS.IndexOf(source)
-                    parent.SensesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #550). SensesOS can yield bare interface
+                    # views whose Python identity differs from source.
+                    sense_list = list(parent.SensesOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, sense in enumerate(sense_list):
+                        if sense.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(sense_list)
+                    else:
+                        insert_index = source_index + 1
+                    parent.SensesOS.Insert(insert_index, duplicate)
             else:
                 # Insert at end
                 if hasattr(parent, "SensesOS"):
