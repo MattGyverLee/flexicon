@@ -351,14 +351,19 @@ class ParagraphOperations(BaseOperations):
         with self._TransactionCM("Duplicate paragraph"):
             # Determine insertion position
             if insert_after:
-                # Find the index of the current paragraph
+                # Index by HVO (issue #531). ParagraphsOS can yield bare interface
+                # views whose Python identity differs from para_obj.
                 para_list = list(owner.ParagraphsOS)
-                try:
-                    current_index = para_list.index(para_obj)
-                    insert_index = current_index + 1
-                except ValueError:
-                    # Paragraph not found in list, append to end
+                target_hvo = para_obj.Hvo
+                current_index = None
+                for i, p in enumerate(para_list):
+                    if p.Hvo == target_hvo:
+                        current_index = i
+                        break
+                if current_index is None:
                     insert_index = len(para_list)
+                else:
+                    insert_index = current_index + 1
 
                 # Insert at position
                 new_para = self.InsertAt(parent_text, insert_index, para_text, wsHandle)
