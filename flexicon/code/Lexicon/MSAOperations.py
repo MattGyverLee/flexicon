@@ -650,6 +650,345 @@ class MSAOperations(BaseOperations):
         return list(slots_rc)
 
     # ------------------------------------------------------------------
+    # MSA feature-structure getters (issue #544 -- reverse of MakeFeatStruc)
+    # ------------------------------------------------------------------
+    #
+    # ``InflectionFeatures.MakeFeatStruc(specs, owner=msa, ...)`` writes an
+    # MSA's feature structure, but until this section there was no public
+    # way to read one back. The private ``__CaptureFeatureStrucProp`` (used
+    # by ``GetSyncableProperties``) already resolves the owning property
+    # and serializes via ``_GetFeatureStruc`` -- but that method returns the
+    # C4 SYNC WIRE FORMAT (``{"TypeGuid": ..., "specs": {...}}``, nested
+    # complex values carry an extra ``"Guid"`` key), which is NOT the shape
+    # ``MakeFeatStruc`` accepts back (a plain recursive ``{feature: value |
+    # {...}}`` dict). Confirmed by reading ``_MakeFeatStruc``/
+    # ``__ResolveFeatStrucOperand`` directly: a GUID *string* resolves via
+    # ``project.Object(guid)`` for either a feature or a value key, so a
+    # dict of GUID-string keys/values is a valid, unambiguous
+    # ``MakeFeatStruc`` input. ``__C4ToFeatStrucSpec`` performs that one
+    # conversion (recursively, for nested ``IFsComplexValue`` structures),
+    # so these getters return something that can be fed straight back into
+    # ``MakeFeatStruc(getter_output, owner=other_msa)`` -- the round-trip
+    # the issue asks for. NOTE: ``_MakeFeatStruc`` never sets ``TypeRA`` on
+    # the struct it creates (only the C4/C5 sync-apply surface,
+    # ``_ApplyFeatureStruc``, does), so ``TypeGuid`` carries no information
+    # for a round trip through ``MakeFeatStruc`` and is intentionally
+    # dropped by the converter -- this is a pre-existing ``MakeFeatStruc``
+    # limitation, not something introduced here.
+
+    def __C4ToFeatStrucSpec(self, c4):
+        """
+        Convert one ``_GetFeatureStruc`` (C4 wire-format) dict into the
+        plain recursive dict ``_MakeFeatStruc`` accepts as ``specs``.
+
+        Args:
+            c4: A C4 dict (``{"TypeGuid": ..., "specs": {...}}``) as
+                returned by ``_GetFeatureStruc``, or ``None``.
+
+        Returns:
+            dict or None: ``None`` when ``c4`` is ``None`` (mirrors
+            ``_GetFeatureStruc``'s own null passthrough -- a null owning
+            property stays ``None``, never ``{}``). Otherwise a dict keyed
+            by feature GUID string, where each value is either a value
+            GUID string (``IFsClosedValue``) or a nested dict of the same
+            shape (``IFsComplexValue``'s ``ValueOA``) -- exactly the
+            recursive shape ``_MakeFeatStruc`` resolves GUID-string
+            operands against. A present-but-empty struct (``c4 ==
+            {"TypeGuid": ..., "specs": {}}``) converts to ``{}``, not
+            ``None`` -- same presence-vs-emptiness distinction C4 itself
+            preserves.
+
+        Notes:
+            - ``TypeGuid`` at every level is dropped (see the module-level
+              note above this method): it is not part of the
+              ``_MakeFeatStruc`` input shape and ``_MakeFeatStruc`` never
+              writes it back, so keeping it here would be misleading.
+            - The nested ``"Guid"`` key C4 attaches to non-top-level
+              structs (identifying the already-attached
+              ``IFsComplexValue.ValueOA``) is likewise dropped -- a fresh
+              call to ``MakeFeatStruc`` always creates new nested structs
+              and cannot target an existing ``Guid``.
+        """
+        if c4 is None:
+            return None
+
+        result = {}
+        for feat_guid, value in c4.get("specs", {}).items():
+            if isinstance(value, dict):
+                result[feat_guid] = self.__C4ToFeatStrucSpec(value)
+            else:
+                result[feat_guid] = value
+        return result
+
+    def __ResolveMsaForFeatures(self, sense_or_msa):
+        """
+        Resolve ``sense_or_msa`` to a concrete, ``ClassName``-cast MSA
+        object for the feature-structure getters, or ``None``.
+
+        Accepts a sense (object/HVO/wrapper) -- reads its
+        ``MorphoSyntaxAnalysisRA`` -- or an MSA (object/HVO/GUID/wrapper)
+        directly, of ANY of the four concrete MSA classes (unlike
+        ``__TryResolveInflAffMsa``, which only recognizes
+        ``MoInflAffMsa``). Delegates the concrete cast to
+        ``__GetMsaObject`` (C2) so every downstream getter receives a
+        properly typed object regardless of entry path.
+
+        Returns:
+            The concrete MSA object, or ``None`` when ``sense_or_msa`` is
+            a sense with no ``MorphoSyntaxAnalysisRA``.
+        """
+        obj = self.__Resolve(sense_or_msa)
+        try:
+            sense = ILexSense(obj)
+        except Exception:
+            sense = None
+
+        if sense is not None:
+            existing = sense.MorphoSyntaxAnalysisRA
+            if existing is None:
+                return None
+            return self.__GetMsaObject(existing)
+
+        return self.__GetMsaObject(obj)
+
+    def __ReadMsaFeatureStrucSpec(self, msa, expected_class_name, slot):
+        """
+        Read one feature-struct owning property off ``msa`` and convert
+        it to the ``_MakeFeatStruc``-shaped spec, or ``None``.
+
+        Returns ``None`` (never raises) when ``msa.ClassName`` does not
+        match ``expected_class_name`` -- mirrors ``GetInflAffMsaSlots``'s
+        graceful non-raise on a wrong-type MSA, applied to this method's
+        ``None``-shaped return instead of ``GetInflAffMsaSlots``'s ``[]``.
+        """
+        if msa.ClassName != expected_class_name:
+            return None
+        concrete_owner, prop_name = self._ResolveFeatureStrucOwner(
+            msa, slot=slot
+        )
+        struct = getattr(concrete_owner, prop_name)
+        return self.__C4ToFeatStrucSpec(self._GetFeatureStruc(struct))
+
+    @OperationsMethod
+    def GetStemFeatures(self, sense_or_msa):
+        """
+        Read ``IMoStemMsa.MsFeaturesOA`` as a ``MakeFeatStruc``-shaped spec.
+
+        This is the read-side pair for
+        ``project.InflectionFeatures.MakeFeatStruc(specs, owner=stem_msa)``:
+        the returned spec can be fed straight back into ``MakeFeatStruc``
+        to reproduce an equivalent (GUID-keyed) feature structure on
+        another owner.
+
+        Args:
+            sense_or_msa: An ``ILexSense``, ``IMoStemMsa``, HVO, GUID
+                string, or ``MorphosyntaxAnalysis`` wrapper.
+
+        Returns:
+            dict or None: Recursive ``{featureGuid: valueGuid | {...}}``
+            spec. ``None`` when ``sense_or_msa`` denotes a sense with no
+            MSA, an MSA that is not ``MoStemMsa``, or a stem MSA whose
+            ``MsFeaturesOA`` is null. ``{}`` when ``MsFeaturesOA`` is a
+            present-but-empty feature structure.
+
+        Raises:
+            FP_NullParameterError: If ``sense_or_msa`` is null.
+
+        Example:
+            >>> spec = project.MSA.GetStemFeatures(sense)
+            >>> if spec is not None:
+            ...     project.InflectionFeatures.MakeFeatStruc(
+            ...         spec, owner=other_stem_msa
+            ...     )
+        """
+        self._ValidateParam(sense_or_msa, "sense_or_msa")
+
+        msa = self.__ResolveMsaForFeatures(sense_or_msa)
+        if msa is None:
+            return None
+        return self.__ReadMsaFeatureStrucSpec(msa, "MoStemMsa", slot=None)
+
+    @OperationsMethod
+    def GetInflAffFeatures(self, sense_or_msa):
+        """
+        Read ``IMoInflAffMsa.InflFeatsOA`` as a ``MakeFeatStruc``-shaped
+        spec.
+
+        Read-side pair for
+        ``project.InflectionFeatures.MakeFeatStruc(specs, owner=infl_msa)``.
+
+        Args:
+            sense_or_msa: An ``ILexSense``, ``IMoInflAffMsa``, HVO, GUID
+                string, or ``MorphosyntaxAnalysis`` wrapper.
+
+        Returns:
+            dict or None: Recursive ``{featureGuid: valueGuid | {...}}``
+            spec. ``None`` when ``sense_or_msa`` denotes a sense with no
+            MSA, an MSA that is not ``MoInflAffMsa``, or an inflectional
+            affix MSA whose ``InflFeatsOA`` is null. ``{}`` when
+            ``InflFeatsOA`` is a present-but-empty feature structure.
+
+        Raises:
+            FP_NullParameterError: If ``sense_or_msa`` is null.
+
+        Example:
+            >>> spec = project.MSA.GetInflAffFeatures(sense)
+            >>> if spec is not None:
+            ...     project.InflectionFeatures.MakeFeatStruc(
+            ...         spec, owner=other_infl_msa
+            ...     )
+        """
+        self._ValidateParam(sense_or_msa, "sense_or_msa")
+
+        msa = self.__ResolveMsaForFeatures(sense_or_msa)
+        if msa is None:
+            return None
+        return self.__ReadMsaFeatureStrucSpec(msa, "MoInflAffMsa", slot=None)
+
+    @OperationsMethod
+    def GetDerivFromFeatures(self, sense_or_msa):
+        """
+        Read ``IMoDerivAffMsa.FromMsFeaturesOA`` as a ``MakeFeatStruc``-
+        shaped spec.
+
+        Read-side pair for
+        ``project.InflectionFeatures.MakeFeatStruc(specs, owner=deriv_msa,
+        slot="From")``.
+
+        Args:
+            sense_or_msa: An ``ILexSense``, ``IMoDerivAffMsa``, HVO, GUID
+                string, or ``MorphosyntaxAnalysis`` wrapper.
+
+        Returns:
+            dict or None: Recursive ``{featureGuid: valueGuid | {...}}``
+            spec. ``None`` when ``sense_or_msa`` denotes a sense with no
+            MSA, an MSA that is not ``MoDerivAffMsa``, or a derivational
+            affix MSA whose ``FromMsFeaturesOA`` is null. ``{}`` when
+            ``FromMsFeaturesOA`` is a present-but-empty feature structure.
+
+        Raises:
+            FP_NullParameterError: If ``sense_or_msa`` is null.
+
+        Example:
+            >>> spec = project.MSA.GetDerivFromFeatures(sense)
+            >>> if spec is not None:
+            ...     project.InflectionFeatures.MakeFeatStruc(
+            ...         spec, owner=other_deriv_msa, slot="From"
+            ...     )
+        """
+        self._ValidateParam(sense_or_msa, "sense_or_msa")
+
+        msa = self.__ResolveMsaForFeatures(sense_or_msa)
+        if msa is None:
+            return None
+        return self.__ReadMsaFeatureStrucSpec(msa, "MoDerivAffMsa", slot="From")
+
+    @OperationsMethod
+    def GetDerivToFeatures(self, sense_or_msa):
+        """
+        Read ``IMoDerivAffMsa.ToMsFeaturesOA`` as a ``MakeFeatStruc``-
+        shaped spec.
+
+        Read-side pair for
+        ``project.InflectionFeatures.MakeFeatStruc(specs, owner=deriv_msa,
+        slot="To")``.
+
+        Args:
+            sense_or_msa: An ``ILexSense``, ``IMoDerivAffMsa``, HVO, GUID
+                string, or ``MorphosyntaxAnalysis`` wrapper.
+
+        Returns:
+            dict or None: Recursive ``{featureGuid: valueGuid | {...}}``
+            spec. ``None`` when ``sense_or_msa`` denotes a sense with no
+            MSA, an MSA that is not ``MoDerivAffMsa``, or a derivational
+            affix MSA whose ``ToMsFeaturesOA`` is null. ``{}`` when
+            ``ToMsFeaturesOA`` is a present-but-empty feature structure.
+
+        Raises:
+            FP_NullParameterError: If ``sense_or_msa`` is null.
+
+        Example:
+            >>> spec = project.MSA.GetDerivToFeatures(sense)
+            >>> if spec is not None:
+            ...     project.InflectionFeatures.MakeFeatStruc(
+            ...         spec, owner=other_deriv_msa, slot="To"
+            ...     )
+        """
+        self._ValidateParam(sense_or_msa, "sense_or_msa")
+
+        msa = self.__ResolveMsaForFeatures(sense_or_msa)
+        if msa is None:
+            return None
+        return self.__ReadMsaFeatureStrucSpec(msa, "MoDerivAffMsa", slot="To")
+
+    @OperationsMethod
+    def GetFeatures(self, sense_or_msa, slot=None):
+        """
+        Read an MSA's feature structure as a ``MakeFeatStruc``-shaped
+        spec, dispatching on the MSA's concrete ``ClassName``.
+
+        Single entry point covering all four concrete MSA classes --
+        prefer this over the explicit per-class getters
+        (``GetStemFeatures`` / ``GetInflAffFeatures`` /
+        ``GetDerivFromFeatures`` / ``GetDerivToFeatures``) when the
+        caller does not already know the MSA's class (Principle III,
+        docs/API_DESIGN_PHILOSOPHY.md).
+
+        Args:
+            sense_or_msa: An ``ILexSense``, any concrete MSA object, HVO,
+                GUID string, or ``MorphosyntaxAnalysis`` wrapper.
+            slot: Required ONLY for a ``MoDerivAffMsa`` (which has two
+                independent feature-struct slots): ``"From"`` or ``"To"``.
+                Ignored for every other MSA class, even if supplied.
+
+        Returns:
+            dict or None: Recursive ``{featureGuid: valueGuid | {...}}``
+            spec (see the per-class getters for the exact owning
+            property). ``None`` when ``sense_or_msa`` denotes a sense
+            with no MSA, an ``MoUnclassifiedAffixMsa`` (carries no
+            feature-struct property at all -- confirmed by the live
+            probe backing ``GetSyncableProperties``), or any other
+            ``ClassName`` outside the four recognized MSA subtypes.
+            ``{}`` when the owning property is a present-but-empty
+            feature structure.
+
+        Raises:
+            FP_NullParameterError: If ``sense_or_msa`` is null.
+            FP_ParameterError: If the resolved MSA is ``MoDerivAffMsa``
+                and ``slot`` is not ``"From"`` or ``"To"`` -- a
+                derivational affix MSA has two independent feature-struct
+                slots and this method never guesses which one the caller
+                means.
+
+        Example:
+            >>> spec = project.MSA.GetFeatures(sense)
+            >>> deriv_from = project.MSA.GetFeatures(deriv_msa, slot="From")
+        """
+        self._ValidateParam(sense_or_msa, "sense_or_msa")
+
+        msa = self.__ResolveMsaForFeatures(sense_or_msa)
+        if msa is None:
+            return None
+
+        class_name = msa.ClassName
+        if class_name == "MoStemMsa":
+            return self.__ReadMsaFeatureStrucSpec(msa, "MoStemMsa", slot=None)
+        if class_name == "MoInflAffMsa":
+            return self.__ReadMsaFeatureStrucSpec(msa, "MoInflAffMsa", slot=None)
+        if class_name == "MoDerivAffMsa":
+            if slot not in ("From", "To"):
+                raise FP_ParameterError(
+                    "GetFeatures: msa is MoDerivAffMsa, which has two "
+                    "independent feature-struct slots; pass slot='From' "
+                    "or slot='To'. Never guessed."
+                )
+            return self.__ReadMsaFeatureStrucSpec(msa, "MoDerivAffMsa", slot=slot)
+        # MoUnclassifiedAffixMsa (R2: no feature-struct property at all)
+        # and any out-of-C1-table ClassName (e.g. MoDerivStepMsa): no
+        # feature-struct property to read.
+        return None
+
+    # ------------------------------------------------------------------
     # Affix MSA variant conversion
     # ------------------------------------------------------------------
 
