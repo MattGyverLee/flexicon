@@ -28,6 +28,21 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   are unaffected. See the Migration Guide's "AffixSlot wrapper" section
   for code that did `IMoInflAffixSlot(slot)` or an `isinstance` check
   against the raw slot.
+- **`LexSenseOperations.GetDoNotPublishIn` / `AddDoNotPublishIn` /
+  `RemoveDoNotPublishIn`** (#545), with the same signatures and semantics
+  as the `LexEntry` and `Examples` versions. Sense-level publication
+  exclusion previously needed raw LCM (`sense.DoNotPublishInRC.Add(pub)`).
+
+### Fixed
+
+- **New entries, senses, subsenses and examples are published in every
+  publication again** (#545). This backs out the #338 default, which
+  seeded `DoNotPublishInRC` with every publication on each new item, so
+  flexicon-created lexicon data was hidden from every dictionary until a
+  caller opted it back in. For senses there was no flexicon call to do
+  that at all. Like the FLEx GUI, exclusion is now a specialty flag set
+  explicitly with `AddDoNotPublishIn`. The
+  `BaseOperations._DefaultExcludeFromAllPublications` helper is removed.
 
 ---
 
