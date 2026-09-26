@@ -183,7 +183,15 @@ class OverlayOperations(PossibilityItemOperations):
     @wrap_enumerable
     @OperationsMethod
     def GetAll(self):
-        """Return all overlays in the project."""
+        """Return all overlays in the project.
+
+        Returns:
+            list[ICmOverlay]: Every overlay in ``ILangProject.OverlaysOC``.
+
+        Example:
+            >>> for overlay in project.Overlays.GetAll():
+            ...     print(project.Overlays.GetName(overlay))
+        """
         return list(self.project.lp.OverlaysOC)
 
     @OperationsMethod

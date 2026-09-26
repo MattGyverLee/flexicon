@@ -4,15 +4,17 @@
 #   Type stubs for MorphRuleOperations
 #
 
-from typing import Any, Optional, Iterator
+from typing import Any, Optional, Iterator, Union
 from ..BaseOperations import BaseOperations, EnumerableWrapper
 from .compound_rule_collection import CompoundRuleCollection
 from .affix_template_collection import AffixTemplateCollection
+from .compound_rule import CompoundRule
+from .affix_template import AffixTemplate
 
 class MorphRuleOperations(BaseOperations[Any]):
     """MorphRuleOperations operations"""
 
-    def GetAll(self) -> EnumerableWrapper[Any]: ...
+    def GetAll(self) -> EnumerableWrapper[Union[CompoundRule, AffixTemplate]]: ...
     def GetAllCompoundRules(self) -> CompoundRuleCollection: ...
     def GetAllAffixTemplates(self) -> AffixTemplateCollection: ...
     def GetAllAffixTemplatesForPOS(self, pos_or_hvo: Any) -> AffixTemplateCollection: ...
