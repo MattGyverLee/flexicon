@@ -1,9 +1,11 @@
 #
 #   test_issue338_publication_defaults_live.py
 #
-#   Live regression coverage for issue #338:
-#   new entries, senses, subsenses, and examples must default to being
-#   excluded from every publication on creation.
+#   Live coverage for publication defaults on creation. Issue #338 made
+#   flexicon seed DoNotPublishInRC on every new entry, sense and example;
+#   issue #545 backed that out. Like the FLEx GUI, a newly created entry,
+#   sense, subsense or example is published in every publication, and
+#   exclusion is a specialty flag set explicitly via AddDoNotPublishIn.
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+
@@ -41,9 +43,9 @@ def _example_by_text(project, sense, text):
     return None
 
 
-class TestIssue338PublicationDefaults:
+class TestPublicationDefaults:
     @pytest.mark.live_phase("LexEntryOperations", "add")
-    def test_create_entry_and_blank_sense_default_exclude_all_publications(
+    def test_create_entry_and_blank_sense_exclude_no_publications(
         self, target_sandbox
     ):
         all_publications = _all_publication_guids(target_sandbox)
@@ -58,16 +60,16 @@ class TestIssue338PublicationDefaults:
         try:
             reread = target_sandbox.LexEntry.Find(lexeme)
             assert reread is not None, "Created entry did not round-trip through Find()"
-            assert _excluded_publication_guids(reread) == all_publications
+            assert _excluded_publication_guids(reread) == set()
 
             senses = list(reread.SensesOS)
             assert len(senses) == 1, "Create(..., create_blank_sense=True) should create one blank sense"
-            assert _excluded_publication_guids(senses[0]) == all_publications
+            assert _excluded_publication_guids(senses[0]) == set()
         finally:
             target_sandbox.LexEntry.Delete(entry)
 
     @pytest.mark.live_phase("LexSenseOperations", "add")
-    def test_create_sense_default_excludes_all_publications(self, target_sandbox):
+    def test_create_sense_default_excludes_no_publications(self, target_sandbox):
         all_publications = _all_publication_guids(target_sandbox)
         if not all_publications:
             pytest.skip("Target sandbox has no publications to verify")
@@ -82,12 +84,12 @@ class TestIssue338PublicationDefaults:
             reread_entry = target_sandbox.LexEntry.Find(lexeme)
             reread_sense = _sense_by_gloss(target_sandbox, reread_entry, gloss)
             assert reread_sense is not None, "Created sense did not round-trip through the LCM"
-            assert _excluded_publication_guids(reread_sense) == all_publications
+            assert _excluded_publication_guids(reread_sense) == set()
         finally:
             target_sandbox.LexEntry.Delete(entry)
 
     @pytest.mark.live_phase("LexEntryOperations", "add")
-    def test_addsense_default_excludes_all_publications(self, target_sandbox):
+    def test_addsense_default_excludes_no_publications(self, target_sandbox):
         all_publications = _all_publication_guids(target_sandbox)
         if not all_publications:
             pytest.skip("Target sandbox has no publications to verify")
@@ -102,12 +104,12 @@ class TestIssue338PublicationDefaults:
             reread_entry = target_sandbox.LexEntry.Find(lexeme)
             reread_sense = _sense_by_gloss(target_sandbox, reread_entry, gloss)
             assert reread_sense is not None, "AddSense result did not round-trip through the LCM"
-            assert _excluded_publication_guids(reread_sense) == all_publications
+            assert _excluded_publication_guids(reread_sense) == set()
         finally:
             target_sandbox.LexEntry.Delete(entry)
 
     @pytest.mark.live_phase("LexSenseOperations", "add")
-    def test_create_subsense_default_excludes_all_publications(self, target_sandbox):
+    def test_create_subsense_default_excludes_no_publications(self, target_sandbox):
         all_publications = _all_publication_guids(target_sandbox)
         if not all_publications:
             pytest.skip("Target sandbox has no publications to verify")
@@ -126,7 +128,8 @@ class TestIssue338PublicationDefaults:
             assert reread_parent is not None
             reread_child = _sense_by_gloss(target_sandbox, reread_entry, child_gloss)
             assert reread_child is not None, "Created subsense did not round-trip through the LCM"
-            assert _excluded_publication_guids(reread_child) == all_publications
+            assert _excluded_publication_guids(reread_parent) == set()
+            assert _excluded_publication_guids(reread_child) == set()
         finally:
             target_sandbox.LexEntry.Delete(entry)
 
@@ -138,7 +141,7 @@ class TestIssue338PublicationDefaults:
             ("Senses.AddExample", f"{TEST_PREFIX}example_via_senses"),
         ],
     )
-    def test_example_creators_default_exclude_all_publications(
+    def test_example_creators_default_exclude_no_publications(
         self, target_sandbox, creator_name, example_text
     ):
         all_publications = _all_publication_guids(target_sandbox)
@@ -163,6 +166,6 @@ class TestIssue338PublicationDefaults:
             assert reread_example is not None, (
                 f"{creator_name} result did not round-trip through the LCM"
             )
-            assert _excluded_publication_guids(reread_example) == all_publications
+            assert _excluded_publication_guids(reread_example) == set()
         finally:
             target_sandbox.LexEntry.Delete(entry)

@@ -212,7 +212,6 @@ class ExampleOperations(BaseOperations):
             # Set example text
             mkstr = TsStringUtils.MakeString(example_text, wsHandle)
             example.Example.set_String(wsHandle, mkstr)
-            self._DefaultExcludeFromAllPublications(example)
 
             return example
 
