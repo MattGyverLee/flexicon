@@ -334,9 +334,20 @@ class ExampleOperations(BaseOperations):
 
             # Determine insertion position
             if insert_after:
-                # Insert after source example
-                source_index = parent.ExamplesOS.IndexOf(source)
-                parent.ExamplesOS.Insert(source_index + 1, duplicate)
+                # Index by HVO (issue #552). ExamplesOS can yield bare interface
+                # views whose Python identity differs from source.
+                example_list = list(parent.ExamplesOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, ex in enumerate(example_list):
+                    if ex.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(example_list)
+                else:
+                    insert_index = source_index + 1
+                parent.ExamplesOS.Insert(insert_index, duplicate)
             else:
                 # Insert at end
                 parent.ExamplesOS.Add(duplicate)
