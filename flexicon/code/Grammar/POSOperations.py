@@ -895,7 +895,13 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
                 to create an optional slot.
 
         Returns:
-            IMoInflAffixSlot: The newly created affix slot.
+            AffixSlot: A wrapper around the newly created IMoInflAffixSlot,
+            exposing ``.name`` (str), ``.optional`` (bool), and ``.affixes``,
+            while still proxying raw LCM member access (``.Name``,
+            ``.Optional``, ``.Hvo``) through to the underlying
+            IMoInflAffixSlot for backward compatibility. Pass it directly
+            to ``MorphRules.AddSlotToTemplate`` or
+            ``MSA.SetInflAffMsaSlots``; both unwrap it automatically.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -905,6 +911,8 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         Example:
             >>> verb = project.POS.Find("Verb")
             >>> slot = project.POS.CreateAffixSlot(verb, "PossConcord", optional=False)
+            >>> slot.name
+            'PossConcord'
 
         See Also:
             GetAffixSlots
@@ -933,7 +941,7 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             # Boolean property is Optional (clr reflection, SIL.LCModel 11).
             slot.Optional = optional
 
-            return slot
+            return AffixSlot(slot)
 
     @OperationsMethod
     def GetSlotName(self, slot_or_hvo, wsHandle=None):
@@ -1084,6 +1092,7 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         with self._TransactionCM(f"Set affix slot optional={bool(optional)}"):
             slot.Optional = bool(optional)
 
+    @wrap_enumerable
     @OperationsMethod
     def GetAffixesInSlot(self, slot_or_hvo):
         """

@@ -133,6 +133,76 @@ def test_get_affix_slots_returns_affixslot_wrapper(sena3_sandbox):
             project.POS.Delete(pos)
 
 
+@pytest.mark.live_phase("POSOperations", "add")
+def test_create_affix_slot_returns_affixslot_wrapper(sena3_sandbox):
+    """
+    CreateAffixSlot returns an AffixSlot wrapper (not a raw
+    IMoInflAffixSlot), and the wrapper flows straight into
+    AddSlotToTemplate and SetInflAffMsaSlots without unwrapping by the
+    caller. Every claim here is confirmed by re-querying the LCM after
+    the write, not by asserting on the value just passed in.
+    """
+    from SIL.LCModel import IMoInflAffixTemplate, IPartOfSpeech
+
+    from flexicon.code.Grammar.affix_slot import AffixSlot
+
+    project = sena3_sandbox
+    assert project.writeEnabled is True
+
+    pos = None
+    entry = None
+    try:
+        pos = project.POS.Create(f"{TEST_PREFIX}create_pos", "T542C")
+        slot = project.POS.CreateAffixSlot(
+            pos, f"{TEST_PREFIX}create_slot", optional=True
+        )
+
+        # CreateAffixSlot returns an AffixSlot, not a raw IMoInflAffixSlot.
+        assert isinstance(slot, AffixSlot)
+        assert slot.name == f"{TEST_PREFIX}create_slot"
+        assert slot.optional is True
+        slot_hvo = int(slot.Hvo)
+
+        # --- Pass the wrapper straight into AddSlotToTemplate ---
+        template = project.MorphRules.CreateAffixTemplate(
+            pos, f"{TEST_PREFIX}create_template"
+        )
+        template_hvo = int(template.Hvo)
+        project.MorphRules.AddSlotToTemplate(template, slot, "prefix")
+
+        # Read back the template's prefix slots directly from the LCM
+        # (not from the value just passed in).
+        pos_hvo = int(pos.Hvo)
+        owner = IPartOfSpeech(project.Object(pos_hvo))
+        fresh_template = None
+        for raw in owner.AffixTemplatesOS:
+            if int(raw.Hvo) == template_hvo:
+                fresh_template = IMoInflAffixTemplate(raw)
+                break
+        assert fresh_template is not None
+        prefix_hvos = {int(item.Hvo) for item in fresh_template.PrefixSlotsRS}
+        assert slot_hvo in prefix_hvos
+
+        # --- Pass the wrapper straight into SetInflAffMsaSlots ---
+        entry = project.LexEntry.Create(
+            f"{TEST_PREFIX}create_prefix", morph_type_name="prefix"
+        )
+        sense = entry.SensesOS[0]
+        infl = project.MSA.CreateInflAff(sense, pos, slots=[])
+        assert infl is not None
+
+        project.MSA.SetInflAffMsaSlots(sense, [slot], replace=True)
+
+        # Read back via GetInflAffMsaSlots -- the LCM, not the input list.
+        slots_from_msa = project.MSA.GetInflAffMsaSlots(sense)
+        assert {int(s.Hvo) for s in slots_from_msa} == {slot_hvo}
+    finally:
+        if entry is not None:
+            project.LexEntry.Delete(entry)
+        if pos is not None:
+            project.POS.Delete(pos)
+
+
 @pytest.mark.live_phase("POSOperations", "read")
 def test_bad_slot_input_raises_parameter_error(sena3_sandbox):
     from flexicon.code.FLExProject import FP_ParameterError
