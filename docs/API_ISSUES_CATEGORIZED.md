@@ -1068,6 +1068,57 @@ separately.
 
 ---
 
+## Category 14: Write-only feature-structure API (issue #544)
+
+**Problem**: `InflectionFeatures.MakeFeatStruc(specs, owner=msa, ...)`
+writes an MSA's feature structure (`IMoStemMsa.MsFeaturesOA`,
+`IMoInflAffMsa.InflFeatsOA`, `IMoDerivAffMsa.From`/`ToMsFeaturesOA`), but
+until this fix there was no public way to read one back -- callers had
+to hand-roll a recursive `IFsFeatStruc`/`IFsClosedValue`/
+`IFsComplexValue` walk. The private helper that already did this walk
+(`MSAOperations.__CaptureFeatureStrucProp`, used only by
+`GetSyncableProperties`) returns the C4 SYNC WIRE FORMAT
+(`{"TypeGuid": ..., "specs": {...}}`, with an extra `"Guid"` key on
+nested levels) -- a shape `MakeFeatStruc` does NOT accept back. Note
+that `POSOperations.GetDefaultFeatures`/`GetInherFeatVal` (the
+part-of-speech precedent for this same read gap) DO return raw C4 --
+that is a pre-existing, narrower design choice for POS and is untouched
+by this fix.
+
+**Fix**: `MSAOperations` gained five public getters --
+`GetStemFeatures`, `GetInflAffFeatures`, `GetDerivFromFeatures`,
+`GetDerivToFeatures`, and a dispatching `GetFeatures(sense_or_msa,
+slot=None)` -- each returning a plain recursive
+`{featureGuid: valueGuid | {...}}` dict: the exact shape
+`_MakeFeatStruc` resolves GUID-string operands against, so
+`MakeFeatStruc(getter_output, owner=other_msa)` reproduces an
+equivalent feature structure on another owner. A private
+`__C4ToFeatStrucSpec` converter performs the one conversion (C4 ->
+`MakeFeatStruc` input), recursively for nested `IFsComplexValue`
+levels, dropping `TypeGuid` at every level (not part of the
+`MakeFeatStruc` input shape, and `_MakeFeatStruc` never writes `TypeRA`
+back regardless -- a pre-existing `MakeFeatStruc` limitation, not
+something this fix introduces).
+
+Semantics locked by the offline test suite
+(`tests/operations/test_msa_feature_getters.py`): `None` when the owning
+property is null OR the sense has no MSA OR an explicit getter is
+called on the wrong MSA class (mirrors `GetInflAffMsaSlots`'s graceful
+non-raise, applied to a `None`-shaped return); `{}` when a struct exists
+but is empty; `FP_ParameterError` when `GetFeatures` resolves to
+`MoDerivAffMsa` and `slot` is not `"From"`/`"To"` (never guessed, same
+policy as `_ResolveFeatureStrucOwner` itself); `FP_NullParameterError`
+for a null `sense_or_msa`.
+
+```python
+# Round-trip a stem MSA's feature structure onto a different owner:
+spec = project.MSA.GetStemFeatures(sense)
+if spec is not None:
+    project.InflectionFeatures.MakeFeatStruc(spec, owner=other_stem_msa)
+```
+
+---
+
 ## Summary Statistics
 
 ### By Status (Updated):
