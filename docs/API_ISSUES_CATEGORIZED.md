@@ -1056,6 +1056,42 @@ at every private resolver reachable with a wrapper. Uses `isinstance`
 checks, not `hasattr` duck-typing, since both wrapper types proxy unknown
 attribute access to the wrapped LCM object.
 
+## Category 14: `IMoInflAffixSlot` had no readers (issue #542)
+
+`POSOperations.CreateAffixSlot` (#255) could create an affix slot, but
+`AffixTemplate.prefix_slots`/`suffix_slots`/`proclitic_slots`/
+`enclitic_slots` and `POSOperations.GetAffixSlots` all returned the raw
+`IMoInflAffixSlot` objects, so the documented `print(f"...{slot.Name}")`
+idiom printed an `IMultiUnicode` object, not text -- pushing callers to
+raw LCM casts to read a slot's name, optionality, or filling affixes.
+
+Live reflection (`clr.GetClrType(IMoInflAffixSlot)`, 2026-09-26) confirms
+the field shapes:
+
+| Field | LCM type | Correct access |
+|---|---|---|
+| `Name` | `IMultiUnicode` | `ITsString(slot.Name.get_String(wsHandle)).Text`, normalized with `normalize_text()` |
+| `Optional` | `System.Boolean` | Plain bool, read/write directly |
+| `Affixes` | `IEnumerable<IMoInflAffMsa>` | Direct back-reference to every MSA whose `SlotsRC` contains this slot -- the exact inverse of `IMoInflAffMsa.SlotsRC` (see `MSAOperations.GetInflAffMsaSlots`, issue #543). No repository scan or entry walk needed. |
+
+Fix: `POSOperations.GetSlotName`/`SetSlotName`/`IsSlotOptional`/
+`SetSlotOptional`/`GetAffixesInSlot`, plus a new `AffixSlot` wrapper
+(`flexicon/code/Grammar/affix_slot.py`, modeled on `AffixTemplate`)
+returned from `GetAffixSlots` and the four `AffixTemplate.*_slots`
+properties. `AffixSlot` is an `LCMObjectWrapper` subclass, so it still
+proxies `.Name`/`.Optional`/`.Hvo` through to the raw LCM object --
+existing callers passing a returned slot into
+`MSAOperations.SetInflAffMsaSlots` or `MorphRuleOperations.AddSlotToTemplate`
+are unaffected, since both already unwrap `LCMObjectWrapper` instances
+(`_UnwrapLcm`/`hasattr(obj, "_obj")`) before casting.
+
+All five new `POSOperations` methods resolve their `slot_or_hvo` argument
+through a private `__ResolveSlot` helper that performs a real pythonnet
+cast to `IMoInflAffixSlot` and raises `FP_ParameterError` on a miss, rather
+than the never-raising `hasattr`-probe shape used by `__ResolveObject` --
+see the 4.10.0 live-gate note in Category 13 about resolvers "that never
+cast".
+
 Known follow-on, deliberately left open by this fix: `MorphRuleOperations`
 has two bare-owner bugs unrelated to wrappers --
 `Delete()`'s `MoInflAffixTemplate` branch and `__DuplicateAffixTemplate`
