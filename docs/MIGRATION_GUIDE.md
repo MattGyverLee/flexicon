@@ -753,3 +753,68 @@ dicts for `ApplySyncableProperties` must be updated:
   exist; use `GetWordGroup(marker)` or read `WordGroupRA` on the marker.
 
 ---
+
+## Change: AffixSlot wrapper (issue #542)
+
+`AffixTemplate.prefix_slots` / `.suffix_slots` / `.proclitic_slots` /
+`.enclitic_slots`, `POSOperations.GetAffixSlots`, and
+`POSOperations.CreateAffixSlot` now return `AffixSlot` wrapper objects
+instead of raw `IMoInflAffixSlot` objects. This is the read-side fix for
+`IMoInflAffixSlot.Name` being an `IMultiUnicode`, not a string --
+`slot.Name` used to require a manual `.BestAnalysisAlternative.Text` (or
+similar) to print.
+
+### What still works unchanged
+
+Attribute access passes straight through to the wrapped LCM object, so
+existing code keeps working without modification:
+
+```python
+slot = project.POS.CreateAffixSlot(verb, "PossConcord")
+slot.Hvo          # still works (proxied)
+slot.Name         # still an IMultiUnicode (proxied) -- use slot.name for text
+slot.Optional     # still works (proxied)
+
+# Passing the wrapper into another Operations method still works -- every
+# resolver that accepts a slot unwraps AffixSlot automatically:
+project.MorphRules.AddSlotToTemplate(template, slot, "prefix")
+project.MSA.SetInflAffMsaSlots(sense, [slot])
+```
+
+### New, simpler reads
+
+```python
+slot.name       # str, "***" normalized to "" -- was slot.Name.BestAnalysisAlternative.Text
+slot.optional   # bool -- was slot.Optional (still works, but .optional matches the other wrappers)
+slot.affixes    # list[IMoInflAffMsa] filling the slot
+```
+
+### What breaks
+
+Code that performs a pythonnet interface cast on the returned value, or
+an `isinstance` check against the raw LCM interface, now fails because
+`AffixSlot` is a plain Python wrapper object, not something pythonnet can
+cast:
+
+**Before:**
+```python
+slot = project.POS.CreateAffixSlot(verb, "PossConcord")
+raw = IMoInflAffixSlot(slot)          # TypeError: object does not implement IMoInflAffixSlot
+if isinstance(slot, IMoInflAffixSlot):  # never true; also never was, pre-#542
+    ...
+```
+
+**After:**
+```python
+slot = project.POS.CreateAffixSlot(verb, "PossConcord")
+raw = IMoInflAffixSlot(slot.lcm_object)   # unwrap first, then cast
+if isinstance(slot, AffixSlot):
+    ...
+```
+
+`slot.lcm_object` is the public unwrap property on every flexicon wrapper
+(`LCMObjectWrapper.lcm_object`); it is the same object `AffixSlot.__init__`
+was constructed from. Do not reach into `slot._obj` directly -- it is the
+same value, but `lcm_object` is the supported public accessor.
+
+---

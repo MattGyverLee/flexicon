@@ -205,7 +205,9 @@ class TestCreateAffixSlotCallOrder:
 
         created = ops.CreateAffixSlot(pos, "PossConcord", optional=False)
 
-        assert created is slot
+        # CreateAffixSlot now returns an AffixSlot wrapper (issue #542);
+        # unwrap it to compare against the raw slot the mock factory made.
+        assert created.lcm_object is slot
         assert log.events == ["create", "add", "makestring", "name", "optional"]
         assert pos.AffixSlotsOC.added == [slot]
         assert slot.Name.writes == [(project.project.DefaultAnalWs, sentinel)]

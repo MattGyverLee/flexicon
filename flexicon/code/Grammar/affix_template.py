@@ -53,11 +53,12 @@ Example::
 
     # Access slots directly
     for slot in wrapped.prefix_slots:
-        print(f"Slot: {slot.Name}")
+        print(f"Slot: {slot.name}")
 """
 
 from ..Shared.wrapper_base import LCMObjectWrapper
 from ..lcm_casting import cast_to_concrete
+from .affix_slot import AffixSlot
 
 try:
     from SIL.LCModel import IPartOfSpeech, PartOfSpeechTags
@@ -196,12 +197,15 @@ class AffixTemplate(LCMObjectWrapper):
         Get the prefix slots collection.
 
         Returns:
-            List or collection of prefix slot objects, or empty list if none.
+            list: AffixSlot wrapper objects, or empty list if none. Each
+            wrapper exposes ``.name`` (str), ``.optional`` (bool), and
+            ``.affixes``, and still proxies raw LCM member access
+            (``.Name``, ``.Optional``, ``.Hvo``) for backward compatibility.
 
         Example::
 
             for slot in wrapped.prefix_slots:
-                print(f"Prefix slot: {slot.Name}")
+                print(f"Prefix slot: {slot.name}")
 
         Notes:
             - Access via PrefixSlotsRS from the concrete interface
@@ -210,7 +214,7 @@ class AffixTemplate(LCMObjectWrapper):
         try:
             if hasattr(self._concrete, "PrefixSlotsRS"):
                 slots = self._concrete.PrefixSlotsRS
-                return list(slots) if slots else []
+                return [AffixSlot(s) for s in slots] if slots else []
             return []
         except Exception:
             return []
@@ -221,12 +225,15 @@ class AffixTemplate(LCMObjectWrapper):
         Get the suffix slots collection.
 
         Returns:
-            List or collection of suffix slot objects, or empty list if none.
+            list: AffixSlot wrapper objects, or empty list if none. Each
+            wrapper exposes ``.name`` (str), ``.optional`` (bool), and
+            ``.affixes``, and still proxies raw LCM member access
+            (``.Name``, ``.Optional``, ``.Hvo``) for backward compatibility.
 
         Example::
 
             for slot in wrapped.suffix_slots:
-                print(f"Suffix slot: {slot.Name}")
+                print(f"Suffix slot: {slot.name}")
 
         Notes:
             - Access via SuffixSlotsRS from the concrete interface
@@ -235,7 +242,7 @@ class AffixTemplate(LCMObjectWrapper):
         try:
             if hasattr(self._concrete, "SuffixSlotsRS"):
                 slots = self._concrete.SuffixSlotsRS
-                return list(slots) if slots else []
+                return [AffixSlot(s) for s in slots] if slots else []
             return []
         except Exception:
             return []
@@ -246,12 +253,15 @@ class AffixTemplate(LCMObjectWrapper):
         Get the proclitic slots collection.
 
         Returns:
-            List or collection of proclitic slot objects, or empty list if none.
+            list: AffixSlot wrapper objects, or empty list if none. Each
+            wrapper exposes ``.name`` (str), ``.optional`` (bool), and
+            ``.affixes``, and still proxies raw LCM member access
+            (``.Name``, ``.Optional``, ``.Hvo``) for backward compatibility.
 
         Example::
 
             for slot in wrapped.proclitic_slots:
-                print(f"Proclitic slot: {slot.Name}")
+                print(f"Proclitic slot: {slot.name}")
 
         Notes:
             - Access via ProcliticSlotsRS from the concrete interface
@@ -260,7 +270,7 @@ class AffixTemplate(LCMObjectWrapper):
         try:
             if hasattr(self._concrete, "ProcliticSlotsRS"):
                 slots = self._concrete.ProcliticSlotsRS
-                return list(slots) if slots else []
+                return [AffixSlot(s) for s in slots] if slots else []
             return []
         except Exception:
             return []
@@ -271,12 +281,15 @@ class AffixTemplate(LCMObjectWrapper):
         Get the enclitic slots collection.
 
         Returns:
-            List or collection of enclitic slot objects, or empty list if none.
+            list: AffixSlot wrapper objects, or empty list if none. Each
+            wrapper exposes ``.name`` (str), ``.optional`` (bool), and
+            ``.affixes``, and still proxies raw LCM member access
+            (``.Name``, ``.Optional``, ``.Hvo``) for backward compatibility.
 
         Example::
 
             for slot in wrapped.enclitic_slots:
-                print(f"Enclitic slot: {slot.Name}")
+                print(f"Enclitic slot: {slot.name}")
 
         Notes:
             - Access via EncliticSlotsRS from the concrete interface
@@ -285,7 +298,7 @@ class AffixTemplate(LCMObjectWrapper):
         try:
             if hasattr(self._concrete, "EncliticSlotsRS"):
                 slots = self._concrete.EncliticSlotsRS
-                return list(slots) if slots else []
+                return [AffixSlot(s) for s in slots] if slots else []
             return []
         except Exception:
             return []

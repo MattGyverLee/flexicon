@@ -91,13 +91,15 @@ class TestIssue255AffixSlotLive:
             record["pos_hvo"] = pos_hvo
 
             slot_name = f"{TEST_PREFIX}PossConcord"
+            # CreateAffixSlot returns an AffixSlot wrapper (issue #542);
+            # .Hvo still proxies through to the raw IMoInflAffixSlot.
             created = project.POS.CreateAffixSlot(pos, slot_name, optional=False)
             assert created is not None
             slot_hvo = created.Hvo
 
             ws = project.project.DefaultAnalWs
             reread = [
-                IMoInflAffixSlot(item)
+                IMoInflAffixSlot(item.lcm_object)
                 for item in project.POS.GetAffixSlots(pos)
                 if item.Hvo == slot_hvo
             ]
@@ -210,7 +212,7 @@ class TestIssue255AffixSlotLive:
                     "interface_bool_properties": iface_bools,
                     "second_slot_hvo": second.Hvo,
                     "second_optional_read_back": bool(
-                        IMoInflAffixSlot(second).Optional
+                        IMoInflAffixSlot(second.lcm_object).Optional
                     ),
                 }
             )
@@ -260,7 +262,7 @@ class TestIssue255AffixSlotLive:
 
             ws = project.project.DefaultAnalWs
             reread = [
-                IMoInflAffixSlot(item)
+                IMoInflAffixSlot(item.lcm_object)
                 for item in project.POS.GetAffixSlots(
                     IPartOfSpeech(project.Object(parent_hvo))
                 )

@@ -463,7 +463,8 @@ class MorphRuleOperations(BaseOperations):
 
         Args:
             template: The IMoInflAffixTemplate object or HVO.
-            slot: The IMoInflAffixSlot object or HVO to insert.
+            slot: The IMoInflAffixSlot object, its HVO, or the AffixSlot
+                wrapper returned by ``project.POS.CreateAffixSlot``.
             side (str): ``prefix``, ``suffix``, ``proclitic``, or
                 ``enclitic``. Case-insensitive.
             index (int, optional): Position to insert at. ``None`` (the
