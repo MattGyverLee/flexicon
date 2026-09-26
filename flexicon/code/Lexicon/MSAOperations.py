@@ -252,7 +252,8 @@ class MSAOperations(BaseOperations):
               not of MSAOperations: the class is write-capable, and its
               CreateStem / CreateDerivAff / CreateInflAff /
               CreateUnclassifiedAffix / SetStemMsaPos / SetDerivAffMsaPos
-              / SetInflAffMsaSlots / ChangeAffixVariant / RemoveOrphaned
+              / SetInflAffMsaSlots / GetInflAffMsaSlots / ChangeAffixVariant
+              / RemoveOrphaned
               siblings all mutate
               the project and call _EnsureWriteEnabled.
             - Collection order follows FLEx's MorphoSyntaxAnalysesOC
@@ -610,6 +611,43 @@ class MSAOperations(BaseOperations):
                 infl.SlotsRC.Clear()
             for slot_obj in resolved_slots:
                 infl.SlotsRC.Add(slot_obj)
+
+    @OperationsMethod
+    def GetInflAffMsaSlots(self, sense_or_msa):
+        """
+        Read ``SlotsRC`` on an inflectional-affix MSA.
+
+        This is the read-side pair for ``SetInflAffMsaSlots``. Pass either
+        the sense whose ``MorphoSyntaxAnalysisRA`` should be read, or the
+        inflectional-affix MSA (or its HVO) directly.
+
+        Args:
+            sense_or_msa: An ``ILexSense``, ``IMoInflAffMsa``, HVO, or
+                ``MorphosyntaxAnalysis`` wrapper.
+
+        Returns:
+            list: ``IMoInflAffixSlot`` objects in ``SlotsRC`` order. An
+            empty list when the sense has no MSA, the MSA is not
+            inflectional-affix, or ``SlotsRC`` is empty.
+
+        Raises:
+            FP_NullParameterError: If ``sense_or_msa`` is null.
+
+        Example:
+            >>> slots = project.MSA.GetInflAffMsaSlots(sense)
+            >>> hvos = {int(s.Hvo) for s in slots}
+            >>> same = project.MSA.GetInflAffMsaSlots(infl_msa_hvo)
+        """
+        self._ValidateParam(sense_or_msa, "sense_or_msa")
+
+        infl = self.__TryResolveInflAffMsa(sense_or_msa)
+        if infl is None:
+            return []
+
+        slots_rc = infl.SlotsRC
+        if slots_rc is None or slots_rc.Count == 0:
+            return []
+        return list(slots_rc)
 
     # ------------------------------------------------------------------
     # Affix MSA variant conversion
@@ -1394,6 +1432,33 @@ class MSAOperations(BaseOperations):
             new_msa = factory.Create(entry, sandbox)
             sense.MorphoSyntaxAnalysisRA = new_msa
             return new_msa
+
+    def __TryResolveInflAffMsa(self, sense_or_msa):
+        """
+        Return IMoInflAffMsa for sense_or_msa when it denotes one, else None.
+
+        Accepts a sense (object/HVO/wrapper) or an inflectional-affix MSA
+        directly. Non-inflectional MSAs and senses with no MSA yield None.
+        """
+        obj = self.__Resolve(sense_or_msa)
+        try:
+            sense = ILexSense(obj)
+        except Exception:
+            sense = None
+
+        if sense is not None:
+            existing = sense.MorphoSyntaxAnalysisRA
+            if existing is None:
+                return None
+            try:
+                return IMoInflAffMsa(existing)
+            except Exception:
+                return None
+
+        try:
+            return IMoInflAffMsa(obj)
+        except Exception:
+            return None
 
     def __ResolveSense(self, sense_or_hvo):
         """Resolve a sense parameter, accepting either an object or HVO."""
