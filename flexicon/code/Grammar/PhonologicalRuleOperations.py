@@ -1406,8 +1406,20 @@ class PhonologicalRuleOperations(BaseOperations):
         with self._TransactionCM("Duplicate phonological rule"):
             duplicate = factory.Create()
             if insert_after:
-                source_index = phon_data.PhonRulesOS.IndexOf(source)
-                phon_data.PhonRulesOS.Insert(source_index + 1, duplicate)
+                # Index by HVO (issue #540). PhonRulesOS can yield bare interface
+                # views whose Python identity differs from source.
+                rule_list = list(phon_data.PhonRulesOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, rule in enumerate(rule_list):
+                    if rule.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(rule_list)
+                else:
+                    insert_index = source_index + 1
+                phon_data.PhonRulesOS.Insert(insert_index, duplicate)
             else:
                 phon_data.PhonRulesOS.Add(duplicate)
 
