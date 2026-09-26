@@ -17,6 +17,7 @@ from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 # Import FLEx LCM types
 from SIL.LCModel import (
     ILexEntryRepository,
+    IMoInflAffixSlot,
     IMoInflAffixSlotFactory,
     IPartOfSpeech,
     IPartOfSpeechFactory,
@@ -35,7 +36,10 @@ from ..FLExProject import (
 from ..lcm_casting import get_pos_from_msa
 
 # Import string utilities
-from ..Shared.string_utils import normalize_match_key
+from ..Shared.string_utils import normalize_match_key, normalize_text
+
+# Import the AffixSlot wrapper (issue #542 read-side pair for CreateAffixSlot)
+from .affix_slot import AffixSlot
 
 # Catalog (GOLDEtic) parsing helpers
 from ..Shared.catalog import parse_etic_catalog
@@ -836,7 +840,12 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             pos_or_hvo: The IPartOfSpeech object or HVO.
 
         Returns:
-            list: List of affix slot objects (empty list if none).
+            list: List of AffixSlot wrapper objects (empty list if none).
+            Each wrapper exposes ``.name`` (str), ``.optional`` (bool), and
+            ``.affixes`` (the IMoInflAffMsa objects filling the slot), and
+            still proxies raw LCM member access (``.Name``, ``.Optional``,
+            ``.Hvo``) through to the underlying IMoInflAffixSlot for
+            backward compatibility with existing callers.
 
         Raises:
             FP_NullParameterError: If pos_or_hvo is None.
@@ -846,7 +855,7 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             >>> verb = posOps.Find("Verb")
             >>> slots = posOps.GetAffixSlots(verb)
             >>> for slot in slots:
-            ...     print(slot.Name)
+            ...     print(slot.name)
             Tense
             Aspect
             Mood
@@ -858,14 +867,15 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             - Used for morphological parsing and generation
 
         See Also:
-            GetInflectionClasses, CreateAffixSlot
+            GetInflectionClasses, CreateAffixSlot, GetSlotName, IsSlotOptional,
+            GetAffixesInSlot
         """
         self._ValidateParam(pos_or_hvo, "pos_or_hvo")
 
         pos = self.__ResolveObject(pos_or_hvo)
 
         # IPartOfSpeech has AffixSlotsOC
-        return list(pos.AffixSlotsOC)
+        return [AffixSlot(slot) for slot in pos.AffixSlotsOC]
 
     @OperationsMethod
     def CreateAffixSlot(self, pos, name, optional=False):
@@ -924,6 +934,203 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             slot.Optional = optional
 
             return slot
+
+    @OperationsMethod
+    def GetSlotName(self, slot_or_hvo, wsHandle=None):
+        """
+        Get the name of an inflectional affix slot.
+
+        Read-side pair for ``CreateAffixSlot`` (issue #542).
+        ``IMoInflAffixSlot.Name`` is an ``IMultiUnicode``, not a string;
+        this method reads it and returns plain text.
+
+        Args:
+            slot_or_hvo: The IMoInflAffixSlot object, its HVO, or an
+                AffixSlot wrapper (from ``GetAffixSlots`` or
+                ``AffixTemplate.prefix_slots``/etc.).
+            wsHandle: Optional writing system handle. Defaults to analysis WS.
+
+        Returns:
+            str: The slot name, or empty string if not set (FLEx's
+            ``***`` null marker is normalized to empty).
+
+        Raises:
+            FP_NullParameterError: If slot_or_hvo is None.
+            FP_ParameterError: If slot_or_hvo does not resolve to an
+                IMoInflAffixSlot.
+
+        Example:
+            >>> posOps = POSOperations(project)
+            >>> verb = posOps.Find("Verb")
+            >>> slot = posOps.CreateAffixSlot(verb, "Tense")
+            >>> posOps.GetSlotName(slot)
+            'Tense'
+
+        See Also:
+            SetSlotName, IsSlotOptional, GetAffixesInSlot
+        """
+        self._ValidateParam(slot_or_hvo, "slot_or_hvo")
+
+        slot = self.__ResolveSlot(slot_or_hvo)
+        wsHandle = self.__WSHandle(wsHandle)
+
+        name = ITsString(slot.Name.get_String(wsHandle)).Text
+        return normalize_text(name)
+
+    @OperationsMethod
+    def SetSlotName(self, slot_or_hvo, name, wsHandle=None):
+        """
+        Set the name of an inflectional affix slot.
+
+        Args:
+            slot_or_hvo: The IMoInflAffixSlot object, its HVO, or an
+                AffixSlot wrapper.
+            name (str): The new name.
+            wsHandle: Optional writing system handle. Defaults to analysis WS.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If slot_or_hvo or name is None.
+            FP_ParameterError: If name is empty, or slot_or_hvo does not
+                resolve to an IMoInflAffixSlot.
+
+        Example:
+            >>> posOps = POSOperations(project)
+            >>> slot = posOps.CreateAffixSlot(verb, "Tense")
+            >>> posOps.SetSlotName(slot, "Aspect")
+
+        See Also:
+            GetSlotName, IsSlotOptional, SetSlotOptional
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(slot_or_hvo, "slot_or_hvo")
+        self._ValidateParam(name, "name")
+
+        if not name or not name.strip():
+            raise FP_ParameterError("Name cannot be empty")
+
+        slot = self.__ResolveSlot(slot_or_hvo)
+        wsHandle = self.__WSHandle(wsHandle)
+
+        mkstr = TsStringUtils.MakeString(name, wsHandle)
+
+        with self._TransactionCM(f"Set affix slot name '{name}'"):
+            slot.Name.set_String(wsHandle, mkstr)
+
+    @OperationsMethod
+    def IsSlotOptional(self, slot_or_hvo):
+        """
+        Check whether an inflectional affix slot may be left empty.
+
+        Args:
+            slot_or_hvo: The IMoInflAffixSlot object, its HVO, or an
+                AffixSlot wrapper.
+
+        Returns:
+            bool: True if the slot is optional, False if obligatory
+            (FLEx's default for a newly-created slot).
+
+        Raises:
+            FP_NullParameterError: If slot_or_hvo is None.
+            FP_ParameterError: If slot_or_hvo does not resolve to an
+                IMoInflAffixSlot.
+
+        Example:
+            >>> posOps = POSOperations(project)
+            >>> slot = posOps.CreateAffixSlot(verb, "PossConcord", optional=True)
+            >>> posOps.IsSlotOptional(slot)
+            True
+
+        See Also:
+            SetSlotOptional, GetSlotName
+        """
+        self._ValidateParam(slot_or_hvo, "slot_or_hvo")
+
+        slot = self.__ResolveSlot(slot_or_hvo)
+        return bool(slot.Optional)
+
+    @OperationsMethod
+    def SetSlotOptional(self, slot_or_hvo, optional):
+        """
+        Set whether an inflectional affix slot may be left empty.
+
+        Args:
+            slot_or_hvo: The IMoInflAffixSlot object, its HVO, or an
+                AffixSlot wrapper.
+            optional (bool): True to make the slot optional, False to make
+                it obligatory.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If slot_or_hvo is None.
+            FP_ParameterError: If slot_or_hvo does not resolve to an
+                IMoInflAffixSlot.
+
+        Example:
+            >>> posOps = POSOperations(project)
+            >>> slot = posOps.CreateAffixSlot(verb, "PossConcord")
+            >>> posOps.SetSlotOptional(slot, True)
+
+        See Also:
+            IsSlotOptional, SetSlotName
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(slot_or_hvo, "slot_or_hvo")
+
+        slot = self.__ResolveSlot(slot_or_hvo)
+
+        with self._TransactionCM(f"Set affix slot optional={bool(optional)}"):
+            slot.Optional = bool(optional)
+
+    @OperationsMethod
+    def GetAffixesInSlot(self, slot_or_hvo):
+        """
+        Get the inflectional-affix MSAs that fill an affix slot.
+
+        Args:
+            slot_or_hvo: The IMoInflAffixSlot object, its HVO, or an
+                AffixSlot wrapper.
+
+        Returns:
+            list: IMoInflAffMsa objects whose SlotsRC contains this slot
+            (empty list if none).
+
+        Raises:
+            FP_NullParameterError: If slot_or_hvo is None.
+            FP_ParameterError: If slot_or_hvo does not resolve to an
+                IMoInflAffixSlot.
+
+        Example:
+            >>> posOps = POSOperations(project)
+            >>> slot = posOps.CreateAffixSlot(verb, "Tense")
+            >>> project.MSA.SetInflAffMsaSlots(sense, [slot])
+            >>> affixes = posOps.GetAffixesInSlot(slot)
+            >>> len(affixes)
+            1
+
+        Notes:
+            - Read via ``IMoInflAffixSlot.Affixes``, the direct
+              back-reference to every ``IMoInflAffMsa`` whose ``SlotsRC``
+              contains this slot (confirmed by live reflection: returns
+              ``IEnumerable<IMoInflAffMsa>``). This is the single most
+              direct LCM path -- it is the exact inverse of
+              ``MSAOperations.GetInflAffMsaSlots`` (issue #543), which
+              reads ``IMoInflAffMsa.SlotsRC`` from the MSA side. No
+              repository scan or entry walk is needed.
+
+        See Also:
+            GetAffixSlots, MSA.GetInflAffMsaSlots, MSA.SetInflAffMsaSlots
+        """
+        self._ValidateParam(slot_or_hvo, "slot_or_hvo")
+
+        slot = self.__ResolveSlot(slot_or_hvo)
+
+        affixes = getattr(slot, "Affixes", None)
+        if affixes is None:
+            return []
+        return list(affixes)
 
     @OperationsMethod
     def GetEntryCount(self, pos_or_hvo, recursive=False):
@@ -1271,6 +1478,45 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         if getattr(obj, "ClassName", None) == "PartOfSpeech":
             return IPartOfSpeech(obj)
         return obj
+
+    def __ResolveSlot(self, slot_or_hvo):
+        """
+        Resolve HVO, raw LCM object, or AffixSlot wrapper to IMoInflAffixSlot.
+
+        Unlike ``__ResolveObject`` (which never raises on a ClassName
+        miss -- deliberately, per its own docstring), this resolver
+        *really casts*: it performs an actual pythonnet interface cast to
+        ``IMoInflAffixSlot`` and raises ``FP_ParameterError`` when the cast
+        fails, rather than silently handing back an object that is missing
+        the members every slot reader/writer method here needs (``Name``,
+        ``Optional``, ``Affixes``). The 4.10.0 live gate (commit
+        9218b3c) found resolvers "that never cast" across the #455-#508
+        series; this method exists specifically to not repeat that shape.
+
+        Args:
+            slot_or_hvo: An ``IMoInflAffixSlot`` object, its HVO (int), or
+                an ``AffixSlot`` wrapper (unwrapped via
+                ``_UnwrapLcmObject`` before casting).
+
+        Returns:
+            IMoInflAffixSlot: The resolved, cast slot object.
+
+        Raises:
+            FP_ParameterError: If the resolved object cannot be cast to
+                IMoInflAffixSlot (wrong type, or a stale/invalid HVO).
+        """
+        if isinstance(slot_or_hvo, int):
+            obj = self.project.Object(slot_or_hvo)
+        else:
+            obj = self._UnwrapLcmObject(slot_or_hvo)
+
+        try:
+            return IMoInflAffixSlot(obj)
+        except Exception:
+            raise FP_ParameterError(
+                "slot_or_hvo must be an IMoInflAffixSlot, its HVO, or an "
+                f"AffixSlot wrapper; got {obj!r}"
+            )
 
     # ========== SYNC INTEGRATION METHODS ==========
     #
