@@ -319,9 +319,20 @@ class WfiMorphBundleOperations(BaseOperations):
 
             # Determine insertion position
             if insert_after:
-                # Insert after source bundle
-                source_index = list(parent.MorphBundlesOS).index(source)
-                parent.MorphBundlesOS.Insert(source_index + 1, duplicate)
+                # Index by HVO (issue #533). MorphBundlesOS can yield bare interface
+                # views whose Python identity differs from source.
+                bundle_list = list(parent.MorphBundlesOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, b in enumerate(bundle_list):
+                    if b.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(bundle_list)
+                else:
+                    insert_index = source_index + 1
+                parent.MorphBundlesOS.Insert(insert_index, duplicate)
             else:
                 # Insert at end
                 parent.MorphBundlesOS.Add(duplicate)
