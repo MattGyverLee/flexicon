@@ -16,15 +16,18 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 - **`POSOperations.GetSlotName`/`SetSlotName`/`IsSlotOptional`/
   `SetSlotOptional`/`GetAffixesInSlot`, and an `AffixSlot` wrapper**
   (#542). `AffixTemplate.prefix_slots`/`suffix_slots`/`proclitic_slots`/
-  `enclitic_slots` and `POSOperations.GetAffixSlots` now return
-  `AffixSlot` wrappers (`.name`, `.optional`, `.affixes`) instead of raw
-  `IMoInflAffixSlot` objects, so the slot name is readable text instead of
-  an `IMultiUnicode`. `GetAffixesInSlot` reads the direct
+  `enclitic_slots`, `POSOperations.GetAffixSlots`, and
+  `POSOperations.CreateAffixSlot` now return `AffixSlot` wrappers
+  (`.name`, `.optional`, `.affixes`) instead of raw `IMoInflAffixSlot`
+  objects, so the slot name is readable text instead of an
+  `IMultiUnicode`. `GetAffixesInSlot` reads the direct
   `IMoInflAffixSlot.Affixes` back-reference -- the inverse of
   `MSAOperations.GetInflAffMsaSlots` (#543). `AffixSlot` still proxies raw
   LCM member access, so existing callers passing a returned slot into
   `MSAOperations.SetInflAffMsaSlots` / `MorphRuleOperations.AddSlotToTemplate`
-  are unaffected.
+  are unaffected. See the Migration Guide's "AffixSlot wrapper" section
+  for code that did `IMoInflAffixSlot(slot)` or an `isinstance` check
+  against the raw slot.
 
 ---
 
