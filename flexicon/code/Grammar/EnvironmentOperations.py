@@ -618,8 +618,20 @@ class EnvironmentOperations(BaseOperations):
             # Add to environments list
             phon_data = self.project.lp.PhonologicalDataOA
             if insert_after:
-                source_index = phon_data.EnvironmentsOS.IndexOf(source)
-                phon_data.EnvironmentsOS.Insert(source_index + 1, duplicate)
+                # Index by HVO (issue #548). EnvironmentsOS can yield bare interface
+                # views whose Python identity differs from source.
+                env_list = list(phon_data.EnvironmentsOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, env in enumerate(env_list):
+                    if env.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(env_list)
+                else:
+                    insert_index = source_index + 1
+                phon_data.EnvironmentsOS.Insert(insert_index, duplicate)
             else:
                 phon_data.EnvironmentsOS.Add(duplicate)
 
