@@ -20,15 +20,14 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
-- **New senses and subsenses are publishable in every publication again**
-  (#545). #338 seeded `DoNotPublishInRC` on every new sense, blank sense
-  and subsense as well as on the entry. Excluding the entry already keeps
-  it out of unrelated publications, and the sense-level exclusions meant
-  that opting an entry into a publication published it with none of its
-  senses. flexicon also had no call to undo that. Sense exclusion is a
-  specialty flag: `LexEntry.Create`, `LexEntry.AddSense`,
-  `Senses.Create` and `Senses.CreateSubsense` no longer set it. New
-  entries and examples are still excluded by default, as in 4.10.0.
+- **New entries, senses, subsenses and examples are published in every
+  publication again** (#545). This backs out the #338 default, which
+  seeded `DoNotPublishInRC` with every publication on each new item, so
+  flexicon-created lexicon data was hidden from every dictionary until a
+  caller opted it back in. For senses there was no flexicon call to do
+  that at all. Like the FLEx GUI, exclusion is now a specialty flag set
+  explicitly with `AddDoNotPublishIn`. The
+  `BaseOperations._DefaultExcludeFromAllPublications` helper is removed.
 
 ---
 

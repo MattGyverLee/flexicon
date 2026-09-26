@@ -1937,7 +1937,6 @@ class LexSenseOperations(BaseOperations):
             # Set example text
             mkstr = TsStringUtils.MakeString(text, wsHandle)
             new_example.Example.set_String(wsHandle, mkstr)
-            self._DefaultExcludeFromAllPublications(new_example)
 
             return new_example
 

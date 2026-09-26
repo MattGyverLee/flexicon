@@ -241,10 +241,9 @@ class LexEntryOperations(BaseOperations):
                 blank_sense = sense_factory.Create()
                 new_entry.SensesOS.Add(blank_sense)
 
-            # Only the entry is excluded. Senses stay publishable everywhere
-            # (sense exclusion is a specialty flag), so opting the entry into
-            # a publication brings its senses with it.
-            self._DefaultExcludeFromAllPublications(new_entry)
+            # No DoNotPublishInRC seeding: like the FLEx GUI, a new entry is
+            # published in every publication. Exclusion is a specialty flag
+            # set explicitly via AddDoNotPublishIn (#545).
 
             # Note: Factory.Create() automatically adds the entry to the repository
             # No explicit Add() call needed - the entry is already in the database

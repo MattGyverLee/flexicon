@@ -1,11 +1,11 @@
 #
 #   test_issue338_publication_defaults_live.py
 #
-#   Live regression coverage for issue #338:
-#   new entries and examples must default to being excluded from every
-#   publication on creation. New senses and subsenses must NOT be
-#   (issue #545): sense exclusion is a specialty flag, and excluding the
-#   entry is what keeps it out of unrelated publications.
+#   Live coverage for publication defaults on creation. Issue #338 made
+#   flexicon seed DoNotPublishInRC on every new entry, sense and example;
+#   issue #545 backed that out. Like the FLEx GUI, a newly created entry,
+#   sense, subsense or example is published in every publication, and
+#   exclusion is a specialty flag set explicitly via AddDoNotPublishIn.
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+
@@ -43,9 +43,9 @@ def _example_by_text(project, sense, text):
     return None
 
 
-class TestIssue338PublicationDefaults:
+class TestPublicationDefaults:
     @pytest.mark.live_phase("LexEntryOperations", "add")
-    def test_create_entry_excludes_all_publications_blank_sense_excludes_none(
+    def test_create_entry_and_blank_sense_exclude_no_publications(
         self, target_sandbox
     ):
         all_publications = _all_publication_guids(target_sandbox)
@@ -60,7 +60,7 @@ class TestIssue338PublicationDefaults:
         try:
             reread = target_sandbox.LexEntry.Find(lexeme)
             assert reread is not None, "Created entry did not round-trip through Find()"
-            assert _excluded_publication_guids(reread) == all_publications
+            assert _excluded_publication_guids(reread) == set()
 
             senses = list(reread.SensesOS)
             assert len(senses) == 1, "Create(..., create_blank_sense=True) should create one blank sense"
@@ -141,7 +141,7 @@ class TestIssue338PublicationDefaults:
             ("Senses.AddExample", f"{TEST_PREFIX}example_via_senses"),
         ],
     )
-    def test_example_creators_default_exclude_all_publications(
+    def test_example_creators_default_exclude_no_publications(
         self, target_sandbox, creator_name, example_text
     ):
         all_publications = _all_publication_guids(target_sandbox)
@@ -166,6 +166,6 @@ class TestIssue338PublicationDefaults:
             assert reread_example is not None, (
                 f"{creator_name} result did not round-trip through the LCM"
             )
-            assert _excluded_publication_guids(reread_example) == all_publications
+            assert _excluded_publication_guids(reread_example) == set()
         finally:
             target_sandbox.LexEntry.Delete(entry)

@@ -3472,30 +3472,6 @@ class BaseOperations:
                     kind or type(factory).__name__, guid, type(exc).__name__, exc)
                 return factory.Create()
 
-    def _DefaultExcludeFromAllPublications(self, item) -> None:
-        """
-        Exclude a newly-created item from every publication by default.
-
-        FLEx models publication membership as an exclusion collection
-        (``DoNotPublishInRC``). A newly-created object with an empty exclusion
-        set is therefore publishable everywhere until callers opt it out. Seed
-        the exclusion collection with every known publication so callers must
-        explicitly opt the item back into the intended publication(s).
-        """
-        if item is None or not hasattr(item, "DoNotPublishInRC"):
-            return
-
-        publications = getattr(self.project, "Publications", None)
-        if publications is None or not hasattr(publications, "GetAll"):
-            return
-
-        # Callers run this inside their own Create bracket; re-entering
-        # _TransactionCM joins that block rather than opening a second task.
-        with self._TransactionCM("Exclude new item from all publications"):
-            for publication in publications.GetAll():
-                if publication not in item.DoNotPublishInRC:
-                    item.DoNotPublishInRC.Add(publication)
-
     @staticmethod
     def _UnwrapLcmObject(obj):
         """

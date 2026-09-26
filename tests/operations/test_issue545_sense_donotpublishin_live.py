@@ -97,25 +97,3 @@ class TestIssue545SenseDoNotPublishIn:
             assert _excluded_guids(sense) == set()
         finally:
             target_sandbox.LexEntry.Delete(entry)
-
-    @pytest.mark.live_phase("LexEntryOperations", "modify")
-    def test_opting_entry_into_publication_publishes_its_senses(self, target_sandbox):
-        pubs = _publications(target_sandbox)
-        pub = pubs[0]
-        pub_guid = str(pub.Guid)
-
-        lexeme = f"{TEST_PREFIX}opt_in"
-        entry = target_sandbox.LexEntry.Create(lexeme, create_blank_sense=True)
-        try:
-            entry, sense = _reread_sense(target_sandbox, lexeme)
-            # The entry is default-excluded (#338); its sense is not (#545).
-            assert pub_guid in {str(p.Guid) for p in entry.DoNotPublishInRC}
-            assert _excluded_guids(sense) == set()
-
-            target_sandbox.LexEntry.RemoveDoNotPublishIn(entry, pub)
-
-            entry, sense = _reread_sense(target_sandbox, lexeme)
-            assert pub_guid not in {str(p.Guid) for p in entry.DoNotPublishInRC}
-            assert pub_guid not in _excluded_guids(sense)
-        finally:
-            target_sandbox.LexEntry.Delete(entry)
