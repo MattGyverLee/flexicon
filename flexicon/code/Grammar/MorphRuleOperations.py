@@ -986,8 +986,20 @@ class MorphRuleOperations(BaseOperations):
             morph_data = self.project.lp.MorphologicalDataOA
 
             if insert_after:
-                idx = morph_data.CompoundRulesOS.IndexOf(source)
-                morph_data.CompoundRulesOS.Insert(idx + 1, duplicate)
+                # Index by HVO (issue #537). CompoundRulesOS can yield bare interface
+                # views whose Python identity differs from source.
+                rule_list = list(morph_data.CompoundRulesOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, rule in enumerate(rule_list):
+                    if rule.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(rule_list)
+                else:
+                    insert_index = source_index + 1
+                morph_data.CompoundRulesOS.Insert(insert_index, duplicate)
             else:
                 morph_data.CompoundRulesOS.Add(duplicate)
 
@@ -1008,8 +1020,20 @@ class MorphRuleOperations(BaseOperations):
                 raise FP_ParameterError("Affix template has no owning Part of Speech")
 
             if insert_after:
-                idx = owner.AffixTemplatesOS.IndexOf(source)
-                owner.AffixTemplatesOS.Insert(idx + 1, duplicate)
+                # Index by HVO (issue #537). AffixTemplatesOS can yield bare interface
+                # views whose Python identity differs from source.
+                template_list = list(owner.AffixTemplatesOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, tmpl in enumerate(template_list):
+                    if tmpl.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(template_list)
+                else:
+                    insert_index = source_index + 1
+                owner.AffixTemplatesOS.Insert(insert_index, duplicate)
             else:
                 owner.AffixTemplatesOS.Add(duplicate)
 
