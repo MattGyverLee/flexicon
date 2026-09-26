@@ -228,7 +228,6 @@ class LexSenseOperations(BaseOperations):
             # Set gloss
             mkstr = TsStringUtils.MakeString(gloss, wsHandle)
             new_sense.Gloss.set_String(wsHandle, mkstr)
-            self._DefaultExcludeFromAllPublications(new_sense)
 
             return new_sense
 
@@ -2043,7 +2042,6 @@ class LexSenseOperations(BaseOperations):
             # Set gloss
             mkstr = TsStringUtils.MakeString(gloss, wsHandle)
             new_subsense.Gloss.set_String(wsHandle, mkstr)
-            self._DefaultExcludeFromAllPublications(new_subsense)
 
             return new_subsense
 
@@ -3495,6 +3493,103 @@ class LexSenseOperations(BaseOperations):
         if anthro_code in sense.AnthroCodesRC:
             with self._TransactionCM("Remove anthropology code"):
                 sense.AnthroCodesRC.Remove(anthro_code)
+
+    @OperationsMethod
+    def GetDoNotPublishIn(self, sense_or_hvo):
+        """
+        Get the publications this sense should not be published in.
+
+        A sense is published in every publication its entry is published in
+        unless it is explicitly excluded here. An empty list is the normal
+        state.
+
+        Args:
+            sense_or_hvo: Either an ILexSense object or its HVO
+
+        Returns:
+            list: List of publication names
+
+        Example:
+            >>> entry = project.LexEntry.Find("bank")
+            >>> sense = entry.SensesOS[1]
+            >>> project.Senses.GetDoNotPublishIn(sense)
+            ['School Dictionary']
+        """
+        self._ValidateParam(sense_or_hvo, "sense_or_hvo")
+
+        sense = self.__GetSenseObject(sense_or_hvo)
+
+        result = []
+        for pub in sense.DoNotPublishInRC:
+            name = best_analysis_text(pub.Name) if pub.Name else str(pub.Guid)
+            result.append(name)
+        return result
+
+    @OperationsMethod
+    def AddDoNotPublishIn(self, sense_or_hvo, publication):
+        """
+        Exclude this sense from a publication.
+
+        Args:
+            sense_or_hvo: Either an ILexSense object or its HVO
+            publication: Publication name (str) or ICmPossibility object
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with write enabled
+            FP_NullParameterError: If sense_or_hvo or publication is None
+            FP_ParameterError: If publication name not found
+
+        Example:
+            >>> project.Senses.AddDoNotPublishIn(sense, "School Dictionary")
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(sense_or_hvo, "sense_or_hvo")
+        self._ValidateParam(publication, "publication")
+
+        sense = self.__GetSenseObject(sense_or_hvo)
+        publication = self.__ResolvePublication(publication)
+
+        if publication not in sense.DoNotPublishInRC:
+            with self._TransactionCM("Add sense publication exclusion"):
+                sense.DoNotPublishInRC.Add(publication)
+
+    @OperationsMethod
+    def RemoveDoNotPublishIn(self, sense_or_hvo, publication):
+        """
+        Remove a publication from this sense's exclude list, so the sense is
+        published there again.
+
+        Args:
+            sense_or_hvo: Either an ILexSense object or its HVO
+            publication: Publication name (str) or ICmPossibility object
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with write enabled
+            FP_NullParameterError: If sense_or_hvo or publication is None
+            FP_ParameterError: If publication name not found
+
+        Example:
+            >>> project.Senses.RemoveDoNotPublishIn(sense, "School Dictionary")
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(sense_or_hvo, "sense_or_hvo")
+        self._ValidateParam(publication, "publication")
+
+        sense = self.__GetSenseObject(sense_or_hvo)
+        publication = self.__ResolvePublication(publication)
+
+        if publication in sense.DoNotPublishInRC:
+            with self._TransactionCM("Remove sense publication exclusion"):
+                sense.DoNotPublishInRC.Remove(publication)
+
+    def __ResolvePublication(self, publication):
+        """Resolve a publication name or object to an ICmPossibility."""
+        if isinstance(publication, str):
+            pub_obj = self.project.Publications.Find(publication)
+            if pub_obj is None:
+                raise FP_ParameterError(f"Publication '{publication}' not found")
+            return pub_obj
+        return self._UnwrapLcmObject(publication)
 
     # --- Private Helper Methods ---
 

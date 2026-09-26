@@ -2,8 +2,10 @@
 #   test_issue338_publication_defaults_live.py
 #
 #   Live regression coverage for issue #338:
-#   new entries, senses, subsenses, and examples must default to being
-#   excluded from every publication on creation.
+#   new entries and examples must default to being excluded from every
+#   publication on creation. New senses and subsenses must NOT be
+#   (issue #545): sense exclusion is a specialty flag, and excluding the
+#   entry is what keeps it out of unrelated publications.
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+
@@ -43,7 +45,7 @@ def _example_by_text(project, sense, text):
 
 class TestIssue338PublicationDefaults:
     @pytest.mark.live_phase("LexEntryOperations", "add")
-    def test_create_entry_and_blank_sense_default_exclude_all_publications(
+    def test_create_entry_excludes_all_publications_blank_sense_excludes_none(
         self, target_sandbox
     ):
         all_publications = _all_publication_guids(target_sandbox)
@@ -62,12 +64,12 @@ class TestIssue338PublicationDefaults:
 
             senses = list(reread.SensesOS)
             assert len(senses) == 1, "Create(..., create_blank_sense=True) should create one blank sense"
-            assert _excluded_publication_guids(senses[0]) == all_publications
+            assert _excluded_publication_guids(senses[0]) == set()
         finally:
             target_sandbox.LexEntry.Delete(entry)
 
     @pytest.mark.live_phase("LexSenseOperations", "add")
-    def test_create_sense_default_excludes_all_publications(self, target_sandbox):
+    def test_create_sense_default_excludes_no_publications(self, target_sandbox):
         all_publications = _all_publication_guids(target_sandbox)
         if not all_publications:
             pytest.skip("Target sandbox has no publications to verify")
@@ -82,12 +84,12 @@ class TestIssue338PublicationDefaults:
             reread_entry = target_sandbox.LexEntry.Find(lexeme)
             reread_sense = _sense_by_gloss(target_sandbox, reread_entry, gloss)
             assert reread_sense is not None, "Created sense did not round-trip through the LCM"
-            assert _excluded_publication_guids(reread_sense) == all_publications
+            assert _excluded_publication_guids(reread_sense) == set()
         finally:
             target_sandbox.LexEntry.Delete(entry)
 
     @pytest.mark.live_phase("LexEntryOperations", "add")
-    def test_addsense_default_excludes_all_publications(self, target_sandbox):
+    def test_addsense_default_excludes_no_publications(self, target_sandbox):
         all_publications = _all_publication_guids(target_sandbox)
         if not all_publications:
             pytest.skip("Target sandbox has no publications to verify")
@@ -102,12 +104,12 @@ class TestIssue338PublicationDefaults:
             reread_entry = target_sandbox.LexEntry.Find(lexeme)
             reread_sense = _sense_by_gloss(target_sandbox, reread_entry, gloss)
             assert reread_sense is not None, "AddSense result did not round-trip through the LCM"
-            assert _excluded_publication_guids(reread_sense) == all_publications
+            assert _excluded_publication_guids(reread_sense) == set()
         finally:
             target_sandbox.LexEntry.Delete(entry)
 
     @pytest.mark.live_phase("LexSenseOperations", "add")
-    def test_create_subsense_default_excludes_all_publications(self, target_sandbox):
+    def test_create_subsense_default_excludes_no_publications(self, target_sandbox):
         all_publications = _all_publication_guids(target_sandbox)
         if not all_publications:
             pytest.skip("Target sandbox has no publications to verify")
@@ -126,7 +128,8 @@ class TestIssue338PublicationDefaults:
             assert reread_parent is not None
             reread_child = _sense_by_gloss(target_sandbox, reread_entry, child_gloss)
             assert reread_child is not None, "Created subsense did not round-trip through the LCM"
-            assert _excluded_publication_guids(reread_child) == all_publications
+            assert _excluded_publication_guids(reread_parent) == set()
+            assert _excluded_publication_guids(reread_child) == set()
         finally:
             target_sandbox.LexEntry.Delete(entry)
 

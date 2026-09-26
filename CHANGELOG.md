@@ -11,6 +11,25 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+### Added
+
+- **`LexSenseOperations.GetDoNotPublishIn` / `AddDoNotPublishIn` /
+  `RemoveDoNotPublishIn`** (#545), with the same signatures and semantics
+  as the `LexEntry` and `Examples` versions. Sense-level publication
+  exclusion previously needed raw LCM (`sense.DoNotPublishInRC.Add(pub)`).
+
+### Fixed
+
+- **New senses and subsenses are publishable in every publication again**
+  (#545). #338 seeded `DoNotPublishInRC` on every new sense, blank sense
+  and subsense as well as on the entry. Excluding the entry already keeps
+  it out of unrelated publications, and the sense-level exclusions meant
+  that opting an entry into a publication published it with none of its
+  senses. flexicon also had no call to undo that. Sense exclusion is a
+  specialty flag: `LexEntry.Create`, `LexEntry.AddSense`,
+  `Senses.Create` and `Senses.CreateSubsense` no longer set it. New
+  entries and examples are still excluded by default, as in 4.10.0.
+
 ---
 
 ## [4.10.0] - 2026-09-25
