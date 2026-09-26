@@ -443,8 +443,20 @@ class NaturalClassOperations(BaseOperations):
 
             # Determine insertion position.
             if insert_after:
-                source_index = list(phon_data.NaturalClassesOS).index(source)
-                phon_data.NaturalClassesOS.Insert(source_index + 1, duplicate)
+                # Index by HVO (issue #535). NaturalClassesOS can yield bare interface
+                # views whose Python identity differs from source.
+                nc_list = list(phon_data.NaturalClassesOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, nc in enumerate(nc_list):
+                    if nc.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(nc_list)
+                else:
+                    insert_index = source_index + 1
+                phon_data.NaturalClassesOS.Insert(insert_index, duplicate)
             else:
                 phon_data.NaturalClassesOS.Add(duplicate)
 
