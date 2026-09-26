@@ -160,6 +160,50 @@ class TestC4ToFeatStrucSpec:
         assert result == {"OUTER-FEAT": {"INNER-FEAT": "INNER-VAL"}}
         assert "Guid" not in result["OUTER-FEAT"]
 
+    def test_converter_never_touches_a_raw_lcm_object(self, msa_ops):
+        """
+        Category-8 guard (triggered by a live-run investigation of a
+        missing IFsFeatStruc(...) cast found in this file's own live
+        test assertion, NOT in library code): __C4ToFeatStrucSpec must
+        operate ONLY on the already-serialized C4 dict that
+        _GetFeatureStruc hands it -- never on a raw LCM
+        ValueOA/IFsAbstractStructure that would need its own explicit
+        cast before FeatureSpecsOC is reachable. Prove it by handing the
+        converter a nested "value" that is a dict with no LCM-style
+        attributes at all (no .FeatureSpecsOC, no .Guid attribute
+        access attempted) and confirming it still recurses correctly
+        via plain dict indexing.
+        """
+        convert = msa_ops._MSAOperations__C4ToFeatStrucSpec
+
+        class _NotAnLcmObject:
+            """No .FeatureSpecsOC, no .Guid -- if the converter ever
+            attribute-accessed this instead of dict-indexing it, this
+            would raise AttributeError exactly like the live failure."""
+
+            def __getattr__(self, name):
+                raise AttributeError(
+                    f"converter must never attribute-access {name!r} on "
+                    f"a nested value -- it only walks dict keys"
+                )
+
+        # The nested C4 level is itself a dict (as _GetFeatureStruc
+        # always produces); the sentinel proves nothing SIBLING to it
+        # is ever touched via attribute access.
+        c4 = {
+            "TypeGuid": None,
+            "specs": {
+                "OUTER-FEAT": {
+                    "TypeGuid": None,
+                    "Guid": "NESTED-GUID",
+                    "specs": {"INNER-FEAT": "INNER-VAL"},
+                },
+            },
+            "_sentinel": _NotAnLcmObject(),
+        }
+        result = convert(c4)
+        assert result == {"OUTER-FEAT": {"INNER-FEAT": "INNER-VAL"}}
+
 
 # ============================================================================
 # Explicit per-class getters

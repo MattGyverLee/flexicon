@@ -52,7 +52,12 @@ class TestStemFeaturesRoundTripLive:
     def test_get_stem_features_round_trips_through_make_feat_struc(
         self, sena3_sandbox
     ):
-        from SIL.LCModel import IFsClosedValue, IFsComplexValue, IMoStemMsa
+        from SIL.LCModel import (
+            IFsClosedValue,
+            IFsComplexValue,
+            IFsFeatStruc,
+            IMoStemMsa,
+        )
 
         project = sena3_sandbox
         assert project.writeEnabled is True
@@ -114,7 +119,18 @@ class TestStemFeaturesRoundTripLive:
             assert len(post_specs) == 1
             complex_spec = IFsComplexValue(post_specs[0])
             assert str(complex_spec.FeatureRA.Guid) == agr_guid
-            nested = list(complex_spec.ValueOA.FeatureSpecsOC)
+            # ValueOA comes back statically typed as the base
+            # IFsAbstractStructure under pythonnet -- every read-back
+            # needs its OWN explicit IFsFeatStruc(...) cast before
+            # FeatureSpecsOC is reachable (same rule _GetFeatureStruc
+            # itself follows; see BaseOperations.py's own comment at the
+            # FsComplexValue branch). This is a test-assertion fix, not a
+            # library fix: __C4ToFeatStrucSpec never touches a raw LCM
+            # object (it only walks the already-serialized C4 dict), and
+            # _GetFeatureStruc already performs this exact cast at the
+            # top of its own recursive call.
+            nested_struct = IFsFeatStruc(complex_spec.ValueOA)
+            nested = list(nested_struct.FeatureSpecsOC)
             assert len(nested) == 1
             closed_spec = IFsClosedValue(nested[0])
             assert str(closed_spec.FeatureRA.Guid) == num_guid
