@@ -1,11 +1,11 @@
 #
 #   test_issue542_affix_slot_readers_live.py
 #
-#   Live read-path verification for issue #542, against the real
-#   in-place 'Target' project (no *.fwbackup fixture is present on this
-#   runner, so target_sandbox/sena3_sandbox are unavailable; target_project
-#   is equally sanctioned for in-place writes -- CLAUDE.md "Live LCM
-#   Verification").
+#   Live read-path verification for issue #542, against a write-enabled
+#   Sena 3 sandbox (a fresh tempdir copy of the Sena 3 .fwbackup fixture --
+#   CLAUDE.md "Live LCM Verification": "Nothing may write to the Target
+#   project" per binding user directive; all writes here go to the Sena 3
+#   sandbox, never the real Target).
 #
 #   Copyright 2026
 #
@@ -18,11 +18,11 @@ TEST_PREFIX = "TEST_542_"
 
 
 @pytest.mark.live_phase("POSOperations", "read")
-def test_slot_readers_round_trip_via_object_and_hvo(target_project):
+def test_slot_readers_round_trip_via_object_and_hvo(sena3_sandbox):
     from SIL.LCModel import IMoInflAffixSlot
     from SIL.LCModel.Core.KernelInterfaces import ITsString
 
-    project = target_project
+    project = sena3_sandbox
     assert project.writeEnabled is True
 
     pos = None
@@ -95,11 +95,11 @@ def test_slot_readers_round_trip_via_object_and_hvo(target_project):
 
 
 @pytest.mark.live_phase("POSOperations", "read")
-def test_get_affix_slots_returns_affixslot_wrapper(target_project):
+def test_get_affix_slots_returns_affixslot_wrapper(sena3_sandbox):
     from flexicon.code.Grammar.affix_slot import AffixSlot
     from flexicon.code.Grammar.affix_template import AffixTemplate
 
-    project = target_project
+    project = sena3_sandbox
     pos = None
     try:
         pos = project.POS.Create(f"{TEST_PREFIX}wrap_pos", "T542W")
@@ -134,10 +134,10 @@ def test_get_affix_slots_returns_affixslot_wrapper(target_project):
 
 
 @pytest.mark.live_phase("POSOperations", "read")
-def test_bad_slot_input_raises_parameter_error(target_project):
+def test_bad_slot_input_raises_parameter_error(sena3_sandbox):
     from flexicon.code.FLExProject import FP_ParameterError
 
-    project = target_project
+    project = sena3_sandbox
     pos = None
     try:
         pos = project.POS.Create(f"{TEST_PREFIX}bad_pos", "T542B")
@@ -150,37 +150,31 @@ def test_bad_slot_input_raises_parameter_error(target_project):
 
 
 @pytest.mark.live_phase("POSOperations", "read")
-def test_sena3_affix_slots_are_readable_if_present():
+def test_sena3_affix_slots_are_readable_if_present(sena3_sandbox):
     """
-    Read-only sanity check against Sena 3: any pre-existing affix slots
-    must be readable through the new wrapper/readers without raising.
+    Read-only sanity check against the Sena 3 sandbox: any pre-existing
+    affix slots must be readable through the new wrapper/readers without
+    raising.
 
-    Reads are unrestricted (CLAUDE.md): Sena 3 is opened directly,
-    read-only, by name -- no sandbox/backup fixture required.
+    Uses the same write-enabled sandbox as the other tests in this file
+    (no additional project needs to be opened) but performs no writes of
+    its own -- it only reads whatever slots already exist in the fixture
+    data.
     """
-    from flexicon.code.FLExProject import FLExProject
+    project = sena3_sandbox
 
-    project = FLExProject()
-    try:
-        project.OpenProject("Sena 3", writeEnabled=False)
-    except Exception as exc:
-        pytest.skip(f"Sena 3 project not available on this runner: {exc}")
-
-    try:
-        found_any = False
-        for pos in project.POS.GetAll():
-            slots = project.POS.GetAffixSlots(pos)
-            for slot in slots:
-                found_any = True
-                name = slot.name
-                assert isinstance(name, str)
-                optional = slot.optional
-                assert isinstance(optional, bool)
-                affixes = project.POS.GetAffixesInSlot(slot)
-                assert isinstance(affixes, list)
-        # Not asserting found_any is True: Sena 3's slot inventory is data,
-        # not a guarantee. This test's value is "no raise while reading
-        # every slot that does exist."
-        _ = found_any
-    finally:
-        project.CloseProject()
+    found_any = False
+    for pos in project.POS.GetAll():
+        slots = project.POS.GetAffixSlots(pos)
+        for slot in slots:
+            found_any = True
+            name = slot.name
+            assert isinstance(name, str)
+            optional = slot.optional
+            assert isinstance(optional, bool)
+            affixes = project.POS.GetAffixesInSlot(slot)
+            assert isinstance(affixes, list)
+    # Not asserting found_any is True: Sena 3's slot inventory is data,
+    # not a guarantee. This test's value is "no raise while reading
+    # every slot that does exist."
+    _ = found_any
