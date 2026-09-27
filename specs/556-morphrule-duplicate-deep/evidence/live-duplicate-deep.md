@@ -35,8 +35,19 @@ failure is the pre-existing `test_issue537_morphrule_duplicate_hvo_live.py`
 test, and is **not** caused by anything in this change (see "Pre-existing
 failure" section below).
 
-`tests/live_status.json` -> `"run_mode": "live"` (confirmed after every live
-invocation above; never `"mock"`).
+Re-run with `-s` (both #556 tests alone) to capture the literal pre/post
+values printed below:
+
+```
+$env:FLEXLIBS_REQUIRE_LIVE = "1"
+python -m pytest tests/operations/test_issue556_morphrule_duplicate_deep_live.py -m requires_live_project -q -s
+```
+
+Result: `2 passed`.
+
+`tests/live_status.json` -> `"run_mode": "live"`, `"run_timestamp":
+"2026-09-27T01:52:40Z"` (confirmed after every live invocation above;
+never `"mock"`).
 
 ## Test A -- deep=True (`test_deep_true_copies_slot_references`)
 
@@ -53,16 +64,20 @@ Setup:
 
 Pre-state (read back from the LCM via `GetAllAffixTemplatesForPOS` + the
 `AffixTemplate` wrapper's `.prefix_slots`/`.suffix_slots`/etc, all cast to
-the concrete `IMoInflAffixTemplate`/`IMoInflAffixSlot` interfaces):
-- Source template HVO: real HVO assigned by the LCM on create (varies per
-  run; captured as `source_hvo` in the test, not printed to console).
-- Source index in `owner.AffixTemplatesOS` (as scanned by
-  `GetAllAffixTemplatesForPOS`): `source_index` (last position, since the
-  template was just appended).
-- Owner template count before Duplicate: `pre_count`.
-- Slot HVO lists on source: `pre_prefix` = [prefix_slot.Hvo] (1 entry),
-  `pre_suffix` = [suffix_slot.Hvo] (1 entry), `pre_proclitic` = [],
-  `pre_enclitic` = [].
+the concrete `IMoInflAffixTemplate`/`IMoInflAffixSlot` interfaces), literal
+values captured from the `-s` pytest run below:
+
+```
+[556-deep-true] PRE source_hvo=152224 source_index=0 owner_template_count=1 pre_prefix=[152222] pre_suffix=[152223] pre_proclitic=[] pre_enclitic=[]
+```
+
+- Source template HVO: `152224`.
+- Source index in `owner.AffixTemplatesOS`: `0` (only template on this POS
+  at setup time).
+- Owner template count before Duplicate: `1`.
+- Slot HVO lists on source: `pre_prefix = [152222]` (1 entry, the
+  `TEST_556_pfx` slot), `pre_suffix = [152223]` (1 entry, the
+  `TEST_556_sfx` slot), `pre_proclitic = []`, `pre_enclitic = []`.
 - Both `pre_prefix` and `pre_suffix` were asserted non-empty before
   proceeding (guards against a broken fixture silently passing).
 
@@ -71,16 +86,21 @@ Action: `project.MorphRules.Duplicate(source, insert_after=True, deep=True)`.
 Post-state, re-queried from the LCM (fresh call to
 `GetAllAffixTemplatesForPOS`, NOT the object handle returned by
 `Duplicate`):
-- Duplicate template found at HVO `dup_hvo`, located via a fresh scan.
-- `dup_prefix == pre_prefix` -- PASS (the slot-ref HVO list on the
-  duplicate's `PrefixSlotsRS` matches the source's exactly).
-- `dup_suffix == pre_suffix` -- PASS.
-- `dup_proclitic == pre_proclitic == []` -- PASS.
-- `dup_enclitic == pre_enclitic == []` -- PASS.
-- `post_order.index(dup_hvo) == source_index + 1` -- PASS (duplicate sits
+
+```
+[556-deep-true] POST dup_hvo=152225 dup_index=1 owner_template_count=2 dup_prefix=[152222] dup_suffix=[152223] dup_proclitic=[] dup_enclitic=[]
+```
+
+- Duplicate template found at HVO `152225`, located via a fresh scan.
+- `dup_prefix = [152222] == pre_prefix` -- PASS (the slot-ref HVO list on
+  the duplicate's `PrefixSlotsRS` matches the source's exactly).
+- `dup_suffix = [152223] == pre_suffix` -- PASS.
+- `dup_proclitic = [] == pre_proclitic == []` -- PASS.
+- `dup_enclitic = [] == pre_enclitic == []` -- PASS.
+- `dup_index = 1 == source_index + 1 (0 + 1)` -- PASS (duplicate sits
   immediately after the source in `owner.AffixTemplatesOS`).
-- `len(post_order) == pre_count + 1` -- PASS (owner's template count went
-  up by exactly one).
+- `owner_template_count = 2 == pre_count + 1 (1 + 1)` -- PASS (owner's
+  template count went up by exactly one).
 
 **Result: PASS** (all assertions above hold; see pytest output,
 `test_deep_true_copies_slot_references` in the 2-passed count).
@@ -95,26 +115,46 @@ Setup:
 - Created affix template `TEST_556_src_shallow`, attached `TEST_556_pfx2`
   to its prefix side.
 
-Pre-state:
-- `pre_prefix` = [prefix_slot.Hvo] (1 entry, asserted non-empty).
-- `pre_suffix` = `pre_proclitic` = `pre_enclitic` = [].
-- `source_index`, `pre_count` as above.
+Pre-state, literal values captured from the `-s` pytest run below:
+
+```
+[556-deep-false] PRE source_hvo=152223 source_index=0 owner_template_count=1 pre_prefix=[152222] pre_suffix=[] pre_proclitic=[] pre_enclitic=[]
+```
+
+- Source template HVO: `152223`.
+- Source index: `0`, owner template count before Duplicate: `1`.
+- `pre_prefix = [152222]` (1 entry, the `TEST_556_pfx2` slot, asserted
+  non-empty).
+- `pre_suffix = pre_proclitic = pre_enclitic = []`.
 
 Action: `project.MorphRules.Duplicate(source, insert_after=True, deep=False)`.
 
 Post-state, re-queried from the LCM:
-- `dup_prefix == []` -- PASS (deep=False must NOT copy slot references).
-- `dup_suffix == []` -- PASS.
-- `dup_proclitic == []` -- PASS.
-- `dup_enclitic == []` -- PASS.
-- Source re-queried again after the Duplicate call: `post_source_prefix ==
-  pre_prefix` -- PASS (source's own slot list is untouched by the
-  duplication).
-- `post_source_suffix == pre_suffix == []` -- PASS.
-- `post_order.index(dup_hvo) == source_index + 1` -- PASS.
-- `len(post_order) == pre_count + 1` -- PASS.
+
+```
+[556-deep-false] POST dup_hvo=152224 dup_index=1 owner_template_count=2 dup_prefix=[] dup_suffix=[] dup_proclitic=[] dup_enclitic=[]
+[556-deep-false] POST-source source_hvo=152223 post_source_prefix=[152222] post_source_suffix=[]
+```
+
+- Duplicate template found at HVO `152224`.
+- `dup_prefix = []` -- PASS (deep=False must NOT copy slot references).
+- `dup_suffix = []` -- PASS.
+- `dup_proclitic = []` -- PASS.
+- `dup_enclitic = []` -- PASS.
+- Source re-queried again after the Duplicate call: `post_source_prefix =
+  [152222] == pre_prefix` -- PASS (source's own slot list is untouched by
+  the duplication).
+- `post_source_suffix = [] == pre_suffix == []` -- PASS.
+- `dup_index = 1 == source_index + 1 (0 + 1)` -- PASS.
+- `owner_template_count = 2 == pre_count + 1 (1 + 1)` -- PASS.
 
 **Result: PASS**.
+
+Note: HVOs 152222-152225 are freshly minted in the `sena3_sandbox` tempdir
+copy for this run and are not stable across runs; the pattern (source
+index 0, duplicate immediately following at index source_index+1, owner
+count +1, slot lists matching for deep=True and empty for deep=False) is
+what should be checked on any re-run, not the literal numbers themselves.
 
 ## Pre-existing failure -- NOT part of this change
 

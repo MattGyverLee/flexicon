@@ -80,6 +80,13 @@ class TestIssue556MorphRuleDuplicateDeepLive:
         )
         assert pre_prefix and pre_suffix, "Fixture setup did not attach slots"
 
+        print(
+            f"\n[556-deep-true] PRE source_hvo={source_hvo} source_index={source_index} "
+            f"owner_template_count={pre_count} pre_prefix={pre_prefix} "
+            f"pre_suffix={pre_suffix} pre_proclitic={pre_proclitic} "
+            f"pre_enclitic={pre_enclitic}"
+        )
+
         try:
             duplicate = project.MorphRules.Duplicate(source, insert_after=True, deep=True)
             dup_hvo = int(duplicate.Hvo)
@@ -90,6 +97,14 @@ class TestIssue556MorphRuleDuplicateDeepLive:
             assert requeried_dup is not None, "Duplicate not found on re-query"
             dup_prefix, dup_suffix, dup_proclitic, dup_enclitic = _slot_hvo_lists(
                 requeried_dup
+            )
+
+            print(
+                f"[556-deep-true] POST dup_hvo={dup_hvo} "
+                f"dup_index={post_order.index(dup_hvo)} "
+                f"owner_template_count={len(post_order)} dup_prefix={dup_prefix} "
+                f"dup_suffix={dup_suffix} dup_proclitic={dup_proclitic} "
+                f"dup_enclitic={dup_enclitic}"
             )
 
             assert dup_prefix == pre_prefix
@@ -125,6 +140,13 @@ class TestIssue556MorphRuleDuplicateDeepLive:
         )
         assert pre_prefix, "Fixture setup did not attach a prefix slot"
 
+        print(
+            f"\n[556-deep-false] PRE source_hvo={source_hvo} source_index={source_index} "
+            f"owner_template_count={pre_count} pre_prefix={pre_prefix} "
+            f"pre_suffix={pre_suffix} pre_proclitic={pre_proclitic} "
+            f"pre_enclitic={pre_enclitic}"
+        )
+
         try:
             duplicate = project.MorphRules.Duplicate(source, insert_after=True, deep=False)
             dup_hvo = int(duplicate.Hvo)
@@ -134,6 +156,14 @@ class TestIssue556MorphRuleDuplicateDeepLive:
             assert requeried_dup is not None, "Duplicate not found on re-query"
             dup_prefix, dup_suffix, dup_proclitic, dup_enclitic = _slot_hvo_lists(
                 requeried_dup
+            )
+
+            print(
+                f"[556-deep-false] POST dup_hvo={dup_hvo} "
+                f"dup_index={post_order.index(dup_hvo)} "
+                f"owner_template_count={len(post_order)} dup_prefix={dup_prefix} "
+                f"dup_suffix={dup_suffix} dup_proclitic={dup_proclitic} "
+                f"dup_enclitic={dup_enclitic}"
             )
 
             # Duplicate's own slot lists must be empty -- deep=False must not copy.
@@ -147,6 +177,13 @@ class TestIssue556MorphRuleDuplicateDeepLive:
             post_source_prefix, post_source_suffix, _, _ = _slot_hvo_lists(
                 requeried_source
             )
+
+            print(
+                f"[556-deep-false] POST-source source_hvo={source_hvo} "
+                f"post_source_prefix={post_source_prefix} "
+                f"post_source_suffix={post_source_suffix}"
+            )
+
             assert post_source_prefix == pre_prefix
             assert post_source_suffix == pre_suffix == []
 
