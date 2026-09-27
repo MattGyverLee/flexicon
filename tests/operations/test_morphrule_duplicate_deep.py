@@ -36,26 +36,50 @@ if _project_root not in sys.path:
 from flexicon.code.Grammar.MorphRuleOperations import MorphRuleOperations
 
 
+class _FakeAffixTemplatesOS(list):
+    """List-like fake for AffixTemplatesOS.
+
+    Real code (MorphRuleOperations.__DuplicateAffixTemplate, post-#537)
+    iterates this collection to find the source's index by HVO, then
+    calls Insert/Add on it. A bare Mock() supports the calls but is not
+    iterable, so `list(owner.AffixTemplatesOS)` raised
+    "TypeError: 'Mock' object is not iterable". Subclassing list keeps
+    iteration/indexing/len() working while still recording Insert/Add
+    calls as Mocks so existing assertions on call_count/args keep working.
+    """
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.IndexOf = Mock(side_effect=lambda item: self.index(item))
+        self.Insert = Mock(side_effect=lambda idx, item: list.insert(self, idx, item))
+        self.Add = Mock(side_effect=lambda item: list.append(self, item))
+
+
 def _make_affix_template_fixture():
     """Build a mock project + source MoInflAffixTemplate + owner + duplicate."""
     project = Mock()
     project.writeEnabled = True
 
-    owner = Mock()
-    owner.ClassName = "PartOfSpeech"
-    owner.AffixTemplatesOS = Mock()
-    owner.AffixTemplatesOS.IndexOf = Mock(return_value=0)
-    owner.AffixTemplatesOS.Insert = Mock()
-    owner.AffixTemplatesOS.Add = Mock()
-
     source = Mock()
     source.ClassName = "MoInflAffixTemplate"
-    source.Owner = owner
+    source.Hvo = 1001
     source.StratumRA = None
     source.PrefixSlotsRS = [Mock(name="slot1"), Mock(name="slot2")]
     source.SuffixSlotsRS = []
     source.ProcliticSlotsRS = []
     source.EncliticSlotsRS = []
+
+    owner = Mock()
+    owner.ClassName = "PartOfSpeech"
+    # source.Owner is what __DuplicateAffixTemplate actually resolves
+    # through _GetTypedOwner (via source.Owner -> cast_to_concrete);
+    # project.Object is not consulted on this path since source is
+    # already a live object, not an HVO. Keep the two in sync so a
+    # future refactor that switches resolution strategy doesn't silently
+    # start reading a stale double.
+    source.Owner = owner
+    owner.AffixTemplatesOS = _FakeAffixTemplatesOS([source])
+    project.Object = Mock(return_value=owner)
 
     duplicate = Mock()
     duplicate.Name = Mock(CopyAlternatives=Mock())
@@ -67,13 +91,12 @@ def _make_affix_template_fixture():
 
     factory = Mock(Create=Mock(return_value=duplicate))
     project.project.ServiceLocator.GetService = Mock(return_value=factory)
-    project.Object = Mock(return_value=owner)
 
     ops = MorphRuleOperations(project)
     # Bypass the real transaction machinery -- not under test here.
     ops._TransactionCM = Mock(return_value=contextlib.nullcontext())
 
-    return ops, source, duplicate
+    return ops, source, duplicate, owner
 
 
 class TestDuplicateSignature:
@@ -93,7 +116,7 @@ class TestDuplicateSignature:
 class TestDuplicateDeepGating:
     def test_default_call_does_not_raise_nameerror(self):
         """Issue #203: calling Duplicate() at all used to raise NameError."""
-        ops, source, duplicate = _make_affix_template_fixture()
+        ops, source, duplicate, owner = _make_affix_template_fixture()
 
         result = ops.Duplicate(source)  # no deep kwarg -- must not NameError
 
@@ -102,7 +125,7 @@ class TestDuplicateDeepGating:
         assert duplicate.PrefixSlotsRS.Add.call_count == 2
 
     def test_deep_false_does_not_copy_slot_references(self):
-        ops, source, duplicate = _make_affix_template_fixture()
+        ops, source, duplicate, owner = _make_affix_template_fixture()
 
         ops.Duplicate(source, deep=False)
 
@@ -111,7 +134,7 @@ class TestDuplicateDeepGating:
 
     def test_deep_true_copies_slot_references(self):
         """Docstring-documented usage: Duplicate(template, deep=True)."""
-        ops, source, duplicate = _make_affix_template_fixture()
+        ops, source, duplicate, owner = _make_affix_template_fixture()
 
         ops.Duplicate(source, deep=True)
 
@@ -124,6 +147,18 @@ class TestDuplicateDeepGating:
 
     def test_deep_true_keyword_matches_docstring_example(self):
         # Reproduces the exact call shown in the docstring's Example section.
-        ops, source, duplicate = _make_affix_template_fixture()
+        ops, source, duplicate, owner = _make_affix_template_fixture()
         copy = ops.Duplicate(source, deep=True)
         assert copy is duplicate
+
+    def test_insert_after_inserts_at_source_index_plus_one(self):
+        """Issue #556: with insert_after=True (default), the duplicate must
+        land immediately after the source in owner.AffixTemplatesOS. The
+        fixture seeds AffixTemplatesOS with [source] at index 0, so the
+        expected Insert call is (1, duplicate)."""
+        ops, source, duplicate, owner = _make_affix_template_fixture()
+
+        ops.Duplicate(source, insert_after=True)
+
+        owner.AffixTemplatesOS.Insert.assert_called_once_with(1, duplicate)
+        owner.AffixTemplatesOS.Add.assert_not_called()
