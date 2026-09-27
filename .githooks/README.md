@@ -66,3 +66,27 @@ disabling the hook:
 ```
 Close-Keyword-Override: <why this should genuinely close the issue>
 ```
+
+## pre-push: the full offline gate
+
+Every `git push` runs the exact CLAUDE.md offline gate
+(`python -m pytest -m "not requires_live_project" -q`) and the push is
+rejected when it fails. Targeted subset runs kept standing in for the
+full gate (caught in the #546 review), and red offline tests have
+reached `main` before (noted in the #545 evidence). The ubuntu CI
+workflow cannot run this gate -- importing the `flexicon` package
+executes `FLExInit` at module scope, which requires FieldWorks -- so the
+local gate is the only test execution between a PR and `main`.
+
+Takes ~15-20 seconds per push. The live gate (`-m requires_live_project`)
+is deliberately NOT included: it needs real projects and stays a
+reviewer-checklist item with evidence in `specs/<feature>/evidence/`.
+
+### Overriding it
+
+- `git push --no-verify` skips all hooks, including this one.
+- `FLEXICON_SKIP_OFFLINE_GATE=1` skips just this gate (e.g. pushing from
+  a machine without the dev dependencies).
+
+Covered by `tests/test_pre_push_gate.py`, which is stdlib-only so it
+also runs on machines without FieldWorks.
