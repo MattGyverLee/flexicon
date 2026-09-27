@@ -207,9 +207,12 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             anthro_list.PossibilitiesOS, ICmAnthroItem, recursive))
 
     @OperationsMethod
-    def Create(self, name, abbreviation=None, anthro_code=None):
+    def Create(self, name, abbreviation=None, anthro_code=None, parent=None):
         """
         Create a new anthropology item.
+
+        This is the canonical creation path for both top-level items and
+        subitems; CreateSubitem delegates to it with parent=parent_item.
 
         Creates a new top-level ICmAnthroItem in the project's anthropology list.
         Use CreateSubitem() to create hierarchical items.
@@ -227,6 +230,9 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                 If None, no abbreviation is set. Defaults to None.
             anthro_code (str, optional): OCM (Outline of Cultural Materials) code
                 (e.g., "586" for marriage). If None, no code is set. Defaults to None.
+            parent: Optional parent ICmAnthroItem object or HVO. If None
+                (default), creates a top-level item; if given, creates a
+                subitem of that parent. Defaults to None.
 
         Returns:
             ICmAnthroItem: The newly created anthropology item object.
@@ -239,7 +245,9 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                 the pending harmonisation decision).
             AttributeError: If name is not a str (from a throwaway .strip()
                 call retained per C7(b); not a deliberate type check).
-            FP_ParameterError: If an item with this name already exists.
+            FP_ParameterError: If a top-level item with this name already
+                exists (subitems are not uniqueness-checked, preserving
+                CreateSubitem's behaviour), or if parent is invalid.
 
         Example:
             >>> # Create a simple item
@@ -260,8 +268,14 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             >>> kinship = project.Anthropology.Create("Kinship", "KIN", "600")
             >>> religion = project.Anthropology.Create("Religion", "REL", "770")
 
+            >>> # A subitem is just a Create with a parent
+            >>> wedding = project.Anthropology.Create(
+            ...     "Wedding Ceremony", "WED", "586.1", parent=marriage)
+
         Notes:
-            - Name must be unique within the project
+            - Top-level names must be unique within the project; subitem
+              names are not uniqueness-checked (pre-existing asymmetry,
+              spec.md C5 -- this change does NOT add a subitem check)
             - Abbreviations don't need to be unique but should be distinct
             - OCM codes follow the Outline of Cultural Materials standard
             - The item is created in the default analysis writing system
@@ -280,30 +294,42 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         # today. Deliberately NOT reassigned, so the persist below keeps the
         # caller's original, unstripped bytes. Preserves the pre-existing
         # exception type per C7(b) -- do not "simplify" to plain deletion.
+        # Stays ahead of parent resolution so the sub path keeps
+        # CreateSubitem's precedence (PN14).
         name.strip()
 
-        # Check if item already exists
-        if self.Exists(name):
-            raise FP_ParameterError(f"Anthropology item '{name}' already exists")
+        parent_item = None
+        if parent is not None:
+            parent_item = self.__GetItemObject(parent)
 
-        # Ensure anthropology list exists. List creation/assignment is project-state
-        # setup; resolve it before opening the per-item transaction so a missing
-        # list never leaves an orphaned ICmAnthroItem. It still needs a bracket of
-        # its own -- under undoable=True every mutation must sit in some UoW -- so
-        # it gets a separate named transaction rather than joining the item's.
-        # The `is None` guard stays outside: an already-initialised list must be a
-        # true no-op, not an empty named undo entry.
-        if self.project.lp.AnthroListOA is None:
-            from SIL.LCModel import ICmPossibilityListFactory
+        if parent_item is None:
+            # Check if item already exists (top-level creates only,
+            # preserving CreateSubitem's no-uniqueness-check behaviour)
+            if self.Exists(name):
+                raise FP_ParameterError(f"Anthropology item '{name}' already exists")
 
-            list_factory = self.project.project.ServiceLocator.GetService(ICmPossibilityListFactory)
-            with self._TransactionCM("Create anthropology list"):
-                anthro_list = list_factory.Create()
-                self.project.lp.AnthroListOA = anthro_list
+            # Ensure anthropology list exists. List creation/assignment is project-state
+            # setup; resolve it before opening the per-item transaction so a missing
+            # list never leaves an orphaned ICmAnthroItem. It still needs a bracket of
+            # its own -- under undoable=True every mutation must sit in some UoW -- so
+            # it gets a separate named transaction rather than joining the item's.
+            # The `is None` guard stays outside: an already-initialised list must be a
+            # true no-op, not an empty named undo entry.
+            if self.project.lp.AnthroListOA is None:
+                from SIL.LCModel import ICmPossibilityListFactory
+
+                list_factory = self.project.project.ServiceLocator.GetService(ICmPossibilityListFactory)
+                with self._TransactionCM("Create anthropology list"):
+                    anthro_list = list_factory.Create()
+                    self.project.lp.AnthroListOA = anthro_list
+            else:
+                anthro_list = self.project.lp.AnthroListOA
+            label = 'Create Anthropology Item'
         else:
-            anthro_list = self.project.lp.AnthroListOA
+            anthro_list = None
+            label = 'Create Anthropology Subitem'
 
-        with self._TransactionCM('Create Anthropology Item'):
+        with self._TransactionCM(label):
             # Get the writing system handle
             wsHandle = self.project.project.DefaultAnalWs
 
@@ -311,8 +337,12 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             factory = self.project.project.ServiceLocator.GetService(ICmAnthroItemFactory)
             new_item = factory.Create()
 
-            # Add to the anthropology list (must be done before setting properties)
-            anthro_list.PossibilitiesOS.Add(new_item)
+            # Add to the parent's subitems or the anthropology list
+            # (must be done before setting properties)
+            if parent_item is not None:
+                parent_item.SubPossibilitiesOS.Add(new_item)
+            else:
+                anthro_list.PossibilitiesOS.Add(new_item)
 
             # Set name
             mkstr_name = TsStringUtils.MakeString(name, wsHandle)
@@ -333,6 +363,10 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
     def CreateSubitem(self, parent_item, name, abbreviation=None, anthro_code=None):
         """
         Create a new anthropology item as a child of an existing item.
+
+        Thin wrapper over Create with parent=parent_item; all creation
+        logic (including the Q-242A/Q-242D whitespace handling) lives on
+        Create.
 
         Creates a hierarchical relationship where the new item is a subcategory
         or more specific aspect of the parent item.
@@ -386,6 +420,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             Marriage Gifts
 
         Notes:
+            - Equivalent to ``Create(name, abbreviation, anthro_code,
+              parent=parent_item)``.
             - Creates hierarchical organization of cultural data
             - Subitems inherit context from parent
             - OCM codes typically use decimal notation (e.g., 586.1, 586.2)
@@ -397,42 +433,18 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         """
         self._EnsureWriteEnabled()
 
-        self._ValidateParam(name, "name")
+        self._ValidateParam(parent_item, "parent_item")
 
-        # Throwaway, non-reassigning strip: same rationale as Create() above
-        # -- the only upstream guard is the null-check-only _ValidateParam,
-        # so this call is what raises AttributeError for a non-str payload
-        # today. Not reassigned, so the persist below keeps the caller's
-        # original, unstripped bytes. Per C7(b).
-        name.strip()
-
-        parent = self.__GetItemObject(parent_item)
-
-        # Get the writing system handle
+        # Bracketed per D5 (the scanner cannot see through same-class
+        # delegation): joins Create's inner transaction via nesting
+        # (B1) rather than opening a separate undo unit.
         with self._TransactionCM('Create Anthropology Subitem'):
-            wsHandle = self.project.project.DefaultAnalWs
-
-            # Create the new item using the factory
-            factory = self.project.project.ServiceLocator.GetService(ICmAnthroItemFactory)
-            new_item = factory.Create()
-
-            # Add to parent's subitems (must be done before setting properties)
-            parent.SubPossibilitiesOS.Add(new_item)
-
-            # Set name
-            mkstr_name = TsStringUtils.MakeString(name, wsHandle)
-            new_item.Name.set_String(wsHandle, mkstr_name)
-
-            # Set abbreviation if provided
-            if abbreviation:
-                mkstr_abbr = TsStringUtils.MakeString(abbreviation, wsHandle)
-                new_item.Abbreviation.set_String(wsHandle, mkstr_abbr)
-
-            # Set OCM code if provided (note: AnthroCode may not exist on CmAnthroItem)
-            if anthro_code and hasattr(new_item, "AnthroCode"):
-                new_item.AnthroCode = anthro_code
-
-            return new_item
+            return self.Create(
+                name,
+                abbreviation=abbreviation,
+                anthro_code=anthro_code,
+                parent=parent_item,
+            )
 
     @OperationsMethod
     def Delete(self, item_or_hvo):
