@@ -141,6 +141,18 @@ class TestDescribeFeatStrucSpec:
         }
         assert ops.DescribeFeatStruc(c4) == "[nc: 1/2; agr: [pers: 3]]"
 
+    def test_bare_complex_feature_named_specs_keeps_label(self, ops):
+        assert ops.DescribeFeatStruc({"specs": {"number": "plural"}}) == (
+            "[specs: [number: plural]]"
+        )
+
+    def test_c4_envelope_holding_specs_named_feature(self, ops):
+        c4 = {
+            "TypeGuid": None,
+            "specs": {"specs": {"number": "plural"}},
+        }
+        assert ops.DescribeFeatStruc(c4) == "[specs: [number: plural]]"
+
 
 # ============================================================================
 # Label fallbacks

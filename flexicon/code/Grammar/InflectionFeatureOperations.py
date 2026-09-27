@@ -1070,6 +1070,9 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
               spec for round-trips.
             - Features appear in the spec's own order (for an
               ``IFsFeatStruc``, the ``FeatureSpecsOC`` order LCM returns).
+            - A complex feature literally named ``specs`` keeps its
+              label and nesting; only the C4 envelope (``TypeGuid``
+              plus ``specs``) is unwrapped.
             - Like ``_GetFeatureStruc``, only closed and complex values are
               shown; disjunctions and malformed specs are skipped.
 
@@ -1102,14 +1105,38 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
 
         return self.__DescribeSpecLevel(spec)
 
+    # Keys of the C4 sync envelope: ``_GetFeatureStruc`` emits exactly
+    # ``{"TypeGuid", "specs"}`` at the top level, plus ``"Guid"`` on
+    # nested levels. A bare feature spec is a mapping of feature
+    # operands to values, and a complex feature may itself be named
+    # ``"specs"`` -- so the ``"specs"`` member alone cannot mark the
+    # envelope.
+    _C4_ENVELOPE_KEYS = frozenset({"TypeGuid", "Guid", "specs"})
+
+    def __IsC4Envelope(self, spec):
+        """
+        True when ``spec`` is the C4 sync envelope (contract C4), not a
+        bare feature spec that happens to hold a complex feature named
+        ``"specs"``. The envelope must carry the ``TypeGuid`` metadata
+        field and contain no other (feature-operand) keys; ``specs``
+        must hold the wrapped pairs mapping.
+        """
+        return (
+            isinstance(spec.get("specs"), dict)
+            and "TypeGuid" in spec
+            and all(key in self._C4_ENVELOPE_KEYS for key in spec)
+        )
+
     def __DescribeSpecLevel(self, spec):
         """
         Render one level of a feature-structure spec as ``"[f: v; ...]"``,
         recursing into nested (complex-value) levels.
         """
         # The C4 sync shape wraps each level's pairs in a "specs" key
-        # (alongside TypeGuid/Guid); the getter shape is the bare pairs.
-        if isinstance(spec.get("specs"), dict):
+        # (alongside the TypeGuid/Guid metadata); the getter shape is the
+        # bare pairs. Unwrap only a real envelope -- a bare complex
+        # feature named "specs" keeps its label and nesting.
+        if self.__IsC4Envelope(spec):
             spec = spec["specs"]
 
         parts = []
