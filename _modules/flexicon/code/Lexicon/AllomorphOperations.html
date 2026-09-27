@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Lexicon.AllomorphOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -54,46 +54,77 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">namedtuple</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
+<span class="c1"># --- Structured result for RemoveOrphaned (issue #231, slice 1) ------------</span>
+
+<span class="n">RemovedAlternateAllomorph</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s2">&quot;RemovedAlternateAllomorph&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;entry_hvo&quot;</span><span class="p">,</span> <span class="s2">&quot;allomorph_hvo&quot;</span><span class="p">,</span> <span class="s2">&quot;class_name&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">RemovedAlternateAllomorph</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">One alternate allomorph removed from ILexEntry.AlternateFormsOS by</span>
+<span class="s2">AllomorphOperations.RemoveOrphaned.</span>
+
+<span class="s2">Fields:</span>
+<span class="s2">    entry_hvo (int): Hvo of the owning ILexEntry.</span>
+<span class="s2">    allomorph_hvo (int): Hvo of the removed allomorph.</span>
+<span class="s2">    class_name (str): ClassName of the removed allomorph.</span>
+<span class="s2">    reason (str): Machine-readable removal reason (e.g. ``duplicate_lexeme``).</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">EntryAlternateOrphanBreakdown</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s2">&quot;EntryAlternateOrphanBreakdown&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;entry_hvo&quot;</span><span class="p">,</span> <span class="s2">&quot;removed_count&quot;</span><span class="p">,</span> <span class="s2">&quot;kept_count&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">RemoveOrphanedAlternatesResult</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s2">&quot;RemoveOrphanedAlternatesResult&quot;</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">&quot;removed_count&quot;</span><span class="p">,</span> <span class="s2">&quot;kept_count&quot;</span><span class="p">,</span> <span class="s2">&quot;removed&quot;</span><span class="p">,</span> <span class="s2">&quot;by_entry&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">RemoveOrphanedAlternatesResult</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Structured result for AllomorphOperations.RemoveOrphaned.</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
 <span class="c1"># Import BaseOperations parent class</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IMoStemAllomorph</span><span class="p">,</span>
     <span class="n">IMoAffixAllomorph</span><span class="p">,</span>
     <span class="n">IMoStemAllomorphFactory</span><span class="p">,</span>
     <span class="n">IMoAffixAllomorphFactory</span><span class="p">,</span>
     <span class="n">ILexEntry</span><span class="p">,</span>
+    <span class="n">ILexEntryRepository</span><span class="p">,</span>
     <span class="n">IPhEnvironment</span><span class="p">,</span>
     <span class="n">LexEntryTags</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Import string utilities</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_text</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span>
 
 <span class="c1"># Import shared morph-type resolution utilities (single source of truth</span>
 <span class="c1"># shared with LexEntryOperations.Create -- see issue #213/#214)</span>
-<span class="kn">from</span> <span class="nn">..Shared.morph_type_utils</span> <span class="kn">import</span> <span class="n">find_morph_type</span><span class="p">,</span> <span class="n">is_stem_morph_type</span><span class="p">,</span> <span class="n">morph_type_not_found_error</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.morph_type_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_morph_type</span><span class="p">,</span> <span class="n">is_stem_morph_type</span><span class="p">,</span> <span class="n">morph_type_not_found_error</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
 
 <span class="c1"># Import wrapper classes</span>
-<span class="kn">from</span> <span class="nn">.allomorph</span> <span class="kn">import</span> <span class="n">Allomorph</span>
-<span class="kn">from</span> <span class="nn">.allomorph_collection</span> <span class="kn">import</span> <span class="n">AllomorphCollection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.allomorph</span><span class="w"> </span><span class="kn">import</span> <span class="n">Allomorph</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.allomorph_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">AllomorphCollection</span>
 
 
 <div class="viewcode-block" id="AllomorphOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.AllomorphOperations.AllomorphOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">AllomorphOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AllomorphOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing allomorphs in a FieldWorks project.</span>
 
@@ -129,7 +160,7 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize AllomorphOperations with a FLExProject instance.</span>
 
@@ -138,7 +169,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Specify which sequence to reorder for allomorphs.</span>
 <span class="sd">        For Allomorph, we reorder entry.AlternateFormsOS</span>
@@ -147,7 +178,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all allomorphs for a lexical entry, or all allomorphs in the entire project.</span>
 
@@ -215,6 +246,13 @@
 <span class="sd">            - Use where() for complex custom filtering</span>
 <span class="sd">            - Individual items are Allomorph wrapper objects with properties like</span>
 <span class="sd">              form, environment, is_stem_allomorph, is_affix_allomorph</span>
+<span class="sd">            - Items can be passed straight back into other AllomorphOperations</span>
+<span class="sd">              methods (e.g. ``GetForm(item)``, ``SetForm(item, ...)``,</span>
+<span class="sd">              ``Delete(item)``) -- the resolver unwraps the wrapper internally</span>
+<span class="sd">              (issue #449). A caller performing a direct pythonnet cast, e.g.</span>
+<span class="sd">              ``IMoStemAllomorph(item)``, must use ``item.lcm_object`` instead</span>
+<span class="sd">              (``IMoStemAllomorph(item.lcm_object)``), since pythonnet cannot</span>
+<span class="sd">              cast a Python wrapper instance.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetForm, AllomorphCollection, Allomorph</span>
@@ -248,7 +286,7 @@
         <span class="k">return</span> <span class="n">AllomorphCollection</span><span class="p">(</span><span class="n">allomorphs</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">morphType</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">morphType</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new allomorph for a lexical entry.</span>
 
@@ -351,7 +389,7 @@
             <span class="k">return</span> <span class="n">allomorph</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete an allomorph.</span>
 
@@ -414,7 +452,7 @@
                 <span class="n">owner</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">allomorph</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate an allomorph, creating a new copy with a new GUID.</span>
 
@@ -449,7 +487,7 @@
 <span class="sd">            - Factory.Create() automatically generates a new GUID</span>
 <span class="sd">            - Factory type determined by source ClassName (MoStemAllomorph, MoAffixAllomorph, etc.)</span>
 <span class="sd">            - insert_after=True preserves the original allomorph&#39;s position/priority</span>
-<span class="sd">            - Simple properties copied: Form (MultiString)</span>
+<span class="sd">            - Simple properties copied: Form (MultiString), IsAbstract (bool)</span>
 <span class="sd">            - Reference properties copied: MorphTypeRA, PhoneEnvRC</span>
 <span class="sd">            - Allomorphs have no owned objects, so deep parameter has no effect</span>
 <span class="sd">            - Only duplicates alternate forms, not lexeme forms</span>
@@ -480,12 +518,12 @@
         <span class="c1"># PhoneEnvRC is reachable below.</span>
         <span class="n">concrete_source</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoStemAllomorph&quot;</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IMoStemAllomorph</span><span class="p">,</span> <span class="n">IMoStemAllomorphFactory</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IMoStemAllomorph</span><span class="p">,</span> <span class="n">IMoStemAllomorphFactory</span>
 
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IMoStemAllomorphFactory</span><span class="p">)</span>
             <span class="n">concrete_source</span> <span class="o">=</span> <span class="n">IMoStemAllomorph</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoAffixAllomorph&quot;</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IMoAffixAllomorph</span><span class="p">,</span> <span class="n">IMoAffixAllomorphFactory</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IMoAffixAllomorph</span><span class="p">,</span> <span class="n">IMoAffixAllomorphFactory</span>
 
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IMoAffixAllomorphFactory</span><span class="p">)</span>
             <span class="n">concrete_source</span> <span class="o">=</span> <span class="n">IMoAffixAllomorph</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
@@ -518,6 +556,9 @@
             <span class="c1"># Copy simple MultiString properties (AFTER adding to parent)</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Form</span><span class="p">)</span>
 
+            <span class="c1"># Copy atomic properties</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">IsAbstract</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">IsAbstract</span><span class="p">)</span>
+
             <span class="c1"># Copy Reference Atomic (RA) properties</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">MorphTypeRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">MorphTypeRA</span>
 
@@ -526,6 +567,131 @@
                 <span class="n">duplicate</span><span class="o">.</span><span class="n">PhoneEnvRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Orphan cleanup (issue #231 -- lex-lead rulings, slices 1-2)</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveOrphaned</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove spurious allomorphs from ``ILexEntry.AlternateFormsOS``.</span>
+
+<span class="sd">        Lexeme-form promotion and other entry edits can leave the lexeme-form</span>
+<span class="sd">        object listed twice: once on ``LexemeFormOA`` and again in</span>
+<span class="sd">        ``AlternateFormsOS``. Those duplicates are safe to drop from the</span>
+<span class="sd">        alternates list only -- the lexeme form itself is untouched.</span>
+
+<span class="sd">        Cascade deletes and partial saves can also leave **stale** handles in</span>
+<span class="sd">        ``AlternateFormsOS`` where ``IsValidObject`` is false. Those list</span>
+<span class="sd">        slots are removed as well (they are not counted as kept alternates).</span>
+
+<span class="sd">        A project-wide ``IWfiMorphBundle.MorphRA``-aware unused-allomorph</span>
+<span class="sd">        sweep (alternates with no interlinear link but still valid objects)</span>
+<span class="sd">        and the example-sentence / feature-structure gaps in issue #231</span>
+<span class="sd">        remain out of scope until lex-domain confirms each back-ref set.</span>
+<span class="sd">        Alternates that are valid but not yet referenced in any text are not</span>
+<span class="sd">        treated as orphans here.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry: An ``ILexEntry`` (or HVO) to limit the scan to one entry.</span>
+<span class="sd">                Pass ``None`` (default) to sweep every entry in the project.</span>
+<span class="sd">            progress: Optional callback ``progress(current, total)`` invoked</span>
+<span class="sd">                once per entry scanned. Exceptions from the callback are</span>
+<span class="sd">                logged and ignored.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            RemoveOrphanedAlternatesResult: ``removed_count``, ``kept_count``,</span>
+<span class="sd">            ``removed`` (list of ``RemovedAlternateAllomorph``), and</span>
+<span class="sd">            ``by_entry`` (list of ``EntryAlternateOrphanBreakdown``).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not write-enabled.</span>
+<span class="sd">            FP_ParameterError: If ``entry`` does not resolve to ``ILexEntry``.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            MSAOperations.RemoveOrphaned (issue #206)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">entry</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">entries</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryObject</span><span class="p">(</span><span class="n">entry</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">entries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ObjectsIn</span><span class="p">(</span><span class="n">ILexEntryRepository</span><span class="p">))</span>
+
+        <span class="n">removed</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">by_entry</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">removed_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">kept_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove orphaned alternate allomorphs&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">entry_obj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">lexeme</span> <span class="o">=</span> <span class="n">entry_obj</span><span class="o">.</span><span class="n">LexemeFormOA</span>
+                <span class="n">lexeme_hvo</span> <span class="o">=</span> <span class="n">lexeme</span><span class="o">.</span><span class="n">Hvo</span> <span class="k">if</span> <span class="n">lexeme</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+                <span class="n">entry_removed</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">entry_kept</span> <span class="o">=</span> <span class="mi">0</span>
+
+                <span class="n">candidates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">entry_obj</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">allo</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">allo</span><span class="o">.</span><span class="n">IsValidObject</span><span class="p">:</span>
+                        <span class="n">entry_obj</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">allo</span><span class="p">)</span>
+                        <span class="n">removed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="n">RemovedAlternateAllomorph</span><span class="p">(</span>
+                                <span class="n">entry_obj</span><span class="o">.</span><span class="n">Hvo</span><span class="p">,</span>
+                                <span class="nb">getattr</span><span class="p">(</span><span class="n">allo</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                <span class="nb">getattr</span><span class="p">(</span><span class="n">allo</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                                <span class="s2">&quot;invalid_stale&quot;</span><span class="p">,</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="n">entry_removed</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="k">continue</span>
+
+                    <span class="k">if</span> <span class="n">lexeme_hvo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">allo</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">lexeme_hvo</span><span class="p">:</span>
+                        <span class="n">entry_obj</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">allo</span><span class="p">)</span>
+                        <span class="n">removed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="n">RemovedAlternateAllomorph</span><span class="p">(</span>
+                                <span class="n">entry_obj</span><span class="o">.</span><span class="n">Hvo</span><span class="p">,</span>
+                                <span class="n">allo</span><span class="o">.</span><span class="n">Hvo</span><span class="p">,</span>
+                                <span class="n">allo</span><span class="o">.</span><span class="n">ClassName</span><span class="p">,</span>
+                                <span class="s2">&quot;duplicate_lexeme&quot;</span><span class="p">,</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="n">entry_removed</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">entry_kept</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="n">removed_count</span> <span class="o">+=</span> <span class="n">entry_removed</span>
+                <span class="n">kept_count</span> <span class="o">+=</span> <span class="n">entry_kept</span>
+                <span class="k">if</span> <span class="n">entry_removed</span> <span class="ow">or</span> <span class="n">entry_kept</span><span class="p">:</span>
+                    <span class="n">by_entry</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">EntryAlternateOrphanBreakdown</span><span class="p">(</span>
+                            <span class="n">entry_obj</span><span class="o">.</span><span class="n">Hvo</span><span class="p">,</span> <span class="n">entry_removed</span><span class="p">,</span> <span class="n">entry_kept</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">progress</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">progress</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">total</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                            <span class="s2">&quot;RemoveOrphaned: progress callback raised; ignoring.&quot;</span><span class="p">,</span>
+                            <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;RemoveOrphaned: removed </span><span class="si">%d</span><span class="s2"> spurious alternate(s), kept </span><span class="si">%d</span><span class="s2"> &quot;</span>
+            <span class="s2">&quot;alternate(s) across </span><span class="si">%d</span><span class="s2"> entr</span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span>
+            <span class="n">removed_count</span><span class="p">,</span>
+            <span class="n">kept_count</span><span class="p">,</span>
+            <span class="n">total</span><span class="p">,</span>
+            <span class="s2">&quot;y&quot;</span> <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;ies&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">RemoveOrphanedAlternatesResult</span><span class="p">(</span>
+            <span class="n">removed_count</span><span class="p">,</span> <span class="n">kept_count</span><span class="p">,</span> <span class="n">removed</span><span class="p">,</span> <span class="n">by_entry</span>
+        <span class="p">)</span>
 
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
     <span class="c1">#</span>
@@ -562,7 +728,7 @@
     <span class="c1"># out-of-table fallback.</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all syncable properties of an allomorph for comparison.</span>
 
@@ -641,7 +807,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Apply syncable properties (from GetSyncableProperties) onto an</span>
 <span class="sd">        allomorph.</span>
@@ -721,7 +887,7 @@
         <span class="s2">&quot;MsEnvFeatures&quot;</span><span class="p">,</span> <span class="s2">&quot;MsEnvFeaturesGuid&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">allomorph</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">allomorph</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Capture the C1 &quot;MoAffixAllomorph&quot; feature-struct row into</span>
 <span class="sd">        ``props``, in place.</span>
@@ -757,7 +923,7 @@
             <span class="n">props</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetFeatureStruc</span><span class="p">(</span><span class="n">struct</span><span class="p">)</span>
             <span class="n">props</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">Guid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">props</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">props</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Apply the C1 &quot;MoAffixAllomorph&quot; feature-struct row from ``props``</span>
 <span class="sd">        onto ``allomorph``, if present.</span>
@@ -799,7 +965,7 @@
             <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two allomorphs and return their differences.</span>
 
@@ -854,7 +1020,7 @@
         <span class="k">return</span> <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the form (text) of an allomorph.</span>
 
@@ -899,7 +1065,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the form (text) of an allomorph.</span>
 
@@ -950,7 +1116,7 @@
             <span class="n">allomorph</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetFormAudio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetFormAudio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set an audio recording for an allomorph&#39;s Form field.</span>
 
@@ -1032,7 +1198,7 @@
                 <span class="p">)</span>
 
         <span class="c1"># Determine if we need to copy the file to LinkedFiles</span>
-        <span class="kn">import</span> <span class="nn">os</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
         <span class="n">internal_path</span> <span class="o">=</span> <span class="n">file_path</span>
 
@@ -1040,7 +1206,7 @@
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">file_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;LinkedFiles&quot;</span><span class="p">):</span>
             <span class="c1"># Copy file to project using Media operations</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="kn">from</span> <span class="nn">..Shared.MediaOperations</span> <span class="kn">import</span> <span class="n">MediaOperations</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.MediaOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">MediaOperations</span>
 
                 <span class="n">media_ops</span> <span class="o">=</span> <span class="n">MediaOperations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
 
@@ -1058,7 +1224,7 @@
         <span class="k">return</span> <span class="n">internal_path</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetFormAudio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFormAudio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the audio file path from an allomorph&#39;s Form field.</span>
 
@@ -1134,7 +1300,7 @@
             <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the morpheme type of an allomorph.</span>
 
@@ -1174,7 +1340,7 @@
         <span class="k">return</span> <span class="n">allomorph</span><span class="o">.</span><span class="n">MorphTypeRA</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">morphType</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">morphType</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the morpheme type of an allomorph.</span>
 
@@ -1216,7 +1382,88 @@
             <span class="n">allomorph</span><span class="o">.</span><span class="n">MorphTypeRA</span> <span class="o">=</span> <span class="n">morphType</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetPhoneEnv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetIsAbstract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check whether an allomorph is an abstract underlying form.</span>
+
+<span class="sd">        FLEx marks abstract underlying forms with the &quot;Abstract form&quot;</span>
+<span class="sd">        checkbox; they matter for parser work.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object or HVO. Accepts a lexeme</span>
+<span class="sd">                form (``entry.LexemeFormOA``), an alternate form, an HVO</span>
+<span class="sd">                int, or an ``Allomorph`` wrapper from ``GetAll()``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if this is an abstract form, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = list(allomorphOps.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if allomorphs:</span>
+<span class="sd">            ...     print(allomorphOps.GetIsAbstract(allomorphs[0]))</span>
+<span class="sd">            False</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Works for the lexeme form as well as alternate forms.</span>
+<span class="sd">            - This is NOT a counterpart to the deprecated</span>
+<span class="sd">              ``LexEntry.DoNotUseForParsing``; recipes should not rely on</span>
+<span class="sd">              ``DoNotUseForParsing``.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetIsAbstract, GetSyncableProperties</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">allomorph</span><span class="o">.</span><span class="n">IsAbstract</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetIsAbstract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set whether an allomorph is an abstract underlying form.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object or HVO. Accepts a lexeme</span>
+<span class="sd">                form (``entry.LexemeFormOA``), an alternate form, an HVO</span>
+<span class="sd">                int, or an ``Allomorph`` wrapper from ``GetAll()``.</span>
+<span class="sd">            value (bool): True to mark as abstract, False to clear.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo or value is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = list(allomorphOps.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if allomorphs:</span>
+<span class="sd">            ...     allomorphOps.SetIsAbstract(allomorphs[0], True)</span>
+<span class="sd">            ...     print(allomorphOps.GetIsAbstract(allomorphs[0]))</span>
+<span class="sd">            True</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Works for the lexeme form as well as alternate forms.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetIsAbstract, GetSyncableProperties</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set allomorph abstract flag&quot;</span><span class="p">):</span>
+            <span class="n">allomorph</span><span class="o">.</span><span class="n">IsAbstract</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetPhoneEnv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the phonological environments for an allomorph.</span>
 
@@ -1256,7 +1503,7 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">allomorph</span><span class="o">.</span><span class="n">PhoneEnvRC</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddPhoneEnv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddPhoneEnv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a phonological environment to an allomorph.</span>
 
@@ -1302,7 +1549,7 @@
             <span class="n">allomorph</span><span class="o">.</span><span class="n">PhoneEnvRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RemovePhoneEnv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemovePhoneEnv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a phonological environment from an allomorph.</span>
 
@@ -1349,7 +1596,7 @@
     <span class="c1"># --- Navigation Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetOwningEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwningEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the lexical entry that owns this allomorph.</span>
 
@@ -1424,7 +1671,7 @@
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__GetEntryObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetEntryObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to ILexEntry.</span>
 
@@ -1435,10 +1682,10 @@
 <span class="sd">            ILexEntry: The resolved entry object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">entry_or_hvo</span>
+            <span class="n">entry_or_hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__GetAllomorphObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetAllomorphObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IMoForm.</span>
 
@@ -1468,17 +1715,21 @@
 <span class="sd">        depend on it never raising.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            allomorph_or_hvo: Either an IMoForm object or an HVO (int).</span>
+<span class="sd">            allomorph_or_hvo: Either an IMoForm object, an HVO (int), or</span>
+<span class="sd">                an ``Allomorph`` wrapper item from ``GetAll()`` (issue</span>
+<span class="sd">                #449) -- unwrapped to the raw LCM object before casting,</span>
+<span class="sd">                since pythonnet cannot cast a Python wrapper instance.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IMoForm: The resolved allomorph, cast to its concrete</span>
 <span class="sd">            interface when its ``ClassName`` is one of the two</span>
 <span class="sd">            recognised allomorph subtypes; returned unchanged otherwise.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">allomorph_or_hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">obj</span> <span class="o">=</span> <span class="n">allomorph_or_hvo</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcmObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
 
         <span class="n">class_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoStemAllomorph&quot;</span><span class="p">:</span>
@@ -1487,7 +1738,7 @@
             <span class="k">return</span> <span class="n">IMoAffixAllomorph</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">obj</span>
 
-    <span class="k">def</span> <span class="nf">__GetEnvironmentObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetEnvironmentObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IPhEnvironment.</span>
 
@@ -1560,7 +1811,7 @@
             <span class="k">return</span> <span class="n">IPhEnvironment</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">obj</span>
 
-    <span class="k">def</span> <span class="nf">__IsStemType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">morph_type</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__IsStemType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">morph_type</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Determine if a morph type should use MoStemAllomorph or MoAffixAllomorph.</span>
 
@@ -1589,7 +1840,7 @@
 
         <span class="k">return</span> <span class="n">is_stem_morph_type</span><span class="p">(</span><span class="n">morph_type</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to vernacular WS for allomorph forms.</span>
 
@@ -1609,7 +1860,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1625,7 +1876,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1640,8 +1891,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

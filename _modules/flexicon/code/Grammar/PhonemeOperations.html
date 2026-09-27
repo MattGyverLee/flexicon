@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Grammar.PhonemeOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,7 +55,7 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import BaseOperations parent class</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">BaseOperations</span><span class="p">,</span>
     <span class="n">OperationsMethod</span><span class="p">,</span>
     <span class="n">wrap_enumerable</span><span class="p">,</span>
@@ -63,7 +63,7 @@
 <span class="p">)</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IPhPhoneme</span><span class="p">,</span>
     <span class="n">IPhPhonemeFactory</span><span class="p">,</span>
     <span class="n">IPhCode</span><span class="p">,</span>
@@ -75,24 +75,27 @@
     <span class="n">IFsClosedValueFactory</span><span class="p">,</span>
     <span class="n">ICmObjectRepository</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># .NET Guid for GUID-aligned FeaturesOA rewiring during sync.</span>
-<span class="kn">import</span> <span class="nn">System</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
 
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Import string utilities</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_text</span><span class="p">,</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span><span class="p">,</span> <span class="n">normalize_match_key</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
 
 <span class="c1"># Catalog parsing helpers (Phase 6d)</span>
-<span class="kn">from</span> <span class="nn">..Shared.catalog</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.catalog</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">CatalogImportResult</span><span class="p">,</span>
+    <span class="n">basic_ipa_segment_is_suprasegmental_tone</span><span class="p">,</span>
     <span class="n">find_catalog_file</span><span class="p">,</span>
     <span class="n">parse_basic_ipa_info</span><span class="p">,</span>
     <span class="n">parse_etic_gloss_list</span><span class="p">,</span>
@@ -110,7 +113,7 @@
 
 <div class="viewcode-block" id="PhonemeOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.PhonemeOperations.PhonemeOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">PhonemeOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PhonemeOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing Phonemes in a FieldWorks project.</span>
 
@@ -143,7 +146,7 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize PhonemeOperations with a FLExProject instance.</span>
 
@@ -152,16 +155,25 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Specify which sequence to reorder for phonemes.</span>
-<span class="sd">        For Phoneme, we reorder parent.PhonemesOS</span>
+<span class="sd">        Reorder operations are not supported for phonemes in a phoneme set.</span>
+
+<span class="sd">        ``IPhPhonemeSet.PhonemesOC`` is an unordered ``ILcmOwningCollection``;</span>
+<span class="sd">        there is no ``PhonemesOS`` and index-based reorder has no LCM meaning</span>
+<span class="sd">        (issue #301).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">PhonemesOS</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;PhonemeOperations does not support inherited Sort / MoveUp / &quot;</span>
+            <span class="s2">&quot;MoveDown / MoveToIndex: IPhPhonemeSet.PhonemesOC is an &quot;</span>
+            <span class="s2">&quot;unordered ILcmOwningCollection with no user-visible order. &quot;</span>
+            <span class="s2">&quot;Pass an IPhPhonemeSet as parent; manipulate PhonemesOC via LCM &quot;</span>
+            <span class="s2">&quot;if you need to add or remove phonemes.&quot;</span>
+        <span class="p">)</span>
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all phonemes in the project.</span>
 
@@ -195,7 +207,7 @@
                 <span class="k">yield</span> <span class="n">phoneme</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new phoneme.</span>
 
@@ -282,7 +294,7 @@
             <span class="k">return</span> <span class="n">new_phoneme</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a phoneme.</span>
 
@@ -327,7 +339,7 @@
                 <span class="n">phoneme_set</span><span class="o">.</span><span class="n">PhonemesOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">phoneme</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a phoneme, creating a new copy with a new GUID.</span>
 
@@ -410,7 +422,7 @@
 
             <span class="c1"># Handle owned objects if deep=True</span>
             <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
-                <span class="kn">from</span> <span class="nn">..lcm_casting</span> <span class="kn">import</span> <span class="n">clone_properties</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">clone_properties</span>
 
                 <span class="c1"># Deep copy FeaturesOA (feature structure)</span>
                 <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;FeaturesOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">FeaturesOA</span><span class="p">:</span>
@@ -447,7 +459,7 @@
             <span class="k">return</span> <span class="n">duplicate</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a phoneme with the given representation exists.</span>
 
@@ -479,7 +491,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a phoneme by representation.</span>
 
@@ -527,7 +539,43 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetRepresentation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of a phoneme.</span>
+
+<span class="sd">        This is a sibling accessor alias for :meth:`GetRepresentation`.</span>
+<span class="sd">        FLEx stores the phoneme display string in ``IPhPhoneme.Name``,</span>
+<span class="sd">        and callers coming from other ``*Operations`` classes often look</span>
+<span class="sd">        for a ``GetName`` helper first.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The phoneme name/representation, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Phonemes.GetName(phoneme))</span>
+<span class="sd">            /p/</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetRepresentation, SetRepresentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">phoneme</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetRepresentation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the representation of a phoneme.</span>
 
@@ -564,7 +612,7 @@
         <span class="k">return</span> <span class="n">representation</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetRepresentation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetRepresentation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the representation of a phoneme.</span>
 
@@ -608,7 +656,7 @@
             <span class="n">phoneme</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the description of a phoneme.</span>
 
@@ -660,7 +708,7 @@
         <span class="k">return</span> <span class="n">desc_str</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the description of a phoneme.</span>
 
@@ -714,7 +762,7 @@
             <span class="n">phoneme</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetFeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the feature structure of a phoneme.</span>
 
@@ -754,7 +802,7 @@
     <span class="c1"># --- Advanced Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetCodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all codes (allophonic representations) for a phoneme.</span>
 
@@ -801,7 +849,7 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">phoneme</span><span class="o">.</span><span class="n">CodesOS</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a code (allophonic representation) to a phoneme.</span>
 
@@ -876,7 +924,7 @@
             <span class="k">return</span> <span class="n">code</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RemoveCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">code_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">code_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a code from a phoneme.</span>
 
@@ -932,7 +980,7 @@
             <span class="n">phoneme</span><span class="o">.</span><span class="n">CodesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FindCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a code (allophonic representation) on a phoneme by its</span>
 <span class="sd">        rendered representation string.</span>
@@ -986,7 +1034,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ReplaceCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">old_code_or_repr</span><span class="p">,</span> <span class="n">new_representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ReplaceCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">old_code_or_repr</span><span class="p">,</span> <span class="n">new_representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Replace one code&#39;s representation on a phoneme.</span>
 
@@ -1047,7 +1095,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">AddCode</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="n">new_representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetBasicIPASymbol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetBasicIPASymbol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the basic IPA symbol for a phoneme.</span>
 
@@ -1112,7 +1160,7 @@
         <span class="k">return</span> <span class="n">ipa_str</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetBasicIPASymbol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">ipa</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetBasicIPASymbol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">ipa</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the basic IPA symbol for a phoneme.</span>
 
@@ -1170,7 +1218,7 @@
                 <span class="n">IPhPhoneme</span><span class="p">(</span><span class="n">phoneme</span><span class="p">)</span><span class="o">.</span><span class="n">set_BasicIPASymbol</span><span class="p">(</span><span class="n">tss</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsVowel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsVowel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a phoneme is classified as a vowel.</span>
 
@@ -1239,7 +1287,7 @@
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsConsonant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsConsonant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a phoneme is classified as a consonant.</span>
 
@@ -1310,9 +1358,13 @@
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__GetPhonemeObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetPhonemeObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IPhPhoneme.</span>
+
+<span class="sd">        An int HVO is resolved via ``project.Object()`` and then cast to the</span>
+<span class="sd">        concrete ``IPhPhoneme`` interface (C2): a bare base-interface view</span>
+<span class="sd">        has no ``FeaturesOA`` for the feature-sync path to write through.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            phoneme_or_hvo: Either an IPhPhoneme object or an HVO (int).</span>
@@ -1321,10 +1373,10 @@
 <span class="sd">            IPhPhoneme: The resolved phoneme object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">IPhPhoneme</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">phoneme_or_hvo</span>
 
-    <span class="k">def</span> <span class="nf">__GetCodeObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetCodeObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IPhCode.</span>
 
@@ -1335,13 +1387,13 @@
 <span class="sd">            IPhCode: The resolved code object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">code_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">code_or_hvo</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">code_or_hvo</span>
+            <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">code_or_hvo</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">code_or_hvo</span><span class="p">)</span>
 
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get dictionary of syncable properties for cross-project synchronization.</span>
 
@@ -1425,7 +1477,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply syncable properties (from GetSyncableProperties) onto a phoneme.</span>
 
 <span class="sd">        Handles the multistring fields via the BaseOperations loop, applies</span>
@@ -1445,9 +1497,12 @@
 <span class="sd">            - ``BasicIPASymbol`` is applied via SetBasicIPASymbol so both the</span>
 <span class="sd">              multistring and scalar LCM shapes are handled; the base loop&#39;s</span>
 <span class="sd">              dict branch would raise on the scalar shape.</span>
-<span class="sd">            - A feature spec is skipped when its feature or value GUID does</span>
-<span class="sd">              not resolve in the target project (the feature system must be</span>
-<span class="sd">              synced first). Must run inside the caller&#39;s unit of work.</span>
+<span class="sd">            - A feature spec RAISES ``FP_ParameterError`` when its feature or</span>
+<span class="sd">              value GUID does not resolve in the target project (C7); a native</span>
+<span class="sd">              data-fidelity loss is a loud error, matching</span>
+<span class="sd">              ``NaturalClassOperations``. ``on_unresolved=&quot;skip&quot;`` remains an</span>
+<span class="sd">              explicit opt-in for callers wanting best-effort. Must run inside</span>
+<span class="sd">              the caller&#39;s unit of work.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;ApplySyncableProperties: item is None&quot;</span><span class="p">)</span>
@@ -1466,6 +1521,7 @@
         <span class="c1"># the base loop. FeaturesGuid is identity-only and not re-applied.</span>
         <span class="n">basic_ipa</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;BasicIPASymbol&quot;</span><span class="p">)</span>
         <span class="n">features</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Features&quot;</span><span class="p">)</span>
+        <span class="n">features_guid</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FeaturesGuid&quot;</span><span class="p">)</span>
         <span class="n">base_props</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">props</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
@@ -1478,10 +1534,10 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">basic_ipa</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">basic_ipa</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyBasicIPASymbol</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="n">basic_ipa</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">features</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyFeatures</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="n">features</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">features</span> <span class="ow">or</span> <span class="n">features_guid</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyFeatures</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">features_guid</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ApplyBasicIPASymbol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">ws_values</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ApplyBasicIPASymbol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">ws_values</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Apply a ``{ws_id: text}`` BasicIPASymbol dict via SetBasicIPASymbol,</span>
 <span class="sd">        which tolerates both the multistring and scalar LCM shapes.</span>
@@ -1500,7 +1556,7 @@
 <span class="sd">        the skip is no longer silent: it is logged, matching</span>
 <span class="sd">        ``_apply_props_loop``&#39;s miss-case warning (spec 250 Defect 3).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">import</span> <span class="nn">logging</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
         <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
         <span class="n">target_ws_by_id</span> <span class="o">=</span> <span class="p">{</span>
@@ -1548,50 +1604,54 @@
                 <span class="k">continue</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">SetBasicIPASymbol</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">tgt_handle</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ApplyFeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">specs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ApplyFeatures</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">phoneme</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">features_guid</span><span class="p">,</span> <span class="n">on_unresolved</span><span class="o">=</span><span class="s2">&quot;raise&quot;</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;phoneme&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Thin call-through to ``BaseOperations._ApplyFeatureStruc`` (spec</span>
-<span class="sd">        feature-structure-sync-gap, T4): rewires a phoneme&#39;s FeaturesOA</span>
+<span class="sd">        feature-structure-sync-gap, T4/T9): rewires a phoneme&#39;s FeaturesOA</span>
 <span class="sd">        feature-value specs from a list of ``{&quot;FeatureGuid&quot;, &quot;ValueGuid&quot;}``</span>
 <span class="sd">        dicts, resolving each feature/value against the target project by</span>
 <span class="sd">        GUID.</span>
 
-<span class="sd">        A missing FeaturesOA is created (ownership-first). Specs are</span>
-<span class="sd">        matched by (FeatureGuid, ValueGuid) so re-application is</span>
-<span class="sd">        idempotent; specs whose feature/value GUID does not resolve in</span>
-<span class="sd">        the target are skipped (``on_unresolved=&quot;skip&quot;`` -- unlike</span>
-<span class="sd">        ``NaturalClassOperations.__ApplyFeatures``, which raises; see T9</span>
-<span class="sd">        for the upcoming policy flip, D1).</span>
+<span class="sd">        A missing FeaturesOA is created (ownership-first), preserving</span>
+<span class="sd">        ``features_guid`` via ``_CreateWithGuid`` where the factory supports</span>
+<span class="sd">        a ``Create(Guid)`` overload. Specs are matched by (FeatureGuid,</span>
+<span class="sd">        ValueGuid) so re-application is idempotent.</span>
 
-<span class="sd">        Note: ``struct_guid`` is passed as ``None`` here, not a</span>
-<span class="sd">        ``FeaturesGuid`` read from ``props`` -- ``ApplySyncableProperties``</span>
-<span class="sd">        (above) has never extracted/threaded ``props.get(&quot;FeaturesGuid&quot;)``</span>
-<span class="sd">        through to this method, so there is no source GUID available to</span>
-<span class="sd">        preserve yet. This is the pre-existing &quot;Phoneme struct-GUID not</span>
-<span class="sd">        preserved&quot; gap (spec D2); T4 does not fix it (that lands in T9,</span>
-<span class="sd">        together with the ``:1351``/``:1431`` fixes that make a GUID</span>
-<span class="sd">        reach here in the first place) -- passing ``struct_guid=None``</span>
-<span class="sd">        keeps this call-through&#39;s behaviour identical to the pre-T4 bare</span>
-<span class="sd">        ``factory.Create()`` (``_CreateWithGuid(..., guid=None)`` is</span>
-<span class="sd">        defined to be exactly that).</span>
+<span class="sd">        Unresolvable feature/value GUIDs RAISE ``FP_ParameterError``</span>
+<span class="sd">        (``on_unresolved=&quot;raise&quot;`` is the default, C7, closes issue #253) --</span>
+<span class="sd">        a silently-incomplete FeaturesOA is precisely the data-fidelity loss</span>
+<span class="sd">        this method exists to close, matching</span>
+<span class="sd">        ``NaturalClassOperations.__ApplyFeatures``. ``on_unresolved=&quot;skip&quot;``</span>
+<span class="sd">        remains a supported explicit opt-in for callers that genuinely want</span>
+<span class="sd">        best-effort application.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            item: Target IPhPhoneme (already created + owned + GUID-assigned</span>
+<span class="sd">            phoneme: Target IPhPhoneme (already created + owned + GUID-assigned</span>
 <span class="sd">                by the caller).</span>
-<span class="sd">            specs: list of ``{&quot;FeatureGuid&quot;: str, &quot;ValueGuid&quot;: str}`` dicts,</span>
-<span class="sd">                as produced by GetSyncableProperties.</span>
+<span class="sd">            features: list of ``{&quot;FeatureGuid&quot;: str, &quot;ValueGuid&quot;: str}``</span>
+<span class="sd">                dicts, as produced by GetSyncableProperties.</span>
+<span class="sd">            features_guid: Optional ``str`` GUID of the source IFsFeatStruc,</span>
+<span class="sd">                used to preserve identity when a new struct must be created.</span>
+<span class="sd">            on_unresolved: ``&quot;raise&quot;`` (default) or ``&quot;skip&quot;``.</span>
+<span class="sd">            label: Context label for diagnostic messages.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If a feature or value GUID does not resolve to</span>
+<span class="sd">                an object in the target project.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ApplyFeatureStruc</span><span class="p">(</span>
             <span class="n">phoneme</span><span class="p">,</span>
             <span class="s2">&quot;FeaturesOA&quot;</span><span class="p">,</span>
-            <span class="n">specs</span><span class="p">,</span>
-            <span class="n">struct_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">on_unresolved</span><span class="o">=</span><span class="s2">&quot;skip&quot;</span><span class="p">,</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;phoneme&quot;</span><span class="p">,</span>
+            <span class="n">features</span><span class="p">,</span>
+            <span class="n">struct_guid</span><span class="o">=</span><span class="n">features_guid</span><span class="p">,</span>
+            <span class="n">on_unresolved</span><span class="o">=</span><span class="n">on_unresolved</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ReadMultiString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">,</span> <span class="n">all_ws</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ReadMultiString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">,</span> <span class="n">all_ws</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Read a multistring property into a ``{ws_id: text}`` dict, guarding</span>
 <span class="sd">        each per-WS read. Handles both the IMultiString (per-WS) and scalar</span>
@@ -1633,7 +1693,7 @@
         <span class="k">return</span> <span class="n">ws_values</span> <span class="ow">or</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two phonemes and return detailed differences.</span>
 
@@ -1694,7 +1754,7 @@
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__is_placeholder_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__is_placeholder_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        True iff `code` is the factory-autocreated placeholder IPhCode --</span>
 <span class="sd">        i.e. its Representation is empty (or the FLEX &#39;***&#39; null marker)</span>
@@ -1711,7 +1771,7 @@
                 <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to vernacular WS for phoneme representations.</span>
 
@@ -1736,7 +1796,7 @@
     <span class="c1"># refuse-on-non-empty pattern instead.</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ImportCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ImportCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_tones</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Import the BasicIPAInfo segment catalog into this project&#39;s</span>
 <span class="sd">        phoneme set.</span>
@@ -1755,6 +1815,12 @@
 <span class="sd">                existing phonemes; the default (force=False) refuses to</span>
 <span class="sd">                run on a non-empty set. Pass True to layer additional</span>
 <span class="sd">                segments onto an existing inventory.</span>
+<span class="sd">            skip_tones (bool): When True (default), skip BasicIPAInfo</span>
+<span class="sd">                segments whose ``&lt;Features/&gt;`` branch is empty. FW ships</span>
+<span class="sd">                seven tone entries at the head of the catalog; they are</span>
+<span class="sd">                suprasegmentals, not segmental phonemes (issue #202).</span>
+<span class="sd">                Pass False to restore the pre-#202 behaviour (create</span>
+<span class="sd">                featureless ``IPhPhoneme`` rows for those entries).</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            CatalogImportResult: Created/skipped counts and any warnings.</span>
@@ -1792,10 +1858,13 @@
 <span class="sd">              or value ids are recorded as warnings and the offending</span>
 <span class="sd">              FeatureValuePair is skipped. The phoneme is still created</span>
 <span class="sd">              with whatever pairs DID resolve.</span>
-<span class="sd">            - Segments with empty ``&lt;Features/&gt;`` (the seven tone entries</span>
-<span class="sd">              at the head of BasicIPAInfo.xml) are created without a</span>
-<span class="sd">              FeaturesOA struct -- MakeFeatStruc is only invoked when</span>
-<span class="sd">              there is at least one resolved spec.</span>
+<span class="sd">            - With ``skip_tones=True`` (default), tone entries (empty</span>
+<span class="sd">              ``&lt;Features/&gt;`` at the head of BasicIPAInfo.xml) are not</span>
+<span class="sd">              imported; they increment ``skipped_count`` and append a</span>
+<span class="sd">              warning. With ``skip_tones=False``, those entries are still</span>
+<span class="sd">              created without a FeaturesOA struct.</span>
+<span class="sd">            - MakeFeatStruc is only invoked when at least one feature</span>
+<span class="sd">              pair resolved for the segment.</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; project.PhonFeatures.ImportCatalog()    # prerequisite</span>
@@ -1917,6 +1986,16 @@
                     <span class="k">continue</span>
                 <span class="n">seen_code_points</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">code_point_id</span><span class="p">)</span>
 
+                <span class="k">if</span> <span class="n">skip_tones</span> <span class="ow">and</span> <span class="n">basic_ipa_segment_is_suprasegmental_tone</span><span class="p">(</span><span class="n">seg</span><span class="p">):</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">skipped_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Segment &#39;</span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">representation</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">code_point_id</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;no codepoint&#39;</span><span class="si">}</span><span class="s2">): skipped &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;suprasegmental tone (empty &lt;Features/&gt;); pass &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;skip_tones=False to import as a featureless phoneme.&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
                 <span class="c1"># Resolve (feature, value) specs against the project&#39;s</span>
                 <span class="c1"># PhFeatureSystemOA. Missing references are warned and</span>
                 <span class="c1"># skipped; the phoneme is still created.</span>
@@ -2010,7 +2089,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -2026,7 +2105,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -2041,8 +2120,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

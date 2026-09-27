@@ -61,13 +61,13 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">best_analysis_text</span><span class="p">,</span> <span class="n">normalize_match_key</span>
 
-<span class="c1"># Canonical morph-type names recognized by FLEx's standard MoMorphType</span>
+<span class="c1"># Canonical morph-type names recognized by FLEx&#39;s standard MoMorphType</span>
 <span class="c1"># possibility list. This is the union of every kguidMorph* GUID already</span>
 <span class="c1"># referenced elsewhere in this codebase:</span>
-<span class="c1">#   - the "stem role" set (_STEM_MORPH_TYPE_GUIDS / is_stem_morph_type):</span>
+<span class="c1">#   - the &quot;stem role&quot; set (_STEM_MORPH_TYPE_GUIDS / is_stem_morph_type):</span>
 <span class="c1">#     stem, root, bound root, bound stem, clitic, enclitic, proclitic,</span>
 <span class="c1">#     particle, phrase, discontiguous phrase</span>
-<span class="c1">#   - the "affix role" set (everything is_stem_morph_type reports False</span>
+<span class="c1">#   - the &quot;affix role&quot; set (everything is_stem_morph_type reports False</span>
 <span class="c1">#     for, per LexSenseOperations.__EntryHasAffixMorphType): prefix,</span>
 <span class="c1">#     suffix, infix, circumfix, prefixing/suffixing/infixing interfix,</span>
 <span class="c1">#     simulfix, suprafix</span>
@@ -75,25 +75,25 @@
 <span class="c1"># build a complete, honest error message -- actual resolution always</span>
 <span class="c1"># queries the live MorphTypesOA possibility list (see find_morph_type).</span>
 <span class="n">CANONICAL_MORPH_TYPE_NAMES</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">"bound root"</span><span class="p">,</span>
-    <span class="s2">"bound stem"</span><span class="p">,</span>
-    <span class="s2">"circumfix"</span><span class="p">,</span>
-    <span class="s2">"clitic"</span><span class="p">,</span>
-    <span class="s2">"discontiguous phrase"</span><span class="p">,</span>
-    <span class="s2">"enclitic"</span><span class="p">,</span>
-    <span class="s2">"infix"</span><span class="p">,</span>
-    <span class="s2">"infixing interfix"</span><span class="p">,</span>
-    <span class="s2">"particle"</span><span class="p">,</span>
-    <span class="s2">"phrase"</span><span class="p">,</span>
-    <span class="s2">"prefix"</span><span class="p">,</span>
-    <span class="s2">"prefixing interfix"</span><span class="p">,</span>
-    <span class="s2">"proclitic"</span><span class="p">,</span>
-    <span class="s2">"root"</span><span class="p">,</span>
-    <span class="s2">"simulfix"</span><span class="p">,</span>
-    <span class="s2">"stem"</span><span class="p">,</span>
-    <span class="s2">"suffix"</span><span class="p">,</span>
-    <span class="s2">"suffixing interfix"</span><span class="p">,</span>
-    <span class="s2">"suprafix"</span><span class="p">,</span>
+    <span class="s2">&quot;bound root&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;bound stem&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;circumfix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;clitic&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;discontiguous phrase&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;enclitic&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;infix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;infixing interfix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;particle&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;phrase&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;prefix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;prefixing interfix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;proclitic&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;root&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;simulfix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;stem&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;suffix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;suffixing interfix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;suprafix&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># GUIDs whose allomorphs use MoStemAllomorph (as opposed to</span>
@@ -117,12 +117,12 @@
 <div class="viewcode-block" id="strip_display_marker">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.morph_type_utils.strip_display_marker">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">strip_display_marker</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Strip FLEx's decorated display markers so a UI-copied label resolves</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Strip FLEx&#39;s decorated display markers so a UI-copied label resolves</span>
 <span class="sd">    to the same canonical name as the bare form.</span>
 
 <span class="sd">    FLEx shows morph-type-decorated forms in several UI surfaces, e.g.</span>
-<span class="sd">    '=enclitic', 'proclitic=', '-suffix', '~simulfix~', '&lt;infix&gt;'. None of</span>
+<span class="sd">    &#39;=enclitic&#39;, &#39;proclitic=&#39;, &#39;-suffix&#39;, &#39;~simulfix~&#39;, &#39;&lt;infix&gt;&#39;. None of</span>
 <span class="sd">    these markers are part of the canonical IMoMorphType.Name; they are</span>
 <span class="sd">    stripped (leading and trailing) before matching.</span>
 
@@ -130,29 +130,29 @@
 <span class="sd">        name (str): Raw name, with or without display markers.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        str: The bare name with leading/trailing '-', '=', '~', '&lt;', '&gt;'</span>
+<span class="sd">        str: The bare name with leading/trailing &#39;-&#39;, &#39;=&#39;, &#39;~&#39;, &#39;&lt;&#39;, &#39;&gt;&#39;</span>
 <span class="sd">             removed.</span>
-<span class="sd">    """</span>
-    <span class="k">return</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"-=~&lt;&gt;"</span><span class="p">)</span></div>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;-=~&lt;&gt;&quot;</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="find_morph_type">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.morph_type_utils.find_morph_type">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_morph_type</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Find an IMoMorphType by name (case-insensitive), tolerating FLEx's</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find an IMoMorphType by name (case-insensitive), tolerating FLEx&#39;s</span>
 <span class="sd">    decorated display labels.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        project: The FLExProject instance (must expose ``project.lp``).</span>
 <span class="sd">        name (str): The morph type name to search for, bare or decorated</span>
-<span class="sd">            (e.g. 'suffix', '=enclitic', 'proclitic=', '-suffix').</span>
+<span class="sd">            (e.g. &#39;suffix&#39;, &#39;=enclitic&#39;, &#39;proclitic=&#39;, &#39;-suffix&#39;).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        IMoMorphType or None: The resolved morph type, or None if no</span>
 <span class="sd">        possibility (including sub-possibilities) matches.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">bare</span> <span class="o">=</span> <span class="n">strip_display_marker</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
     <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">bare</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -178,7 +178,7 @@
 <div class="viewcode-block" id="is_stem_morph_type">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.morph_type_utils.is_stem_morph_type">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">is_stem_morph_type</span><span class="p">(</span><span class="n">morph_type</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Determine if a morph type should use MoStemAllomorph or MoAffixAllomorph.</span>
 
 <span class="sd">    Args:</span>
@@ -197,7 +197,7 @@
 <span class="sd">        hierarchy check. User-defined custom stem sub-possibilities (created</span>
 <span class="sd">        under a stem-like parent in a customized MorphTypesOA list) are not</span>
 <span class="sd">        in ``_STEM_MORPH_TYPE_GUIDS`` and will be classified as affix.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">morph_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">True</span>
 
@@ -208,9 +208,9 @@
 <div class="viewcode-block" id="morph_type_not_found_error">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.morph_type_utils.morph_type_not_found_error">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">morph_type_not_found_error</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Build the standard "morph type not found" error message, listing the</span>
-<span class="sd">    complete set of canonical morph-type names (no vague "etc.").</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build the standard &quot;morph type not found&quot; error message, listing the</span>
+<span class="sd">    complete set of canonical morph-type names (no vague &quot;etc.&quot;).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        name (str): The name the caller attempted to resolve.</span>
@@ -224,10 +224,10 @@
 <span class="sd">        lookup). It is intentionally not queried dynamically here --</span>
 <span class="sd">        actual name resolution always goes through find_morph_type(),</span>
 <span class="sd">        which does query the live possibility list.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s2">"Morph type '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' not found. "</span>
-        <span class="sa">f</span><span class="s2">"Use one of: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CANONICAL_MORPH_TYPE_NAMES</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+        <span class="sa">f</span><span class="s2">&quot;Morph type &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; not found. &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Use one of: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CANONICAL_MORPH_TYPE_NAMES</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
     <span class="p">)</span></div>
 
 </pre></div>
@@ -268,7 +268,7 @@
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

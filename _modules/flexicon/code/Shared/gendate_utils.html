@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Shared.gendate_utils &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Shared.gendate_utils</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Shared.gendate_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#</span>
+<span class="c1">#   flexicon.code.Shared.gendate_utils</span>
+<span class="c1">#</span>
+<span class="c1">#   Build SIL.LCModel.Core.Cellar.GenDate values from caller input.</span>
+<span class="c1">#</span>
+<span class="c1">#   IRnGenericRec.DateOfEvent and ICmPerson.DateOfBirth / DateOfDeath are</span>
+<span class="c1">#   CLR-typed GenDate structs. pythonnet converts neither a Python str nor</span>
+<span class="c1">#   a System.DateTime to GenDate, so assigning either raises TypeError</span>
+<span class="c1">#   (live-proven 2026-09-23, issue #330). Callers must hand the setter a</span>
+<span class="c1">#   constructed GenDate.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2026</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">DateTime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Cellar</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenDate</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="n">FP_ParameterError</span>
+
+
+<div class="viewcode-block" id="empty_gendate">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.gendate_utils.empty_gendate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">empty_gendate</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the empty GenDate (IsEmpty is True), used to clear a field.&quot;&quot;&quot;</span>
+    <span class="c1"># GenDate has no parameterless ctor under pythonnet; encoded value 0</span>
+    <span class="c1"># is the empty date.</span>
+    <span class="k">return</span> <span class="n">GenDate</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="gendate_from_input">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.gendate_utils.gendate_from_input">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">gendate_from_input</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">allow_empty</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a date string or System.DateTime to an exact AD GenDate.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        date: A ``System.DateTime``, a ``GenDate`` (returned unchanged), or</span>
+<span class="sd">            a string that ``DateTime.Parse`` accepts (&quot;YYYY-MM-DD&quot;,</span>
+<span class="sd">            &quot;YYYY-MM-DD HH:MM:SS&quot;, ...).</span>
+<span class="sd">        allow_empty (bool): If True, &quot;&quot; (after stripping) returns the empty</span>
+<span class="sd">            GenDate instead of raising.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        GenDate: Precision ``Exact``, AD. GenDate has no time component, so</span>
+<span class="sd">        any time of day in the input is dropped.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FP_ParameterError: If the string does not parse, or the type is</span>
+<span class="sd">            unsupported.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">GenDate</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">date</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span> <span class="ow">and</span> <span class="n">allow_empty</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">empty_gendate</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">parsed</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">System</span><span class="o">.</span><span class="n">FormatException</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid date format: </span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s2">. Use &#39;YYYY-MM-DD&#39; or &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;YYYY-MM-DD HH:MM:SS&#39; - </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">):</span>
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">date</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid date type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">date</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="s2">&quot;Use a System.DateTime or date string.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">GenDate</span><span class="p">(</span>
+        <span class="n">GenDate</span><span class="o">.</span><span class="n">PrecisionType</span><span class="o">.</span><span class="n">Exact</span><span class="p">,</span> <span class="n">parsed</span><span class="o">.</span><span class="n">Month</span><span class="p">,</span> <span class="n">parsed</span><span class="o">.</span><span class="n">Day</span><span class="p">,</span> <span class="n">parsed</span><span class="o">.</span><span class="n">Year</span><span class="p">,</span> <span class="kc">True</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Shared.gendate_utils</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

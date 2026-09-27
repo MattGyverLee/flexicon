@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.TextsWords.WfiAnalysisOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -54,12 +54,12 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span> <span class="nn">clr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
 
 <span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
-<span class="kn">import</span> <span class="nn">System</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
 
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IWfiAnalysis</span><span class="p">,</span>
     <span class="n">IWfiAnalysisFactory</span><span class="p">,</span>
     <span class="n">IWfiAnalysisRepository</span><span class="p">,</span>
@@ -71,22 +71,22 @@
     <span class="n">ICmAgent</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
 
 <span class="c1"># --- Approval Status Enum ---</span>
 
-<span class="kn">import</span> <span class="nn">enum</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">enum</span>
 
 
 <div class="viewcode-block" id="ApprovalStatusTypes">
 <a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.WfiAnalysisOperations.ApprovalStatusTypes">[docs]</a>
-<span class="k">class</span> <span class="nc">ApprovalStatusTypes</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ApprovalStatusTypes</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">IntEnum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Approval status values for wordform analyses.</span>
 
 <span class="sd">    IntEnum so existing callers that compared by the underlying integer</span>
@@ -103,7 +103,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">_coerce_approval_status</span><span class="p">(</span><span class="n">status</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_coerce_approval_status</span><span class="p">(</span><span class="n">status</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize a user-facing approval value to ApprovalStatusTypes.</span>
 
 <span class="sd">    Accepts:</span>
@@ -141,7 +141,7 @@
 
 <div class="viewcode-block" id="WfiAnalysisOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.WfiAnalysisOperations.WfiAnalysisOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">WfiAnalysisOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WfiAnalysisOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Provides operations for managing wordform analyses in a FLEx project.</span>
 
@@ -169,7 +169,7 @@
 <span class="sd">        &gt;&gt;&gt; project.WfiAnalyses.ApproveAnalysis(new_analysis)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize WfiAnalysisOperations.</span>
 
@@ -178,11 +178,22 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Specify which sequence to reorder for wordform analyses.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">AnalysesOS</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reorder operations are not supported for wordform analyses.</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="sd">        ``IWfiWordform.AnalysesOC`` is an unordered ``ILcmOwningCollection``;</span>
+<span class="sd">        there is no ``AnalysesOS`` and index-based reorder has no LCM meaning</span>
+<span class="sd">        (issue #301; see ``Duplicate()`` comments in this module).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;WfiAnalysisOperations does not support inherited Sort / MoveUp / &quot;</span>
+            <span class="s2">&quot;MoveDown / MoveToIndex: IWfiWordform.AnalysesOC is an unordered &quot;</span>
+            <span class="s2">&quot;ILcmOwningCollection with no user-visible order. Use LCM APIs &quot;</span>
+            <span class="s2">&quot;directly if you need to add or remove analyses.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper to resolve writing system handle (analysis).</span>
 
@@ -196,7 +207,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__GetWordformObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetWordformObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper to get wordform object from HVO or object.</span>
 
@@ -230,7 +241,7 @@
                 <span class="k">pass</span>
         <span class="k">return</span> <span class="n">wordform_or_hvo</span>
 
-    <span class="k">def</span> <span class="nf">__GetAnalysisObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetAnalysisObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper to get analysis object from HVO or object.</span>
 
@@ -264,7 +275,7 @@
                 <span class="k">pass</span>
         <span class="k">return</span> <span class="n">analysis_or_hvo</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveOwningAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveOwningAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Map any segment analysis token to its owning IWfiAnalysis.</span>
 
@@ -305,7 +316,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieve all analyses for a wordform.</span>
 
@@ -346,7 +357,7 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">wordform</span><span class="o">.</span><span class="n">AnalysesOC</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new analysis for a wordform.</span>
 
@@ -408,7 +419,7 @@
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all syncable properties of a wordform analysis.</span>
 
@@ -437,7 +448,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two wordform analyses for differences.</span>
 
@@ -479,8 +490,10 @@
             <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
-            <span class="c1"># Compare values</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_CompareValues</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">):</span>
+            <span class="c1"># Compare values inline: FLExProject has no _CompareValues</span>
+            <span class="c1"># member (calling it raised AttributeError on every compare;</span>
+            <span class="c1"># same fix as MediaOperations.CompareTo).</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
                 <span class="c1"># Values are different</span>
                 <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
 
@@ -488,7 +501,7 @@
         <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete an analysis from its owning wordform.</span>
 
@@ -534,7 +547,7 @@
             <span class="n">wordform</span><span class="o">.</span><span class="n">AnalysesOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">analysis</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a wordform analysis, creating a new copy with a new GUID.</span>
 
@@ -649,7 +662,7 @@
             <span class="k">return</span> <span class="n">duplicate</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a specific analysis exists for a wordform.</span>
 
@@ -698,7 +711,7 @@
     <span class="c1"># --- Approval &amp; Status Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetApprovalStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetApprovalStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the approval status of an analysis.</span>
 
@@ -765,7 +778,7 @@
         <span class="k">return</span> <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">UNAPPROVED</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetApprovalStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetApprovalStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the approval status of an analysis.</span>
 
@@ -825,7 +838,7 @@
         <span class="c1"># Get default human agent for evaluations</span>
         <span class="c1"># Import here to avoid circular dependency. AgentOperations lives in</span>
         <span class="c1"># the Lists/ subpackage, not TextsWords/ (issue #24).</span>
-        <span class="kn">from</span> <span class="nn">..Lists.AgentOperations</span> <span class="kn">import</span> <span class="n">AgentOperations</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..Lists.AgentOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgentOperations</span>
 
         <span class="n">agent_ops</span> <span class="o">=</span> <span class="n">AgentOperations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
 
@@ -877,7 +890,7 @@
         <span class="c1"># bare-int 0/1/2 (back-compat with the pre-IntEnum constants)</span>
         <span class="c1"># to the IntEnum members before dispatching. (issue #59)</span>
         <span class="n">normalized</span> <span class="o">=</span> <span class="n">_coerce_approval_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">Opinions</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">Opinions</span>
 
         <span class="n">opinion_map</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">APPROVED</span><span class="p">:</span> <span class="n">Opinions</span><span class="o">.</span><span class="n">approves</span><span class="p">,</span>
@@ -893,7 +906,7 @@
             <span class="n">agent</span><span class="o">.</span><span class="n">SetEvaluation</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="n">opinion_map</span><span class="p">[</span><span class="n">normalized</span><span class="p">])</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsHumanApproved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsHumanApproved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if an analysis is human-approved.</span>
 
@@ -941,7 +954,7 @@
         <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsComputerApproved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsComputerApproved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if an analysis is computer/parser-approved.</span>
 
@@ -988,7 +1001,7 @@
         <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ApproveAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApproveAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Approve an analysis (mark as human-approved).</span>
 
@@ -1032,7 +1045,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">SetApprovalStatus</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">APPROVED</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RejectAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RejectAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Reject an analysis (mark as disapproved).</span>
 
@@ -1078,7 +1091,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGlosses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGlosses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all glosses for an analysis.</span>
 
@@ -1118,7 +1131,7 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">MeaningsOC</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGlossCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGlossCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the count of glosses for an analysis.</span>
 
@@ -1153,7 +1166,7 @@
         <span class="k">return</span> <span class="n">analysis</span><span class="o">.</span><span class="n">MeaningsOC</span><span class="o">.</span><span class="n">Count</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddGloss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">gloss_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddGloss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">gloss_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a gloss to an analysis.</span>
 
@@ -1220,7 +1233,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetMorphBundles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMorphBundles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all morpheme bundles for an analysis.</span>
 
@@ -1260,7 +1273,7 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetMorphBundleCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMorphBundleCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the count of morpheme bundles for an analysis.</span>
 
@@ -1296,7 +1309,7 @@
         <span class="k">return</span> <span class="n">analysis</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="o">.</span><span class="n">Count</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetMorphemeBundles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMorphemeBundles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get morpheme bundles for any segment analysis token (owner-resolving).</span>
 
@@ -1337,7 +1350,7 @@
     <span class="c1"># --- Category Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetCategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the grammatical category (part of speech) for an analysis.</span>
 
@@ -1382,7 +1395,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetCategoryAbbrev</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCategoryAbbrev</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the category (POS) abbreviation for any analysis token.</span>
 
@@ -1426,7 +1439,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">POS</span><span class="o">.</span><span class="n">GetAbbreviation</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetCategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">category</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetCategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">category</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the grammatical category (part of speech) for an analysis.</span>
 
@@ -1484,7 +1497,7 @@
     <span class="c1"># --- Evaluation Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAgentEvaluation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAgentEvaluation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the parser/agent evaluation for an analysis.</span>
 
@@ -1536,7 +1549,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetHumanEvaluation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetHumanEvaluation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the human evaluation for an analysis.</span>
 
@@ -1585,7 +1598,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetEvaluations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetEvaluations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all agent evaluations for an analysis.</span>
 
@@ -1636,7 +1649,7 @@
     <span class="c1"># --- Utility Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetOwningWordform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwningWordform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the wordform that owns this analysis.</span>
 
@@ -1677,7 +1690,7 @@
         <span class="k">return</span> <span class="n">IWfiWordform</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the GUID (globally unique identifier) of an analysis.</span>
 
@@ -1720,7 +1733,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1736,7 +1749,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1751,8 +1764,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

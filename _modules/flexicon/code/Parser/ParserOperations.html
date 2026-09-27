@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Parser.ParserOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -66,12 +66,12 @@
 <span class="c1"># the package, and at least one function-local one here.</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span>
-<span class="kn">from</span> <span class="nn">..exceptions</span> <span class="kn">import</span> <span class="n">FP_ParameterError</span><span class="p">,</span> <span class="n">FP_RuntimeError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">FP_ParameterError</span><span class="p">,</span> <span class="n">FP_RuntimeError</span>
 
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
@@ -125,7 +125,7 @@
 <div class="viewcode-block" id="ParserAvailability">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Parser.html#flexicon.code.Parser.ParserOperations.ParserAvailability">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">ParserAvailability</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParserAvailability</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether this project can reach the parser, and why not if it cannot.</span>
 
 <span class="sd">    Returned, never raised. Asking whether the parser is reachable succeeds</span>
@@ -188,7 +188,7 @@
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
 
-<span class="k">def</span> <span class="nf">_parser_component_path</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_parser_component_path</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Where ParserCore.dll is expected, per flexicon&#39;s own install resolution.</span>
 
 <span class="sd">    Uses FLExGlobals.FWCodeDir -- the registry-derived FieldWorks directory</span>
@@ -196,14 +196,14 @@
 <span class="sd">    not FlexToolsMCP&#39;s resolution: this repository does not import that one</span>
 <span class="sd">    (Decision D1), and the two checks stay independent on purpose.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">FLExGlobals</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExGlobals</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">FLExGlobals</span><span class="o">.</span><span class="n">FWCodeDir</span><span class="p">:</span>
         <span class="n">FLExGlobals</span><span class="o">.</span><span class="n">InitialiseFWGlobals</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">FLExGlobals</span><span class="o">.</span><span class="n">FWCodeDir</span><span class="p">),</span> <span class="n">PARSER_COMPONENT</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_data_model_dir</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_data_model_dir</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The directory the LOADED data model assembly actually came from.</span>
 
 <span class="sd">    &quot;The data model in use&quot; in FR-004 means the SIL.LCModel already resolved</span>
@@ -217,7 +217,7 @@
 <span class="sd">    reports as unavailable rather than treating as a match.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">System</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
 
         <span class="k">for</span> <span class="n">assembly</span> <span class="ow">in</span> <span class="n">System</span><span class="o">.</span><span class="n">AppDomain</span><span class="o">.</span><span class="n">CurrentDomain</span><span class="o">.</span><span class="n">GetAssemblies</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">assembly</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span><span class="o">.</span><span class="n">Name</span> <span class="o">==</span> <span class="s2">&quot;SIL.LCModel&quot;</span><span class="p">:</span>
@@ -229,11 +229,11 @@
     <span class="k">return</span> <span class="kc">None</span>
 
 
-<span class="k">def</span> <span class="nf">_format_clr_type</span><span class="p">(</span><span class="n">clr_type</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_format_clr_type</span><span class="p">(</span><span class="n">clr_type</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Render a .NET System.Type the way the C# source spells it.&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">clr_type</span><span class="o">.</span><span class="n">IsGenericType</span><span class="p">:</span>
-            <span class="kn">import</span> <span class="nn">re</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
             <span class="n">base</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;`\d+&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">clr_type</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
             <span class="n">args</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_format_clr_type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">clr_type</span><span class="o">.</span><span class="n">GetGenericArguments</span><span class="p">())</span>
@@ -249,15 +249,15 @@
     <span class="k">return</span> <span class="n">_CLR_PRIMITIVE_NAMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_reflect_member_surface</span><span class="p">(</span><span class="n">component_path</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_reflect_member_surface</span><span class="p">(</span><span class="n">component_path</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;(present member names, detected version) for the component on disk.</span>
 
 <span class="sd">    Reflection only -- Assembly.LoadFile plus GetConstructors/GetMethods. No</span>
 <span class="sd">    cache is constructed, no grammar is loaded and no word is parsed, so</span>
 <span class="sd">    probing is free of side effects on the project.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">import</span> <span class="nn">System</span>
-    <span class="kn">from</span> <span class="nn">System.Reflection</span> <span class="kn">import</span> <span class="n">BindingFlags</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">System.Reflection</span><span class="w"> </span><span class="kn">import</span> <span class="n">BindingFlags</span>
 
     <span class="n">assembly</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Reflection</span><span class="o">.</span><span class="n">Assembly</span><span class="o">.</span><span class="n">LoadFile</span><span class="p">(</span><span class="n">component_path</span><span class="p">)</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">assembly</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span>
@@ -278,7 +278,7 @@
     <span class="k">return</span> <span class="n">present</span><span class="p">,</span> <span class="n">detected</span>
 
 
-<span class="k">def</span> <span class="nf">_probe_availability</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_probe_availability</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve availability. Never raises, whatever it hits.</span>
 
 <span class="sd">    The blanket except is deliberate and is the requirement, not laziness:</span>
@@ -343,7 +343,7 @@
 
 <div class="viewcode-block" id="ParserOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Parser.html#flexicon.code.Parser.ParserOperations.ParserOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">ParserOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParserOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    READ-ONLY access to the FieldWorks morphological parser.</span>
 
@@ -408,7 +408,7 @@
 <span class="sd">        ParserAvailability</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize ParserOperations with a FLExProject instance.</span>
 
@@ -439,7 +439,7 @@
     <span class="c1"># --- Availability ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAvailability</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAvailability</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Report whether this project can reach the parser, and why not if it cannot.</span>
 
@@ -492,7 +492,7 @@
     <span class="c1"># --- Parsing ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ParseWord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ParseWord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Parse a single word form and return the parser&#39;s result object.</span>
 
@@ -530,7 +530,7 @@
         <span class="k">return</span> <span class="n">handle</span><span class="o">.</span><span class="n">ParseWord</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ParseWordXml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ParseWordXml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Parse a single word form and return the parser&#39;s structured document.</span>
 
@@ -567,7 +567,7 @@
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">TraceWordXml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">,</span> <span class="n">analyses</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">TraceWordXml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">,</span> <span class="n">analyses</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Trace a parse attempt, optionally restricted to specific analyses.</span>
 
@@ -638,7 +638,7 @@
     <span class="c1"># --- Grammar lifetime ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Reload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Reload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Discard the loaded grammar and load it again. Unconditionally.</span>
 
@@ -683,7 +683,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_restricted</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsUpToDate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsUpToDate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Ask the parser whether its loaded grammar is current.</span>
 
@@ -724,14 +724,14 @@
     <span class="c1"># makes the disagreement harmless, and tier A1 asserts it structurally</span>
     <span class="c1"># rather than leaving it as a convention to remember.</span>
 
-    <span class="k">def</span> <span class="nf">_Require</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_Require</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Refuse with the availability reason, or return the status.&quot;&quot;&quot;</span>
         <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAvailability</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="o">.</span><span class="n">available</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_RuntimeError</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">status</span>
 
-    <span class="k">def</span> <span class="nf">_ReleaseGrammar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ReleaseGrammar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Drop the held grammar, discarding it first if we still can.</span>
 
 <span class="sd">        Best-effort by design: this runs when we are switching away from a</span>
@@ -751,7 +751,7 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
-    <span class="k">def</span> <span class="nf">_CurrentHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">confirm_currency</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_CurrentHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">confirm_currency</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The bound parser for the project in use, with a current grammar.</span>
 
 <span class="sd">        Enforces both grammar-lifetime clauses in one place, which is why</span>
@@ -779,7 +779,7 @@
             <span class="n">handle</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">handle</span>
 
-    <span class="k">def</span> <span class="nf">_ConstructParser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ConstructParser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Bind the component and construct a parser over `cache`.</span>
 
 <span class="sd">        The import is FUNCTION-LOCAL, and that is FR-003: loading the</span>
@@ -788,14 +788,14 @@
 <span class="sd">        installation moved degrades to unavailable instead of failing to</span>
 <span class="sd">        import flexicon at all.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">import</span> <span class="nn">clr</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
 
         <span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="n">PARSER_ASSEMBLY</span><span class="p">)</span>
-        <span class="kn">from</span> <span class="nn">SIL.FieldWorks.WordWorks.Parser</span> <span class="kn">import</span> <span class="n">HCParser</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.FieldWorks.WordWorks.Parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">HCParser</span>
 
         <span class="k">return</span> <span class="n">HCParser</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_ClearAnyRestriction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ClearAnyRestriction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo a restriction a previous trace left on the component.</span>
 
 <span class="sd">        WHY THIS EXISTS -- verified against the component&#39;s source and</span>
@@ -826,7 +826,7 @@
         <span class="n">handle</span><span class="o">.</span><span class="n">ParseWordXml</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_restricted</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="nf">_AsIdentifierSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analyses</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_AsIdentifierSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analyses</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Render `analyses` as the restriction the component expects.</span>
 
 <span class="sd">        None means DO NOT RESTRICT, and the component spells that as null --</span>
@@ -854,7 +854,7 @@
                 <span class="s2">&quot;to trace without restriction, or pass the analyses you want.&quot;</span>
             <span class="p">)</span>
 
-        <span class="kn">import</span> <span class="nn">System</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
 
         <span class="n">sequence</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Array</span><span class="p">[</span><span class="n">System</span><span class="o">.</span><span class="n">Int32</span><span class="p">](</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
@@ -867,7 +867,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -883,7 +883,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -898,8 +898,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

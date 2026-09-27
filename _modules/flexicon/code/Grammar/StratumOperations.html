@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Grammar.StratumOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,31 +55,31 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import BaseOperations parent class</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IMoStratum</span><span class="p">,</span>
     <span class="n">IMoStratumFactory</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Import string utilities</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span><span class="p">,</span> <span class="n">normalize_text</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span><span class="p">,</span> <span class="n">normalize_text</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="StratumOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.StratumOperations.StratumOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">StratumOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">StratumOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing morphological strata in a</span>
 <span class="sd">    FieldWorks project.</span>
@@ -108,10 +108,10 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reordering sequence target for strata.</span>
 
 <span class="sd">        Args:</span>
@@ -125,7 +125,7 @@
 
     <span class="c1"># ----- helpers -----</span>
 
-    <span class="k">def</span> <span class="nf">__Container</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__Container</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">morph_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">MorphologicalDataOA</span>
         <span class="k">if</span> <span class="n">morph_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
@@ -133,7 +133,7 @@
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">morph_data</span><span class="o">.</span><span class="n">StrataOS</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stratum_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stratum_or_hvo</span><span class="p">):</span>
         <span class="c1"># Casts by ClassName BEFORE returning (issue #275, generalising</span>
         <span class="c1"># #269&#39;s fix): self.project.Object() returns a bare ICmObject, on</span>
         <span class="c1"># which direct attribute access (stratum.Name / .Abbreviation /</span>
@@ -152,7 +152,7 @@
                 <span class="k">pass</span>
         <span class="k">return</span> <span class="n">obj</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span>
@@ -163,7 +163,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Yield every stratum in ``MorphologicalDataOA.StrataOS``.</span>
 
@@ -177,7 +177,7 @@
             <span class="k">yield</span> <span class="n">stratum</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a stratum by name (NFD-normalised casefold match).</span>
 
@@ -204,7 +204,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return True if a stratum with the given name exists.</span>
 
@@ -218,7 +218,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new stratum and add it to ``StrataOS``.</span>
 
@@ -271,7 +271,7 @@
             <span class="k">return</span> <span class="n">new_stratum</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stratum_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stratum_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a stratum from ``StrataOS``.</span>
 
@@ -301,7 +301,7 @@
     <span class="c1"># ----- accessors -----</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stratum_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stratum_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the stratum&#39;s Name in the given WS, or &quot;&quot; if unset.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">stratum_or_hvo</span><span class="p">,</span> <span class="s2">&quot;stratum_or_hvo&quot;</span><span class="p">)</span>
         <span class="n">stratum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">stratum_or_hvo</span><span class="p">)</span>
@@ -309,7 +309,7 @@
         <span class="k">return</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">stratum</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stratum_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stratum_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the stratum&#39;s Abbreviation in the given WS, or &quot;&quot;.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">stratum_or_hvo</span><span class="p">,</span> <span class="s2">&quot;stratum_or_hvo&quot;</span><span class="p">)</span>
         <span class="n">stratum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">stratum_or_hvo</span><span class="p">)</span>
@@ -319,7 +319,7 @@
         <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stratum_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stratum_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the stratum&#39;s Description in the given WS, or &quot;&quot;.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">stratum_or_hvo</span><span class="p">,</span> <span class="s2">&quot;stratum_or_hvo&quot;</span><span class="p">)</span>
         <span class="n">stratum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">stratum_or_hvo</span><span class="p">)</span>
@@ -331,7 +331,7 @@
     <span class="c1"># ----- sync integration -----</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return a dict of syncable properties for cross-project transfer.</span>
 
@@ -362,7 +362,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Apply syncable properties produced by GetSyncableProperties.</span>
 
@@ -380,7 +380,7 @@
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two strata and return ``(is_different, differences)``.</span>
 
@@ -428,7 +428,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -444,7 +444,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -459,8 +459,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

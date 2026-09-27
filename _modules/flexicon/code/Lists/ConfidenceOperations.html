@@ -54,12 +54,6 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">IWfiAnalysisRepository</span><span class="p">,</span>
-    <span class="n">IWfiGlossRepository</span><span class="p">,</span>
-<span class="p">)</span>
-
 <span class="c1"># Import flexlibs exceptions</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
@@ -71,13 +65,13 @@
 <div class="viewcode-block" id="ConfidenceOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lists.html#flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConfidenceOperations</span><span class="p">(</span><span class="n">PossibilityItemOperations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing confidence levels (quality</span>
 <span class="sd">    ratings) in a FieldWorks project.</span>
 
-<span class="sd">    Confidence levels are used to rate the quality or certainty of linguistic</span>
-<span class="sd">    analyses and glosses. They provide a standardized way to indicate how</span>
-<span class="sd">    confident a linguist or parser is about a particular analysis or gloss.</span>
+<span class="sd">    Confidence levels rate the quality or certainty of research notebook</span>
+<span class="sd">    records (and other LCM types that expose ``ConfidenceRA``). They are</span>
+<span class="sd">    not stored on interlinear ``IWfiAnalysis`` / ``IWfiGloss`` objects.</span>
 <span class="sd">    Confidence levels are implemented as a possibility list using ICmPossibility.</span>
 
 <span class="sd">    Common confidence levels might include:</span>
@@ -99,8 +93,8 @@
 <span class="sd">    - CompareTo() - Compare by name</span>
 
 <span class="sd">    Domain-Specific Methods (ConfidenceOperations):</span>
-<span class="sd">    - GetAnalysesWithConfidence() - Find analyses using a level</span>
-<span class="sd">    - GetGlossesWithConfidence() - Find glosses using a level</span>
+<span class="sd">    - GetAnalysesWithConfidence() - Find notebook records using a level</span>
+<span class="sd">    - GetGlossesWithConfidence() - Not supported (IWfiGloss has no confidence)</span>
 <span class="sd">    - GetDefault() - Get default confidence level</span>
 
 <span class="sd">    This class should be accessed via FLExProject.Confidence property.</span>
@@ -110,182 +104,136 @@
 <span class="sd">        from flexicon import FLExProject</span>
 
 <span class="sd">        project = FLExProject()</span>
-<span class="sd">        project.OpenProject("my project", writeEnabled=True)</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
 
 <span class="sd">        # Get all confidence levels</span>
 <span class="sd">        for level in project.Confidence.GetAll():</span>
 <span class="sd">            name = project.Confidence.GetName(level)</span>
 <span class="sd">            desc = project.Confidence.GetDescription(level)</span>
-<span class="sd">            print(f"{name}: {desc}")</span>
+<span class="sd">            print(f&quot;{name}: {desc}&quot;)</span>
 
 <span class="sd">        # Find a specific confidence level</span>
-<span class="sd">        high = project.Confidence.Find("High Confidence")</span>
+<span class="sd">        high = project.Confidence.Find(&quot;High Confidence&quot;)</span>
 <span class="sd">        if high:</span>
-<span class="sd">            # Get analyses using this confidence level</span>
-<span class="sd">            analyses = project.Confidence.GetAnalysesWithConfidence(high)</span>
-<span class="sd">            print(f"{len(analyses)} analyses have high confidence")</span>
+<span class="sd">            # Get notebook records using this confidence level</span>
+<span class="sd">            records = project.Confidence.GetAnalysesWithConfidence(high)</span>
+<span class="sd">            print(f&quot;{len(records)} records have high confidence&quot;)</span>
 
 <span class="sd">        # Create a custom confidence level</span>
-<span class="sd">        custom = project.Confidence.Create("Verified", "en")</span>
+<span class="sd">        custom = project.Confidence.Create(&quot;Verified&quot;, &quot;en&quot;)</span>
 <span class="sd">        project.Confidence.SetDescription(custom,</span>
-<span class="sd">            "Analysis verified by native speaker")</span>
+<span class="sd">            &quot;Analysis verified by native speaker&quot;)</span>
 
 <span class="sd">        # Find the default confidence level</span>
 <span class="sd">        default = project.Confidence.GetDefault()</span>
 <span class="sd">        if default:</span>
-<span class="sd">            print(f"Default: {project.Confidence.GetName(default)}")</span>
+<span class="sd">            print(f&quot;Default: {project.Confidence.GetName(default)}&quot;)</span>
 
 <span class="sd">        project.CloseProject()</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize ConfidenceOperations with a FLExProject instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: The FLExProject instance to operate on.</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_item_class_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Get the item class name for error messages."""</span>
-        <span class="k">return</span> <span class="s2">"Confidence"</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the item class name for error messages.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;Confidence&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_list_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Get the confidence levels list container."""</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the confidence levels list container.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ConfidenceLevelsOA</span>
 
     <span class="c1"># --- Usage Query Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAnalysesWithConfidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Get all wordform analyses that use this confidence level.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all research notebook records that use this confidence level.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            level_or_hvo: Either an ICmPossibility object or its HVO.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            list: List of IWfiAnalysis objects that reference this confidence level.</span>
+<span class="sd">            list: List of IRnGenericRec objects whose ``ConfidenceRA`` matches</span>
+<span class="sd">            this level.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If level_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; high = project.Confidence.Find("High Confidence")</span>
-<span class="sd">            &gt;&gt;&gt; analyses = project.Confidence.GetAnalysesWithConfidence(high)</span>
-<span class="sd">            &gt;&gt;&gt; print(f"Found {len(analyses)} high-confidence analyses")</span>
-<span class="sd">            Found 127 high-confidence analyses</span>
+<span class="sd">            &gt;&gt;&gt; high = project.Confidence.Find(&quot;High Confidence&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; records = project.Confidence.GetAnalysesWithConfidence(high)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(records)} high-confidence notebook records&quot;)</span>
+<span class="sd">            Found 12 high-confidence notebook records</span>
 
-<span class="sd">            &gt;&gt;&gt; # Show analyses for each confidence level</span>
+<span class="sd">            &gt;&gt;&gt; # Show records for each confidence level</span>
 <span class="sd">            &gt;&gt;&gt; for level in project.Confidence.GetAll():</span>
 <span class="sd">            ...     name = project.Confidence.GetName(level)</span>
-<span class="sd">            ...     analyses = project.Confidence.GetAnalysesWithConfidence(level)</span>
-<span class="sd">            ...     print(f"{name}: {len(analyses)} analyses")</span>
-
-<span class="sd">            &gt;&gt;&gt; # Find analyses that need review</span>
-<span class="sd">            &gt;&gt;&gt; low = project.Confidence.Find("Low Confidence")</span>
-<span class="sd">            &gt;&gt;&gt; if low:</span>
-<span class="sd">            ...     review_list = project.Confidence.GetAnalysesWithConfidence(low)</span>
-<span class="sd">            ...     for analysis in review_list:</span>
-<span class="sd">            ...         # Process analyses needing review</span>
-<span class="sd">            ...         pass</span>
+<span class="sd">            ...     records = project.Confidence.GetAnalysesWithConfidence(level)</span>
+<span class="sd">            ...     print(f&quot;{name}: {len(records)} records&quot;)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Searches through all wordform analyses in the project</span>
-<span class="sd">            - Returns empty list if no analyses use this confidence level</span>
-<span class="sd">            - May be slow for large lexicons (searches entire repository)</span>
-<span class="sd">            - Useful for quality control and validation workflows</span>
+<span class="sd">            - Scans ``DataNotebook.GetAll()`` (``IRnGenericRec`` with</span>
+<span class="sd">              ``ConfidenceRA`` in LCM)</span>
+<span class="sd">            - Interlinear ``IWfiAnalysis`` objects do not carry confidence</span>
+<span class="sd">              levels; the historical method name is retained</span>
+<span class="sd">            - Returns empty list if no records use this confidence level</span>
 <span class="sd">            - Use before deleting a confidence level</span>
 
 <span class="sd">        See Also:</span>
-<span class="sd">            GetGlossesWithConfidence, Delete</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">level_or_hvo</span><span class="p">,</span> <span class="s2">"level_or_hvo"</span><span class="p">)</span>
+<span class="sd">            GetGlossesWithConfidence, Delete, DataNotebookOperations.GetConfidence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">level_or_hvo</span><span class="p">,</span> <span class="s2">&quot;level_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">level_or_hvo</span><span class="p">)</span>
         <span class="n">level_hvo</span> <span class="o">=</span> <span class="n">level</span><span class="o">.</span><span class="n">Hvo</span>
 
-        <span class="n">analyses</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">analysis_repo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IWfiAnalysisRepository</span><span class="p">)</span>
+        <span class="n">records</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DataNotebook</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="n">confidence</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">ConfidenceRA</span>
+            <span class="k">if</span> <span class="n">confidence</span> <span class="ow">and</span> <span class="n">confidence</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">level_hvo</span><span class="p">:</span>
+                <span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
 
-        <span class="c1"># Search through all analyses</span>
-        <span class="k">for</span> <span class="n">analysis</span> <span class="ow">in</span> <span class="n">analysis_repo</span><span class="o">.</span><span class="n">AllInstances</span><span class="p">():</span>
-            <span class="c1"># Check if this analysis has this confidence level</span>
-            <span class="c1"># Note: IWfiAnalysis may have Confidence property as reference</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="s2">"ConfidenceRA"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">analysis</span><span class="o">.</span><span class="n">ConfidenceRA</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">analysis</span><span class="o">.</span><span class="n">ConfidenceRA</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">level_hvo</span><span class="p">:</span>
-                    <span class="n">analyses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">analysis</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">analyses</span>
+        <span class="k">return</span> <span class="n">records</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetGlossesWithConfidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Get all wordform glosses that use this confidence level.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Not supported: wordform glosses have no confidence field in LCM.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            level_or_hvo: Either an ICmPossibility object or its HVO.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            list: List of IWfiGloss objects that reference this confidence level.</span>
+<span class="sd">            Never returns normally.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If level_or_hvo is None.</span>
-
-<span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; high = project.Confidence.Find("High Confidence")</span>
-<span class="sd">            &gt;&gt;&gt; glosses = project.Confidence.GetGlossesWithConfidence(high)</span>
-<span class="sd">            &gt;&gt;&gt; print(f"Found {len(glosses)} high-confidence glosses")</span>
-<span class="sd">            Found 89 high-confidence glosses</span>
-
-<span class="sd">            &gt;&gt;&gt; # Show glosses for each confidence level</span>
-<span class="sd">            &gt;&gt;&gt; for level in project.Confidence.GetAll():</span>
-<span class="sd">            ...     name = project.Confidence.GetName(level)</span>
-<span class="sd">            ...     glosses = project.Confidence.GetGlossesWithConfidence(level)</span>
-<span class="sd">            ...     print(f"{name}: {len(glosses)} glosses")</span>
-
-<span class="sd">            &gt;&gt;&gt; # Find glosses that need verification</span>
-<span class="sd">            &gt;&gt;&gt; unconfirmed = project.Confidence.Find("Unconfirmed")</span>
-<span class="sd">            &gt;&gt;&gt; if unconfirmed:</span>
-<span class="sd">            ...     pending = project.Confidence.GetGlossesWithConfidence(unconfirmed)</span>
-<span class="sd">            ...     for gloss in pending:</span>
-<span class="sd">            ...         # Process glosses needing verification</span>
-<span class="sd">            ...         pass</span>
-
-<span class="sd">        Notes:</span>
-<span class="sd">            - Searches through all wordform glosses in the project</span>
-<span class="sd">            - Returns empty list if no glosses use this confidence level</span>
-<span class="sd">            - May be slow for large projects (searches entire repository)</span>
-<span class="sd">            - Useful for tracking translation quality</span>
-<span class="sd">            - Use before deleting a confidence level</span>
+<span class="sd">            FP_ParameterError: Always -- ``IWfiGloss`` has no ``ConfidenceRA``.</span>
 
 <span class="sd">        See Also:</span>
-<span class="sd">            GetAnalysesWithConfidence, Delete</span>
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">level_or_hvo</span><span class="p">,</span> <span class="s2">"level_or_hvo"</span><span class="p">)</span>
+<span class="sd">            GetAnalysesWithConfidence, WfiAnalysisOperations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">level_or_hvo</span><span class="p">,</span> <span class="s2">&quot;level_or_hvo&quot;</span><span class="p">)</span>
 
-        <span class="n">level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">level_or_hvo</span><span class="p">)</span>
-        <span class="n">level_hvo</span> <span class="o">=</span> <span class="n">level</span><span class="o">.</span><span class="n">Hvo</span>
-
-        <span class="n">glosses</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">gloss_repo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IWfiGlossRepository</span><span class="p">)</span>
-
-        <span class="c1"># Search through all glosses</span>
-        <span class="k">for</span> <span class="n">gloss</span> <span class="ow">in</span> <span class="n">gloss_repo</span><span class="o">.</span><span class="n">AllInstances</span><span class="p">():</span>
-            <span class="c1"># Check if this gloss has this confidence level</span>
-            <span class="c1"># Note: IWfiGloss may have Confidence property as reference</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="s2">"ConfidenceRA"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">gloss</span><span class="o">.</span><span class="n">ConfidenceRA</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">gloss</span><span class="o">.</span><span class="n">ConfidenceRA</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">level_hvo</span><span class="p">:</span>
-                    <span class="n">glosses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gloss</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">glosses</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+            <span class="s2">&quot;IWfiGloss has no confidence level in LCM; wordform glosses do &quot;</span>
+            <span class="s2">&quot;not reference ConfidenceLevelsOA. Use GetAnalysesWithConfidence &quot;</span>
+            <span class="s2">&quot;for notebook records, or WfiAnalysis approval APIs for &quot;</span>
+            <span class="s2">&quot;interlinear quality.&quot;</span>
+        <span class="p">)</span>
 
     <span class="c1"># --- Special Query Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetDefault</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the default confidence level for the project.</span>
 
 <span class="sd">        The default confidence level is typically used for new analyses when</span>
@@ -299,7 +247,7 @@
 <span class="sd">            &gt;&gt;&gt; default = project.Confidence.GetDefault()</span>
 <span class="sd">            &gt;&gt;&gt; if default:</span>
 <span class="sd">            ...     name = project.Confidence.GetName(default)</span>
-<span class="sd">            ...     print(f"Default confidence level: {name}")</span>
+<span class="sd">            ...     print(f&quot;Default confidence level: {name}&quot;)</span>
 <span class="sd">            Default confidence level: Medium Confidence</span>
 
 <span class="sd">            &gt;&gt;&gt; # Use default for new analysis</span>
@@ -313,11 +261,11 @@
 <span class="sd">            - Default is typically the first confidence level in the list</span>
 <span class="sd">            - Some FLEx configurations may not have a default set</span>
 <span class="sd">            - Default can be project-specific</span>
-<span class="sd">            - Consider the first level or "Medium" as conventional defaults</span>
+<span class="sd">            - Consider the first level or &quot;Medium&quot; as conventional defaults</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, Find</span>
-<span class="sd">        """</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">levels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">levels</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -364,7 +312,7 @@
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

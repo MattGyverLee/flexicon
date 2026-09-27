@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Lexicon.SemanticDomainOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,28 +55,30 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import BaseOperations parent class</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span><span class="p">,</span> <span class="n">best_analysis_text</span>
-<span class="kn">from</span> <span class="nn">..Shared.catalog_backed</span> <span class="kn">import</span> <span class="n">_LCMNativeCatalogImportMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span><span class="p">,</span> <span class="n">best_analysis_text</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.catalog_backed</span><span class="w"> </span><span class="kn">import</span> <span class="n">_LCMNativeCatalogImportMixin</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ICmSemanticDomain</span><span class="p">,</span>
     <span class="n">ICmSemanticDomainFactory</span><span class="p">,</span>
+    <span class="n">ICmDomainQ</span><span class="p">,</span>
+    <span class="n">ICmDomainQFactory</span><span class="p">,</span>
     <span class="n">ILexSenseRepository</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
 
 
 <div class="viewcode-block" id="SemanticDomainOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.SemanticDomainOperations.SemanticDomainOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">SemanticDomainOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">,</span> <span class="n">_LCMNativeCatalogImportMixin</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SemanticDomainOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">,</span> <span class="n">_LCMNativeCatalogImportMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing semantic domains in a</span>
 <span class="sd">    FieldWorks project.</span>
@@ -125,7 +127,7 @@
     <span class="n">DOMAIN_ITEM_LABEL_SINGULAR</span> <span class="o">=</span> <span class="s2">&quot;domain&quot;</span>
     <span class="n">DOMAIN_ITEM_LABEL_PLURAL</span> <span class="o">=</span> <span class="s2">&quot;domains&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize SemanticDomainOperations with a FLExProject instance.</span>
 
@@ -138,7 +140,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all semantic domains in the project.</span>
 
@@ -178,7 +180,7 @@
             <span class="n">domain_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">,</span> <span class="n">ICmSemanticDomain</span><span class="p">,</span> <span class="n">recursive</span><span class="p">))</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a semantic domain by its number.</span>
 
@@ -231,7 +233,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FindByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a semantic domain by its name.</span>
 
@@ -284,7 +286,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a semantic domain with the given number exists.</span>
 
@@ -321,7 +323,7 @@
     <span class="c1"># --- Domain Properties ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the name of a semantic domain.</span>
 
@@ -364,7 +366,7 @@
         <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the name of a semantic domain.</span>
 
@@ -404,7 +406,7 @@
             <span class="n">domain</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the description of a semantic domain.</span>
 
@@ -443,7 +445,7 @@
         <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the description of a semantic domain.</span>
 
@@ -476,7 +478,7 @@
             <span class="n">domain</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the abbreviation of a semantic domain.</span>
 
@@ -515,7 +517,7 @@
         <span class="k">return</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the domain number of a semantic domain.</span>
 
@@ -564,7 +566,7 @@
         <span class="k">return</span> <span class="n">number</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetQuestions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetQuestions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get elicitation questions for a semantic domain.</span>
 
@@ -614,7 +616,7 @@
         <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">questions_list</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetOcmCodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOcmCodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get OCM (Outline of Cultural Materials) codes for a semantic domain.</span>
 
@@ -638,7 +640,7 @@
 <span class="sd">            - OCM is a standard anthropological classification system</span>
 <span class="sd">            - Returns empty string if no OCM codes are assigned</span>
 <span class="sd">            - Multiple codes may be separated by spaces or commas</span>
-<span class="sd">            - Uses default analysis writing system</span>
+<span class="sd">            - OcmCodes is a scalar string field (no writing-system variants)</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetNumber, GetDescription</span>
@@ -646,16 +648,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
 
-        <span class="c1"># OcmCodes is a MultiUnicode</span>
-        <span class="n">ocm</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">OcmCodes</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">ocm</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="c1"># OcmCodes is a scalar String property on ICmSemanticDomain,</span>
+        <span class="c1"># not a MultiUnicode field, so a writing-system loop is wrong here.</span>
+        <span class="n">ocm</span> <span class="o">=</span> <span class="n">domain</span><span class="o">.</span><span class="n">OcmCodes</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ocm</span>
 
     <span class="c1"># --- Hierarchy Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSubdomains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSubdomains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the subdomains of a semantic domain.</span>
 
@@ -694,7 +696,7 @@
             <span class="k">return</span> <span class="p">[</span><span class="n">ICmSemanticDomain</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">domain</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">]</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">def</span> <span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
                 <span class="n">child</span> <span class="o">=</span> <span class="n">ICmSemanticDomain</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
                 <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
@@ -704,7 +706,7 @@
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetParent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the parent domain of a semantic domain.</span>
 
@@ -756,7 +758,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDepth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDepth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the depth of a semantic domain in the hierarchy.</span>
 
@@ -810,7 +812,7 @@
     <span class="c1"># --- Usage Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSensesInDomain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSensesInDomain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all lexical senses that belong to this semantic domain.</span>
 
@@ -863,7 +865,7 @@
         <span class="k">return</span> <span class="n">senses</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSenseCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSenseCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the count of lexical senses that belong to this semantic domain.</span>
 
@@ -943,7 +945,7 @@
     <span class="c1"># --- Custom Domain Management ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new custom semantic domain.</span>
 
@@ -1029,7 +1031,7 @@
             <span class="k">return</span> <span class="n">new_domain</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a semantic domain.</span>
 
@@ -1083,7 +1085,7 @@
                 <span class="n">domain_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a semantic domain, creating a new copy with a new GUID.</span>
 
@@ -1118,8 +1120,10 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Factory.Create() automatically generates a new GUID</span>
 <span class="sd">            - insert_after=True preserves the original domain&#39;s position</span>
-<span class="sd">            - Simple properties copied: Name, Description, Abbreviation, Questions, OcmCodes</span>
-<span class="sd">            - Owned objects (deep=True): SubPossibilitiesOS (subdomains), OccurrencesRS</span>
+<span class="sd">            - Simple properties copied: Name, Description, Abbreviation, OcmCodes</span>
+<span class="sd">            - Questions (QuestionsOS, an owning sequence) and subdomains are copied</span>
+<span class="sd">              when deep=True; shallow duplicates (deep=False) drop them</span>
+<span class="sd">            - Owned objects (deep=True): SubPossibilitiesOS (subdomains)</span>
 <span class="sd">            - Abbreviation (domain number) is copied but should typically be changed</span>
 <span class="sd">            - ReferringObjects (senses) are not copied (back-references)</span>
 
@@ -1164,18 +1168,23 @@
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
-            <span class="n">duplicate</span><span class="o">.</span><span class="n">Questions</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Questions</span><span class="p">)</span>
-            <span class="n">duplicate</span><span class="o">.</span><span class="n">OcmCodes</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">OcmCodes</span><span class="p">)</span>
+
+            <span class="c1"># OcmCodes is a scalar String property, not a multistring - assign directly</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">OcmCodes</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">OcmCodes</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="c1"># Questions is an owning sequence of ICmDomainQ objects (QuestionsOS),</span>
+            <span class="c1"># each with a MultiUnicode Question field - duplicate them explicitly</span>
+            <span class="n">q_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmDomainQFactory</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">domain_q</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">QuestionsOS</span><span class="p">:</span>
+                <span class="n">new_q</span> <span class="o">=</span> <span class="n">q_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">QuestionsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_q</span><span class="p">)</span>
+                <span class="n">new_q</span><span class="o">.</span><span class="n">Question</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">domain_q</span><span class="o">.</span><span class="n">Question</span><span class="p">)</span>
 
             <span class="c1"># Handle owned objects if deep=True</span>
             <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
                 <span class="c1"># Duplicate subdomains recursively</span>
                 <span class="k">for</span> <span class="n">subdomain</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">Duplicate</span><span class="p">(</span><span class="n">subdomain</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-                <span class="c1"># Copy OccurrencesRS (references to examples in the semantic domain)</span>
-                <span class="k">for</span> <span class="n">occurrence</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">OccurrencesRS</span><span class="p">:</span>
-                    <span class="n">duplicate</span><span class="o">.</span><span class="n">OccurrencesRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">occurrence</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">duplicate</span>
 
@@ -1197,7 +1206,7 @@
     <span class="c1"># and nested SubPossibilities all come from the catalog.</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ImportCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ImportCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Import the full SemDom semantic-domain catalog into this project.</span>
 
@@ -1258,7 +1267,7 @@
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all syncable properties of a semantic domain for comparison.</span>
 
@@ -1298,31 +1307,33 @@
                     <span class="n">abbreviation_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
         <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Abbreviation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">abbreviation_dict</span>
 
-        <span class="c1"># Questions - elicitation questions</span>
+        <span class="c1"># Questions - elicitation questions; QuestionsOS is an owning sequence of</span>
+        <span class="c1"># ICmDomainQ objects, each with a MultiUnicode Question field. Aggregate</span>
+        <span class="c1"># per writing system (mirrors GetQuestions).</span>
         <span class="n">questions_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Questions&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;QuestionsOS&quot;</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
-                <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Questions</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-                <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
-                    <span class="n">questions_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+                <span class="n">texts</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">domain_q</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">QuestionsOS</span><span class="p">:</span>
+                    <span class="n">q_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">domain_q</span><span class="o">.</span><span class="n">Question</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                    <span class="k">if</span> <span class="n">q_text</span><span class="p">:</span>
+                        <span class="n">texts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q_text</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">texts</span><span class="p">:</span>
+                    <span class="n">questions_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
         <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Questions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">questions_dict</span>
 
-        <span class="c1"># OcmCodes - OCM codes</span>
-        <span class="n">ocm_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;OcmCodes&quot;</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
-                <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">OcmCodes</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-                <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
-                    <span class="n">ocm_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;OcmCodes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ocm_dict</span>
+        <span class="c1"># OcmCodes - OCM codes (scalar String property, not a multistring)</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;OcmCodes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">OcmCodes</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
         <span class="c1"># Note: SubPossibilitiesOS is an Owning Sequence (OS) - not included</span>
-        <span class="c1"># Note: OccurrencesRS is a Reference Sequence (complex) - not included</span>
+        <span class="c1"># Note: ICmSemanticDomain has no Occurrences reference sequence</span>
+        <span class="c1"># (issue #230 gap 2 ruled out; live reflection in</span>
+        <span class="c1"># specs/352-copyalternatives-audit).</span>
 
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two semantic domains and return their differences.</span>
 
@@ -1354,7 +1365,7 @@
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to ICmSemanticDomain.</span>
 
@@ -1384,7 +1395,7 @@
                 <span class="k">pass</span>
         <span class="k">return</span> <span class="n">domain_or_hvo</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
 
@@ -1404,7 +1415,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1420,7 +1431,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1435,8 +1446,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

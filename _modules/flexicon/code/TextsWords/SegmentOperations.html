@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.TextsWords.SegmentOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -54,26 +54,27 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">clr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
 
 <span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ISegment</span><span class="p">,</span>
     <span class="n">ISegmentFactory</span><span class="p">,</span>
     <span class="n">IStTxtPara</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_NullParameterError</span><span class="p">,</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
     <span class="n">FP_ReadOnlyError</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -95,7 +96,7 @@
 
 <div class="viewcode-block" id="SegmentOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.SegmentOperations.SegmentOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">SegmentOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SegmentOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing segments in a FieldWorks project.</span>
 
@@ -142,7 +143,7 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize SegmentOperations with a FLExProject instance.</span>
 
@@ -151,7 +152,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Specify which sequence to reorder: a paragraph&#39;s segments.</span>
 
 <span class="sd">        ``parent`` must be an IStTxtPara -- the same type GetAll()/</span>
@@ -162,7 +163,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">SegmentsOS</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper for writing system handles (analysis).</span>
 
@@ -176,7 +177,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandleVern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleVern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper for writing system handles (vernacular).</span>
 
@@ -190,7 +191,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__GetParagraphObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetParagraphObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper to get paragraph object from HVO or object.</span>
 
@@ -201,10 +202,10 @@
 <span class="sd">            IStTxtPara: The paragraph object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">para_or_hvo</span>
+            <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__GetSegmentObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetSegmentObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper to get segment object from HVO or object.</span>
 
@@ -215,14 +216,14 @@
 <span class="sd">            ISegment: The segment object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">segment_or_hvo</span>
+            <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__GetSegmentFactory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetSegmentFactory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the ISegmentFactory from the service locator.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ISegmentFactory</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__GetAnalysisObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetAnalysisObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper to get an IAnalysis object from HVO or object.</span>
 
@@ -231,7 +232,12 @@
 <span class="sd">                IWfiGloss, or IPunctuationForm) or its HVO integer.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            IAnalysis: The analysis object.</span>
+<span class="sd">            ``IAnalysis``: The analysis object. The HVO path returns</span>
+<span class="sd">            ``project.Object(hvo)`` without ``cast_to_concrete`` (polymorphic</span>
+<span class="sd">            wordform / analysis / gloss / punctuation types). Callers that</span>
+<span class="sd">            need concrete analysis interfaces must cast per issue #212; this</span>
+<span class="sd">            helper stays deliberately generic (issue #494).</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
@@ -241,7 +247,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all segments in a paragraph.</span>
 
@@ -274,7 +280,7 @@
             <span class="k">yield</span> <span class="n">segment</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAnalyses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAnalyses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all analyses (wordforms and their linguistic analyses) for a segment.</span>
 
@@ -310,7 +316,7 @@
         <span class="k">return</span> <span class="n">analyses</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGloss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGloss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the gloss text for a segment analysis token of any type.</span>
 
@@ -358,7 +364,7 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetBaselineText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetBaselineText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the baseline text of a segment (the original text in the vernacular language).</span>
 
@@ -389,7 +395,7 @@
         <span class="k">return</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">BaselineText</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetBaselineText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetBaselineText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the baseline text of a segment by editing the owning paragraph Contents.</span>
 
@@ -420,9 +426,7 @@
         <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
         <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleVern</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
-        <span class="n">para</span> <span class="o">=</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">Paragraph</span>
-        <span class="k">if</span> <span class="n">para</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Segment has no owning paragraph; cannot write BaselineText&quot;</span><span class="p">)</span>
+        <span class="n">para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetOwningParagraph</span><span class="p">(</span><span class="n">segment_obj</span><span class="p">)</span>
         <span class="n">begin</span> <span class="o">=</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">BeginOffset</span>
         <span class="n">end</span> <span class="o">=</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">EndOffset</span>
         <span class="c1"># The builder work is pure in-memory string assembly on a TsStrBldr;</span>
@@ -437,7 +441,7 @@
             <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">bldr</span><span class="o">.</span><span class="n">GetString</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetFreeTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFreeTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the free translation for a segment.</span>
 
@@ -471,7 +475,7 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetFreeTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetFreeTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the free translation for a segment.</span>
 
@@ -502,7 +506,7 @@
             <span class="n">segment_obj</span><span class="o">.</span><span class="n">FreeTranslation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetLiteralTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLiteralTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the literal (word-for-word) translation of a segment.</span>
 
@@ -536,7 +540,7 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetLiteralTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetLiteralTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the literal (word-for-word) translation of a segment.</span>
 
@@ -567,7 +571,7 @@
             <span class="n">segment_obj</span><span class="o">.</span><span class="n">LiteralTranslation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetNotes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetNotes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all notes associated with a segment.</span>
 
@@ -601,7 +605,7 @@
     <span class="c1"># ========== WRITE METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AppendSentence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AppendSentence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Append a new sentence to a paragraph, creating a new segment.</span>
 
@@ -754,7 +758,7 @@
             <span class="k">return</span> <span class="n">seg</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a segment from its paragraph.</span>
 
@@ -789,7 +793,7 @@
             <span class="n">owner</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">segment_obj</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Replace the analysis token at a given index in a segment&#39;s AnalysesRS.</span>
 
@@ -832,7 +836,7 @@
             <span class="n">segment_obj</span><span class="o">.</span><span class="n">AnalysesRS</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">analysis_obj</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ReplaceAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">old_analysis_or_hvo</span><span class="p">,</span> <span class="n">new_analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ReplaceAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">old_analysis_or_hvo</span><span class="p">,</span> <span class="n">new_analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find an analysis token in a segment&#39;s AnalysesRS and replace it.</span>
 
@@ -869,18 +873,26 @@
         <span class="n">old_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">old_analysis_or_hvo</span><span class="p">)</span>
         <span class="n">new_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">new_analysis_or_hvo</span><span class="p">)</span>
 
-        <span class="n">analyses</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">segment_obj</span><span class="o">.</span><span class="n">AnalysesRS</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">old_obj</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">analyses</span><span class="p">:</span>
+        <span class="c1"># Membership by HVO (issue #528). AnalysesRS can yield interface views</span>
+        <span class="c1"># while __GetAnalysisObject may return a different Python wrapper for</span>
+        <span class="c1"># the same token; ``in`` / list.index then false-negative. Elements</span>
+        <span class="c1"># without an HVO never match -- they are skipped, not dereferenced.</span>
+        <span class="n">old_hvo</span> <span class="o">=</span> <span class="n">old_obj</span><span class="o">.</span><span class="n">Hvo</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">segment_obj</span><span class="o">.</span><span class="n">AnalysesRS</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="n">old_hvo</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
                 <span class="s2">&quot;old_analysis_or_hvo was not found in the segment&#39;s AnalysesRS&quot;</span>
             <span class="p">)</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="n">analyses</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">old_obj</span><span class="p">)</span>
 
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Replace segment analysis&quot;</span><span class="p">):</span>
             <span class="n">segment_obj</span><span class="o">.</span><span class="n">AnalysesRS</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_obj</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">InsertAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">InsertAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Insert an analysis token at a given index in a segment&#39;s AnalysesRS.</span>
 
@@ -922,7 +934,7 @@
             <span class="n">segment_obj</span><span class="o">.</span><span class="n">AnalysesRS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">analysis_obj</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AppendAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AppendAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Append an analysis token to the end of a segment&#39;s AnalysesRS.</span>
 
@@ -955,7 +967,7 @@
             <span class="n">segment_obj</span><span class="o">.</span><span class="n">AnalysesRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">analysis_obj</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RemoveAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove the analysis token at a given index from a segment&#39;s AnalysesRS.</span>
 
@@ -990,7 +1002,7 @@
             <span class="n">segment_obj</span><span class="o">.</span><span class="n">AnalysesRS</span><span class="o">.</span><span class="n">RemoveAt</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SplitSegment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">offset_within_segment</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SplitSegment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">offset_within_segment</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Split a segment at a character offset measured from the start of the segment.</span>
 
@@ -1040,9 +1052,7 @@
                 <span class="sa">f</span><span class="s2">&quot;(exclusive); got </span><span class="si">{</span><span class="n">offset_within_segment</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-        <span class="n">para</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">Paragraph</span>
-        <span class="k">if</span> <span class="n">para</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Segment has no owning paragraph&quot;</span><span class="p">)</span>
+        <span class="n">para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetOwningParagraph</span><span class="p">(</span><span class="n">seg</span><span class="p">)</span>
 
         <span class="n">absolute_offset</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">BeginOffset</span> <span class="o">+</span> <span class="n">offset_within_segment</span>
 
@@ -1066,7 +1076,7 @@
             <span class="k">return</span> <span class="p">(</span><span class="n">seg</span><span class="p">,</span> <span class="n">new_seg</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">MergeSegments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seg1_or_hvo</span><span class="p">,</span> <span class="n">seg2_or_hvo</span><span class="p">,</span> <span class="n">translation_policy</span><span class="o">=</span><span class="s2">&quot;migrate&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MergeSegments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seg1_or_hvo</span><span class="p">,</span> <span class="n">seg2_or_hvo</span><span class="p">,</span> <span class="n">translation_policy</span><span class="o">=</span><span class="s2">&quot;migrate&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Merge two adjacent segments into one, removing the inter-segment boundary.</span>
 
@@ -1131,16 +1141,31 @@
                 <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">translation_policy</span><span class="si">!r}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">seg1</span><span class="o">.</span><span class="n">Owner</span> <span class="o">!=</span> <span class="n">seg2</span><span class="o">.</span><span class="n">Owner</span><span class="p">:</span>
+        <span class="c1"># Compare typed paragraph owners by HVO (issue #521). Raw seg.Owner is</span>
+        <span class="c1"># ICmObject; reference inequality can spuriously fail adjacent segments.</span>
+        <span class="n">para1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">seg1</span><span class="p">)</span>
+        <span class="n">para2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">seg2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">para1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">para2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Segments have no valid owner paragraph&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">para1</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">!=</span> <span class="n">para2</span><span class="o">.</span><span class="n">Hvo</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Segments must be in the same paragraph&quot;</span><span class="p">)</span>
 
-        <span class="n">para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">seg1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">para</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Segments have no valid owner paragraph&quot;</span><span class="p">)</span>
+        <span class="n">para</span> <span class="o">=</span> <span class="n">para1</span>
 
-        <span class="n">segments_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">)</span>
-        <span class="n">idx1</span> <span class="o">=</span> <span class="n">segments_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">seg1</span><span class="p">)</span>
-        <span class="n">idx2</span> <span class="o">=</span> <span class="n">segments_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">seg2</span><span class="p">)</span>
+        <span class="c1"># Adjacent indices by HVO (issue #525). SegmentsOS can yield bare</span>
+        <span class="c1"># interface views while __GetSegmentObject returns cast handles.</span>
+        <span class="n">seg1_hvo</span> <span class="o">=</span> <span class="n">seg1</span><span class="o">.</span><span class="n">Hvo</span>
+        <span class="n">seg2_hvo</span> <span class="o">=</span> <span class="n">seg2</span><span class="o">.</span><span class="n">Hvo</span>
+        <span class="n">idx1</span> <span class="o">=</span> <span class="n">idx2</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">seg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">seg</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">seg1_hvo</span><span class="p">:</span>
+                <span class="n">idx1</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="k">if</span> <span class="n">seg</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">seg2_hvo</span><span class="p">:</span>
+                <span class="n">idx2</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">if</span> <span class="n">idx1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">idx2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;One or both segments are not in the paragraph SegmentsOS&quot;</span>
+            <span class="p">)</span>
 
         <span class="c1"># Ensure seg1 is the earlier segment</span>
         <span class="k">if</span> <span class="n">idx1</span> <span class="o">&gt;</span> <span class="n">idx2</span><span class="p">:</span>
@@ -1200,12 +1225,15 @@
             <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">bldr</span><span class="o">.</span><span class="n">GetString</span><span class="p">()</span>
 
             <span class="c1"># --- Step 2: remove seg2 from SegmentsOS if it still exists ---</span>
-            <span class="k">if</span> <span class="n">seg2</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">):</span>
-                <span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">seg2</span><span class="p">)</span>
+            <span class="c1"># Membership by HVO (issue #525); same gap as Exists (#523).</span>
+            <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">seg</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">seg2</span><span class="o">.</span><span class="n">Hvo</span><span class="p">:</span>
+                    <span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">seg</span><span class="p">)</span>
+                    <span class="k">break</span>
 
             <span class="k">return</span> <span class="n">seg1</span>
 
-    <span class="k">def</span> <span class="nf">__MigrateTranslations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seg1</span><span class="p">,</span> <span class="n">seg2</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__MigrateTranslations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seg1</span><span class="p">,</span> <span class="n">seg2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Concatenate seg2&#39;s FreeTranslation and LiteralTranslation into seg1</span>
 <span class="sd">        per writing system that has content, joined by &#39; / &#39;. Also moves all</span>
@@ -1262,7 +1290,7 @@
                     <span class="n">seg2</span><span class="o">.</span><span class="n">NotesOS</span><span class="o">.</span><span class="n">MoveTo</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">notes2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">seg1</span><span class="o">.</span><span class="n">NotesOS</span><span class="p">,</span> <span class="n">dest_index</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ReparseParagraph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ReparseParagraph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Re-derive segment offsets and wordform analyses for a paragraph by</span>
 <span class="sd">        reassigning para.Contents to itself; FreeTranslation, LiteralTranslation,</span>
@@ -1317,10 +1345,47 @@
 
         <span class="k">return</span> <span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span>
 
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwningParagraph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the paragraph that owns a segment.</span>
+
+<span class="sd">        Retrieves the ``IStTxtPara`` object that contains the segment via the</span>
+<span class="sd">        typed owner chain (issue #521).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IStTxtPara: The paragraph that owns the segment.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the segment does not exist or has no owner.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = project.Paragraphs.Create(text, &quot;Hello world.&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; seg = project.Segments.AppendSentence(para, &quot;Second sentence.&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; owner = project.Segments.GetOwningParagraph(seg)</span>
+<span class="sd">            &gt;&gt;&gt; assert owner.Hvo == para.Hvo</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Accepts segment HVO and raw ``project.Object(hvo)`` views (#275)</span>
+<span class="sd">            - Prefer this over ``segment.Paragraph`` / raw ``segment.Owner``</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            MergeSegments, SplitSegment, SetBaselineText, Delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+        <span class="n">para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">segment_obj</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">para</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Segment has no valid owning paragraph&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">para</span>
+
     <span class="c1"># ========== QUERY/VALIDATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a segment exists in a paragraph.</span>
 
@@ -1350,11 +1415,17 @@
         <span class="n">para_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetParagraphObject</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">)</span>
         <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
 
-        <span class="n">segments_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">para_obj</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">segment_obj</span> <span class="ow">in</span> <span class="n">segments_list</span>
+        <span class="c1"># Membership by HVO (issue #523). SegmentsOS yields bare interface</span>
+        <span class="c1"># views while __GetSegmentObject may return cast_to_concrete handles;</span>
+        <span class="c1"># Python ``in`` then false-negates for the same LCM segment.</span>
+        <span class="n">target_hvo</span> <span class="o">=</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">Hvo</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">para_obj</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">seg</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">target_hvo</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetBeginOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetBeginOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the beginning character offset of a segment within its paragraph.</span>
 
@@ -1385,7 +1456,7 @@
         <span class="k">return</span> <span class="mi">0</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetEndOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetEndOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the ending character offset of a segment within its paragraph.</span>
 
@@ -1416,7 +1487,7 @@
         <span class="k">return</span> <span class="mi">0</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a segment is marked as a label (section header).</span>
 
@@ -1447,7 +1518,7 @@
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetIsLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">is_label</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetIsLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">is_label</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set whether a segment is a label (section header).</span>
 
@@ -1477,7 +1548,7 @@
                 <span class="n">segment_obj</span><span class="o">.</span><span class="n">IsLabel</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">is_label</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ValidateSegments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ValidateSegments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validate the integrity of all segments in a paragraph.</span>
 
@@ -1561,7 +1632,7 @@
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all syncable properties of a segment.</span>
 
@@ -1614,7 +1685,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two segments for differences.</span>
 
@@ -1650,7 +1721,10 @@
             <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_CompareValues</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">):</span>
+            <span class="c1"># Inline comparison: FLExProject has no _CompareValues member</span>
+            <span class="c1"># (calling it raised AttributeError on every compare; same</span>
+            <span class="c1"># fix as MediaOperations.CompareTo).</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
                 <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
 
         <span class="n">is_different</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">differences</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
@@ -1662,7 +1736,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1678,7 +1752,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1693,8 +1767,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

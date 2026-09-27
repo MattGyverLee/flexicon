@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Notebook.NoteOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,28 +55,31 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IScrScriptureNote</span><span class="p">,</span>
     <span class="n">IScrScriptureNoteFactory</span><span class="p">,</span>
+    <span class="n">ICmAgent</span><span class="p">,</span>
     <span class="n">ICmBaseAnnotation</span><span class="p">,</span>
     <span class="n">ICmBaseAnnotationFactory</span><span class="p">,</span>
+    <span class="n">ICmBaseAnnotationRepository</span><span class="p">,</span>
     <span class="n">ICmAnnotationDefn</span><span class="p">,</span>
     <span class="n">ICmPossibility</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
-<span class="kn">from</span> <span class="nn">System</span> <span class="kn">import</span> <span class="n">DateTime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">DateTime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">best_analysis_text</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
 
 
 <div class="viewcode-block" id="NoteOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.NoteOperations.NoteOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">NoteOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NoteOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing notes and comments in a</span>
 <span class="sd">    FieldWorks project.</span>
@@ -116,7 +119,7 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize NoteOperations with a FLExProject instance.</span>
 
@@ -125,11 +128,71 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetDiscussionParent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the parent note for a threaded reply, if any (issue #323).&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;BeginObjectRA&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">note</span><span class="o">.</span><span class="n">BeginObjectRA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ICmBaseAnnotation</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">BeginObjectRA</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">note</span><span class="o">.</span><span class="n">BeginObjectRA</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__AttachReply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_note</span><span class="p">,</span> <span class="n">reply</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">after_source</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attach ``reply`` under ``parent_note`` using the LCM surface that exists.</span>
+
+<span class="sd">        ``ICmBaseAnnotation`` has no ``RepliesOS``; general discussion replies</span>
+<span class="sd">        live in ``LangProject.AnnotationsOC`` with ``BeginObjectRA`` pointing at</span>
+<span class="sd">        the parent note. ``IScrScriptureNote`` uses ``ResponsesOS``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Reached only from inside a caller&#39;s bracket (Duplicate / AddReply),</span>
+        <span class="c1"># so this transaction joins that one (nesting-aware per B1). Stated</span>
+        <span class="c1"># anyway so the site is grep-auditable per D5.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Attach note reply&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">scr_parent</span> <span class="o">=</span> <span class="n">IScrScriptureNote</span><span class="p">(</span><span class="n">parent_note</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">insert_after</span> <span class="ow">and</span> <span class="n">after_source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">idx</span> <span class="o">=</span> <span class="n">scr_parent</span><span class="o">.</span><span class="n">ResponsesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">after_source</span><span class="p">)</span>
+                    <span class="n">scr_parent</span><span class="o">.</span><span class="n">ResponsesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">reply</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">scr_parent</span><span class="o">.</span><span class="n">ResponsesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnnotationsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
+            <span class="n">reply</span><span class="o">.</span><span class="n">BeginObjectRA</span> <span class="o">=</span> <span class="n">parent_note</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__IterDirectReplies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Yield direct reply notes for ``note`` (issue #323).&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">scr</span> <span class="o">=</span> <span class="n">IScrScriptureNote</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">reply</span> <span class="ow">in</span> <span class="n">scr</span><span class="o">.</span><span class="n">ResponsesOS</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">reply</span>
+            <span class="k">return</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># The repository is its own service; GetService(ICmBaseAnnotation)</span>
+        <span class="c1"># raises ActivationException (no instance registered for an object</span>
+        <span class="c1"># interface). Live-proven 2026-09-25.</span>
+        <span class="n">repos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+            <span class="n">ICmBaseAnnotationRepository</span>
+        <span class="p">)</span>
+        <span class="n">note_hvo</span> <span class="o">=</span> <span class="n">note</span><span class="o">.</span><span class="n">Hvo</span>
+        <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">repos</span><span class="o">.</span><span class="n">AllInstances</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">ann</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">note_hvo</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ann</span><span class="p">,</span> <span class="s2">&quot;BeginObjectRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ann</span><span class="o">.</span><span class="n">BeginObjectRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ann</span><span class="o">.</span><span class="n">BeginObjectRA</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">note_hvo</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">ann</span>
+
     <span class="c1"># --- Core CRUD Operations ---</span>
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner_object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner_object</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all notes attached to an object.</span>
 
@@ -163,7 +226,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">owner_object</span><span class="p">,</span> <span class="s2">&quot;owner_object&quot;</span><span class="p">)</span>
 
         <span class="c1"># Get the annotation repository</span>
-        <span class="n">anno_repos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmBaseAnnotation</span><span class="p">)</span><span class="o">.</span><span class="n">Repository</span>
+        <span class="n">anno_repos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmBaseAnnotationRepository</span><span class="p">)</span>
 
         <span class="c1"># Find all annotations for this object</span>
         <span class="k">for</span> <span class="n">annotation</span> <span class="ow">in</span> <span class="n">anno_repos</span><span class="o">.</span><span class="n">AllInstances</span><span class="p">():</span>
@@ -177,7 +240,7 @@
                 <span class="k">yield</span> <span class="n">annotation</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner_object</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner_object</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new note attached to an object.</span>
 
@@ -261,7 +324,7 @@
             <span class="k">return</span> <span class="n">note</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a note.</span>
 
@@ -296,17 +359,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
 
         <span class="c1"># Remove from owner&#39;s collection. note.Owner is typed as</span>
-        <span class="c1"># ICmObject and does not expose AnnotationsOC / RepliesOS; cast</span>
-        <span class="c1"># to the concrete owner so the typed collection is reachable</span>
-        <span class="c1"># (the previous hasattr check silently no-opped for notes owned</span>
-        <span class="c1"># by IRnGenericRec or by a parent note).</span>
+        <span class="c1"># ICmObject and does not expose AnnotationsOC / ResponsesOS; cast</span>
+        <span class="c1"># to the concrete owner so the typed collection is reachable.</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete note&quot;</span><span class="p">):</span>
             <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;AnnotationsOC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">owner</span><span class="o">.</span><span class="n">AnnotationsOC</span><span class="p">:</span>
                     <span class="n">owner</span><span class="o">.</span><span class="n">AnnotationsOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">owner</span><span class="o">.</span><span class="n">RepliesOS</span><span class="p">:</span>
-                    <span class="n">owner</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;ResponsesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">owner</span><span class="o">.</span><span class="n">ResponsesOS</span><span class="p">:</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">ResponsesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
 
             <span class="c1"># Removing from an owning collection (AnnotationsOC/RepliesOS)</span>
             <span class="c1"># already deletes the underlying CmObject -- calling</span>
@@ -320,7 +381,7 @@
                 <span class="n">note</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a note, creating a new copy with a new GUID.</span>
 
@@ -374,8 +435,9 @@
         <span class="c1"># previous hasattr checks silently no-opped, leaving the</span>
         <span class="c1"># duplicate orphaned).</span>
         <span class="n">source</span> <span class="o">=</span> <span class="n">item_or_hvo</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
-        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">discussion_parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetDiscussionParent</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">discussion_parent</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Note has no owning record or parent note&quot;</span><span class="p">)</span>
 
         <span class="c1"># Create new note using factory (auto-generates new GUID)</span>
@@ -383,22 +445,24 @@
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmBaseAnnotationFactory</span><span class="p">)</span>
             <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-            <span class="c1"># Determine insertion position</span>
-            <span class="c1"># Notes can be in AnnotationsOC (when parent is owner object) or RepliesOS (when parent is another note)</span>
-            <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
-                <span class="c1"># Insert after source note</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
-                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-                    <span class="n">parent</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;AnnotationsOC&quot;</span><span class="p">):</span>
-                    <span class="c1"># AnnotationsOC is unordered (OC); insert_after is a no-op, add at end</span>
-                    <span class="n">parent</span><span class="o">.</span><span class="n">AnnotationsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">discussion_parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__AttachReply</span><span class="p">(</span>
+                    <span class="n">discussion_parent</span><span class="p">,</span>
+                    <span class="n">duplicate</span><span class="p">,</span>
+                    <span class="n">insert_after</span><span class="o">=</span><span class="n">insert_after</span><span class="p">,</span>
+                    <span class="n">after_source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">owner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;ResponsesOS&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                    <span class="n">idx</span> <span class="o">=</span> <span class="n">owner</span><span class="o">.</span><span class="n">ResponsesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">ResponsesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">ResponsesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">owner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;AnnotationsOC&quot;</span><span class="p">):</span>
+                <span class="c1"># AnnotationsOC is unordered (OC); insert_after is a no-op, add at end</span>
+                <span class="n">owner</span><span class="o">.</span><span class="n">AnnotationsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Insert at end</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
-                    <span class="n">parent</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;AnnotationsOC&quot;</span><span class="p">):</span>
-                    <span class="n">parent</span><span class="o">.</span><span class="n">AnnotationsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnnotationsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
 
             <span class="c1"># Copy simple MultiString properties</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Comment</span><span class="p">)</span>
@@ -424,15 +488,13 @@
 
             <span class="c1"># Handle owned objects if deep=True</span>
             <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
-                <span class="c1"># Duplicate replies into the NEW duplicate (not the original&#39;s parent)</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
-                    <span class="k">for</span> <span class="n">reply</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">RepliesOS</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateReplyInto</span><span class="p">(</span><span class="n">reply</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">reply</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__IterDirectReplies</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateReplyInto</span><span class="p">(</span><span class="n">reply</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">duplicate</span>
 
-    <span class="k">def</span> <span class="nf">_DuplicateReplyInto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_reply</span><span class="p">,</span> <span class="n">parent_note</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicate a reply note into the specified parent note&#39;s RepliesOS.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_DuplicateReplyInto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_reply</span><span class="p">,</span> <span class="n">parent_note</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicate a reply note under ``parent_note`` (issue #323).&quot;&quot;&quot;</span>
         <span class="c1"># Every caller reaches this helper from inside Duplicate&#39;s own</span>
         <span class="c1"># &quot;Duplicate note&quot; bracket, so these mutations are already covered at</span>
         <span class="c1"># runtime and this bracket merely joins that transaction (nesting-aware</span>
@@ -441,7 +503,7 @@
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate note reply&quot;</span><span class="p">):</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmBaseAnnotationFactory</span><span class="p">)</span>
             <span class="n">dup_reply</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
-            <span class="n">parent_note</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">dup_reply</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__AttachReply</span><span class="p">(</span><span class="n">parent_note</span><span class="p">,</span> <span class="n">dup_reply</span><span class="p">)</span>
 
             <span class="c1"># Copy properties. &quot;Source&quot; was renamed to SourceRA in this LCM</span>
             <span class="c1"># version (see note in Duplicate() above) -- it is a reference,</span>
@@ -454,15 +516,14 @@
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_reply</span><span class="p">,</span> <span class="s2">&quot;BeginObjectRA&quot;</span><span class="p">):</span>
                 <span class="n">dup_reply</span><span class="o">.</span><span class="n">BeginObjectRA</span> <span class="o">=</span> <span class="n">source_reply</span><span class="o">.</span><span class="n">BeginObjectRA</span>
 
-            <span class="c1"># Recurse into nested replies</span>
-            <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_reply</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">nested_reply</span> <span class="ow">in</span> <span class="n">source_reply</span><span class="o">.</span><span class="n">RepliesOS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">nested_reply</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__IterDirectReplies</span><span class="p">(</span><span class="n">source_reply</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateReplyInto</span><span class="p">(</span><span class="n">nested_reply</span><span class="p">,</span> <span class="n">dup_reply</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get syncable properties for cross-project synchronization.</span>
 
@@ -490,8 +551,13 @@
         <span class="c1"># MultiString properties</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;Comment&quot;</span><span class="p">):</span>
             <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Comment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;Source&quot;</span><span class="p">):</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="c1"># Source is a reference (SourceRA) to the authoring agent, not a</span>
+        <span class="c1"># MultiString (live-proven: no Source member; issue #352). Sync</span>
+        <span class="c1"># the agent GUID like the other RA properties below.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;SourceRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">note</span><span class="o">.</span><span class="n">SourceRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">SourceRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Reference Atomic (RA) property - return GUID as string</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;AnnotationTypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">note</span><span class="o">.</span><span class="n">AnnotationTypeRA</span><span class="p">:</span>
@@ -507,7 +573,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two notes and return detailed differences.</span>
 
@@ -553,7 +619,7 @@
     <span class="c1"># --- Content Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the text content of a note.</span>
 
@@ -597,7 +663,7 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the text content of a note.</span>
 
@@ -644,7 +710,7 @@
     <span class="c1"># --- Note Type Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetNoteType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetNoteType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the note type/category.</span>
 
@@ -683,7 +749,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetNoteType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">note_type</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetNoteType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">note_type</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the note type/category.</span>
 
@@ -735,7 +801,7 @@
     <span class="c1"># --- Metadata Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the creation date of a note.</span>
 
@@ -776,7 +842,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the last modification date of a note.</span>
 
@@ -821,7 +887,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAuthor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAuthor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the author of a note.</span>
 
@@ -829,7 +895,7 @@
 <span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: The author name, or empty string if not set.</span>
+<span class="sd">            str: The authoring agent&#39;s name, or empty string if not set.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If note is None.</span>
@@ -849,7 +915,8 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns empty string if author not set</span>
-<span class="sd">            - Author is typically set from user preferences</span>
+<span class="sd">            - Author is the SourceRA agent reference (there is no Source</span>
+<span class="sd">              multistring; live-proven, issue #352)</span>
 <span class="sd">            - Use for filtering and attribution</span>
 
 <span class="sd">        See Also:</span>
@@ -857,24 +924,26 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;Source&quot;</span><span class="p">):</span>
-            <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
-            <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-            <span class="k">return</span> <span class="n">text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">note</span><span class="o">.</span><span class="n">SourceRA</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;SourceRA&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">source</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">best_analysis_text</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetAuthor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">author_name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetAuthor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">author</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the author of a note.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
-<span class="sd">            author_name (str): The author name to set.</span>
+<span class="sd">            author: An ICmAgent object, an agent name string, or &quot;&quot;/None</span>
+<span class="sd">                to clear. A name string reuses the existing agent with</span>
+<span class="sd">                that name or creates one (find-or-create via Agents).</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
-<span class="sd">            FP_NullParameterError: If note or author_name is None.</span>
+<span class="sd">            FP_NullParameterError: If note is None.</span>
+<span class="sd">            FP_ParameterError: If author is neither an agent nor a string.</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
@@ -884,8 +953,9 @@
 <span class="sd">            John Smith</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Empty string is allowed (clears the author)</span>
-<span class="sd">            - Author is stored as a string, not a user object reference</span>
+<span class="sd">            - Author is the SourceRA agent reference (there is no Source</span>
+<span class="sd">              multistring; live-proven, issue #352)</span>
+<span class="sd">            - Empty string or None clears the author</span>
 <span class="sd">            - Use consistent naming for better filtering</span>
 
 <span class="sd">        See Also:</span>
@@ -894,19 +964,36 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">author_name</span><span class="p">,</span> <span class="s2">&quot;author_name&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;Source&quot;</span><span class="p">):</span>
-            <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
-            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">author_name</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set note author&quot;</span><span class="p">):</span>
-                <span class="n">note</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+        <span class="c1"># Type validation stays outside the bracket so a bad argument raises</span>
+        <span class="c1"># before any undo task opens.</span>
+        <span class="n">agent</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">author_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">author</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">author_name</span> <span class="o">=</span> <span class="n">author</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">author</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">agent</span> <span class="o">=</span> <span class="n">ICmAgent</span><span class="p">(</span><span class="n">author</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;author must be an ICmAgent object, an agent name &quot;</span>
+                    <span class="s2">&quot;string, or empty/None to clear&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Find-or-create shares the bracket, so a new agent and the author</span>
+        <span class="c1"># link land as one undo step.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set note author&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">author_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Agents</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">author</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">agent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Agents</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">author</span><span class="p">)</span>
+            <span class="n">note</span><span class="o">.</span><span class="n">SourceRA</span> <span class="o">=</span> <span class="n">agent</span>
 
     <span class="c1"># --- Discussion/Threading Operations ---</span>
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetReplies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetReplies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all reply notes (threaded discussion) for a note.</span>
 
@@ -944,12 +1031,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">reply</span> <span class="ow">in</span> <span class="n">note</span><span class="o">.</span><span class="n">RepliesOS</span><span class="p">:</span>
-                <span class="k">yield</span> <span class="n">reply</span>
+        <span class="k">for</span> <span class="n">reply</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__IterDirectReplies</span><span class="p">(</span><span class="n">note</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">reply</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddReply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_note</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddReply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_note</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a reply to an existing note (threaded discussion).</span>
 
@@ -1003,9 +1089,7 @@
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmBaseAnnotationFactory</span><span class="p">)</span>
             <span class="n">reply</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-            <span class="c1"># Add as reply to parent note (must be done before setting properties)</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent_note</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
-                <span class="n">parent_note</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__AttachReply</span><span class="p">(</span><span class="n">parent_note</span><span class="p">,</span> <span class="n">reply</span><span class="p">)</span>
 
             <span class="c1"># Set the content</span>
             <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
@@ -1019,7 +1103,7 @@
     <span class="c1"># --- Utility Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetOwner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the owner object that the note is attached to.</span>
 
@@ -1069,7 +1153,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the GUID of a note.</span>
 
@@ -1104,7 +1188,7 @@
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS for notes.</span>
 
@@ -1118,7 +1202,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__FindAnnotationDefn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__FindAnnotationDefn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find an annotation definition by name.</span>
 
@@ -1149,7 +1233,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1165,7 +1249,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1180,8 +1264,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

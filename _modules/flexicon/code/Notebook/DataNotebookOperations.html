@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Notebook.DataNotebookOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -54,40 +54,43 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IRnGenericRec</span><span class="p">,</span>
     <span class="n">IRnGenericRecFactory</span><span class="p">,</span>
-    <span class="n">IRnResearchNbkRepository</span><span class="p">,</span>
     <span class="n">ICmPossibility</span><span class="p">,</span>
     <span class="n">ICmPossibilityRepository</span><span class="p">,</span>
     <span class="n">ICmPerson</span><span class="p">,</span>
     <span class="n">IText</span><span class="p">,</span>
     <span class="n">ICmFile</span><span class="p">,</span>
     <span class="n">ICmFileFactory</span><span class="p">,</span>
+    <span class="n">IStTextFactory</span><span class="p">,</span>
+    <span class="n">IStTxtPara</span><span class="p">,</span>
+    <span class="n">IStTxtParaFactory</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
-<span class="kn">from</span> <span class="nn">System</span> <span class="kn">import</span> <span class="n">Guid</span><span class="p">,</span> <span class="n">DateTime</span>
-<span class="kn">import</span> <span class="nn">System</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">Guid</span><span class="p">,</span> <span class="n">DateTime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
 
 <span class="c1"># Import string utilities</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_text</span><span class="p">,</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span><span class="p">,</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.gendate_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">gendate_from_input</span>
 
 
 <div class="viewcode-block" id="DataNotebookOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.DataNotebookOperations.DataNotebookOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">DataNotebookOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataNotebookOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing research notebook records in a</span>
 <span class="sd">    FieldWorks project.</span>
@@ -158,7 +161,7 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize DataNotebookOperations with a FLExProject instance.</span>
 
@@ -167,7 +170,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Specify which sequence to reorder for notebook records.</span>
 
 <span class="sd">        ``parent`` is an ``IRnGenericRec``; the ordered sequence of child</span>
@@ -176,7 +179,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">SubRecordsOS</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper for writing system handles.</span>
 
@@ -190,7 +193,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ValidatedRecordHvo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ValidatedRecordHvo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal function to validate and convert record_or_hvo to HVO.</span>
 
@@ -212,7 +215,7 @@
 
         <span class="k">return</span> <span class="n">hvo</span>
 
-    <span class="k">def</span> <span class="nf">__GetRecordObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetRecordObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal function to get IRnGenericRec object from record_or_hvo.</span>
 
@@ -244,13 +247,84 @@
             <span class="ne">KeyError</span><span class="p">,</span>
             <span class="n">System</span><span class="o">.</span><span class="n">Collections</span><span class="o">.</span><span class="n">Generic</span><span class="o">.</span><span class="n">KeyNotFoundException</span><span class="p">,</span>
         <span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid notebook record object or HVO: </span><span class="si">{</span><span class="n">record_or_hvo</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid notebook record object or HVO: </span><span class="si">{</span><span class="n">record_or_hvo</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ReadRecordContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a record&#39;s body content as plain text.</span>
+
+<span class="sd">        Body content lives in ``DescriptionOA`` (an owned ``IStText``);</span>
+<span class="sd">        there is no ``Text`` member on ``IRnGenericRec`` (live-proven:</span>
+<span class="sd">        ``hasattr(record, &quot;Text&quot;)`` is False, issue #352). Paragraph</span>
+<span class="sd">        contents are joined with newlines.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sttext</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">DescriptionOA</span>
+        <span class="k">if</span> <span class="n">sttext</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">texts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">para</span> <span class="ow">in</span> <span class="n">sttext</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="p">:</span>
+            <span class="n">para_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">IStTxtPara</span><span class="p">(</span><span class="n">para</span><span class="p">)</span><span class="o">.</span><span class="n">Contents</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">para_text</span><span class="p">:</span>
+                <span class="n">texts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">para_text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">normalize_text</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">texts</span><span class="p">))</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_SetRecordContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Replace a record&#39;s body content (call inside a transaction).</span>
+
+<span class="sd">        Rebuilds the ``DescriptionOA`` paragraphs from ``content``</span>
+<span class="sd">        (one paragraph per line). An empty ``content`` clears the</span>
+<span class="sd">        paragraphs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Callers already hold a transaction; re-entering joins it.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set record content&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">DescriptionOA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">text_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                    <span class="n">IStTextFactory</span>
+                <span class="p">)</span>
+                <span class="n">record</span><span class="o">.</span><span class="n">DescriptionOA</span> <span class="o">=</span> <span class="n">text_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="n">sttext</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">DescriptionOA</span>
+            <span class="k">while</span> <span class="n">sttext</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">sttext</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">sttext</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">content</span><span class="p">:</span>
+                <span class="n">para_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                    <span class="n">IStTxtParaFactory</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">content</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="ow">or</span> <span class="p">[</span><span class="n">content</span><span class="p">]:</span>
+                    <span class="n">new_para</span> <span class="o">=</span> <span class="n">para_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                    <span class="n">sttext</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_para</span><span class="p">)</span>
+                    <span class="n">new_para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_CopyRecordContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deep-copy body paragraphs (call inside a transaction).</span>
+
+<span class="sd">        Copies the full TsString per paragraph, preserving formatting</span>
+<span class="sd">        and all writing-system runs (same idiom as</span>
+<span class="sd">        ``TextOperations.Duplicate``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Callers already hold a transaction; re-entering joins it.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Copy record content&quot;</span><span class="p">):</span>
+            <span class="n">source_st</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">DescriptionOA</span>
+            <span class="k">if</span> <span class="n">source_st</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">source_st</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="n">text_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                <span class="n">IStTextFactory</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">duplicate</span><span class="o">.</span><span class="n">DescriptionOA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">DescriptionOA</span> <span class="o">=</span> <span class="n">text_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="n">para_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                <span class="n">IStTxtParaFactory</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">para</span> <span class="ow">in</span> <span class="n">source_st</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="p">:</span>
+                <span class="n">contents</span> <span class="o">=</span> <span class="n">IStTxtPara</span><span class="p">(</span><span class="n">para</span><span class="p">)</span><span class="o">.</span><span class="n">Contents</span>
+                <span class="k">if</span> <span class="n">contents</span><span class="p">:</span>
+                    <span class="n">new_para</span> <span class="o">=</span> <span class="n">para_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                    <span class="n">duplicate</span><span class="o">.</span><span class="n">DescriptionOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_para</span><span class="p">)</span>
+                    <span class="n">new_para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">contents</span>
 
     <span class="c1"># --- Core CRUD Operations ---</span>
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all research notebook records in the project.</span>
 
@@ -280,20 +354,24 @@
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Find, GetSubRecords, FindByDate</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">repos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IRnResearchNbkRepository</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">repos</span><span class="o">.</span><span class="n">AllInstances</span><span class="p">():</span>
-            <span class="c1"># Only yield top-level records (those without an owner that&#39;s also a record)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">owner</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">Owner</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">IRnGenericRec</span><span class="p">):</span>
-                    <span class="k">yield</span> <span class="n">record</span>
-            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">NullReferenceException</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="k">yield</span> <span class="n">record</span>
+        <span class="c1"># Top-level records live in the project&#39;s single ResearchNotebookOA</span>
+        <span class="c1"># RecordsOC. The prior form enumerated IRnResearchNbkRepository</span>
+        <span class="c1"># AllInstances(), which yields the RnResearchNbk notebook itself --</span>
+        <span class="c1"># Find/GetTitle then failed on it with AttributeError (found live</span>
+        <span class="c1"># while verifying issue #352).</span>
+        <span class="n">notebook</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ResearchNotebookOA</span>
+        <span class="k">if</span> <span class="n">notebook</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">iter</span><span class="p">([])</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">notebook</span><span class="o">.</span><span class="n">RecordsOC</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new research notebook record.</span>
+
+<span class="sd">        This is the canonical creation path for both top-level records and</span>
+<span class="sd">        sub-records; CreateSubRecord delegates to it with</span>
+<span class="sd">        parent=parent_record_or_hvo.</span>
 
 <span class="sd">        Creates a top-level notebook record with the specified title and optional</span>
 <span class="sd">        content. Use CreateSubRecord() to create hierarchical sub-records.</span>
@@ -303,6 +381,9 @@
 <span class="sd">            content (str, optional): The main content/body text of the record.</span>
 <span class="sd">                Defaults to None (empty content).</span>
 <span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+<span class="sd">            parent: Optional parent record (IRnGenericRec) or its HVO. If</span>
+<span class="sd">                None (default), creates a top-level record; if given,</span>
+<span class="sd">                creates a sub-record of that parent. Defaults to None.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IRnGenericRec: The newly created notebook record object.</span>
@@ -310,7 +391,8 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
 <span class="sd">            FP_NullParameterError: If title is None.</span>
-<span class="sd">            FP_ParameterError: If title is empty.</span>
+<span class="sd">            FP_ParameterError: If title is empty, or if the parent doesn&#39;t</span>
+<span class="sd">                exist.</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Create a basic record</span>
@@ -327,6 +409,10 @@
 <span class="sd">            ...     content=&quot;Notas sobre terminología de parentesco&quot;,</span>
 <span class="sd">            ...     wsHandle=project.WSHandle(&#39;es&#39;)</span>
 <span class="sd">            ... )</span>
+
+<span class="sd">            &gt;&gt;&gt; # A sub-record is just a Create with a parent</span>
+<span class="sd">            &gt;&gt;&gt; sub = project.DataNotebook.Create(</span>
+<span class="sd">            ...     &quot;Kinship Terminology&quot;, parent=record)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create and configure</span>
 <span class="sd">            &gt;&gt;&gt; record = project.DataNotebook.Create(&quot;Field Observation&quot;)</span>
@@ -353,29 +439,41 @@
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
+        <span class="n">parent_record</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;parent&quot;</span><span class="p">)</span>
+            <span class="n">parent_record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Create sub-record &#39;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Create notebook record &#39;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IRnGenericRecFactory</span><span class="p">)</span>
 
-        <span class="c1"># Create the record in the RecordsOC collection, owned by the</span>
-        <span class="c1"># project&#39;s single ResearchNotebookOA -- not by the repository,</span>
-        <span class="c1"># which has no RecordsOC member (ruling C1).</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create notebook record &#39;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="n">label</span><span class="p">):</span>
 
             <span class="n">record</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ResearchNotebookOA</span><span class="o">.</span><span class="n">RecordsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parent_record</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parent_record</span><span class="o">.</span><span class="n">SubRecordsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Create the record in the RecordsOC collection, owned by the</span>
+                <span class="c1"># project&#39;s single ResearchNotebookOA -- not by the repository,</span>
+                <span class="c1"># which has no RecordsOC member (ruling C1).</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ResearchNotebookOA</span><span class="o">.</span><span class="n">RecordsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
 
-            <span class="c1"># Set title</span>
-            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-            <span class="n">record</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+            <span class="c1"># Set title. IRnGenericRec.Title is a bare ITsString, not an</span>
+            <span class="c1"># IMultiString -- it has no set_String/get_String (live-proven,</span>
+            <span class="c1"># issue #352). Assign via the house _MakeTsString adapter.</span>
+            <span class="n">record</span><span class="o">.</span><span class="n">Title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MakeTsString</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
 
-            <span class="c1"># Set content if provided</span>
+            <span class="c1"># Set content if provided (body lives in DescriptionOA; there</span>
+            <span class="c1"># is no Text member on IRnGenericRec, issue #352).</span>
             <span class="k">if</span> <span class="n">content</span><span class="p">:</span>
-                <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-                <span class="n">record</span><span class="o">.</span><span class="n">Text</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_SetRecordContent</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">record</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a notebook record from the project.</span>
 
@@ -444,7 +542,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ResearchNotebookOA</span><span class="o">.</span><span class="n">RecordsOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a notebook record with the given title exists.</span>
 
@@ -466,13 +564,10 @@
 <span class="sd">            ...     print(&quot;Record already exists&quot;)</span>
 <span class="sd">            Record already exists</span>
 
-<span class="sd">            &gt;&gt;&gt; # Check multiple writing systems</span>
-<span class="sd">            &gt;&gt;&gt; exists_en = project.DataNotebook.Exists(&quot;Interview&quot;, &quot;en&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; exists_es = project.DataNotebook.Exists(&quot;Entrevista&quot;, &quot;es&quot;)</span>
-
 <span class="sd">        Notes:</span>
 <span class="sd">            - Search is case-sensitive</span>
-<span class="sd">            - Searches in the specified writing system only</span>
+<span class="sd">            - Title is a single bare ITsString (no per-WS variants);</span>
+<span class="sd">              the wsHandle argument is accepted but ignored</span>
 <span class="sd">            - Returns True if at least one record matches</span>
 <span class="sd">            - Does not search content, only titles</span>
 
@@ -484,16 +579,17 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a notebook record by its title.</span>
 
-<span class="sd">        Searches for the first record that exactly matches the given title</span>
-<span class="sd">        in the specified writing system.</span>
+<span class="sd">        Searches for the first record that exactly matches the given title.</span>
+<span class="sd">        Title is a single bare ITsString (no per-WS variants, issue #352);</span>
+<span class="sd">        the wsHandle argument is accepted for compatibility but ignored.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            title (str): The title to search for (case-sensitive).</span>
-<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+<span class="sd">            wsHandle: Accepted but ignored (titles have no WS variants).</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IRnGenericRec: The matching notebook record object, or None if not found.</span>
@@ -511,12 +607,6 @@
 <span class="sd">            ... else:</span>
 <span class="sd">            ...     print(&quot;Record not found&quot;)</span>
 
-<span class="sd">            &gt;&gt;&gt; # Find in specific writing system</span>
-<span class="sd">            &gt;&gt;&gt; record = project.DataNotebook.Find(</span>
-<span class="sd">            ...     &quot;Entrevista 1&quot;,</span>
-<span class="sd">            ...     wsHandle=project.WSHandle(&#39;es&#39;)</span>
-<span class="sd">            ... )</span>
-
 <span class="sd">            &gt;&gt;&gt; # Find and update</span>
 <span class="sd">            &gt;&gt;&gt; record = project.DataNotebook.Find(&quot;Old Title&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; if record:</span>
@@ -526,7 +616,6 @@
 <span class="sd">            - Search is case-sensitive and exact match only</span>
 <span class="sd">            - Returns first match if multiple records have same title</span>
 <span class="sd">            - Returns None if no match found</span>
-<span class="sd">            - Searches only in specified writing system</span>
 <span class="sd">            - Use FindBy* methods for more complex queries</span>
 
 <span class="sd">        See Also:</span>
@@ -538,7 +627,9 @@
 
         <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
-            <span class="n">record_title</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="c1"># Title is a single bare ITsString (no per-WS variants,</span>
+            <span class="c1"># issue #352); the wsHandle dimension does not apply.</span>
+            <span class="n">record_title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ReadTsString</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Title</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">record_title</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">record</span>
 
@@ -547,7 +638,7 @@
     <span class="c1"># --- Property Operations: Title ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the title of a notebook record.</span>
 
@@ -568,32 +659,22 @@
 <span class="sd">            &gt;&gt;&gt; print(title)</span>
 <span class="sd">            Interview 1</span>
 
-<span class="sd">            &gt;&gt;&gt; # Get title in multiple languages</span>
-<span class="sd">            &gt;&gt;&gt; title_en = project.DataNotebook.GetTitle(record, &quot;en&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; title_es = project.DataNotebook.GetTitle(record, &quot;es&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;EN: {title_en}, ES: {title_es}&quot;)</span>
-<span class="sd">            EN: Interview 1, ES: Entrevista 1</span>
-
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns empty string if title not set in specified WS</span>
-<span class="sd">            - Titles are multi-lingual (can be set in multiple writing systems)</span>
+<span class="sd">            - Returns empty string if title not set</span>
+<span class="sd">            - Title is a single bare ITsString (one value, tagged with</span>
+<span class="sd">              the analysis WS at write time -- not per-WS variants)</span>
 <span class="sd">            - Use SetTitle() to modify</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetTitle, GetContent</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-            <span class="k">return</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not get record title: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="c1"># Title is a bare ITsString (no per-WS variants, issue #352).</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ReadTsString</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Title</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the title of a notebook record.</span>
 
@@ -613,13 +694,11 @@
 <span class="sd">            &gt;&gt;&gt; print(project.DataNotebook.GetTitle(record))</span>
 <span class="sd">            Interview with Speaker A</span>
 
-<span class="sd">            &gt;&gt;&gt; # Set in multiple languages</span>
-<span class="sd">            &gt;&gt;&gt; project.DataNotebook.SetTitle(record, &quot;Interview 1&quot;, &quot;en&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; project.DataNotebook.SetTitle(record, &quot;Entrevista 1&quot;, &quot;es&quot;)</span>
-
 <span class="sd">        Notes:</span>
 <span class="sd">            - Title must not be empty</span>
-<span class="sd">            - Titles support multiple writing systems</span>
+<span class="sd">            - Title is a single bare ITsString: each SetTitle call</span>
+<span class="sd">              overwrites the one stored value (the wsHandle only tags</span>
+<span class="sd">              the new value)</span>
 <span class="sd">            - Previous title value is overwritten</span>
 
 <span class="sd">        See Also:</span>
@@ -635,15 +714,14 @@
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
-        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set notebook record title &#39;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
-            <span class="n">record</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+            <span class="c1"># Bare ITsString (issue #352) -- assign, no set_String.</span>
+            <span class="n">record</span><span class="o">.</span><span class="n">Title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MakeTsString</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
 
     <span class="c1"># --- Property Operations: Content ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the content/body text of a notebook record.</span>
 
@@ -673,24 +751,21 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns empty string if content not set</span>
 <span class="sd">            - Content can be lengthy (multiple paragraphs)</span>
-<span class="sd">            - Content is multi-lingual</span>
+<span class="sd">            - Content is stored as DescriptionOA paragraphs; paragraphs</span>
+<span class="sd">              are joined with newlines on read</span>
 <span class="sd">            - May contain structured text markup</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetContent, GetTitle</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Text</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-            <span class="k">return</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not get record content: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="c1"># Body content lives in DescriptionOA (no Text member on</span>
+        <span class="c1"># IRnGenericRec, issue #352).</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ReadRecordContent</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the content/body text of a notebook record.</span>
 
@@ -717,14 +792,11 @@
 <span class="sd">            &gt;&gt;&gt; new_content = existing + &quot;\\n\\nAdditional observations...&quot;</span>
 <span class="sd">            &gt;&gt;&gt; project.DataNotebook.SetContent(record, new_content)</span>
 
-<span class="sd">            &gt;&gt;&gt; # Set in multiple languages</span>
-<span class="sd">            &gt;&gt;&gt; project.DataNotebook.SetContent(record, &quot;English notes&quot;, &quot;en&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; project.DataNotebook.SetContent(record, &quot;Notas en español&quot;, &quot;es&quot;)</span>
-
 <span class="sd">        Notes:</span>
-<span class="sd">            - Content can be empty string</span>
+<span class="sd">            - Content can be empty string (clears the paragraphs)</span>
 <span class="sd">            - Previous content is completely replaced</span>
-<span class="sd">            - Supports multiple writing systems</span>
+<span class="sd">            - Content is stored as DescriptionOA paragraphs (one</span>
+<span class="sd">              paragraph per line); the wsHandle tags the new runs</span>
 <span class="sd">            - No length limit on content</span>
 
 <span class="sd">        See Also:</span>
@@ -737,15 +809,13 @@
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
-        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set notebook record content&quot;</span><span class="p">):</span>
-            <span class="n">record</span><span class="o">.</span><span class="n">Text</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_SetRecordContent</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
 
     <span class="c1"># --- Record Type Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetRecordType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetRecordType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the type/category of a notebook record.</span>
 
@@ -784,13 +854,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;Type&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">Type</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">record</span><span class="o">.</span><span class="n">Type</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;TypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">TypeRA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">record</span><span class="o">.</span><span class="n">TypeRA</span>
 
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetRecordType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">record_type</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetRecordType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">record_type</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the type/category of a notebook record.</span>
 
@@ -834,10 +904,10 @@
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set record type&quot;</span><span class="p">):</span>
-            <span class="n">record</span><span class="o">.</span><span class="n">Type</span> <span class="o">=</span> <span class="n">record_type</span>
+            <span class="n">record</span><span class="o">.</span><span class="n">TypeRA</span> <span class="o">=</span> <span class="n">record_type</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAllRecordTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllRecordTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all available notebook record types in the project.</span>
 
@@ -872,18 +942,17 @@
 <span class="sd">        See Also:</span>
 <span class="sd">            GetRecordType, SetRecordType, FindRecordTypeByName</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Get the record types list from the project</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;RecTypesOA&quot;</span><span class="p">):</span>
-            <span class="n">rec_types_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">RecTypesOA</span>
-            <span class="c1"># PossibilitiesOS is declared over ICmPossibility; cast</span>
-            <span class="c1"># elements so subtype surface is reachable (issue #270).</span>
-            <span class="k">if</span> <span class="n">rec_types_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedElements</span><span class="p">(</span><span class="n">rec_types_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">)</span>
+        <span class="c1"># Record types live on the research notebook object, not ILangProject</span>
+        <span class="c1"># (issue #322; live reflection in lcm-member-truth-sweep).</span>
+        <span class="n">notebook</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ResearchNotebookOA</span>
+        <span class="n">rec_types_list</span> <span class="o">=</span> <span class="n">notebook</span><span class="o">.</span><span class="n">RecTypesOA</span>
+        <span class="k">if</span> <span class="n">rec_types_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedElements</span><span class="p">(</span><span class="n">rec_types_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FindRecordTypeByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindRecordTypeByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a record type by its name.</span>
 
@@ -928,7 +997,7 @@
     <span class="c1"># --- Date/Time Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the creation date of a notebook record.</span>
 
@@ -968,7 +1037,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the last modification date of a notebook record.</span>
 
@@ -1008,7 +1077,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateOfEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateOfEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the event date of a notebook record.</span>
 
@@ -1019,7 +1088,8 @@
 <span class="sd">            record_or_hvo: The notebook record object (IRnGenericRec) or its HVO.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            DateTime: The event date, or None if not set.</span>
+<span class="sd">            GenDate: The event date (SIL.LCModel.Core.Cellar.GenDate), or</span>
+<span class="sd">            None if not set.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If record_or_hvo is None.</span>
@@ -1028,8 +1098,8 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; record = project.DataNotebook.Find(&quot;Interview 1&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; event_date = project.DataNotebook.GetDateOfEvent(record)</span>
-<span class="sd">            &gt;&gt;&gt; if event_date:</span>
-<span class="sd">            ...     print(f&quot;Event: {event_date.ToString(&#39;yyyy-MM-dd&#39;)}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if event_date is not None:</span>
+<span class="sd">            ...     print(f&quot;Event: {event_date.Year}-{event_date.Month:02}-{event_date.Day:02}&quot;)</span>
 <span class="sd">            ... else:</span>
 <span class="sd">            ...     print(&quot;Event date not set&quot;)</span>
 <span class="sd">            Event: 2024-01-15</span>
@@ -1037,7 +1107,9 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Can be different from creation/modification dates</span>
 <span class="sd">            - Useful for documenting when fieldwork occurred</span>
-<span class="sd">            - Returns None if not set</span>
+<span class="sd">            - Returns None if not set. An unset DateOfEvent is an empty</span>
+<span class="sd">              GenDate struct, which is truthy under pythonnet, so IsEmpty</span>
+<span class="sd">              is checked explicitly.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetDateOfEvent, GetDateCreated</span>
@@ -1045,15 +1117,17 @@
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">record</span><span class="o">.</span><span class="n">DateOfEvent</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">):</span>
+                <span class="n">event_date</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">DateOfEvent</span>
+                <span class="k">if</span> <span class="n">event_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">event_date</span><span class="o">.</span><span class="n">IsEmpty</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">event_date</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">NullReferenceException</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">pass</span>
 
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetDateOfEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDateOfEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the event date of a notebook record.</span>
 
@@ -1084,6 +1158,10 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Accepts DateTime object or string format</span>
 <span class="sd">            - String format: &quot;YYYY-MM-DD&quot; or &quot;YYYY-MM-DD HH:MM:SS&quot;</span>
+<span class="sd">            - Stored as an exact AD GenDate (IRnGenericRec.DateOfEvent is not</span>
+<span class="sd">              System.DateTime, and pythonnet converts neither a str nor a</span>
+<span class="sd">              DateTime to GenDate -- issue #330). GenDate has no time</span>
+<span class="sd">              component, so any time of day is dropped.</span>
 <span class="sd">            - Represents when the documented event occurred</span>
 <span class="sd">            - Independent of creation/modification dates</span>
 
@@ -1096,22 +1174,17 @@
 
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Convert string to DateTime if needed</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">date</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
-            <span class="k">except</span> <span class="p">(</span><span class="n">System</span><span class="o">.</span><span class="n">FormatException</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid date format: </span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s2">. Use &#39;YYYY-MM-DD&#39; or &#39;YYYY-MM-DD HH:MM:SS&#39; - </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># Validation/normalization stays outside the bracket: a malformed date</span>
+        <span class="c1"># must raise before any undo task opens (D5/P3).</span>
+        <span class="n">gen_date</span> <span class="o">=</span> <span class="n">gendate_from_input</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
 
-        <span class="c1"># Parse above stays outside the bracket: a malformed date must raise</span>
-        <span class="c1"># before any undo task opens (D5/P3).</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set record date of event&quot;</span><span class="p">):</span>
-            <span class="n">record</span><span class="o">.</span><span class="n">DateOfEvent</span> <span class="o">=</span> <span class="n">date</span>
+            <span class="n">record</span><span class="o">.</span><span class="n">DateOfEvent</span> <span class="o">=</span> <span class="n">gen_date</span>
 
     <span class="c1"># --- Hierarchy Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSubRecords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSubRecords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all direct sub-records of a notebook record.</span>
 
@@ -1167,9 +1240,12 @@
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CreateSubRecord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_record_or_hvo</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateSubRecord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_record_or_hvo</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new sub-record under a parent notebook record.</span>
+
+<span class="sd">        Thin wrapper over Create with parent=parent_record_or_hvo; all</span>
+<span class="sd">        creation logic lives on Create.</span>
 
 <span class="sd">        Creates a child record in the hierarchical structure. Sub-records</span>
 <span class="sd">        inherit the context of their parent but can have their own properties,</span>
@@ -1210,6 +1286,8 @@
 <span class="sd">            ... )</span>
 
 <span class="sd">        Notes:</span>
+<span class="sd">            - Equivalent to ``Create(title, content, wsHandle,</span>
+<span class="sd">              parent=parent_record_or_hvo)``.</span>
 <span class="sd">            - Sub-records can have their own sub-records (unlimited nesting)</span>
 <span class="sd">            - Sub-records are independent objects with their own properties</span>
 <span class="sd">            - Deleting parent deletes all sub-records recursively</span>
@@ -1220,35 +1298,21 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">parent_record_or_hvo</span><span class="p">,</span> <span class="s2">&quot;parent_record_or_hvo&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">title</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Title cannot be empty&quot;</span><span class="p">)</span>
-
-        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">parent_record_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
-
-        <span class="c1"># Create the sub-record</span>
-        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IRnGenericRecFactory</span><span class="p">)</span>
-
+        <span class="c1"># Bracketed per D5 (the scanner cannot see through same-class</span>
+        <span class="c1"># delegation): joins Create&#39;s inner transaction via nesting</span>
+        <span class="c1"># (B1) rather than opening a separate undo unit.</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create sub-record &#39;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
-
-            <span class="n">subrecord</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
-            <span class="n">parent</span><span class="o">.</span><span class="n">SubRecordsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">subrecord</span><span class="p">)</span>
-
-            <span class="c1"># Set title</span>
-            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-            <span class="n">subrecord</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
-
-            <span class="c1"># Set content if provided</span>
-            <span class="k">if</span> <span class="n">content</span><span class="p">:</span>
-                <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-                <span class="n">subrecord</span><span class="o">.</span><span class="n">Text</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">subrecord</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span>
+                <span class="n">title</span><span class="p">,</span>
+                <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span>
+                <span class="n">wsHandle</span><span class="o">=</span><span class="n">wsHandle</span><span class="p">,</span>
+                <span class="n">parent</span><span class="o">=</span><span class="n">parent_record_or_hvo</span><span class="p">,</span>
+            <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetParentRecord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParentRecord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the parent record of a sub-record.</span>
 
@@ -1295,19 +1359,23 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
+        <span class="c1"># Only a parent exposing SubRecordsOS is a record. A top-level</span>
+        <span class="c1"># record&#39;s owner is the RnResearchNbk notebook, which must map</span>
+        <span class="c1"># to None (found live: raw ICmObject owner returned instead of</span>
+        <span class="c1"># None). Same dispatch as Delete/Duplicate.</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">owner</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">Owner</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">IRnGenericRec</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">IRnGenericRec</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">InvalidCastException</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">pass</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">InvalidCastException</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;SubRecordsOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">parent</span>
 
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="c1"># --- Linking Operations: Researchers ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetResearchers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetResearchers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all researchers associated with a notebook record.</span>
 
@@ -1345,13 +1413,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;Researchers&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">Researchers</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Researchers</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">ResearchersRC</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddResearcher</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddResearcher</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a researcher to a notebook record.</span>
 
@@ -1399,13 +1464,12 @@
 
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;Researchers&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">person</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">Researchers</span><span class="p">:</span>
-                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add researcher to notebook record&quot;</span><span class="p">):</span>
-                    <span class="n">record</span><span class="o">.</span><span class="n">Researchers</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">person</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">ResearchersRC</span><span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add researcher to notebook record&quot;</span><span class="p">):</span>
+                <span class="n">record</span><span class="o">.</span><span class="n">ResearchersRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RemoveResearcher</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveResearcher</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a researcher from a notebook record.</span>
 
@@ -1439,26 +1503,35 @@
 
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;Researchers&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">Researchers</span><span class="p">:</span>
-                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove researcher from notebook record&quot;</span><span class="p">):</span>
-                    <span class="n">record</span><span class="o">.</span><span class="n">Researchers</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">ResearchersRC</span><span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove researcher from notebook record&quot;</span><span class="p">):</span>
+                <span class="n">record</span><span class="o">.</span><span class="n">ResearchersRC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
 
     <span class="c1"># --- Linking Operations: Participants ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetParticipants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParticipants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all participants associated with a notebook record.</span>
 
 <span class="sd">        Participants are people (ICmPerson objects) who participated in the</span>
 <span class="sd">        recorded event (e.g., consultants, speakers, informants).</span>
 
+<span class="sd">        Under the hood, a notebook record does not hold participants</span>
+<span class="sd">        directly. It owns a collection of role-participant groups</span>
+<span class="sd">        (``ParticipantsOC``, each an ``IRnRoledPartic``), and each group</span>
+<span class="sd">        references a set of people (``ParticipantsRC``) along with an</span>
+<span class="sd">        optional role (``RoleRA``, an ``ICmPossibility``). This method</span>
+<span class="sd">        flattens every group&#39;s people into a single de-duplicated list --</span>
+<span class="sd">        a person who appears in more than one role group is only returned</span>
+<span class="sd">        once.</span>
+
 <span class="sd">        Args:</span>
 <span class="sd">            record_or_hvo: The notebook record object (IRnGenericRec) or its HVO.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            list: List of ICmPerson objects representing participants.</span>
+<span class="sd">            list: List of ICmPerson objects representing participants,</span>
+<span class="sd">                de-duplicated across all role groups.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If record_or_hvo is None.</span>
@@ -1480,24 +1553,45 @@
 <span class="sd">            - Returns empty list if no participants assigned</span>
 <span class="sd">            - Participants differ from researchers (subjects vs. investigators)</span>
 <span class="sd">            - Multiple participants can be assigned to one record</span>
+<span class="sd">            - LIMITATION: role information (``RoleRA``) is not surfaced by</span>
+<span class="sd">              this method. If a person is a participant with a specific</span>
+<span class="sd">              role, that role is not distinguishable in the returned list --</span>
+<span class="sd">              this method only reports flat person membership. A future API</span>
+<span class="sd">              could add an optional role-aware return shape without</span>
+<span class="sd">              breaking this signature.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            AddParticipant, RemoveParticipant, GetResearchers</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;Participants&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">Participants</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Participants</span><span class="p">)</span>
+        <span class="n">seen_hvos</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">participants</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">ParticipantsOC</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">ParticipantsRC</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">Hvo</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_hvos</span><span class="p">:</span>
+                    <span class="n">seen_hvos</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">Hvo</span><span class="p">)</span>
+                    <span class="n">participants</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="n">participants</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddParticipant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddParticipant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a participant to a notebook record.</span>
 
 <span class="sd">        Associates a person (consultant/speaker/informant) with the notebook</span>
 <span class="sd">        record as a participant in the documented event.</span>
+
+<span class="sd">        A notebook record has no direct participant collection. Instead it</span>
+<span class="sd">        owns a collection of role-participant groups (``ParticipantsOC``,</span>
+<span class="sd">        each an ``IRnRoledPartic``), and this method targets the record&#39;s</span>
+<span class="sd">        *default* (no-specific-role) group, exposed read-only via</span>
+<span class="sd">        ``record.DefaultRoledParticipants``. If no roled-participant group</span>
+<span class="sd">        exists yet, one is created via ``record.MakeDefaultRoledParticipant()``</span>
+<span class="sd">        before the person is linked. This method has no ``role`` parameter,</span>
+<span class="sd">        so it can only ever target/create the default group -- a caller</span>
+<span class="sd">        who needs a role-specific group must do so via direct LCM access.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            record_or_hvo: The notebook record object (IRnGenericRec) or its HVO.</span>
@@ -1526,6 +1620,9 @@
 <span class="sd">            - Adding same participant twice has no effect</span>
 <span class="sd">            - Participants represent subjects/consultants</span>
 <span class="sd">            - Use AddResearcher() for investigators/fieldworkers</span>
+<span class="sd">            - The first call for a record with no roled-participant group</span>
+<span class="sd">              creates one (an owned ``IRnRoledPartic`` object); subsequent</span>
+<span class="sd">              calls reuse that same default group</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetParticipants, RemoveParticipant, AddResearcher</span>
@@ -1536,18 +1633,40 @@
 
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;Participants&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">person</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">Participants</span><span class="p">:</span>
-                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add participant to notebook record&quot;</span><span class="p">):</span>
-                    <span class="n">record</span><span class="o">.</span><span class="n">Participants</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">DefaultRoledParticipants</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">ParticipantsRC</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add participant to notebook record&quot;</span><span class="p">):</span>
+            <span class="c1"># Re-check inside the transaction: DefaultRoledParticipants is</span>
+            <span class="c1"># read-only and returns None until a group exists, so the only</span>
+            <span class="c1"># documented factory path is MakeDefaultRoledParticipant().</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">DefaultRoledParticipants</span>
+            <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">group</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">MakeDefaultRoledParticipant</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">person</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">ParticipantsRC</span><span class="p">:</span>
+                <span class="n">group</span><span class="o">.</span><span class="n">ParticipantsRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RemoveParticipant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveParticipant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a participant from a notebook record.</span>
 
 <span class="sd">        Removes the association between a person and a notebook record. The</span>
 <span class="sd">        person object itself is not deleted.</span>
+
+<span class="sd">        A person can appear in more than one role-participant group</span>
+<span class="sd">        (``IRnRoledPartic``, owned by the record via ``ParticipantsOC``).</span>
+<span class="sd">        This method searches every group owned by the record and unlinks</span>
+<span class="sd">        the person from each one that contains them (via that group&#39;s</span>
+<span class="sd">        ``ParticipantsRC``, a reference collection -- unlinking never</span>
+<span class="sd">        deletes the person or the group).</span>
+
+<span class="sd">        If removing the person leaves a role group empty, that empty</span>
+<span class="sd">        group is left in place; this method does not delete owned</span>
+<span class="sd">        ``IRnRoledPartic`` objects (removal from the owning ``ParticipantsOC``</span>
+<span class="sd">        collection would be destructive and is out of scope here).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            record_or_hvo: The notebook record object (IRnGenericRec) or its HVO.</span>
@@ -1566,6 +1685,9 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only removes the link, doesn&#39;t delete the person</span>
 <span class="sd">            - No error if person wasn&#39;t linked to record</span>
+<span class="sd">            - Removes the person from every role group that contains them,</span>
+<span class="sd">              not just the default group</span>
+<span class="sd">            - Never deletes the role group itself, even if left empty</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            AddParticipant, GetParticipants</span>
@@ -1576,15 +1698,26 @@
 
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;Participants&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">Participants</span><span class="p">:</span>
-                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove participant from notebook record&quot;</span><span class="p">):</span>
-                    <span class="n">record</span><span class="o">.</span><span class="n">Participants</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
+        <span class="n">groups_with_person</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">group</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">ParticipantsOC</span> <span class="k">if</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">ParticipantsRC</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">groups_with_person</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove participant from notebook record&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups_with_person</span><span class="p">:</span>
+                <span class="c1"># Unlink from the reference collection only. Never touch</span>
+                <span class="c1"># record.ParticipantsOC -- that is the owning collection,</span>
+                <span class="c1"># and removing a group from it would delete the group</span>
+                <span class="c1"># (and orphan/destroy its participant links), not just</span>
+                <span class="c1"># unlink this one person.</span>
+                <span class="n">group</span><span class="o">.</span><span class="n">ParticipantsRC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
 
     <span class="c1"># --- Linking Operations: Locations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetLocations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLocations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all locations associated with a notebook record.</span>
 
@@ -1630,7 +1763,7 @@
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddLocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddLocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a location to a notebook record.</span>
 
@@ -1686,7 +1819,7 @@
                     <span class="n">record</span><span class="o">.</span><span class="n">LocationsRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RemoveLocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveLocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a location from a notebook record.</span>
 
@@ -1728,7 +1861,7 @@
     <span class="c1"># --- Linking Operations: Sources ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all bibliographic sources associated with a notebook record.</span>
 
@@ -1774,7 +1907,7 @@
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddSource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddSource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a source (person) to a notebook record.</span>
 
@@ -1829,7 +1962,7 @@
                     <span class="n">record</span><span class="o">.</span><span class="n">SourcesRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RemoveSource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveSource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a source (person) from a notebook record.</span>
 
@@ -1872,7 +2005,7 @@
     <span class="c1"># --- Text Linking Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetTexts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetTexts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all texts linked to a notebook record.</span>
 
@@ -1911,13 +2044,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;TextsRC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">TextsRC</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">TextsRC</span><span class="p">)</span>
+        <span class="n">linked</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">TextRA</span>
+        <span class="k">if</span> <span class="n">linked</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">IText</span><span class="p">(</span><span class="n">linked</span><span class="p">)]</span>
 
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">LinkToText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">LinkToText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Link a notebook record to a text.</span>
 
@@ -1961,13 +2095,20 @@
 
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;TextsRC&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">text</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">TextsRC</span><span class="p">:</span>
-                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Link text to notebook record&quot;</span><span class="p">):</span>
-                    <span class="n">record</span><span class="o">.</span><span class="n">TextsRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">text_obj</span> <span class="o">=</span> <span class="n">IText</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;text must be a valid IText object&quot;</span><span class="p">)</span>
+
+        <span class="n">current</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">TextRA</span>
+        <span class="k">if</span> <span class="n">current</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">current</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">Hvo</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Link text to notebook record&quot;</span><span class="p">):</span>
+            <span class="n">record</span><span class="o">.</span><span class="n">TextRA</span> <span class="o">=</span> <span class="n">text_obj</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">UnlinkFromText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">UnlinkFromText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Unlink a notebook record from a text.</span>
 
@@ -2002,15 +2143,22 @@
 
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;TextsRC&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">TextsRC</span><span class="p">:</span>
-                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Unlink text from notebook record&quot;</span><span class="p">):</span>
-                    <span class="n">record</span><span class="o">.</span><span class="n">TextsRC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">text_obj</span> <span class="o">=</span> <span class="n">IText</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;text must be a valid IText object&quot;</span><span class="p">)</span>
+
+        <span class="n">current</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">TextRA</span>
+        <span class="k">if</span> <span class="n">current</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">current</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">!=</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">Hvo</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Unlink text from notebook record&quot;</span><span class="p">):</span>
+            <span class="n">record</span><span class="o">.</span><span class="n">TextRA</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># --- Media File Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetMediaFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMediaFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all media files attached to a notebook record.</span>
 
@@ -2054,7 +2202,7 @@
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">media_file</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">media_file</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a media file to a notebook record.</span>
 
@@ -2107,7 +2255,7 @@
                     <span class="n">record</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">media_file</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RemoveMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">media_file</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">media_file</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a media file from a notebook record.</span>
 
@@ -2150,7 +2298,7 @@
     <span class="c1"># --- Status Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the status of a notebook record.</span>
 
@@ -2187,13 +2335,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;Status&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">Status</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">record</span><span class="o">.</span><span class="n">Status</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;StatusRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">StatusRA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">record</span><span class="o">.</span><span class="n">StatusRA</span>
 
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the status of a notebook record.</span>
 
@@ -2249,10 +2397,10 @@
         <span class="c1"># Lookup above stays outside the bracket: an unknown status name must</span>
         <span class="c1"># raise before any undo task opens (D5/P3).</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set record status&quot;</span><span class="p">):</span>
-            <span class="n">record</span><span class="o">.</span><span class="n">Status</span> <span class="o">=</span> <span class="n">status</span>
+            <span class="n">record</span><span class="o">.</span><span class="n">StatusRA</span> <span class="o">=</span> <span class="n">status</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAllStatuses</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllStatuses</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all available status values for notebook records.</span>
 
@@ -2292,7 +2440,7 @@
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FindStatusByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status_name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindStatusByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status_name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a status by its name.</span>
 
@@ -2335,15 +2483,17 @@
     <span class="c1"># --- Query Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FindByDate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByDate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find notebook records by date range.</span>
 
 <span class="sd">        Searches for records whose DateOfEvent falls within the specified range.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            start_date: Start date (DateTime or string &quot;YYYY-MM-DD&quot;). None means no start limit.</span>
-<span class="sd">            end_date: End date (DateTime or string &quot;YYYY-MM-DD&quot;). None means no end limit.</span>
+<span class="sd">            start_date: Start date (GenDate, DateTime or string &quot;YYYY-MM-DD&quot;).</span>
+<span class="sd">                None means no start limit.</span>
+<span class="sd">            end_date: End date (GenDate, DateTime or string &quot;YYYY-MM-DD&quot;).</span>
+<span class="sd">                None means no end limit.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            list: List of IRnGenericRec objects matching the date criteria.</span>
@@ -2367,27 +2517,33 @@
 <span class="sd">            - Searches DateOfEvent, not DateCreated/Modified</span>
 <span class="sd">            - Records without DateOfEvent are excluded</span>
 <span class="sd">            - Both dates are inclusive</span>
-<span class="sd">            - Accepts DateTime objects or date strings</span>
+<span class="sd">            - Accepts GenDate, DateTime objects or date strings</span>
+<span class="sd">            - Bounds are compared as GenDates at day resolution; a stored</span>
+<span class="sd">              non-exact date (&quot;before&quot;/&quot;after&quot;/&quot;approximately&quot;) uses</span>
+<span class="sd">              GenDate&#39;s own ordering</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            FindByResearcher, FindByType, GetDateOfEvent</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Convert string dates to DateTime if needed</span>
-        <span class="k">if</span> <span class="n">start_date</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start_date</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">start_date</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">start_date</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">end_date</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">end_date</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">end_date</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">end_date</span><span class="p">)</span>
+        <span class="c1"># DateOfEvent is a GenDate, whose relational operators only accept</span>
+        <span class="c1"># another GenDate -- comparing it with a DateTime raises TypeError.</span>
+        <span class="c1"># Normalize both bounds up front so a bad bound raises</span>
+        <span class="c1"># FP_ParameterError before any iteration.</span>
+        <span class="k">if</span> <span class="n">start_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">start_date</span> <span class="o">=</span> <span class="n">gendate_from_input</span><span class="p">(</span><span class="n">start_date</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">end_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">end_date</span> <span class="o">=</span> <span class="n">gendate_from_input</span><span class="p">(</span><span class="n">end_date</span><span class="p">)</span>
 
         <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
             <span class="n">event_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetDateOfEvent</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">event_date</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">event_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">continue</span>
 
             <span class="c1"># Check if date falls within range</span>
-            <span class="k">if</span> <span class="n">start_date</span> <span class="ow">and</span> <span class="n">event_date</span> <span class="o">&lt;</span> <span class="n">start_date</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">start_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">event_date</span> <span class="o">&lt;</span> <span class="n">start_date</span><span class="p">:</span>
                 <span class="k">continue</span>
-            <span class="k">if</span> <span class="n">end_date</span> <span class="ow">and</span> <span class="n">event_date</span> <span class="o">&gt;</span> <span class="n">end_date</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">end_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">event_date</span> <span class="o">&gt;</span> <span class="n">end_date</span><span class="p">:</span>
                 <span class="k">continue</span>
 
             <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
@@ -2395,7 +2551,7 @@
         <span class="k">return</span> <span class="n">results</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FindByResearcher</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByResearcher</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find all notebook records associated with a specific researcher.</span>
 
@@ -2447,7 +2603,7 @@
         <span class="k">return</span> <span class="n">results</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FindByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_type</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_type</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find all notebook records of a specific type.</span>
 
@@ -2501,7 +2657,7 @@
         <span class="k">return</span> <span class="n">results</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a notebook record, creating a new copy with a new GUID.</span>
 
@@ -2556,18 +2712,19 @@
         <span class="c1"># Get source record</span>
         <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Determine parent (owner)</span>
-        <span class="n">owner</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Owner</span>
-
         <span class="c1"># Create new record using factory (auto-generates new GUID)</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate notebook record&quot;</span><span class="p">):</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IRnGenericRecFactory</span><span class="p">)</span>
             <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-            <span class="c1"># Determine insertion position and add to parent FIRST</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">IRnGenericRec</span><span class="p">):</span>
+            <span class="c1"># Determine insertion position and add to parent FIRST.</span>
+            <span class="c1"># Mirror Delete: only a parent exposing SubRecordsOS is a</span>
+            <span class="c1"># record (sub-record path). A top-level record&#39;s owner is the</span>
+            <span class="c1"># RnResearchNbk notebook, which has no SubRecordsOS (found</span>
+            <span class="c1"># live: raw ICmObject owner, AttributeError).</span>
+            <span class="n">parent_record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parent_record</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent_record</span><span class="p">,</span> <span class="s2">&quot;SubRecordsOS&quot;</span><span class="p">):</span>
                 <span class="c1"># Parent is another notebook record (sub-record)</span>
-                <span class="n">parent_record</span> <span class="o">=</span> <span class="n">IRnGenericRec</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
                     <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent_record</span><span class="o">.</span><span class="n">SubRecordsOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
                     <span class="n">parent_record</span><span class="o">.</span><span class="n">SubRecordsOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
@@ -2582,17 +2739,18 @@
                 <span class="c1"># via Add().</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ResearchNotebookOA</span><span class="o">.</span><span class="n">RecordsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
 
-            <span class="c1"># Copy simple MultiString properties</span>
-            <span class="n">duplicate</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Title</span><span class="p">)</span>
-            <span class="n">duplicate</span><span class="o">.</span><span class="n">Text</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+            <span class="c1"># Copy title (bare ITsString: direct assignment, issue #352)</span>
+            <span class="c1"># and body content (DescriptionOA paragraphs).</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Title</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Title</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_CopyRecordContent</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
 
             <span class="c1"># Copy Reference Atomic (RA) properties</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;Type&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">Type</span><span class="p">:</span>
-                <span class="n">duplicate</span><span class="o">.</span><span class="n">Type</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Type</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;Status&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">Status</span><span class="p">:</span>
-                <span class="n">duplicate</span><span class="o">.</span><span class="n">Status</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Status</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;Confidence&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">Confidence</span><span class="p">:</span>
-                <span class="n">duplicate</span><span class="o">.</span><span class="n">Confidence</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Confidence</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;TypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">TypeRA</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">TypeRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">TypeRA</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;StatusRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">StatusRA</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">StatusRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">StatusRA</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;ConfidenceRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">ConfidenceRA</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">ConfidenceRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">ConfidenceRA</span>
 
             <span class="c1"># Copy DateTime properties</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
@@ -2607,7 +2765,7 @@
 
             <span class="k">return</span> <span class="n">duplicate</span>
 
-    <span class="k">def</span> <span class="nf">_DuplicateSubRecordInto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_rec</span><span class="p">,</span> <span class="n">parent_dup</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_DuplicateSubRecordInto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_rec</span><span class="p">,</span> <span class="n">parent_dup</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicate a sub-record into the specified parent&#39;s SubRecordsOS.&quot;&quot;&quot;</span>
         <span class="c1"># Every caller reaches this helper from inside Duplicate&#39;s own</span>
         <span class="c1"># &quot;Duplicate notebook record&quot; bracket, so these mutations are already</span>
@@ -2619,16 +2777,17 @@
             <span class="n">dup_rec</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
             <span class="n">parent_dup</span><span class="o">.</span><span class="n">SubRecordsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">dup_rec</span><span class="p">)</span>
 
-            <span class="c1"># Copy properties</span>
-            <span class="n">dup_rec</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_rec</span><span class="o">.</span><span class="n">Title</span><span class="p">)</span>
-            <span class="n">dup_rec</span><span class="o">.</span><span class="n">Text</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_rec</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+            <span class="c1"># Copy title (bare ITsString) and body content</span>
+            <span class="c1"># (DescriptionOA paragraphs); see Duplicate above.</span>
+            <span class="n">dup_rec</span><span class="o">.</span><span class="n">Title</span> <span class="o">=</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">Title</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_CopyRecordContent</span><span class="p">(</span><span class="n">source_rec</span><span class="p">,</span> <span class="n">dup_rec</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_rec</span><span class="p">,</span> <span class="s2">&quot;Type&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">Type</span><span class="p">:</span>
-                <span class="n">dup_rec</span><span class="o">.</span><span class="n">Type</span> <span class="o">=</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">Type</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_rec</span><span class="p">,</span> <span class="s2">&quot;Status&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">Status</span><span class="p">:</span>
-                <span class="n">dup_rec</span><span class="o">.</span><span class="n">Status</span> <span class="o">=</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">Status</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_rec</span><span class="p">,</span> <span class="s2">&quot;Confidence&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">Confidence</span><span class="p">:</span>
-                <span class="n">dup_rec</span><span class="o">.</span><span class="n">Confidence</span> <span class="o">=</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">Confidence</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_rec</span><span class="p">,</span> <span class="s2">&quot;TypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">TypeRA</span><span class="p">:</span>
+                <span class="n">dup_rec</span><span class="o">.</span><span class="n">TypeRA</span> <span class="o">=</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">TypeRA</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_rec</span><span class="p">,</span> <span class="s2">&quot;StatusRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">StatusRA</span><span class="p">:</span>
+                <span class="n">dup_rec</span><span class="o">.</span><span class="n">StatusRA</span> <span class="o">=</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">StatusRA</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_rec</span><span class="p">,</span> <span class="s2">&quot;ConfidenceRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">ConfidenceRA</span><span class="p">:</span>
+                <span class="n">dup_rec</span><span class="o">.</span><span class="n">ConfidenceRA</span> <span class="o">=</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">ConfidenceRA</span>
 
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_rec</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
                 <span class="n">dup_rec</span><span class="o">.</span><span class="n">DateOfEvent</span> <span class="o">=</span> <span class="n">source_rec</span><span class="o">.</span><span class="n">DateOfEvent</span>
@@ -2641,29 +2800,28 @@
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get syncable properties for cross-project synchronization.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;item&quot;</span><span class="p">)</span>
 
-        <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
 
         <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Title&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Text</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Title&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ReadTsString</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Title</span><span class="p">)</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ReadRecordContent</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;Type&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">Type</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;TypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">TypeRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">TypeRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;Status&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">Status</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;StatusRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">StatusRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">StatusRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;Confidence&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">Confidence</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Confidence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">Confidence</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;ConfidenceRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">ConfidenceRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Confidence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">ConfidenceRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Confidence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -2675,7 +2833,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compare two notebook records and return detailed differences.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
@@ -2700,7 +2858,7 @@
     <span class="c1"># --- Metadata Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the GUID (globally unique identifier) of a notebook record.</span>
 
@@ -2732,7 +2890,7 @@
         <span class="k">return</span> <span class="n">record</span><span class="o">.</span><span class="n">Guid</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetConfidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetConfidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the confidence level of a notebook record.</span>
 
@@ -2769,13 +2927,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetRecordObject</span><span class="p">(</span><span class="n">record_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;Confidence&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">Confidence</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">record</span><span class="o">.</span><span class="n">Confidence</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;ConfidenceRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">ConfidenceRA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">record</span><span class="o">.</span><span class="n">ConfidenceRA</span>
 
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetConfidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">confidence</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetConfidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_or_hvo</span><span class="p">,</span> <span class="n">confidence</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the confidence level of a notebook record.</span>
 
@@ -2822,7 +2980,7 @@
 
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s1">&#39;Set Confidence&#39;</span><span class="p">):</span>
 
-            <span class="n">record</span><span class="o">.</span><span class="n">Confidence</span> <span class="o">=</span> <span class="n">confidence</span></div>
+            <span class="n">record</span><span class="o">.</span><span class="n">ConfidenceRA</span> <span class="o">=</span> <span class="n">confidence</span></div>
 
 </pre></div>
 
@@ -2830,7 +2988,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -2846,7 +3004,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -2861,8 +3019,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

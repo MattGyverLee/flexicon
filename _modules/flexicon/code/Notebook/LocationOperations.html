@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Notebook.LocationOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -54,33 +54,41 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
+<span class="c1"># CmLocation adds only Alias beyond CmPossibility in MasterLCModel.xml; there</span>
+<span class="c1"># is no LCM storage for geographic coordinates or elevation (issue #453).</span>
+<span class="n">_LCM_LOCATION_GEO_UNSUPPORTED</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;ICmLocation has no coordinate or elevation fields in the LCM (issue #453): &quot;</span>
+    <span class="s2">&quot;CmLocation exposes only Alias beyond CmPossibility; historical &quot;</span>
+    <span class="s2">&quot;DateOfEvent/GenDate and Elevation access never reached the database.&quot;</span>
+<span class="p">)</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ICmLocation</span><span class="p">,</span>
     <span class="n">ICmLocationFactory</span><span class="p">,</span>
     <span class="n">ICmPossibilityRepository</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
-<span class="kn">from</span> <span class="nn">System</span> <span class="kn">import</span> <span class="n">DateTime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">DateTime</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
 
 
 <div class="viewcode-block" id="LocationOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.LocationOperations.LocationOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">LocationOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LocationOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing geographic locations in a</span>
 <span class="sd">    FieldWorks project.</span>
@@ -122,7 +130,7 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize LocationOperations with a FLExProject instance.</span>
 
@@ -135,7 +143,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all locations in the project.</span>
 
@@ -170,14 +178,21 @@
             <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">,</span> <span class="n">ICmLocation</span><span class="p">,</span> <span class="n">recursive</span><span class="p">))</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Create a new top-level location.</span>
+<span class="sd">        Create a new location.</span>
+
+<span class="sd">        This is the canonical creation path for both top-level locations</span>
+<span class="sd">        and sublocations; CreateSublocation delegates to it with</span>
+<span class="sd">        parent=parent_location_or_hvo.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): The name of the new location.</span>
 <span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
 <span class="sd">            alias (str): Optional alias/abbreviation for the location.</span>
+<span class="sd">            parent: Optional parent ICmLocation object or HVO. If None</span>
+<span class="sd">                (default), creates a top-level location; if given, creates</span>
+<span class="sd">                a sublocation of that parent. Defaults to None.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            ICmLocation: The newly created location object.</span>
@@ -185,7 +200,8 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
 <span class="sd">            FP_NullParameterError: If name is None.</span>
-<span class="sd">            FP_ParameterError: If name is empty.</span>
+<span class="sd">            FP_ParameterError: If name is empty, the locations list is</span>
+<span class="sd">                missing (top-level only), or the parent doesn&#39;t exist.</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Create a simple location</span>
@@ -199,13 +215,17 @@
 <span class="sd">            &gt;&gt;&gt; print(project.Location.GetAlias(region))</span>
 <span class="sd">            VAU</span>
 
+<span class="sd">            &gt;&gt;&gt; # A sublocation is just a Create with a parent</span>
+<span class="sd">            &gt;&gt;&gt; town = project.Location.Create(&quot;Mitú&quot;, &quot;en&quot;, parent=region)</span>
+
 <span class="sd">            &gt;&gt;&gt; # Add coordinates and elevation</span>
 <span class="sd">            &gt;&gt;&gt; project.Location.SetCoordinates(village, -1.2345, -70.6789)</span>
 <span class="sd">            &gt;&gt;&gt; project.Location.SetElevation(village, 150)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Creates a top-level location (no parent region)</span>
-<span class="sd">            - Use CreateSublocation() to create hierarchical locations</span>
+<span class="sd">            - Creates a top-level location (no parent region) unless parent</span>
+<span class="sd">              is given -- use CreateSublocation() to create hierarchical</span>
+<span class="sd">              locations</span>
 <span class="sd">            - Name is set in specified writing system</span>
 <span class="sd">            - Alias is optional and can be set later with SetAlias()</span>
 <span class="sd">            - Coordinates and elevation should be set separately</span>
@@ -223,18 +243,30 @@
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
-        <span class="c1"># Get the locations list</span>
-        <span class="n">location_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LocationsOA</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">location_list</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Locations list not found in project&quot;</span><span class="p">)</span>
+        <span class="n">parent_location</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;parent&quot;</span><span class="p">)</span>
+            <span class="n">parent_location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Create sublocation &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Get the locations list (top-level creates only; a sublocation</span>
+            <span class="c1"># attaches to its parent, which implies the list exists)</span>
+            <span class="n">location_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LocationsOA</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">location_list</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Locations list not found in project&quot;</span><span class="p">)</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Create location &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
 
         <span class="c1"># Create the new location using the factory</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create location &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="n">label</span><span class="p">):</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmLocationFactory</span><span class="p">)</span>
             <span class="n">new_location</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-            <span class="c1"># Add to top-level list (must be done before setting properties)</span>
-            <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_location</span><span class="p">)</span>
+            <span class="c1"># Add to the parent&#39;s sublocations or the top-level list</span>
+            <span class="c1"># (must be done before setting properties)</span>
+            <span class="k">if</span> <span class="n">parent_location</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parent_location</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_location</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_location</span><span class="p">)</span>
 
             <span class="c1"># Set name</span>
             <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
@@ -251,7 +283,7 @@
             <span class="k">return</span> <span class="n">new_location</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a location from the project.</span>
 
@@ -307,7 +339,7 @@
                     <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a location by its name.</span>
 
@@ -366,7 +398,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a location with the given name exists.</span>
 
@@ -401,7 +433,7 @@
     <span class="c1"># --- Name and Alias Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the name of a location.</span>
 
@@ -445,7 +477,7 @@
         <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the name of a location.</span>
 
@@ -494,7 +526,7 @@
             <span class="n">location</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAlias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAlias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the alias/abbreviation of a location.</span>
 
@@ -540,7 +572,7 @@
         <span class="k">return</span> <span class="n">alias</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetAlias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetAlias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the alias/abbreviation of a location.</span>
 
@@ -590,7 +622,7 @@
     <span class="c1"># --- Geographic Properties ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the geographic coordinates (latitude, longitude) of a location.</span>
 
@@ -620,35 +652,21 @@
 <span class="sd">            ...     print(&quot;Location coordinates not set&quot;)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns None if either latitude or longitude is not set</span>
-<span class="sd">            - Latitude range: -90 (South Pole) to +90 (North Pole)</span>
-<span class="sd">            - Longitude range: -180 (West) to +180 (East)</span>
-<span class="sd">            - Coordinates are stored as GenDate fields in LCM</span>
-<span class="sd">            - Use decimal degrees format (not degrees/minutes/seconds)</span>
+<span class="sd">            - Always returns None today: the LCM ``CmLocation`` class has no</span>
+<span class="sd">              latitude/longitude fields (issue #453).</span>
+<span class="sd">            - Use decimal degrees format (not degrees/minutes/seconds) if a</span>
+<span class="sd">              future storage path is added.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetCoordinates, GetElevation, FindByCoordinates</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
 
-        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
-
-        <span class="c1"># Coordinates are stored in GenDate fields</span>
-        <span class="c1"># Latitude in GenDate.GenDateVal1</span>
-        <span class="c1"># Longitude in GenDate.GenDateVal2</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
-            <span class="n">date_info</span> <span class="o">=</span> <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">date_info</span><span class="p">,</span> <span class="s2">&quot;GenDateVal1&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">date_info</span><span class="p">,</span> <span class="s2">&quot;GenDateVal2&quot;</span><span class="p">):</span>
-                <span class="n">lat</span> <span class="o">=</span> <span class="n">date_info</span><span class="o">.</span><span class="n">GenDateVal1</span>
-                <span class="n">lon</span> <span class="o">=</span> <span class="n">date_info</span><span class="o">.</span><span class="n">GenDateVal2</span>
-                <span class="c1"># Check if valid coordinates (both non-zero or explicitly set)</span>
-                <span class="k">if</span> <span class="n">lat</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">lon</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">lat</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">lon</span><span class="p">))</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">latitude</span><span class="p">,</span> <span class="n">longitude</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">latitude</span><span class="p">,</span> <span class="n">longitude</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the geographic coordinates of a location.</span>
 
@@ -660,7 +678,8 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
 <span class="sd">            FP_NullParameterError: If location_or_hvo, latitude, or longitude is None.</span>
-<span class="sd">            FP_ParameterError: If location doesn&#39;t exist or coordinates are invalid.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist, coordinates are invalid,</span>
+<span class="sd">                or the LCM model provides no coordinate storage (issue #453).</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
@@ -679,8 +698,6 @@
 <span class="sd">            - Longitude must be between -180 and +180</span>
 <span class="sd">            - Use negative values for South latitude and West longitude</span>
 <span class="sd">            - Use decimal degrees, not degrees/minutes/seconds</span>
-<span class="sd">            - Coordinates are stored in GenDate fields</span>
-<span class="sd">            - Use (0, 0) to clear coordinates (though this is valid for Gulf of Guinea)</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetCoordinates, SetElevation, FindByCoordinates</span>
@@ -703,28 +720,11 @@
         <span class="k">if</span> <span class="n">lon</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">180</span> <span class="ow">or</span> <span class="n">lon</span> <span class="o">&gt;</span> <span class="mi">180</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Longitude must be between -180 and +180 (got </span><span class="si">{</span><span class="n">lon</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 
-        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
-
-        <span class="c1"># Create or update GenDate for coordinates</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set location coordinates&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
-                <span class="c1"># Need to create GenDate - this may require factory</span>
-                <span class="c1"># For now, set directly if property exists</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">):</span>
-                    <span class="c1"># Try to initialize the GenDate object</span>
-                    <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">GenDate</span>
-
-                    <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span> <span class="o">=</span> <span class="n">GenDate</span><span class="p">()</span>
-
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
-                <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="o">.</span><span class="n">GenDateVal1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lat</span> <span class="o">*</span> <span class="mi">10000</span><span class="p">)</span>  <span class="c1"># Store with precision</span>
-                <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="o">.</span><span class="n">GenDateVal2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lon</span> <span class="o">*</span> <span class="mi">10000</span><span class="p">)</span>
-
-            <span class="c1"># Update modification date</span>
-            <span class="n">location</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="n">_LCM_LOCATION_GEO_UNSUPPORTED</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetElevation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetElevation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the elevation of a location in meters above sea level.</span>
 
@@ -750,30 +750,20 @@
 <span class="sd">            ...     print(&quot;Elevation not recorded&quot;)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns None if elevation is not set</span>
-<span class="sd">            - Elevation is in meters above sea level</span>
-<span class="sd">            - Negative values indicate below sea level</span>
-<span class="sd">            - Stored as an integer</span>
-<span class="sd">            - Typical range: -500 to +9000 meters for inhabited areas</span>
+<span class="sd">            - Always returns None today: the LCM ``CmLocation`` class has no</span>
+<span class="sd">              ``Elevation`` field (issue #453).</span>
+<span class="sd">            - Elevation is in meters above sea level when a storage path exists.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetElevation, GetCoordinates</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
 
-        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
-
-        <span class="c1"># Elevation might be stored in a numeric field</span>
-        <span class="c1"># Check if the field exists and has a value</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;Elevation&quot;</span><span class="p">):</span>
-            <span class="n">elev</span> <span class="o">=</span> <span class="n">location</span><span class="o">.</span><span class="n">Elevation</span>
-            <span class="k">if</span> <span class="n">elev</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Assume 0 means not set</span>
-                <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">elev</span><span class="p">)</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetElevation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">elevation</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetElevation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">elevation</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the elevation of a location in meters above sea level.</span>
 
@@ -784,7 +774,8 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
 <span class="sd">            FP_NullParameterError: If location_or_hvo or elevation is None.</span>
-<span class="sd">            FP_ParameterError: If location doesn&#39;t exist or elevation is invalid.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist, elevation is invalid,</span>
+<span class="sd">                or the LCM model provides no elevation storage (issue #453).</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
@@ -826,22 +817,13 @@
         <span class="k">if</span> <span class="n">elev</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">500</span> <span class="ow">or</span> <span class="n">elev</span> <span class="o">&gt;</span> <span class="mi">10000</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Elevation </span><span class="si">{</span><span class="n">elev</span><span class="si">}</span><span class="s2"> is outside typical range (-500 to 10000m)&quot;</span><span class="p">)</span>
 
-        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
-
-        <span class="c1"># Set elevation if field exists</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set location elevation&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;Elevation&quot;</span><span class="p">):</span>
-                <span class="n">location</span><span class="o">.</span><span class="n">Elevation</span> <span class="o">=</span> <span class="n">elev</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Elevation field not available on ICmLocation&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Update modification date</span>
-            <span class="n">location</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="n">_LCM_LOCATION_GEO_UNSUPPORTED</span><span class="p">)</span>
 
     <span class="c1"># --- Description ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the description of a location.</span>
 
@@ -884,7 +866,7 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the description of a location.</span>
 
@@ -937,7 +919,7 @@
     <span class="c1"># --- Hierarchical Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetRegion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetRegion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the parent region of a location.</span>
 
@@ -992,7 +974,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetRegion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">parent_location_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetRegion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">parent_location_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the parent region of a location (move it in the hierarchy).</span>
 
@@ -1055,30 +1037,22 @@
         <span class="c1"># Get current parent</span>
         <span class="n">old_parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetRegion</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
 
-        <span class="c1"># Remove from old parent</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set location region&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">old_parent</span><span class="p">:</span>
-                <span class="n">old_parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Remove from top-level list</span>
-                <span class="n">location_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LocationsOA</span>
-                <span class="k">if</span> <span class="n">location_list</span> <span class="ow">and</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
-                    <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">old_parent</span> <span class="o">==</span> <span class="n">new_parent</span><span class="p">:</span>
+            <span class="k">return</span>
 
-            <span class="c1"># Add to new parent</span>
+        <span class="c1"># Re-parent via Add only -- LcmOwningSequence.Remove deletes the ownee (#472).</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set location region&quot;</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">new_parent</span><span class="p">:</span>
                 <span class="n">new_parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Add to top-level list</span>
                 <span class="n">location_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LocationsOA</span>
                 <span class="k">if</span> <span class="n">location_list</span><span class="p">:</span>
                     <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
 
-            <span class="c1"># Update modification date</span>
             <span class="n">location</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSublocations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSublocations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the sublocations of a location.</span>
 
@@ -1118,7 +1092,7 @@
             <span class="k">return</span> <span class="p">[</span><span class="n">ICmLocation</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">location</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">]</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">def</span> <span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
                 <span class="n">child</span> <span class="o">=</span> <span class="n">ICmLocation</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
                 <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
@@ -1128,9 +1102,12 @@
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CreateSublocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_location_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateSublocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_location_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new sublocation under a parent location.</span>
+
+<span class="sd">        Thin wrapper over Create with parent=parent_location_or_hvo; all</span>
+<span class="sd">        creation logic lives on Create.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            parent_location_or_hvo: The parent ICmLocation object or HVO.</span>
@@ -1160,6 +1137,8 @@
 <span class="sd">            Vaupés Department</span>
 
 <span class="sd">        Notes:</span>
+<span class="sd">            - Equivalent to ``Create(name, wsHandle, alias=alias,</span>
+<span class="sd">              parent=parent_location_or_hvo)``.</span>
 <span class="sd">            - Creates location as child of parent</span>
 <span class="sd">            - Parent-child relationship is established automatically</span>
 <span class="sd">            - Sublocation inherits no properties from parent (coordinates, etc.)</span>
@@ -1172,38 +1151,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">parent_location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;parent_location_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
-
-        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">parent_location_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
-
-        <span class="c1"># Create the new location using the factory</span>
+        <span class="c1"># Bracketed per D5 (the scanner cannot see through same-class</span>
+        <span class="c1"># delegation): joins Create&#39;s inner transaction via nesting</span>
+        <span class="c1"># (B1) rather than opening a separate undo unit.</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create sublocation &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
-            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmLocationFactory</span><span class="p">)</span>
-            <span class="n">new_location</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
-
-            <span class="c1"># Add to parent&#39;s sublocations (must be done before setting properties)</span>
-            <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_location</span><span class="p">)</span>
-
-            <span class="c1"># Set name</span>
-            <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-            <span class="n">new_location</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
-
-            <span class="c1"># Set alias if provided</span>
-            <span class="k">if</span> <span class="n">alias</span><span class="p">:</span>
-                <span class="n">mkstr_alias</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">alias</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-                <span class="n">new_location</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_alias</span><span class="p">)</span>
-
-            <span class="c1"># Set creation date</span>
-            <span class="n">new_location</span><span class="o">.</span><span class="n">DateCreated</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
-
-            <span class="k">return</span> <span class="n">new_location</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span>
+                <span class="n">name</span><span class="p">,</span>
+                <span class="n">wsHandle</span><span class="p">,</span>
+                <span class="n">alias</span><span class="o">=</span><span class="n">alias</span><span class="p">,</span>
+                <span class="n">parent</span><span class="o">=</span><span class="n">parent_location_or_hvo</span><span class="p">,</span>
+            <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a location, creating a new copy with a new GUID.</span>
 
@@ -1286,21 +1247,6 @@
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
                 <span class="n">duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
 
-            <span class="c1"># Copy coordinates and elevation</span>
-            <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetCoordinates</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">coords</span><span class="p">:</span>
-                <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">coords</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">SetCoordinates</span><span class="p">(</span><span class="n">duplicate</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">duplicate</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">):</span>
-                    <span class="n">duplicate</span><span class="o">.</span><span class="n">DateOfEvent</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">DateOfEvent</span>
-
-            <span class="n">elevation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetElevation</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">elevation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">duplicate</span><span class="p">,</span> <span class="s2">&quot;Elevation&quot;</span><span class="p">):</span>
-                    <span class="n">duplicate</span><span class="o">.</span><span class="n">Elevation</span> <span class="o">=</span> <span class="n">elevation</span>
-
             <span class="c1"># Set creation date</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">DateCreated</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
 
@@ -1313,7 +1259,7 @@
 
             <span class="k">return</span> <span class="n">duplicate</span>
 
-    <span class="k">def</span> <span class="nf">_DuplicateSublocationInto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_loc</span><span class="p">,</span> <span class="n">parent_dup</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_DuplicateSublocationInto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_loc</span><span class="p">,</span> <span class="n">parent_dup</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicate a sublocation into the specified parent&#39;s SubPossibilitiesOS.&quot;&quot;&quot;</span>
         <span class="c1"># Every caller reaches this helper from inside Duplicate&#39;s own</span>
         <span class="c1"># &quot;Duplicate location&quot; bracket, so these mutations are already covered at</span>
@@ -1331,20 +1277,6 @@
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_loc</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
                 <span class="n">dup_loc</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_loc</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
 
-            <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetCoordinates</span><span class="p">(</span><span class="n">source_loc</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">coords</span><span class="p">:</span>
-                <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">coords</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">SetCoordinates</span><span class="p">(</span><span class="n">dup_loc</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_loc</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_loc</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dup_loc</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">):</span>
-                    <span class="n">dup_loc</span><span class="o">.</span><span class="n">DateOfEvent</span> <span class="o">=</span> <span class="n">source_loc</span><span class="o">.</span><span class="n">DateOfEvent</span>
-
-            <span class="n">elevation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetElevation</span><span class="p">(</span><span class="n">source_loc</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">elevation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dup_loc</span><span class="p">,</span> <span class="s2">&quot;Elevation&quot;</span><span class="p">):</span>
-                    <span class="n">dup_loc</span><span class="o">.</span><span class="n">Elevation</span> <span class="o">=</span> <span class="n">elevation</span>
-
             <span class="n">dup_loc</span><span class="o">.</span><span class="n">DateCreated</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
 
             <span class="c1"># Recurse into nested sublocations</span>
@@ -1355,7 +1287,7 @@
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get syncable properties for cross-project synchronization.</span>
 
@@ -1383,7 +1315,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two locations and return detailed differences.</span>
 
@@ -1419,7 +1351,7 @@
     <span class="c1"># --- Metadata Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the GUID (Globally Unique Identifier) of a location.</span>
 
@@ -1459,7 +1391,7 @@
         <span class="k">return</span> <span class="n">location</span><span class="o">.</span><span class="n">Guid</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the creation date of a location.</span>
 
@@ -1504,7 +1436,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the last modification date of a location.</span>
 
@@ -1554,7 +1486,7 @@
     <span class="c1"># --- Query Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FindByCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latitude</span><span class="p">,</span> <span class="n">longitude</span><span class="p">,</span> <span class="n">radius_km</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latitude</span><span class="p">,</span> <span class="n">longitude</span><span class="p">,</span> <span class="n">radius_km</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find locations near the specified coordinates.</span>
 
@@ -1631,7 +1563,7 @@
         <span class="k">return</span> <span class="n">results</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetNearby</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">radius_km</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetNearby</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">radius_km</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all locations near a given location.</span>
 
@@ -1693,7 +1625,7 @@
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to ICmLocation.</span>
 
@@ -1723,7 +1655,7 @@
                 <span class="k">pass</span>
         <span class="k">return</span> <span class="n">location_or_hvo</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
 
@@ -1737,7 +1669,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__HaversineDistance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon2</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__HaversineDistance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculate the great-circle distance between two points on Earth.</span>
 
@@ -1777,7 +1709,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1793,7 +1725,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1808,8 +1740,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

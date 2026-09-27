@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Lexicon.LexEntryOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -54,15 +54,15 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="c1"># Import BaseOperations parent class</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ILexEntry</span><span class="p">,</span>
     <span class="n">ILexEntryFactory</span><span class="p">,</span>
     <span class="n">ILexEntryRepository</span><span class="p">,</span>
@@ -79,21 +79,22 @@
     <span class="n">ILexEtymologyFactory</span><span class="p">,</span>
     <span class="n">ICmFileFactory</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
+    <span class="n">FP_DeduplicationError</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Import string utilities</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_text</span><span class="p">,</span> <span class="n">normalize_match_key</span><span class="p">,</span> <span class="n">best_analysis_text</span><span class="p">,</span> <span class="n">best_vernacular_text</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span><span class="p">,</span> <span class="n">normalize_match_key</span><span class="p">,</span> <span class="n">best_analysis_text</span><span class="p">,</span> <span class="n">best_vernacular_text</span>
 
 <span class="c1"># Import shared morph-type resolution utilities (single source of truth</span>
 <span class="c1"># for name lookup, display-marker normalization, and stem/affix</span>
 <span class="c1"># classification -- also used by AllomorphOperations)</span>
-<span class="kn">from</span> <span class="nn">..Shared.morph_type_utils</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.morph_type_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">find_morph_type</span><span class="p">,</span>
     <span class="n">is_stem_morph_type</span><span class="p">,</span>
     <span class="n">morph_type_not_found_error</span><span class="p">,</span>
@@ -102,7 +103,7 @@
 
 <div class="viewcode-block" id="LexEntryOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.LexEntryOperations.LexEntryOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">LexEntryOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LexEntryOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing lexical entries in a</span>
 <span class="sd">    FieldWorks project.</span>
@@ -137,7 +138,7 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize LexEntryOperations with a FLExProject instance.</span>
 
@@ -150,7 +151,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all lexical entries in the project.</span>
 
@@ -181,7 +182,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ObjectsIn</span><span class="p">(</span><span class="n">ILexEntryRepository</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lexeme_form</span><span class="p">,</span> <span class="n">morph_type_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">create_blank_sense</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lexeme_form</span><span class="p">,</span> <span class="n">morph_type_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">create_blank_sense</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new lexical entry in the FLEx project.</span>
 
@@ -285,13 +286,17 @@
                 <span class="n">blank_sense</span> <span class="o">=</span> <span class="n">sense_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
                 <span class="n">new_entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">blank_sense</span><span class="p">)</span>
 
+            <span class="c1"># No DoNotPublishInRC seeding: like the FLEx GUI, a new entry is</span>
+            <span class="c1"># published in every publication. Exclusion is a specialty flag</span>
+            <span class="c1"># set explicitly via AddDoNotPublishIn (#545).</span>
+
             <span class="c1"># Note: Factory.Create() automatically adds the entry to the repository</span>
             <span class="c1"># No explicit Add() call needed - the entry is already in the database</span>
 
             <span class="k">return</span> <span class="n">new_entry</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a lexical entry from the FLEx project.</span>
 
@@ -338,7 +343,7 @@
             <span class="n">entry</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a lexical entry, creating a new entry with the same properties.</span>
 
@@ -474,7 +479,12 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Senses</span><span class="o">.</span><span class="n">_deep_copy_sense_to</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="n">new_entry</span><span class="p">)</span>
 
                 <span class="c1"># Duplicate alternate forms (allomorphs) using correct factory type</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
+
                 <span class="k">for</span> <span class="n">allomorph</span> <span class="ow">in</span> <span class="n">source_entry</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="p">:</span>
+                    <span class="c1"># AlternateFormsOS yields the base IMoForm view, which has</span>
+                    <span class="c1"># no PhoneEnvRC; cast so the environment copy below works.</span>
+                    <span class="n">allomorph</span> <span class="o">=</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">allomorph</span><span class="p">)</span>
                     <span class="n">class_name</span> <span class="o">=</span> <span class="n">allomorph</span><span class="o">.</span><span class="n">ClassName</span>
                     <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoAffixAllomorph&quot;</span><span class="p">:</span>
                         <span class="n">allomorph_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IMoAffixAllomorphFactory</span><span class="p">)</span>
@@ -512,13 +522,14 @@
                     <span class="n">etym_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexEtymologyFactory</span><span class="p">)</span>
                     <span class="n">new_etym</span> <span class="o">=</span> <span class="n">etym_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
                     <span class="n">new_entry</span><span class="o">.</span><span class="n">EtymologyOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_etym</span><span class="p">)</span>
-                    <span class="n">new_etym</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">etymology</span><span class="o">.</span><span class="n">Source</span><span class="p">)</span>
+                    <span class="c1"># ILexEtymology has no Source field (issue #352);</span>
+                    <span class="c1"># source-language text lives on LanguageNotes</span>
+                    <span class="c1"># (mirrors EtymologyOperations.Duplicate).</span>
+                    <span class="n">new_etym</span><span class="o">.</span><span class="n">LanguageNotes</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">etymology</span><span class="o">.</span><span class="n">LanguageNotes</span><span class="p">)</span>
                     <span class="n">new_etym</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">etymology</span><span class="o">.</span><span class="n">Form</span><span class="p">)</span>
                     <span class="n">new_etym</span><span class="o">.</span><span class="n">Gloss</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">etymology</span><span class="o">.</span><span class="n">Gloss</span><span class="p">)</span>
                     <span class="n">new_etym</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">etymology</span><span class="o">.</span><span class="n">Comment</span><span class="p">)</span>
                     <span class="n">new_etym</span><span class="o">.</span><span class="n">Bibliography</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">etymology</span><span class="o">.</span><span class="n">Bibliography</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">etymology</span><span class="p">,</span> <span class="s2">&quot;LanguageNotesRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">etymology</span><span class="o">.</span><span class="n">LanguageNotesRA</span><span class="p">:</span>
-                        <span class="n">new_etym</span><span class="o">.</span><span class="n">LanguageNotesRA</span> <span class="o">=</span> <span class="n">etymology</span><span class="o">.</span><span class="n">LanguageNotesRA</span>
 
                 <span class="c1"># Note: EntryRefsOS (variant/complex form references) are NOT copied.</span>
                 <span class="c1"># These describe relationships between entries (variant-of, complex-form-of)</span>
@@ -530,7 +541,7 @@
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all syncable properties of a lexical entry for comparison.</span>
 
@@ -637,7 +648,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Apply a syncable-properties dict onto a LexEntry item.</span>
 
@@ -659,7 +670,7 @@
 <span class="sd">                DoNotShowMainEntryInRC; pass through to BaseOperations for all</span>
 <span class="sd">                other fields.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">import</span> <span class="nn">logging</span> <span class="k">as</span> <span class="nn">_logging</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_logging</span>
         <span class="n">_log</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
@@ -679,7 +690,7 @@
         <span class="c1"># Publications live in lexDB.PublicationTypesOA.PossibilitiesOS (flat list;</span>
         <span class="c1"># sub-publications are accessed via SubPossibilitiesOS but publication</span>
         <span class="c1"># exclusion flags only reference top-level publications in practice).</span>
-        <span class="k">def</span> <span class="nf">_build_pub_guid_map</span><span class="p">():</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_build_pub_guid_map</span><span class="p">():</span>
             <span class="n">pub_map</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">pub</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lexDB</span><span class="o">.</span><span class="n">PublicationTypesOA</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
@@ -730,7 +741,7 @@
                         <span class="n">rc_collection</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">pub_obj</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two lexical entries and return their differences.</span>
 
@@ -761,7 +772,7 @@
         <span class="k">return</span> <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lexeme_form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lexeme_form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a lexical entry with the given lexeme form exists.</span>
 
@@ -801,7 +812,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">lexeme_form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lexeme_form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lexeme_form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a lexical entry by its lexeme form.</span>
 
@@ -856,7 +867,7 @@
     <span class="c1"># --- Headword &amp; Form Management ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetHeadword</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetHeadword</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the headword (display form) of a lexical entry.</span>
 
@@ -901,7 +912,7 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetHeadword</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetHeadword</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the headword by setting the lexeme form.</span>
 
@@ -937,7 +948,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">SetLexemeForm</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetLexemeForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLexemeForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the lexeme form of a lexical entry.</span>
 
@@ -986,7 +997,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetLexemeForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetLexemeForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the lexeme form of a lexical entry.</span>
 
@@ -1038,7 +1049,7 @@
             <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetCitationForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCitationForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the citation form of a lexical entry.</span>
 
@@ -1086,7 +1097,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetCitationForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetCitationForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the citation form of a lexical entry.</span>
 
@@ -1132,7 +1143,7 @@
             <span class="n">entry</span><span class="o">.</span><span class="n">CitationForm</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetBestVernacularAlternative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetBestVernacularAlternative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get best available vernacular form (Pattern 5 - fallback logic).</span>
 
@@ -1188,7 +1199,7 @@
     <span class="c1"># --- Computed Properties (Pattern 2) ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetShortName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetShortName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get short display name for entry (Pattern 2 - computed property).</span>
 
@@ -1225,7 +1236,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetHeadword</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetLongName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLongName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get long display name for entry (Pattern 2 - computed property).</span>
 
@@ -1272,7 +1283,7 @@
         <span class="k">return</span> <span class="n">long_name</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetLIFTid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLIFTid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get LIFT XML identifier for entry (Pattern 2 - computed property).</span>
 
@@ -1310,7 +1321,7 @@
     <span class="c1"># --- Entry Properties ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetHomographNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetHomographNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the homograph number of a lexical entry.</span>
 
@@ -1353,7 +1364,7 @@
         <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">HomographNumber</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetHomographNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetHomographNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the homograph number of a lexical entry.</span>
 
@@ -1403,7 +1414,7 @@
             <span class="n">entry</span><span class="o">.</span><span class="n">HomographNumber</span> <span class="o">=</span> <span class="n">number</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the creation date of a lexical entry.</span>
 
@@ -1444,7 +1455,7 @@
         <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">DateCreated</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the last modification date of a lexical entry.</span>
 
@@ -1485,7 +1496,7 @@
         <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">DateModified</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the morph type of a lexical entry&#39;s lexeme form.</span>
 
@@ -1535,7 +1546,7 @@
         <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="o">.</span><span class="n">MorphTypeRA</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">morph_type_or_name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">morph_type_or_name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the morph type of a lexical entry&#39;s lexeme form.</span>
 
@@ -1594,7 +1605,7 @@
             <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="o">.</span><span class="n">MorphTypeRA</span> <span class="o">=</span> <span class="n">morph_type</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAvailableMorphTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAvailableMorphTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get a list of all available morph types in the project.</span>
 
@@ -1641,7 +1652,7 @@
 
         <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="k">def</span> <span class="nf">collect_types</span><span class="p">(</span><span class="n">possibilities</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">collect_types</span><span class="p">(</span><span class="n">possibilities</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">mt</span> <span class="ow">in</span> <span class="n">possibilities</span><span class="p">:</span>
                 <span class="n">name</span> <span class="o">=</span> <span class="n">best_analysis_text</span><span class="p">(</span><span class="n">mt</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
@@ -1655,7 +1666,7 @@
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ValidateMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">morph_type_name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ValidateMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">morph_type_name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a morph type name exists in the project.</span>
 
@@ -1699,7 +1710,7 @@
         <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAllByMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name_or_list</span><span class="p">,</span> <span class="n">match_allomorphs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllByMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name_or_list</span><span class="p">,</span> <span class="n">match_allomorphs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return all entries whose lexeme-form morph type matches the given name(s).</span>
 
@@ -1769,7 +1780,7 @@
     <span class="c1"># --- Sense Management ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSenses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSenses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all senses of a lexical entry.</span>
 
@@ -1808,7 +1819,7 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSenseCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSenseCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the count of senses for a lexical entry.</span>
 
@@ -1846,9 +1857,12 @@
         <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="o">.</span><span class="n">Count</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddSense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">gloss</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddSense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">gloss</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a new sense to a lexical entry.</span>
+
+<span class="sd">        Thin wrapper over project.Senses.Create; all creation logic</span>
+<span class="sd">        lives there.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entry_or_hvo: Either an ILexEntry object or its HVO</span>
@@ -1861,7 +1875,9 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If entry_or_hvo or gloss is None</span>
-<span class="sd">            FP_ParameterError: If gloss is empty</span>
+<span class="sd">            FP_ParameterError: If gloss is empty, or if the parent is</span>
+<span class="sd">                provably not a lexical entry (a sense goes via</span>
+<span class="sd">                project.Senses.CreateSubsense)</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
@@ -1875,6 +1891,7 @@
 <span class="sd">            ...                                       project.WSHandle(&#39;fr&#39;))</span>
 
 <span class="sd">        Notes:</span>
+<span class="sd">            - Equivalent to ``project.Senses.Create(entry_or_hvo, gloss, ...)``.</span>
 <span class="sd">            - Sense is appended to the end of the sense list</span>
 <span class="sd">            - Gloss is stored in the specified writing system</span>
 <span class="sd">            - Only gloss is set - use FLExProject methods for other properties</span>
@@ -1886,31 +1903,33 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="s2">&quot;gloss&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateStringNotEmpty</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="s2">&quot;gloss&quot;</span><span class="p">)</span>
+        <span class="c1"># Narrow contract: the parent must be an entry. The HVO leg keeps</span>
+        <span class="c1"># __ResolveObject&#39;s strict union (isinstance or ClassName); an</span>
+        <span class="c1"># object with no usable ClassName flows through to</span>
+        <span class="c1"># Senses.Create, which applies the entry-path default.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">class_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">class_name</span> <span class="o">!=</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;AddSense() parent must be a lexical entry; &quot;</span>
+                    <span class="s2">&quot;for a sense use project.Senses.CreateSubsense() instead&quot;</span>
+                <span class="p">)</span>
 
-        <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
-
+        <span class="c1"># Bracketed per D5 (the scanner cannot see through cross-class</span>
+        <span class="c1"># delegation via self.project.Senses): joins Senses.Create&#39;s</span>
+        <span class="c1"># inner transaction via nesting (B1).</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add sense&quot;</span><span class="p">):</span>
-            <span class="c1"># Create the new sense using the factory</span>
-            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexSenseFactory</span><span class="p">)</span>
-            <span class="n">new_sense</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
-
-            <span class="c1"># Add to entry&#39;s sense list (must be done before setting properties)</span>
-            <span class="n">entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_sense</span><span class="p">)</span>
-
-            <span class="c1"># Set the gloss</span>
-            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-            <span class="n">new_sense</span><span class="o">.</span><span class="n">Gloss</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">new_sense</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Senses</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span>
+                <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">gloss</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">wsHandle</span>
+            <span class="p">)</span>
 
     <span class="c1"># --- Additional Properties ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the GUID (Globally Unique Identifier) of a lexical entry.</span>
 
@@ -1955,7 +1974,7 @@
         <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">Guid</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetImportResidue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetImportResidue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the import residue of a lexical entry.</span>
 
@@ -1996,7 +2015,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ReadTsString</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">ImportResidue</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetImportResidue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">residue</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetImportResidue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">residue</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the import residue of a lexical entry.</span>
 
@@ -2041,7 +2060,7 @@
     <span class="c1"># --- MultiString/MultiUnicode Properties ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetBibliography</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetBibliography</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the bibliography of a lexical entry.</span>
 
@@ -2066,7 +2085,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">Bibliography</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetBibliography</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetBibliography</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the bibliography of a lexical entry.</span>
 
@@ -2088,7 +2107,7 @@
             <span class="n">entry</span><span class="o">.</span><span class="n">Bibliography</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetComment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetComment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the comment of a lexical entry.</span>
 
@@ -2107,7 +2126,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetComment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetComment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the comment of a lexical entry.</span>
 
@@ -2129,7 +2148,7 @@
             <span class="n">entry</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetLiteralMeaning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLiteralMeaning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the literal meaning of a lexical entry.</span>
 
@@ -2148,7 +2167,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">LiteralMeaning</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetLiteralMeaning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetLiteralMeaning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the literal meaning of a lexical entry.</span>
 
@@ -2170,7 +2189,7 @@
             <span class="n">entry</span><span class="o">.</span><span class="n">LiteralMeaning</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetRestrictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetRestrictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the restrictions of a lexical entry.</span>
 
@@ -2189,7 +2208,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">Restrictions</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetRestrictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetRestrictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the restrictions of a lexical entry.</span>
 
@@ -2211,7 +2230,7 @@
             <span class="n">entry</span><span class="o">.</span><span class="n">Restrictions</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSummaryDefinition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSummaryDefinition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the summary definition of a lexical entry.</span>
 
@@ -2230,7 +2249,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">SummaryDefinition</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetSummaryDefinition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetSummaryDefinition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the summary definition of a lexical entry.</span>
 
@@ -2254,7 +2273,7 @@
     <span class="c1"># --- Boolean Properties ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDoNotUseForParsing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDoNotUseForParsing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if an entry is excluded from parsing.</span>
 
@@ -2270,7 +2289,7 @@
         <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">DoNotUseForParsing</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetDoNotUseForParsing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDoNotUseForParsing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set whether an entry is excluded from parsing.</span>
 
@@ -2287,7 +2306,7 @@
             <span class="n">entry</span><span class="o">.</span><span class="n">DoNotUseForParsing</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetExcludeAsHeadword</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetExcludeAsHeadword</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if an entry is excluded as a headword.</span>
 
@@ -2303,7 +2322,7 @@
         <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">ExcludeAsHeadword</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetExcludeAsHeadword</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetExcludeAsHeadword</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set whether an entry is excluded as a headword.</span>
 
@@ -2322,7 +2341,7 @@
     <span class="c1"># --- Collection Properties ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDoNotPublishIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDoNotPublishIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the publications this entry should not be published in.</span>
 
@@ -2349,7 +2368,7 @@
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddDoNotPublishIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">publication</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddDoNotPublishIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">publication</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a publication to exclude this entry from.</span>
 
@@ -2375,7 +2394,7 @@
                 <span class="n">entry</span><span class="o">.</span><span class="n">DoNotPublishInRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">publication</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RemoveDoNotPublishIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">publication</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveDoNotPublishIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">publication</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a publication from the exclude list.</span>
 
@@ -2401,7 +2420,7 @@
                 <span class="n">entry</span><span class="o">.</span><span class="n">DoNotPublishInRC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">publication</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDoNotShowMainEntryIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDoNotShowMainEntryIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the publications where this entry should not be shown as main entry.</span>
 
@@ -2422,7 +2441,7 @@
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddDoNotShowMainEntryIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">publication</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddDoNotShowMainEntryIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">publication</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a publication to not show this entry as main entry.</span>
 
@@ -2448,7 +2467,7 @@
                 <span class="n">entry</span><span class="o">.</span><span class="n">DoNotShowMainEntryInRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">publication</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RemoveDoNotShowMainEntryIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">publication</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveDoNotShowMainEntryIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">publication</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a publication from the no-main-entry list.</span>
 
@@ -2475,7 +2494,7 @@
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to ILexEntry.</span>
 
@@ -2507,7 +2526,7 @@
 <span class="sd">                (``ComponentLexemesRS`` may legitimately hold an</span>
 <span class="sd">                ILexSense, and a sense&#39;s HVO must still be refused)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">..lcm_casting</span> <span class="kn">import</span> <span class="n">cast_to_concrete</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">))</span>
@@ -2531,7 +2550,7 @@
             <span class="k">return</span> <span class="n">obj</span>
         <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to vernacular WS.</span>
 
@@ -2548,7 +2567,7 @@
     <span class="c1"># --- Back-Reference Methods (Pattern 3) ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetVisibleComplexFormBackRefs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetVisibleComplexFormBackRefs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all complex forms that reference this entry.</span>
 
@@ -2591,7 +2610,7 @@
             <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetComplexFormsNotSubentries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetComplexFormsNotSubentries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get complex forms that reference this entry, excluding subentries.</span>
 
@@ -2661,7 +2680,7 @@
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetMinimalLexReferences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMinimalLexReferences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get essential lexical references for this entry.</span>
 
@@ -2708,7 +2727,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAllSenses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllSenses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all senses owned by this entry, including subsenses recursively.</span>
 
@@ -2763,7 +2782,7 @@
                             <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__CollectSubsenses</span><span class="p">(</span><span class="n">subsense</span><span class="p">))</span>
             <span class="k">return</span> <span class="n">result</span>
 
-    <span class="k">def</span> <span class="nf">__CollectSubsenses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__CollectSubsenses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Helper to recursively collect subsenses.</span>
 
@@ -2779,10 +2798,85 @@
                 <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__CollectSubsenses</span><span class="p">(</span><span class="n">subsense</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">result</span>
 
+    <span class="c1"># --- Complex form type catalog (issue #305) ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllComplexFormTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all complex form types defined in the project.</span>
+
+<span class="sd">        Complex form types classify compounds, idioms, and other multi-lexeme</span>
+<span class="sd">        entries (for example ``Composto`` / ``Compound``). The list lives at</span>
+<span class="sd">        ``LexDbOA.ComplexEntryTypesOA`` and is **not** reachable by a fixed</span>
+<span class="sd">        English name through ``PossibilityLists.FindList``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            EnumerableWrapper: Each complex form type (``LexEntryType``) in the</span>
+<span class="sd">            project, including subtypes.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for cf_type in project.LexEntry.GetAllComplexFormTypes():</span>
+<span class="sd">            ...     name = project.PossibilityLists.GetItemName(cf_type)</span>
+<span class="sd">            ...     print(name)</span>
+<span class="sd">            Compound</span>
+<span class="sd">            Idiom</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindComplexFormType, AddComplexFormComponent,</span>
+<span class="sd">            ``VariantOperations.GetAllTypes``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lexdb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LexDbOA</span>
+        <span class="k">if</span> <span class="n">lexdb</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">lexdb</span><span class="o">.</span><span class="n">ComplexEntryTypesOA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
+
+        <span class="k">for</span> <span class="n">ctype</span> <span class="ow">in</span> <span class="n">lexdb</span><span class="o">.</span><span class="n">ComplexEntryTypesOA</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">ctype</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ctype</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">subtype</span> <span class="ow">in</span> <span class="n">ctype</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">subtype</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindComplexFormType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a complex form type by name (case-insensitive).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): Type name to find (for example ``Composto`` on a</span>
+<span class="sd">                Portuguese UI project, or ``Compound`` on an English one).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The type object if found, otherwise ``None``.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; cf_type = project.LexEntry.FindComplexFormType(&quot;Compound&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if cf_type:</span>
+<span class="sd">            ...     project.LexiconSetComplexFormType(entry_ref, cf_type)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAllComplexFormTypes, ``PossibilityLists.FindItem``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="k">for</span> <span class="n">cf_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAllComplexFormTypes</span><span class="p">():</span>
+            <span class="n">type_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">cf_type</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">type_name</span> <span class="ow">and</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">type_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">cf_type</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
     <span class="c1"># --- Complex Form Helper Methods (Pattern 4) ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddComplexFormComponent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">complex_entry_or_hvo</span><span class="p">,</span> <span class="n">component_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddComplexFormComponent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">complex_entry_or_hvo</span><span class="p">,</span> <span class="n">component_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a component to a complex form (compound, idiom, phrasal verb).</span>
 
@@ -2865,7 +2959,7 @@
                 <span class="n">entry_ref</span><span class="o">.</span><span class="n">ShowComplexFormsInRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">component</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RemoveComplexFormComponent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">complex_entry_or_hvo</span><span class="p">,</span> <span class="n">component_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveComplexFormComponent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">complex_entry_or_hvo</span><span class="p">,</span> <span class="n">component_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a component from a complex form.</span>
 
@@ -2916,7 +3010,7 @@
                     <span class="k">break</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetComplexFormComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">complex_entry_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetComplexFormComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">complex_entry_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all components of a complex form.</span>
 
@@ -2966,7 +3060,7 @@
     <span class="c1"># --- Pattern 7: MergeObject (Entry/Sense merging) ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">MergeObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">survivor_or_hvo</span><span class="p">,</span> <span class="n">victim_or_hvo</span><span class="p">,</span> <span class="n">fLoseNoStringData</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">auto_deduplicate</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MergeObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">survivor_or_hvo</span><span class="p">,</span> <span class="n">victim_or_hvo</span><span class="p">,</span> <span class="n">fLoseNoStringData</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">auto_deduplicate</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Merge one entry into another (IRREVERSIBLE operation).</span>
 
@@ -3036,7 +3130,7 @@
         <span class="n">victim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">victim_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Validate merge compatibility (same class, same concrete type if applicable)</span>
-        <span class="kn">from</span> <span class="nn">..lcm_casting</span> <span class="kn">import</span> <span class="n">validate_merge_compatibility</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_merge_compatibility</span>
 
         <span class="n">is_compatible</span><span class="p">,</span> <span class="n">error_msg</span> <span class="o">=</span> <span class="n">validate_merge_compatibility</span><span class="p">(</span><span class="n">survivor</span><span class="p">,</span> <span class="n">victim</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">is_compatible</span><span class="p">:</span>
@@ -3060,7 +3154,7 @@
 
     <span class="c1"># --- Private Helper Methods for Deduplication ---</span>
 
-    <span class="k">def</span> <span class="nf">__DeduplicateSensesInEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__DeduplicateSensesInEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Detect and merge duplicate senses within an entry.</span>
 
@@ -3127,7 +3221,7 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during sense deduplication: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="c1"># Don&#39;t fail the whole merge operation if deduplication fails</span>
 
-    <span class="k">def</span> <span class="nf">__DeduplicatePronunciationsInEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__DeduplicatePronunciationsInEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Detect and remove duplicate pronunciations within an entry.</span>
 
@@ -3146,52 +3240,69 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">return</span>  <span class="c1"># No duplicates possible</span>
 
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Build signature map for all pronunciations in entry</span>
-            <span class="n">sig_map</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">for</span> <span class="n">pron</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="p">:</span>
-                <span class="c1"># Get pronunciation form across all writing systems</span>
-                <span class="n">pron_dict</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystemManager</span><span class="o">.</span><span class="n">AllWritingSystems</span><span class="p">:</span>
-                        <span class="n">ws_handle</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span>
-                        <span class="n">pron_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">pron</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="k">if</span> <span class="n">pron</span><span class="o">.</span><span class="n">Form</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-                        <span class="k">if</span> <span class="n">pron_text</span><span class="p">:</span>
-                            <span class="n">pron_dict</span><span class="p">[</span><span class="n">ws_handle</span><span class="p">]</span> <span class="o">=</span> <span class="n">pron_text</span>
-                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not get pronunciation form: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="k">continue</span>
+        <span class="c1"># Build signature map for all pronunciations in entry</span>
+        <span class="n">sig_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">pron</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="p">:</span>
+            <span class="c1"># Get pronunciation form across all writing systems</span>
+            <span class="n">pron_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">AllWritingSystems</span><span class="p">:</span>
+                    <span class="n">ws_handle</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span>
+                    <span class="n">pron_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">pron</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="k">if</span> <span class="n">pron</span><span class="o">.</span><span class="n">Form</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                    <span class="k">if</span> <span class="n">pron_text</span><span class="p">:</span>
+                        <span class="n">pron_dict</span><span class="p">[</span><span class="n">ws_handle</span><span class="p">]</span> <span class="o">=</span> <span class="n">pron_text</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not get pronunciation form: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
 
-                <span class="k">if</span> <span class="n">pron_dict</span><span class="p">:</span>
-                    <span class="n">sig</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">pron_dict</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
-                    <span class="k">if</span> <span class="n">sig</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sig_map</span><span class="p">:</span>
-                        <span class="n">sig_map</span><span class="p">[</span><span class="n">sig</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-                    <span class="n">sig_map</span><span class="p">[</span><span class="n">sig</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pron</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pron_dict</span><span class="p">:</span>
+                <span class="n">sig</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">pron_dict</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+                <span class="k">if</span> <span class="n">sig</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sig_map</span><span class="p">:</span>
+                    <span class="n">sig_map</span><span class="p">[</span><span class="n">sig</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">sig_map</span><span class="p">[</span><span class="n">sig</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pron</span><span class="p">)</span>
 
-            <span class="c1"># Find and remove duplicate groups</span>
-            <span class="n">removed_count</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">sig</span><span class="p">,</span> <span class="n">prons</span> <span class="ow">in</span> <span class="n">sig_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">prons</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="c1"># Keep first, remove rest</span>
-                    <span class="k">for</span> <span class="n">dupe</span> <span class="ow">in</span> <span class="n">prons</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
-                        <span class="k">try</span><span class="p">:</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                                <span class="sa">f</span><span class="s2">&quot;Auto-removing duplicate pronunciation in entry (HVO: </span><span class="si">{</span><span class="n">dupe</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">) &quot;</span>
-                                <span class="sa">f</span><span class="s2">&quot;keeping master (HVO: </span><span class="si">{</span><span class="n">prons</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">)&quot;</span>
-                            <span class="p">)</span>
-                            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove duplicate pronunciation&quot;</span><span class="p">):</span>
-                                <span class="n">dupe</span><span class="o">.</span><span class="n">OwningList</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">dupe</span><span class="p">)</span>
-                            <span class="n">removed_count</span> <span class="o">+=</span> <span class="mi">1</span>
-                        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not remove duplicate pronunciation (HVO: </span><span class="si">{</span><span class="n">dupe</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># Find and remove duplicate groups. entry.PronunciationsOS.Remove() is</span>
+        <span class="c1"># the correct member here (not dupe.OwningList, which does not exist</span>
+        <span class="c1"># on ILexPronunciation -- see issue #318): it is an</span>
+        <span class="c1"># ILcmOwningSequence, and .Remove() on an owning sequence *is* the</span>
+        <span class="c1"># deletion path (owned objects cannot be orphaned), so no separate</span>
+        <span class="c1"># Delete()/DeleteUnderlyingObject() call is made or wanted.</span>
+        <span class="c1">#</span>
+        <span class="c1"># No inner try/except around .Remove(): no genuinely benign LCM-side</span>
+        <span class="c1"># failure mode is identifiable for removing an owned pronunciation,</span>
+        <span class="c1"># so AttributeError/TypeError/anything else propagates immediately</span>
+        <span class="c1"># per issue #318 (precedent: FLExInit.py narrowing, issue #249).</span>
+        <span class="n">found_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">removed_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">sig</span><span class="p">,</span> <span class="n">prons</span> <span class="ow">in</span> <span class="n">sig_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">prons</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">found_count</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">prons</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="c1"># Keep first, remove rest</span>
+                <span class="k">for</span> <span class="n">dupe</span> <span class="ow">in</span> <span class="n">prons</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Auto-removing duplicate pronunciation in entry (HVO: </span><span class="si">{</span><span class="n">dupe</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">) &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;keeping master (HVO: </span><span class="si">{</span><span class="n">prons</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">)&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove duplicate pronunciation&quot;</span><span class="p">):</span>
+                        <span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">dupe</span><span class="p">)</span>
+                    <span class="c1"># Verify the removal actually took effect rather than</span>
+                    <span class="c1"># assuming success just because .Remove() didn&#39;t raise</span>
+                    <span class="c1"># -- a benign LCM-side &quot;can&#39;t remove, still referenced&quot;</span>
+                    <span class="c1"># condition could return normally without removing</span>
+                    <span class="c1"># anything, and that must be distinguishable from a</span>
+                    <span class="c1"># real removal (issue #291&#39;s collapse).</span>
+                    <span class="k">if</span> <span class="n">dupe</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="p">:</span>
+                        <span class="n">removed_count</span> <span class="o">+=</span> <span class="mi">1</span>
 
-            <span class="k">if</span> <span class="n">removed_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auto-deduplicated </span><span class="si">{</span><span class="n">removed_count</span><span class="si">}</span><span class="s2"> duplicate pronunciation(s) in entry (HVO: </span><span class="si">{</span><span class="n">entry</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">found_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">removed_count</span> <span class="o">&lt;</span> <span class="n">found_count</span><span class="p">:</span>
+                <span class="c1"># Duplicates were detected but not all removed -- must not</span>
+                <span class="c1"># collapse into the same silent outcome as &quot;0 duplicates</span>
+                <span class="c1"># existed&quot; (issue #291&#39;s exact defect shape).</span>
+                <span class="k">raise</span> <span class="n">FP_DeduplicationError</span><span class="p">(</span><span class="s2">&quot;pronunciations&quot;</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">Hvo</span><span class="p">,</span> <span class="n">found_count</span><span class="p">,</span> <span class="n">removed_count</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auto-deduplicated </span><span class="si">{</span><span class="n">removed_count</span><span class="si">}</span><span class="s2"> duplicate pronunciation(s) in entry (HVO: </span><span class="si">{</span><span class="n">entry</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during pronunciation deduplication: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">__DeduplicateAllomorphsInEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__DeduplicateAllomorphsInEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Detect and remove duplicate allomorphs within an entry.</span>
 
@@ -3210,61 +3321,68 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">entry</span><span class="o">.</span><span class="n">AlternateFormsOS</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">return</span>  <span class="c1"># No duplicates possible</span>
 
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Build signature map for all allomorphs in entry</span>
-            <span class="n">sig_map</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">for</span> <span class="n">allomorph</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="p">:</span>
-                <span class="c1"># Get allomorph form and morph type</span>
-                <span class="n">allomorph_dict</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="n">morph_type_guid</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="c1"># Build signature map for all allomorphs in entry</span>
+        <span class="n">sig_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">allomorph</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="p">:</span>
+            <span class="c1"># Get allomorph form and morph type</span>
+            <span class="n">allomorph_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">morph_type_guid</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
 
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="c1"># Get form across all writing systems</span>
-                    <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystemManager</span><span class="o">.</span><span class="n">AllWritingSystems</span><span class="p">:</span>
-                        <span class="n">ws_handle</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span>
-                        <span class="n">form_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">allomorph</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="k">if</span> <span class="n">allomorph</span><span class="o">.</span><span class="n">Form</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-                        <span class="k">if</span> <span class="n">form_text</span><span class="p">:</span>
-                            <span class="n">allomorph_dict</span><span class="p">[</span><span class="n">ws_handle</span><span class="p">]</span> <span class="o">=</span> <span class="n">form_text</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Get form across all writing systems</span>
+                <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">AllWritingSystems</span><span class="p">:</span>
+                    <span class="n">ws_handle</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span>
+                    <span class="n">form_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">allomorph</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="k">if</span> <span class="n">allomorph</span><span class="o">.</span><span class="n">Form</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                    <span class="k">if</span> <span class="n">form_text</span><span class="p">:</span>
+                        <span class="n">allomorph_dict</span><span class="p">[</span><span class="n">ws_handle</span><span class="p">]</span> <span class="o">=</span> <span class="n">form_text</span>
 
-                    <span class="c1"># Get morph type</span>
-                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">allomorph</span><span class="p">,</span> <span class="s2">&quot;MorphTypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">allomorph</span><span class="o">.</span><span class="n">MorphTypeRA</span><span class="p">:</span>
-                        <span class="n">morph_type_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">allomorph</span><span class="o">.</span><span class="n">MorphTypeRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not get allomorph form/type: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="k">continue</span>
+                <span class="c1"># Get morph type</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">allomorph</span><span class="p">,</span> <span class="s2">&quot;MorphTypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">allomorph</span><span class="o">.</span><span class="n">MorphTypeRA</span><span class="p">:</span>
+                    <span class="n">morph_type_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">allomorph</span><span class="o">.</span><span class="n">MorphTypeRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not get allomorph form/type: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
 
-                <span class="k">if</span> <span class="n">allomorph_dict</span><span class="p">:</span>
-                    <span class="n">sig</span> <span class="o">=</span> <span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">allomorph_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span> <span class="n">morph_type_guid</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">sig</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sig_map</span><span class="p">:</span>
-                        <span class="n">sig_map</span><span class="p">[</span><span class="n">sig</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-                    <span class="n">sig_map</span><span class="p">[</span><span class="n">sig</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">allomorph</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">allomorph_dict</span><span class="p">:</span>
+                <span class="n">sig</span> <span class="o">=</span> <span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">allomorph_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span> <span class="n">morph_type_guid</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">sig</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sig_map</span><span class="p">:</span>
+                    <span class="n">sig_map</span><span class="p">[</span><span class="n">sig</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">sig_map</span><span class="p">[</span><span class="n">sig</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">allomorph</span><span class="p">)</span>
 
-            <span class="c1"># Find and remove duplicate groups</span>
-            <span class="n">removed_count</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">sig</span><span class="p">,</span> <span class="n">allomorphs</span> <span class="ow">in</span> <span class="n">sig_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">allomorphs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="c1"># Keep first, remove rest</span>
-                    <span class="k">for</span> <span class="n">dupe</span> <span class="ow">in</span> <span class="n">allomorphs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
-                        <span class="k">try</span><span class="p">:</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                                <span class="sa">f</span><span class="s2">&quot;Auto-removing duplicate allomorph in entry (HVO: </span><span class="si">{</span><span class="n">dupe</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">) &quot;</span>
-                                <span class="sa">f</span><span class="s2">&quot;keeping master (HVO: </span><span class="si">{</span><span class="n">allomorphs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">)&quot;</span>
-                            <span class="p">)</span>
-                            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove duplicate allomorph&quot;</span><span class="p">):</span>
-                                <span class="n">dupe</span><span class="o">.</span><span class="n">OwningList</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">dupe</span><span class="p">)</span>
-                            <span class="n">removed_count</span> <span class="o">+=</span> <span class="mi">1</span>
-                        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not remove duplicate allomorph (HVO: </span><span class="si">{</span><span class="n">dupe</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># Find and remove duplicate groups. entry.AlternateFormsOS.Remove()</span>
+        <span class="c1"># is the correct member (not dupe.OwningList, which does not exist</span>
+        <span class="c1"># on IMoForm -- see issue #318); see the pronunciation dedup helper</span>
+        <span class="c1"># above for the full rationale (owning-sequence Remove is the</span>
+        <span class="c1"># deletion path; no inner catch since no benign failure is</span>
+        <span class="c1"># identifiable).</span>
+        <span class="n">found_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">removed_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">sig</span><span class="p">,</span> <span class="n">allomorphs</span> <span class="ow">in</span> <span class="n">sig_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">allomorphs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">found_count</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">allomorphs</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="c1"># Keep first, remove rest</span>
+                <span class="k">for</span> <span class="n">dupe</span> <span class="ow">in</span> <span class="n">allomorphs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Auto-removing duplicate allomorph in entry (HVO: </span><span class="si">{</span><span class="n">dupe</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">) &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;keeping master (HVO: </span><span class="si">{</span><span class="n">allomorphs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">)&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Remove duplicate allomorph&quot;</span><span class="p">):</span>
+                        <span class="n">entry</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">dupe</span><span class="p">)</span>
+                    <span class="c1"># See __DeduplicatePronunciationsInEntry above: verify</span>
+                    <span class="c1"># the removal actually took effect rather than</span>
+                    <span class="c1"># assuming success just because .Remove() didn&#39;t</span>
+                    <span class="c1"># raise (issue #291&#39;s collapse).</span>
+                    <span class="k">if</span> <span class="n">dupe</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="p">:</span>
+                        <span class="n">removed_count</span> <span class="o">+=</span> <span class="mi">1</span>
 
-            <span class="k">if</span> <span class="n">removed_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auto-deduplicated </span><span class="si">{</span><span class="n">removed_count</span><span class="si">}</span><span class="s2"> duplicate allomorph(s) in entry (HVO: </span><span class="si">{</span><span class="n">entry</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
-
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during allomorph deduplication: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">found_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">removed_count</span> <span class="o">&lt;</span> <span class="n">found_count</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_DeduplicationError</span><span class="p">(</span><span class="s2">&quot;allomorphs&quot;</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">Hvo</span><span class="p">,</span> <span class="n">found_count</span><span class="p">,</span> <span class="n">removed_count</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auto-deduplicated </span><span class="si">{</span><span class="n">removed_count</span><span class="si">}</span><span class="s2"> duplicate allomorph(s) in entry (HVO: </span><span class="si">{</span><span class="n">entry</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__IsStemType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">morph_type</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__IsStemType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">morph_type</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Determine if a morph type should use MoStemAllomorph or MoAffixAllomorph.</span>
 
@@ -3284,7 +3402,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">is_stem_morph_type</span><span class="p">(</span><span class="n">morph_type</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandleAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
 
@@ -3298,7 +3416,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__FindMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__FindMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a morph type by name (case-insensitive).</span>
 
@@ -3325,7 +3443,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -3341,7 +3459,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -3356,8 +3474,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

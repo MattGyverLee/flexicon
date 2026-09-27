@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Grammar.PhonologicalRuleOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,11 +55,11 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import BaseOperations parent class</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IPhRegularRuleFactory</span><span class="p">,</span>  <span class="c1"># Fixed: was IPhPhonRuleFactory</span>
     <span class="n">IPhSegRuleRHSFactory</span><span class="p">,</span>
     <span class="n">IPhSegmentRuleFactory</span><span class="p">,</span>
@@ -74,21 +74,22 @@
     <span class="n">IPhIterationContextFactory</span><span class="p">,</span>
     <span class="n">ICmObjectRepository</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># Import pattern-element dataclasses for the WireRule composer</span>
-<span class="kn">from</span> <span class="nn">..Shared.rule_patterns</span> <span class="kn">import</span> <span class="n">Seg</span><span class="p">,</span> <span class="n">NC</span><span class="p">,</span> <span class="n">Boundary</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.rule_patterns</span><span class="w"> </span><span class="kn">import</span> <span class="n">Seg</span><span class="p">,</span> <span class="n">NC</span><span class="p">,</span> <span class="n">Boundary</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
 
 
 <div class="viewcode-block" id="PhonologicalRuleOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.PhonologicalRuleOperations.PhonologicalRuleOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">PhonologicalRuleOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PhonologicalRuleOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing phonological rules in a</span>
 <span class="sd">    FieldWorks project.</span>
@@ -129,7 +130,7 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize PhonologicalRuleOperations with a FLExProject instance.</span>
 
@@ -138,7 +139,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Specify which sequence to reorder for phonological rules.</span>
 <span class="sd">        For PhonologicalRule, we reorder parent.PhonRulesOS</span>
@@ -147,7 +148,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all phonological rules in the project.</span>
 
@@ -158,10 +159,9 @@
 <span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
 <span class="sd">            &gt;&gt;&gt; rules = phonRuleOps.GetAll()</span>
 <span class="sd">            &gt;&gt;&gt; print(rules)  # Shows type breakdown</span>
-<span class="sd">            RuleCollection (12 total)</span>
-<span class="sd">              PhRegularRule: 7 (58%)</span>
-<span class="sd">              PhMetathesisRule: 3 (25%)</span>
-<span class="sd">              PhReduplicationRule: 2 (17%)</span>
+<span class="sd">            RuleCollection (10 total)</span>
+<span class="sd">              PhRegularRule: 7 (70%)</span>
+<span class="sd">              PhMetathesisRule: 3 (30%)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Access individual rules</span>
 <span class="sd">            &gt;&gt;&gt; for rule in rules:</span>
@@ -180,12 +180,18 @@
 <span class="sd">            - Use rule.input_contexts instead of accessing StrucDescOS</span>
 <span class="sd">            - Returns empty collection if no phonological data defined</span>
 <span class="sd">            - Type breakdown is visible when printed</span>
+<span class="sd">            - Items can be passed straight back into other</span>
+<span class="sd">              PhonologicalRuleOperations methods (e.g. ``Delete(item)``,</span>
+<span class="sd">              ``WireRule(item, ...)``) -- resolvers unwrap the wrapper</span>
+<span class="sd">              internally (issue #449). A caller performing a direct</span>
+<span class="sd">              pythonnet cast, e.g. ``IPhRegularRule(item)``, must use</span>
+<span class="sd">              ``item.lcm_object`` instead.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Find, RuleCollection, PhonologicalRule</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.phonological_rule</span> <span class="kn">import</span> <span class="n">PhonologicalRule</span>
-        <span class="kn">from</span> <span class="nn">.rule_collection</span> <span class="kn">import</span> <span class="n">RuleCollection</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.phonological_rule</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhonologicalRule</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.rule_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">RuleCollection</span>
 
         <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">phon_data</span><span class="p">:</span>
@@ -200,7 +206,7 @@
         <span class="k">return</span> <span class="n">RuleCollection</span><span class="p">(</span><span class="n">rules</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new phonological rule.</span>
 
@@ -274,7 +280,7 @@
             <span class="k">return</span> <span class="n">new_rule</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a phonological rule.</span>
 
@@ -314,7 +320,7 @@
                     <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a phonological rule with the given name exists.</span>
 
@@ -342,7 +348,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a phonological rule by name.</span>
 
@@ -384,7 +390,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the name of a phonological rule.</span>
 
@@ -418,7 +424,7 @@
         <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the name of a phonological rule.</span>
 
@@ -457,7 +463,7 @@
             <span class="n">rule</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the description of a phonological rule.</span>
 
@@ -490,7 +496,7 @@
         <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the description of a phonological rule.</span>
 
@@ -526,7 +532,7 @@
             <span class="n">rule</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetStratum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetStratum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the stratum of a phonological rule.</span>
 
@@ -564,7 +570,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetStratum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">stratum</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetStratum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">stratum</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the stratum of a phonological rule.</span>
 
@@ -604,7 +610,7 @@
                 <span class="n">rule</span><span class="o">.</span><span class="n">StratumRA</span> <span class="o">=</span> <span class="n">stratum</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDirection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDirection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the direction of rule application.</span>
 
@@ -638,7 +644,7 @@
         <span class="k">return</span> <span class="mi">0</span>  <span class="c1"># Default: left-to-right</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetDirection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDirection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the direction of rule application.</span>
 
@@ -676,7 +682,7 @@
                 <span class="n">rule</span><span class="o">.</span><span class="n">Direction</span> <span class="o">=</span> <span class="n">direction</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetLeftContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">context_item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetLeftContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">context_item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Refuses with NotImplementedError.</span>
 
@@ -709,7 +715,7 @@
         <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetRightContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">context_item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetRightContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">context_item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Refuses with NotImplementedError.</span>
 
@@ -744,7 +750,7 @@
     <span class="c1"># ========================================================================</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">MakeConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MakeConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create an alpha-feature constraint variable bound to a feature.</span>
 
@@ -805,7 +811,7 @@
             <span class="k">return</span> <span class="n">constraint</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">DeleteConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraint_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">DeleteConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraint_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a feature constraint from the project.</span>
 
@@ -850,7 +856,7 @@
             <span class="n">phon_data</span><span class="o">.</span><span class="n">FeatConstraintsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all feature constraints in the project.</span>
 
@@ -877,7 +883,7 @@
     <span class="c1"># ========================================================================</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">WireRule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">input_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_change</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">WireRule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">input_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_change</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">left_context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right_context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;replace&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        High-level composer for phonological rules using SPE notation.</span>
@@ -1064,7 +1070,7 @@
     <span class="c1"># WireRule internals</span>
     <span class="c1"># ------------------------------------------------------------------</span>
 
-    <span class="k">def</span> <span class="nf">__ClearSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ClearSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove all elements from an owning sequence.&quot;&quot;&quot;</span>
         <span class="c1"># Reached only from inside the &quot;Wire phonological rule&quot; bracket, so</span>
         <span class="c1"># this transaction joins that one (nesting-aware per B1). Stated</span>
@@ -1078,7 +1084,7 @@
             <span class="k">while</span> <span class="n">seq</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">seq</span><span class="o">.</span><span class="n">RemoveAt</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">Count</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__CleanupSequenceContextMembers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__CleanupSequenceContextMembers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        If ``ctx`` is an IPhSequenceContext, remove its MembersRS items</span>
 <span class="sd">        from PhPhonData.ContextsOS. No-op for None or for single-context</span>
@@ -1120,7 +1126,7 @@
                 <span class="k">if</span> <span class="n">member</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">contexts_pool</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">member</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__WireContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">slot_name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WireContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">slot_name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Build the appropriate context object for a left/right context list.</span>
 
@@ -1204,7 +1210,7 @@
 
             <span class="k">return</span> <span class="n">seq</span><span class="p">,</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">__BuildSimpleContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elem</span><span class="p">,</span> <span class="n">slot_name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__BuildSimpleContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elem</span><span class="p">,</span> <span class="n">slot_name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the appropriate IPhSimpleContext* for a pattern element.</span>
 
 <span class="sd">        Returns an unattached context; caller is responsible for attaching</span>
@@ -1255,7 +1261,7 @@
             <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__PopulateSimpleContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">elem</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__PopulateSimpleContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">elem</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Populate FeatureStructureRA + alpha constraints (Phase 2 order).&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">Seg</span><span class="p">):</span>
             <span class="c1"># Seg has no plus/minus fields by construction (TypeError at</span>
@@ -1297,7 +1303,7 @@
             <span class="sa">f</span><span class="s2">&quot;Cannot populate context from element of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveBoundary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveBoundary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Look up an IPhBdryMarker by name from PhonemeSetsOS[0].&quot;&quot;&quot;</span>
         <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">phon_data</span><span class="p">:</span>
@@ -1321,8 +1327,16 @@
             <span class="sa">f</span><span class="s2">&quot;PhonemeSetsOS[0].BoundaryMarkersOC. Available: </span><span class="si">{</span><span class="n">available</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveFeature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve a feature argument (object/HVO/wrapper) to its LCM object.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveFeature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve a feature argument (object/HVO/wrapper) to its LCM object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The underlying LCM object. The HVO path uses ``project.Object(hvo)``</span>
+<span class="sd">            without ``cast_to_concrete`` -- a generic, possibly uncast view.</span>
+<span class="sd">            Callers in this module only pass the result into LCM APIs that</span>
+<span class="sd">            accept ``ICmObject``; do not add eager casting here (issue #494).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_concrete&quot;</span><span class="p">):</span>
@@ -1331,12 +1345,19 @@
             <span class="k">return</span> <span class="n">feature_or_hvo</span><span class="o">.</span><span class="n">_obj</span>
         <span class="k">return</span> <span class="n">feature_or_hvo</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveLcmObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve an HVO or wrapper to its underlying LCM object.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveLcmObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve an HVO or wrapper to its underlying LCM object.</span>
 
 <span class="sd">        Identity-preserving for plain LCM objects (important for</span>
-<span class="sd">        IPhFeatureConstraint sharing: the same constraint object must</span>
+<span class="sd">        ``IPhFeatureConstraint`` sharing: the same constraint object must</span>
 <span class="sd">        round-trip unchanged so alpha-variable identity holds).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The exact LCM instance passed in or loaded by HVO. The HVO path</span>
+<span class="sd">            uses ``project.Object(hvo)`` without casting so object identity</span>
+<span class="sd">            is preserved; casting would break alpha-variable sharing (issue</span>
+<span class="sd">            #494).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">)</span>
@@ -1347,7 +1368,7 @@
         <span class="k">return</span> <span class="n">obj_or_hvo</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a phonological rule, creating a new copy with a new GUID.</span>
 
@@ -1379,8 +1400,8 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Preserves the source&#39;s concrete subtype: a PhMetathesisRule</span>
-<span class="sd">              source produces a PhMetathesisRule duplicate, etc. Dispatches</span>
-<span class="sd">              on source.ClassName to pick the matching factory. (issue #126)</span>
+<span class="sd">              source produces a PhMetathesisRule duplicate. Dispatches on</span>
+<span class="sd">              source.ClassName to pick the matching factory. (issue #126)</span>
 <span class="sd">            - insert_after=True preserves the original rule&#39;s position</span>
 <span class="sd">            - Copies all simple properties: Name, Description, Direction, StratumRA</span>
 <span class="sd">            - Copies all owned objects when deep=True:</span>
@@ -1400,24 +1421,23 @@
 
         <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
 
-        <span class="c1"># Dispatch on the source&#39;s concrete subtype so a metathesis or</span>
-        <span class="c1"># reduplication rule duplicate doesn&#39;t silently become a regular</span>
-        <span class="c1"># rule. PhonRulesOS is polymorphic (PhRegularRule, PhMetathesisRule,</span>
-        <span class="c1"># PhReduplicationRule); CreateAndAppendElement and the previous</span>
-        <span class="c1"># IPhRegularRuleFactory-only fallback both produced PhRegularRule</span>
-        <span class="c1"># regardless of source. Same fix shape as 76204e0 (#27) for</span>
+        <span class="c1"># Dispatch on the source&#39;s concrete subtype so a metathesis rule</span>
+        <span class="c1"># duplicate doesn&#39;t silently become a regular rule. PhonRulesOS is</span>
+        <span class="c1"># polymorphic (PhRegularRule, PhMetathesisRule); CreateAndAppendElement</span>
+        <span class="c1"># and the previous IPhRegularRuleFactory-only fallback both produced</span>
+        <span class="c1"># PhRegularRule regardless of source. Same fix shape as 76204e0 (#27) for</span>
         <span class="c1"># NaturalClassOperations.Duplicate. (issue #126)</span>
         <span class="c1">#</span>
         <span class="c1"># Resolve the factory through lcm_casting&#39;s _get_factory_for_class</span>
-        <span class="c1"># rather than importing IPh{Metathesis,Reduplication}RuleFactory at</span>
-        <span class="c1"># module load. Some pythonnet/LCM builds don&#39;t expose all three</span>
-        <span class="c1"># factory interfaces at import time; lcm_casting wraps the lookup</span>
+        <span class="c1"># rather than importing IPh{Metathesis}RuleFactory at module load. Some</span>
+        <span class="c1"># pythonnet/LCM builds don&#39;t expose both factory interfaces at import</span>
+        <span class="c1"># time; lcm_casting wraps the lookup</span>
         <span class="c1"># in a try/except and returns None if the factory isn&#39;t bindable</span>
         <span class="c1"># on the current build. That lets PhonologicalRuleOperations</span>
         <span class="c1"># itself remain importable everywhere, and surfaces a clear</span>
         <span class="c1"># FP_ParameterError only when a caller actually asks to duplicate</span>
         <span class="c1"># a rule of an unsupported concrete type.</span>
-        <span class="kn">from</span> <span class="nn">..lcm_casting</span> <span class="kn">import</span> <span class="n">_get_factory_for_class</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">_get_factory_for_class</span>
 
         <span class="n">source_class</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">ClassName</span>
         <span class="n">factory</span> <span class="o">=</span> <span class="n">_get_factory_for_class</span><span class="p">(</span><span class="n">source_class</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
@@ -1426,20 +1446,32 @@
                 <span class="sa">f</span><span class="s2">&quot;Cannot duplicate rule of class </span><span class="si">{</span><span class="n">source_class</span><span class="si">!r}</span><span class="s2">: no &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;factory available on this LCM build. Known concrete &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;phonological rule types are PhRegularRule, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;PhMetathesisRule, PhReduplicationRule.&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;PhMetathesisRule.&quot;</span>
             <span class="p">)</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate phonological rule&quot;</span><span class="p">):</span>
             <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
-                <span class="n">source_index</span> <span class="o">=</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-                <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="c1"># Index by HVO (issue #540). PhonRulesOS can yield bare interface</span>
+                <span class="c1"># views whose Python identity differs from source.</span>
+                <span class="n">rule_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="p">)</span>
+                <span class="n">target_hvo</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Hvo</span>
+                <span class="n">source_index</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">rule</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rule_list</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">rule</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">target_hvo</span><span class="p">:</span>
+                        <span class="n">source_index</span> <span class="o">=</span> <span class="n">i</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="n">source_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">insert_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rule_list</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">insert_index</span> <span class="o">=</span> <span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">insert_index</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
 
             <span class="c1"># Clone all properties (simple, reference, and owned objects)</span>
             <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
                 <span class="c1"># Deep clone using the LCM cloning utilities</span>
-                <span class="kn">from</span> <span class="nn">..lcm_casting</span> <span class="kn">import</span> <span class="n">clone_properties</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">clone_properties</span>
 
                 <span class="n">clone_properties</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -1457,7 +1489,7 @@
 
             <span class="k">return</span> <span class="n">duplicate</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IPhPhonRule.</span>
 
@@ -1468,19 +1500,22 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            IPhPhonRule: The resolved rule object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Unwrap PhonologicalRule / PythonicWrapper wrappers (from GetAll())</span>
+        <span class="c1"># so collection operations see the raw IPhSegmentRule (issue #449).</span>
+        <span class="c1"># Uses the shared BaseOperations._UnwrapLcm isinstance-based helper</span>
+        <span class="c1"># rather than duck-typing on ``_obj``/``_concrete``, since raw</span>
+        <span class="c1"># pythonnet objects should not be probed with hasattr() for</span>
+        <span class="c1"># attributes they don&#39;t have. Then cast_to_concrete so HVO callers</span>
+        <span class="c1"># get IPhRegularRule / IPhMetathesisRule members (issue #461).</span>
+        <span class="n">rule_or_hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
-        <span class="c1"># Unwrap PhonologicalRule wrappers (from GetAll()) so collection</span>
-        <span class="c1"># operations see the raw IPhSegmentRule. Duck-typed for any</span>
-        <span class="c1"># LCMObjectWrapper subclass without importing the class.</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_concrete&quot;</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">rule_or_hvo</span><span class="o">.</span><span class="n">_obj</span>
-        <span class="k">return</span> <span class="n">rule_or_hvo</span>
+            <span class="n">rule_or_hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
 
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get dictionary of syncable properties for cross-project synchronization.</span>
 
@@ -1538,7 +1573,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply syncable properties (from GetSyncableProperties) onto an item.</span>
 
 <span class="sd">        Inherited from BaseOperations; declared on the concrete class so static</span>
@@ -1548,7 +1583,7 @@
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two phonological rules and return detailed differences.</span>
 
@@ -1609,7 +1644,7 @@
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
 
@@ -1629,7 +1664,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1645,7 +1680,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1660,8 +1695,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

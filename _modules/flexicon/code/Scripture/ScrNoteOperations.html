@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Scripture.ScrNoteOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,28 +55,29 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import BaseOperations parent class</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IScrBook</span><span class="p">,</span>
     <span class="n">IScrBookAnnotations</span><span class="p">,</span>
     <span class="n">IScrScriptureNote</span><span class="p">,</span>
     <span class="n">IScrScriptureNoteFactory</span><span class="p">,</span>
     <span class="n">IScrTxtPara</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
 
 
 <div class="viewcode-block" id="ScrNoteOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Scripture.html#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">ScrNoteOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ScrNoteOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing Scripture notes in a</span>
 <span class="sd">    FieldWorks project.</span>
@@ -121,7 +122,7 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize ScrNoteOperations with a FLExProject instance.</span>
 
@@ -133,7 +134,7 @@
     <span class="c1"># --- Core CRUD Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;translator_note&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;translator_note&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new Scripture note attached to a paragraph.</span>
 
@@ -192,7 +193,7 @@
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create note&quot;</span><span class="p">):</span>
             <span class="c1"># Ensure book has annotations container</span>
             <span class="k">if</span> <span class="n">book</span><span class="o">.</span><span class="n">FootnotesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IScrBookAnnotationsFactory</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IScrBookAnnotationsFactory</span>
 
                 <span class="n">annotations_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IScrBookAnnotationsFactory</span><span class="p">)</span>
                 <span class="n">annotations</span> <span class="o">=</span> <span class="n">annotations_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
@@ -219,7 +220,7 @@
                     <span class="n">para_obj</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">mkstr</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Create paragraph</span>
-                    <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IStTxtParaFactory</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IStTxtParaFactory</span>
 
                     <span class="n">para_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTxtParaFactory</span><span class="p">)</span>
                     <span class="n">para_obj</span> <span class="o">=</span> <span class="n">para_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
@@ -227,7 +228,7 @@
                     <span class="n">para_obj</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">mkstr</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Create discussion StText</span>
-                <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IStTextFactory</span><span class="p">,</span> <span class="n">IStTxtParaFactory</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IStTextFactory</span><span class="p">,</span> <span class="n">IStTxtParaFactory</span>
 
                 <span class="n">text_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTextFactory</span><span class="p">)</span>
                 <span class="n">new_note</span><span class="o">.</span><span class="n">DiscussionOA</span> <span class="o">=</span> <span class="n">text_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
@@ -244,7 +245,7 @@
             <span class="k">return</span> <span class="n">new_note</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a Scripture note from the FLEx project.</span>
 
@@ -283,7 +284,7 @@
             <span class="n">note</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a Scripture note by index within a book.</span>
 
@@ -336,7 +337,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all Scripture notes in a book.</span>
 
@@ -381,7 +382,7 @@
     <span class="c1"># --- Note Properties ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the text content of a Scripture note.</span>
 
@@ -430,7 +431,7 @@
         <span class="k">return</span> <span class="n">text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the text content of a Scripture note.</span>
 
@@ -476,14 +477,14 @@
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set note text&quot;</span><span class="p">):</span>
             <span class="c1"># Ensure DiscussionOA exists</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="p">:</span>
-                <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IStTextFactory</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IStTextFactory</span>
 
                 <span class="n">text_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTextFactory</span><span class="p">)</span>
                 <span class="n">note</span><span class="o">.</span><span class="n">DiscussionOA</span> <span class="o">=</span> <span class="n">text_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
             <span class="c1"># Ensure discussion has at least one paragraph</span>
             <span class="k">if</span> <span class="n">note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IStTxtParaFactory</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IStTxtParaFactory</span>
 
                 <span class="n">para_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTxtParaFactory</span><span class="p">)</span>
                 <span class="n">para</span> <span class="o">=</span> <span class="n">para_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
@@ -495,7 +496,7 @@
             <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">mkstr</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the type of a Scripture note.</span>
 
@@ -532,7 +533,7 @@
         <span class="k">return</span> <span class="s2">&quot;note&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Mark a Scripture note as resolved.</span>
 
@@ -574,7 +575,7 @@
                 <span class="n">note</span><span class="o">.</span><span class="n">ResolutionStatus</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Resolved</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsResolved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsResolved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a Scripture note is marked as resolved.</span>
 
@@ -613,7 +614,7 @@
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IScrScriptureNote.</span>
 
@@ -643,7 +644,7 @@
                 <span class="k">pass</span>
         <span class="k">return</span> <span class="n">note_or_hvo</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveBook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveBook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IScrBook.</span>
 
@@ -657,13 +658,16 @@
 <span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a Scripture book</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrBook</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrBook</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;ScrBook&quot;</span>
+            <span class="p">):</span>
                 <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a Scripture book&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span>
-        <span class="k">return</span> <span class="n">book_or_hvo</span>
+        <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveParagraph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveParagraph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IScrTxtPara.</span>
 
@@ -671,19 +675,25 @@
 <span class="sd">            para_or_hvo: Either an IScrTxtPara object or an HVO (int)</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            IScrTxtPara: The resolved paragraph object</span>
+<span class="sd">            ``IScrTxtPara``: The resolved paragraph. The HVO path validates</span>
+<span class="sd">            with ``isinstance(obj, IScrTxtPara)`` but does not call</span>
+<span class="sd">            ``cast_to_concrete``; the sole caller binds the result without</span>
+<span class="sd">            reading subtype-only members (issue #494 contract-only row).</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a Scripture paragraph</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrTxtPara</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrTxtPara</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;ScrTxtPara&quot;</span>
+            <span class="p">):</span>
                 <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a Scripture paragraph&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span>
-        <span class="k">return</span> <span class="n">para_or_hvo</span>
+        <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
 
@@ -703,7 +713,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -719,7 +729,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -734,8 +744,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

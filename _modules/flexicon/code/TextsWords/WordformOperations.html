@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.TextsWords.WordformOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -54,15 +54,15 @@
 <span class="c1">#   Copyright Craig Farrow, 2008 - 2024</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">clr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
 
 <span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IWfiWordformRepository</span><span class="p">,</span>
     <span class="n">IWfiWordformFactory</span><span class="p">,</span>
     <span class="n">IWfiWordform</span><span class="p">,</span>
@@ -71,21 +71,22 @@
     <span class="n">IWfiMorphBundleFactory</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
 
 <span class="c1"># --- Spelling Status Enum ---</span>
 
 
 <div class="viewcode-block" id="SpellingStatusStates">
 <a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.WordformOperations.SpellingStatusStates">[docs]</a>
-<span class="k">class</span> <span class="nc">SpellingStatusStates</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SpellingStatusStates</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Spelling status values for wordforms.&quot;&quot;&quot;</span>
 
     <span class="n">UNDECIDED</span> <span class="o">=</span> <span class="mi">0</span>
@@ -99,7 +100,7 @@
 
 <div class="viewcode-block" id="WordformOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.WordformOperations.WordformOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">WordformOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WordformOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Provides operations for managing wordforms in a FLEx project.</span>
 
@@ -124,7 +125,7 @@
 <span class="sd">          implemented. See Duplicate() method for details and workaround.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize WordformOperations.</span>
 
@@ -133,7 +134,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper to resolve writing system handle.</span>
 
@@ -147,9 +148,45 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveWordform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IWfiWordform.</span>
+
+<span class="sd">        Casts by ``ClassName`` before returning (issue #500, generalising</span>
+<span class="sd">        #275 / #269). ``self.project.Object(hvo)`` returns a bare</span>
+<span class="sd">        ``ICmObject``; ``isinstance(obj, IWfiWordform)`` is False even for</span>
+<span class="sd">        a genuine wordform, so the old inline HVO guards rejected every real</span>
+<span class="sd">        HVO. ``cast_to_concrete`` widens to the concrete interface.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wordform_or_hvo: Either an IWfiWordform object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiWordform: The resolved wordform object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO does not refer to a wordform.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;WfiWordform&quot;</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">obj</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;WfiWordform&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">wordform_or_hvo</span>
+
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieve all wordforms in the FLEx project.</span>
 
@@ -175,7 +212,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ObjectsIn</span><span class="p">(</span><span class="n">IWfiWordformRepository</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new wordform in the FLEx project.</span>
 
@@ -227,7 +264,7 @@
             <span class="k">return</span> <span class="n">new_wf</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a wordform from the FLEx project.</span>
 
@@ -253,20 +290,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="c1"># Resolve to wordform object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="n">wordform_or_hvo</span>
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordform</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># LCM Delete() removes the object from the repository</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete wordform&quot;</span><span class="p">):</span>
             <span class="n">wordform</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a wordform exists in the FLEx project.</span>
 
@@ -297,7 +328,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find and return a wordform by its surface form.</span>
 
@@ -338,7 +369,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the surface text form of a wordform.</span>
 
@@ -365,13 +396,7 @@
 <span class="sd">        See Also:</span>
 <span class="sd">            SetForm, Find</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Resolve to wordform object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="n">wordform_or_hvo</span>
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordform</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
@@ -380,7 +405,7 @@
         <span class="k">return</span> <span class="n">form</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the surface text form of a wordform.</span>
 
@@ -412,13 +437,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="s2">&quot;wordform_or_hvo&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Resolve to wordform object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="n">wordform_or_hvo</span>
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordform</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
@@ -428,7 +447,7 @@
             <span class="n">wordform</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSpellingStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSpellingStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the spelling status of a wordform.</span>
 
@@ -456,18 +475,12 @@
 <span class="sd">        See Also:</span>
 <span class="sd">            SetSpellingStatus, SpellingStatusStates</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Resolve to wordform object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="n">wordform_or_hvo</span>
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordform</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">wordform</span><span class="o">.</span><span class="n">SpellingStatus</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetSpellingStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetSpellingStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the spelling status of a wordform.</span>
 
@@ -500,19 +513,13 @@
         <span class="k">if</span> <span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">SpellingStatusStates</span><span class="o">.</span><span class="n">UNDECIDED</span><span class="p">,</span> <span class="n">SpellingStatusStates</span><span class="o">.</span><span class="n">INCORRECT</span><span class="p">,</span> <span class="n">SpellingStatusStates</span><span class="o">.</span><span class="n">CORRECT</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid spelling status: </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">. Must be 0, 1, or 2.&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Resolve to wordform object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="n">wordform_or_hvo</span>
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordform</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
 
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set wordform spelling status&quot;</span><span class="p">):</span>
             <span class="n">wordform</span><span class="o">.</span><span class="n">SpellingStatus</span> <span class="o">=</span> <span class="n">status</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAnalyses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAnalyses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all analyses associated with a wordform.</span>
 
@@ -540,18 +547,12 @@
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, Find</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Resolve to wordform object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="n">wordform_or_hvo</span>
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordform</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">wordform</span><span class="o">.</span><span class="n">AnalysesOC</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetOccurrenceCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOccurrenceCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the count of occurrences of a wordform in texts.</span>
 
@@ -577,13 +578,7 @@
 <span class="sd">        See Also:</span>
 <span class="sd">            GetOccurrences, GetAll</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Resolve to wordform object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="n">wordform_or_hvo</span>
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordform</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># OccurrencesInTexts is IEnumerable[ISegment] (no .Count). The sibling</span>
         <span class="c1"># GetOccurrences method already materializes via list() -- match it</span>
@@ -591,7 +586,7 @@
         <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">wordform</span><span class="o">.</span><span class="n">OccurrencesInTexts</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetOccurrences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOccurrences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all segment occurrences of a wordform in texts.</span>
 
@@ -619,18 +614,12 @@
 <span class="sd">        See Also:</span>
 <span class="sd">            GetOccurrenceCount, GetAll</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Resolve to wordform object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="n">wordform_or_hvo</span>
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordform</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">wordform</span><span class="o">.</span><span class="n">OccurrencesInTexts</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetChecksum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetChecksum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the checksum of a wordform.</span>
 
@@ -656,19 +645,13 @@
 <span class="sd">        See Also:</span>
 <span class="sd">            GetForm, GetSpellingStatus</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Resolve to wordform object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="n">wordform_or_hvo</span>
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordform</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">wordform</span><span class="o">.</span><span class="n">Checksum</span>
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAllWithStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllWithStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieve all wordforms with a specific spelling status.</span>
 
@@ -711,7 +694,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAllUnapproved</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllUnapproved</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieve all wordforms that are not approved (not CORRECT status).</span>
 
@@ -743,7 +726,7 @@
                 <span class="k">yield</span> <span class="n">wf</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ApproveSpelling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApproveSpelling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Approve the spelling of a wordform by setting status to CORRECT.</span>
 
@@ -774,19 +757,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="c1"># Resolve to wordform object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">wordform</span> <span class="o">=</span> <span class="n">wordform_or_hvo</span>
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordform</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
 
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Approve wordform spelling&quot;</span><span class="p">):</span>
             <span class="n">wordform</span><span class="o">.</span><span class="n">SpellingStatus</span> <span class="o">=</span> <span class="n">SpellingStatusStates</span><span class="o">.</span><span class="n">CORRECT</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a wordform, creating a new copy with a new GUID.</span>
 
@@ -858,13 +835,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Resolve to wordform object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">source</span> <span class="o">=</span> <span class="n">item_or_hvo</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordform</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
 
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate wordform&quot;</span><span class="p">):</span>
             <span class="c1"># Create new wordform using factory (auto-generates new GUID)</span>
@@ -951,7 +922,7 @@
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all syncable properties of a wordform.</span>
 
@@ -986,7 +957,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two wordforms for differences.</span>
 
@@ -1029,8 +1000,10 @@
             <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
-            <span class="c1"># Compare values</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_CompareValues</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">):</span>
+            <span class="c1"># Compare values inline: FLExProject has no _CompareValues</span>
+            <span class="c1"># member (calling it raised AttributeError on every compare;</span>
+            <span class="c1"># same fix as MediaOperations.CompareTo).</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
                 <span class="c1"># Values are different</span>
                 <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
 
@@ -1043,7 +1016,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1059,7 +1032,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1074,8 +1047,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

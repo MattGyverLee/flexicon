@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Lists.AgentOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -56,26 +56,26 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ICmAgent</span><span class="p">,</span>
     <span class="n">ICmAgentFactory</span><span class="p">,</span>
     <span class="n">ICmPerson</span><span class="p">,</span>
     <span class="n">ICmAgentEvaluation</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
-<span class="kn">import</span> <span class="nn">System</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="n">FP_ParameterError</span><span class="p">,</span> <span class="n">FP_NullParameterError</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">OperationsMethod</span>
-<span class="kn">from</span> <span class="nn">.possibility_item_base</span> <span class="kn">import</span> <span class="n">PossibilityItemOperations</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="n">FP_ParameterError</span><span class="p">,</span> <span class="n">FP_NullParameterError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">OperationsMethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.possibility_item_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PossibilityItemOperations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
 
 
 <div class="viewcode-block" id="AgentOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lists.html#flexicon.code.Lists.AgentOperations.AgentOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">AgentOperations</span><span class="p">(</span><span class="n">PossibilityItemOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AgentOperations</span><span class="p">(</span><span class="n">PossibilityItemOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Agent operations for managing human analysts and automated parsers.</span>
 
@@ -109,7 +109,7 @@
 <span class="sd">    - GetDateCreated() / GetDateModified() - Get timestamps</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize AgentOperations with a FLExProject instance.</span>
 
@@ -118,16 +118,16 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_get_item_class_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_item_class_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the item class name for error messages.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Agent&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_get_list_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_list_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the agents list container.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnalyzingAgentsOC</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Iterate over all agents in the project&#39;s AnalyzingAgentsOC.</span>
 
@@ -157,7 +157,7 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">agents_oc</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new agent in AnalyzingAgentsOC.</span>
 
@@ -226,7 +226,7 @@
             <span class="k">return</span> <span class="n">new_agent</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete an agent from AnalyzingAgentsOC.</span>
 
@@ -252,7 +252,7 @@
                 <span class="n">agents_oc</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">agent</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate an agent, creating a new copy with a new GUID.</span>
 
@@ -299,7 +299,7 @@
             <span class="k">return</span> <span class="n">duplicate</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find an agent by name (case-insensitive).</span>
 
@@ -332,10 +332,56 @@
 
         <span class="k">return</span> <span class="kc">None</span>
 
+    <span class="c1"># --- Sync integration (ICmAgent is not ICmPossibility) ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return syncable properties for an analyzing agent.</span>
+
+<span class="sd">        ICmAgent exposes ``Name`` and ``Human`` but not ``Description``.</span>
+<span class="sd">        The inherited ``PossibilityItemOperations.GetSyncableProperties``</span>
+<span class="sd">        unconditionally read ``Description`` and raised ``AttributeError``</span>
+<span class="sd">        on every agent (issue #350).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Guid&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">Guid</span><span class="p">)}</span>
+
+        <span class="n">name_alts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span>
+            <span class="n">name_str</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">name_str</span><span class="p">:</span>
+                <span class="n">name_alts</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">name_str</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">name_alts</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name_alts</span>
+
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Human&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">Human</span><span class="p">)</span>
+
+        <span class="n">version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetVersion</span><span class="p">(</span><span class="n">agent</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">version</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">version</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;ICmAgent has no Description member (issue #350).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;ICmAgent has no Description member; intentionally a no-op (#350).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
     <span class="c1"># --- Version and Type Management ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetVersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetVersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the version string of an agent.</span>
 
@@ -384,7 +430,7 @@
         <span class="k">return</span> <span class="n">agent</span><span class="o">.</span><span class="n">Version</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetVersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetVersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the version string of an agent.</span>
 
@@ -436,7 +482,7 @@
     <span class="c1"># --- Agent Type Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsHuman</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsHuman</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if an agent is a human analyst.</span>
 
@@ -454,8 +500,7 @@
 <span class="sd">            ...     name = project.Agents.GetName(agent)</span>
 <span class="sd">            ...     if project.Agents.IsHuman(agent):</span>
 <span class="sd">            ...         person = project.Agents.GetHuman(agent)</span>
-<span class="sd">            ...         email = project.Person.GetEmail(person)</span>
-<span class="sd">            ...         print(f&quot;Human: {name} ({email})&quot;)</span>
+<span class="sd">            ...         print(f&quot;Human: {name} ({project.Person.GetName(person)})&quot;)</span>
 <span class="sd">            ...     else:</span>
 <span class="sd">            ...         version = project.Agents.GetVersion(agent)</span>
 <span class="sd">            ...         print(f&quot;Parser: {name} v{version}&quot;)</span>
@@ -483,7 +528,7 @@
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">Human</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsParser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsParser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if an agent is a parser (automated analyzer).</span>
 
@@ -526,7 +571,7 @@
     <span class="c1"># --- Human (Person) Link ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetHuman</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetHuman</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the linked person for a human agent.</span>
 
@@ -544,9 +589,8 @@
 <span class="sd">            &gt;&gt;&gt; if project.Agents.IsHuman(agent):</span>
 <span class="sd">            ...     person = project.Agents.GetHuman(agent)</span>
 <span class="sd">            ...     name = project.Person.GetName(person)</span>
-<span class="sd">            ...     email = project.Person.GetEmail(person)</span>
-<span class="sd">            ...     print(f&quot;{name}: {email}&quot;)</span>
-<span class="sd">            John Smith: john.smith@example.com</span>
+<span class="sd">            ...     print(name)</span>
+<span class="sd">            John Smith</span>
 
 <span class="sd">            &gt;&gt;&gt; # Parser agents return None</span>
 <span class="sd">            &gt;&gt;&gt; parser = project.Agents.Find(&quot;MyParser&quot;)</span>
@@ -569,7 +613,7 @@
         <span class="k">return</span> <span class="n">agent</span><span class="o">.</span><span class="n">Human</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetHuman</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetHuman</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the linked person for an agent (making it a human agent).</span>
 
@@ -624,7 +668,7 @@
     <span class="c1"># --- Evaluations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetEvaluations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetEvaluations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all evaluations created by an agent.</span>
 
@@ -675,7 +719,7 @@
         <span class="k">return</span> <span class="n">evaluations</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetEvaluationCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetEvaluationCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the number of evaluations created by an agent.</span>
 
@@ -716,7 +760,7 @@
     <span class="c1"># --- Query Methods ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FindByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_human</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_human</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find all agents of a specific type (human or parser).</span>
 
@@ -732,8 +776,7 @@
 <span class="sd">            &gt;&gt;&gt; for agent in humans:</span>
 <span class="sd">            ...     name = project.Agents.GetName(agent)</span>
 <span class="sd">            ...     person = project.Agents.GetHuman(agent)</span>
-<span class="sd">            ...     email = project.Person.GetEmail(person)</span>
-<span class="sd">            ...     print(f&quot;{name}: {email}&quot;)</span>
+<span class="sd">            ...     print(f&quot;{name}: {project.Person.GetName(person)}&quot;)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Get all parsers</span>
 <span class="sd">            &gt;&gt;&gt; parsers = project.Agents.FindByType(False)</span>
@@ -762,7 +805,7 @@
         <span class="k">return</span> <span class="n">agents</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetHumanAgents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetHumanAgents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all human agents in the project.</span>
 
@@ -777,8 +820,7 @@
 <span class="sd">            &gt;&gt;&gt; for agent in humans:</span>
 <span class="sd">            ...     name = project.Agents.GetName(agent)</span>
 <span class="sd">            ...     person = project.Agents.GetHuman(agent)</span>
-<span class="sd">            ...     email = project.Person.GetEmail(person)</span>
-<span class="sd">            ...     print(f&quot;Analyst: {name} ({email})&quot;)</span>
+<span class="sd">            ...     print(f&quot;Analyst: {name} ({project.Person.GetName(person)})&quot;)</span>
 <span class="sd">            Analyst: John Smith (john.smith@example.com)</span>
 <span class="sd">            Analyst: Maria Garcia (maria.garcia@example.com)</span>
 <span class="sd">            Analyst: Ahmed Hassan (ahmed.hassan@example.com)</span>
@@ -795,7 +837,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindByType</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetParserAgents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParserAgents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all parser agents in the project.</span>
 
@@ -829,7 +871,7 @@
     <span class="c1"># --- Metadata ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the creation date of an agent record.</span>
 
@@ -869,7 +911,7 @@
         <span class="k">return</span> <span class="n">agent</span><span class="o">.</span><span class="n">DateCreated</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the last modification date of an agent record.</span>
 
@@ -917,7 +959,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -933,7 +975,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -948,8 +990,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

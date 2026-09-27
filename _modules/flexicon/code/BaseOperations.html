@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.BaseOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -56,21 +56,24 @@
 
 <span class="c1"># --- Imports ------------------------------------------------------------------</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
-<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ReadOnlyError</span><span class="p">,</span>
     <span class="n">FP_NullParameterError</span><span class="p">,</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">.Shared.lcm_constants</span> <span class="kn">import</span> <span class="n">OWNING_SEQUENCE_SUFFIX</span><span class="p">,</span> <span class="n">FEATURE_STRUC_OWNER_TABLE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.Shared.lcm_constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWNING_SEQUENCE_SUFFIX</span><span class="p">,</span> <span class="n">FEATURE_STRUC_OWNER_TABLE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.Shared.wrapper_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LCMObjectWrapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.PythonicWrapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">PythonicWrapper</span><span class="p">,</span> <span class="n">unwrap</span> <span class="k">as</span> <span class="n">_unwrap_pythonic</span>
 
 <span class="c1"># --- Constants ---------------------------------------------------------------</span>
 
 
 <div class="viewcode-block" id="EnumerableWrapper">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.EnumerableWrapper">[docs]</a>
-<span class="k">class</span> <span class="nc">EnumerableWrapper</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EnumerableWrapper</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Wraps C# IEnumerable to provide Pythonic interface.</span>
 
@@ -93,7 +96,7 @@
 <span class="sd">            ...</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enumerable</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enumerable</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrap an IEnumerable collection.</span>
 
 <span class="sd">        Args:</span>
@@ -102,14 +105,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_enumerable</span> <span class="o">=</span> <span class="n">enumerable</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cached_list</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">_ensure_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ensure_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to list on first access (lazy evaluation).&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cached_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_enumerable</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_list</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">Count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get count of items in the collection (Pythonic for C# .Count).</span>
 
 <span class="sd">        Returns:</span>
@@ -122,11 +125,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ensure_list</span><span class="p">())</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Support len() function.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Count</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Support indexing and slicing.</span>
 
 <span class="sd">        Args:</span>
@@ -144,11 +147,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_list</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Support iteration (for item in collection).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ensure_list</span><span class="p">())</span>
 
-    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Support &#39;in&#39; operator.</span>
 
 <span class="sd">        Example::</span>
@@ -159,13 +162,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_list</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;EnumerableWrapper(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_enumerable</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
 
-<span class="k">def</span> <span class="nf">_needs_enumerable_wrap</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_needs_enumerable_wrap</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Decide whether `result` needs to be wrapped in EnumerableWrapper.</span>
 
@@ -217,7 +220,7 @@
 
 <div class="viewcode-block" id="wrap_enumerable">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.wrap_enumerable">[docs]</a>
-<span class="k">class</span> <span class="nc">wrap_enumerable</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">wrap_enumerable</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Descriptor to automatically wrap IEnumerable/iterator return values.</span>
 
@@ -256,13 +259,13 @@
 <span class="sd">        guarantee and rationale.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Store the inner function/method.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
         <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__name__&#39;</span><span class="p">,</span> <span class="s1">&#39;wrapped&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">objtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">objtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Descriptor protocol: delegate to inner descriptor if present.</span>
 
@@ -281,7 +284,7 @@
                 <span class="n">inner_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="fm">__get__</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">objtype</span><span class="p">)</span>
 
         <span class="c1"># Return a wrapper that will wrap the result</span>
-        <span class="k">def</span> <span class="nf">wrapped_method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">wrapped_method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">inner_method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">_needs_enumerable_wrap</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">EnumerableWrapper</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
@@ -289,7 +292,7 @@
 
         <span class="k">return</span> <span class="n">wrapped_method</span>
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Direct call support (when decorator is applied to a function, not a method).</span>
 
@@ -304,7 +307,7 @@
 
 <div class="viewcode-block" id="OperationsMethod">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.OperationsMethod">[docs]</a>
-<span class="k">class</span> <span class="nc">OperationsMethod</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OperationsMethod</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Descriptor enabling methods to work as both class and instance methods.</span>
 
@@ -329,13 +332,13 @@
 <span class="sd">        pos_list = POSOperations(project).GetAll()  # Instance-level</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Store the method being decorated.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
         <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span>
         <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span>
 
-    <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">objtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">objtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Descriptor protocol: handle both class and instance access.</span>
 
@@ -356,7 +359,7 @@
 
         <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Called on class: POSOperations.GetAll(project)</span>
-            <span class="k">def</span> <span class="nf">class_method</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">class_method</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">                </span><span class="sd">&quot;&quot;&quot;Automatically instantiate and call the method.&quot;&quot;&quot;</span>
                 <span class="n">instance</span> <span class="o">=</span> <span class="n">objtype</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -368,7 +371,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">_normalize_ws_tag</span><span class="p">(</span><span class="n">tag</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_ws_tag</span><span class="p">(</span><span class="n">tag</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Fold a writing-system Id to canonical hyphen-lowercase form.</span>
 
 <span class="sd">    Replicates ``WritingSystemOperations._NormalizeLangTag``&#39;s</span>
@@ -382,7 +385,7 @@
     <span class="k">return</span> <span class="n">tag</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
 
-<span class="k">def</span> <span class="nf">_resolve_ws_handle</span><span class="p">(</span><span class="n">target_ws_by_id</span><span class="p">,</span> <span class="n">tgt_ws_id</span><span class="p">,</span> <span class="n">_index_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_ws_handle</span><span class="p">(</span><span class="n">target_ws_by_id</span><span class="p">,</span> <span class="n">tgt_ws_id</span><span class="p">,</span> <span class="n">_index_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve a target ws_id to its handle: exact match first, then a</span>
 <span class="sd">    normalized (case/separator tolerant) fallback (spec 250, Defect 4).</span>
 
@@ -469,7 +472,7 @@
     <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">distinct_handles</span><span class="p">))</span>
 
 
-<span class="k">def</span> <span class="nf">_apply_props_loop</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">target_ws_by_id</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_props_loop</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">target_ws_by_id</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                       <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_default_ws_getter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_ts_string_utils</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Pure loop body of ApplySyncableProperties. No project handle required.</span>
 
@@ -496,7 +499,7 @@
 <span class="sd">        _ts_string_utils: The imported TsStringUtils class, passed in to avoid</span>
 <span class="sd">            a re-import inside the pure helper.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">import</span> <span class="nn">logging</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
     <span class="c1"># Lazily-built normalized WS-id side-index, shared across every</span>
     <span class="c1"># writing-system alt resolved within this single _apply_props_loop</span>
@@ -641,7 +644,7 @@
 
 <div class="viewcode-block" id="BaseOperations">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.BaseOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">BaseOperations</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseOperations</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for all FLEx operation classes.</span>
 
@@ -696,7 +699,7 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize BaseOperations with a FLExProject instance.</span>
 
@@ -710,7 +713,7 @@
 <div class="viewcode-block" id="BaseOperations.Sort">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.BaseOperations.Sort">[docs]</a>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Sort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_or_hvo</span><span class="p">,</span> <span class="n">key_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Sort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_or_hvo</span><span class="p">,</span> <span class="n">key_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Sort items in an owning sequence using a custom key function.</span>
 
@@ -816,10 +819,55 @@
             <span class="k">return</span> <span class="n">count</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ApplySequenceOrder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">desired_order</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reorder an LCM owning sequence to match ``desired_order`` using MoveTo.</span>
+
+<span class="sd">        Never uses ``Clear()`` -- on an owning sequence, Clear deletes every</span>
+<span class="sd">        child object (issue #470).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sequence: LCM owning sequence (``Count``, indexing, ``MoveTo``).</span>
+<span class="sd">            desired_order: Every current member exactly once, in target order.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If ``desired_order`` length or membership does</span>
+<span class="sd">                not match the sequence.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">sequence</span><span class="o">.</span><span class="n">Count</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">desired_order</span><span class="p">)</span> <span class="o">!=</span> <span class="n">count</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;desired_order length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">desired_order</span><span class="p">)</span><span class="si">}</span><span class="s2"> does not match &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;sequence count </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">current</span> <span class="o">=</span> <span class="p">[</span><span class="n">sequence</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">current</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">desired_order</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;desired_order must contain exactly the same objects as the sequence&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Every caller reaches this from inside its own Reorder bracket, so</span>
+        <span class="c1"># this transaction joins that one (nesting-aware per B1). Stated</span>
+        <span class="c1"># anyway so the site is grep-auditable per D5.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Apply sequence order&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">target_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">):</span>
+                <span class="n">current_index</span> <span class="o">=</span> <span class="n">target_index</span>
+                <span class="n">target_item</span> <span class="o">=</span> <span class="n">desired_order</span><span class="p">[</span><span class="n">target_index</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">target_index</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">sequence</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">target_item</span><span class="p">:</span>
+                        <span class="n">current_index</span> <span class="o">=</span> <span class="n">j</span>
+                        <span class="k">break</span>
+
+                <span class="k">if</span> <span class="n">current_index</span> <span class="o">!=</span> <span class="n">target_index</span><span class="p">:</span>
+                    <span class="n">sequence</span><span class="o">.</span><span class="n">MoveTo</span><span class="p">(</span>
+                        <span class="n">current_index</span><span class="p">,</span> <span class="n">current_index</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">target_index</span>
+                    <span class="p">)</span>
+
 <div class="viewcode-block" id="BaseOperations.MoveUp">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.BaseOperations.MoveUp">[docs]</a>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">MoveUp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_or_hvo</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">positions</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveUp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_or_hvo</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">positions</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Move an item up (toward index 0) by specified number of positions.</span>
 
@@ -886,6 +934,7 @@
         <span class="k">if</span> <span class="n">positions</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;positions must be positive integer&quot;</span><span class="p">)</span>
 
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetObject</span><span class="p">(</span><span class="n">parent_or_hvo</span><span class="p">)</span>
         <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetSequence</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
 
@@ -919,7 +968,7 @@
 <div class="viewcode-block" id="BaseOperations.MoveDown">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.BaseOperations.MoveDown">[docs]</a>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">MoveDown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_or_hvo</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">positions</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveDown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_or_hvo</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">positions</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Move an item down (toward end) by specified number of positions.</span>
 
@@ -986,6 +1035,7 @@
         <span class="k">if</span> <span class="n">positions</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;positions must be positive integer&quot;</span><span class="p">)</span>
 
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetObject</span><span class="p">(</span><span class="n">parent_or_hvo</span><span class="p">)</span>
         <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetSequence</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
 
@@ -1020,7 +1070,7 @@
 <div class="viewcode-block" id="BaseOperations.MoveToIndex">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.BaseOperations.MoveToIndex">[docs]</a>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">MoveToIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_or_hvo</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">new_index</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveToIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_or_hvo</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">new_index</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Move an item to a specific index position.</span>
 
@@ -1075,6 +1125,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetObject</span><span class="p">(</span><span class="n">parent_or_hvo</span><span class="p">)</span>
         <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetSequence</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
 
@@ -1109,7 +1160,7 @@
 <div class="viewcode-block" id="BaseOperations.MoveBefore">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.BaseOperations.MoveBefore">[docs]</a>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">MoveBefore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_to_move</span><span class="p">,</span> <span class="n">target_item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveBefore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_to_move</span><span class="p">,</span> <span class="n">target_item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Move an item to position immediately before another item.</span>
 
@@ -1157,6 +1208,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
+        <span class="n">item_to_move</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">item_to_move</span><span class="p">)</span>
+        <span class="n">target_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">target_item</span><span class="p">)</span>
+
         <span class="c1"># Find which sequence contains both items</span>
         <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_FindCommonSequence</span><span class="p">(</span><span class="n">item_to_move</span><span class="p">,</span> <span class="n">target_item</span><span class="p">)</span>
 
@@ -1188,7 +1242,7 @@
 <div class="viewcode-block" id="BaseOperations.MoveAfter">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.BaseOperations.MoveAfter">[docs]</a>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">MoveAfter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_to_move</span><span class="p">,</span> <span class="n">target_item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveAfter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_to_move</span><span class="p">,</span> <span class="n">target_item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Move an item to position immediately after another item.</span>
 
@@ -1236,6 +1290,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
+        <span class="n">item_to_move</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">item_to_move</span><span class="p">)</span>
+        <span class="n">target_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">target_item</span><span class="p">)</span>
+
         <span class="c1"># Find which sequence contains both items</span>
         <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_FindCommonSequence</span><span class="p">(</span><span class="n">item_to_move</span><span class="p">,</span> <span class="n">target_item</span><span class="p">)</span>
 
@@ -1268,7 +1325,7 @@
 <div class="viewcode-block" id="BaseOperations.Swap">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.BaseOperations.Swap">[docs]</a>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Swap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Swap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Swap the positions of two items in a sequence.</span>
 
@@ -1315,6 +1372,9 @@
 <span class="sd">        See Also:</span>
 <span class="sd">            MoveBefore, MoveAfter, MoveToIndex</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">item2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
         <span class="c1"># Find which sequence contains both items</span>
         <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_FindCommonSequence</span><span class="p">(</span><span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">)</span>
 
@@ -1360,7 +1420,7 @@
 <div class="viewcode-block" id="BaseOperations.GetSyncableProperties">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.BaseOperations.GetSyncableProperties">[docs]</a>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get dictionary of syncable properties for cross-project synchronization.</span>
 
@@ -1458,7 +1518,7 @@
 <div class="viewcode-block" id="BaseOperations.ApplySyncableProperties">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.BaseOperations.ApplySyncableProperties">[docs]</a>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Apply a syncable-properties dict (from GetSyncableProperties) onto an</span>
 <span class="sd">        item. Inverse of GetSyncableProperties.</span>
@@ -1526,7 +1586,7 @@
             <span class="p">)</span>
 
         <span class="c1"># Lazy import — avoids burdening module load for users who don&#39;t sync.</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
         <span class="n">target_ws_by_id</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">ws</span><span class="o">.</span><span class="n">Id</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span> <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()</span>
@@ -1554,7 +1614,7 @@
 <div class="viewcode-block" id="BaseOperations.CompareTo">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.BaseOperations.BaseOperations.CompareTo">[docs]</a>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two items and return detailed differences.</span>
 
@@ -1711,7 +1771,7 @@
 
     <span class="c1"># ========== HELPER METHODS ==========</span>
 
-    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the owning sequence from parent object.</span>
 
@@ -1754,7 +1814,58 @@
             <span class="s2">&quot;Example: return parent.SensesOS&quot;</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_GetObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_UnwrapLcm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Unwrap a flexicon wrapper object to the raw LCM object it holds.</span>
+
+<span class="sd">        `GetAll()` on several Operations classes (Allomorph, MSA, MorphRule,</span>
+<span class="sd">        PhonologicalRule) returns `LCMObjectWrapper` instances instead of raw</span>
+<span class="sd">        LCM objects, so users can iterate results and then pass an item</span>
+<span class="sd">        straight back into another Operations method (e.g.</span>
+<span class="sd">        `project.Allomorphs.GetForm(item)` for `item` in</span>
+<span class="sd">        `project.Allomorphs.GetAll(entry)`). Internal resolvers that later</span>
+<span class="sd">        perform a pythonnet interface cast (`IMoStemAllomorph(obj)`, etc.) or</span>
+<span class="sd">        an equality/`IndexOf`/`Remove` check against a raw LCM sequence need</span>
+<span class="sd">        the raw object, not the wrapper -- pythonnet cannot cast a plain</span>
+<span class="sd">        Python wrapper object, and wrapper instances don&#39;t define `__eq__`</span>
+<span class="sd">        against raw LCM objects.</span>
+
+<span class="sd">        This helper centralizes that unwrap step so every resolver applies</span>
+<span class="sd">        it the same way, using `isinstance` checks against the two known</span>
+<span class="sd">        wrapper types rather than `hasattr()` probes. `hasattr()` is unsafe</span>
+<span class="sd">        here: both wrapper types proxy unknown attribute access to the</span>
+<span class="sd">        wrapped LCM object via `__getattr__`, and raw pythonnet objects can</span>
+<span class="sd">        raise on some attribute probes rather than returning False.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: An `LCMObjectWrapper`, a `PythonicWrapper`, a raw LCM</span>
+<span class="sd">                object, an HVO (int), a string, or None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object: `obj.lcm_object` if obj is an `LCMObjectWrapper`;</span>
+<span class="sd">                the underlying LCM object if obj is a `PythonicWrapper`;</span>
+<span class="sd">                otherwise `obj` unchanged (including None, int, str, and</span>
+<span class="sd">                raw LCM objects, which all pass through untouched).</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allo_wrapper = project.Allomorphs.GetAll(entry)[0]</span>
+<span class="sd">            &gt;&gt;&gt; raw = self._UnwrapLcm(allo_wrapper)</span>
+<span class="sd">            &gt;&gt;&gt; IMoAffixAllomorph(raw)  # works; would TypeError on the wrapper</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Never raises -- safe to call unconditionally on any value.</span>
+<span class="sd">            - Idempotent: unwrapping an already-raw object is a no-op.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            LCMObjectWrapper.lcm_object, PythonicWrapper.unwrap()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">LCMObjectWrapper</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">lcm_object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">PythonicWrapper</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">_unwrap_pythonic</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get object from HVO or return object directly.</span>
 
@@ -1762,7 +1873,10 @@
 <span class="sd">        or its HVO (Handle Value Object = integer ID).</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            obj_or_hvo: Either an object or an HVO (int).</span>
+<span class="sd">            obj_or_hvo: Either an object or an HVO (int). May also be a</span>
+<span class="sd">                flexicon wrapper object (e.g. an item from a wrapper-</span>
+<span class="sd">                returning `GetAll()`), which is unwrapped to its raw LCM</span>
+<span class="sd">                object before being returned.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            object: The resolved object.</span>
@@ -1780,17 +1894,19 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - If obj_or_hvo is int, retrieves object by HVO</span>
-<span class="sd">            - If obj_or_hvo is object, returns it unchanged</span>
+<span class="sd">            - If obj_or_hvo is a wrapper, unwraps to the raw LCM object</span>
+<span class="sd">            - If obj_or_hvo is a raw object, returns it unchanged</span>
 <span class="sd">            - Uses FLExProject.Object() for HVO resolution</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            All methods that accept parent_or_hvo use this.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">obj_or_hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">obj_or_hvo</span>
 
-    <span class="k">def</span> <span class="nf">_GetTypedOwner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetTypedOwner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return obj.Owner cast to its concrete LCM interface.</span>
 
@@ -1827,10 +1943,10 @@
         <span class="n">owner</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">Owner</span>
         <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
-        <span class="kn">from</span> <span class="nn">.lcm_casting</span> <span class="kn">import</span> <span class="n">cast_to_concrete</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
         <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_GetTypedElements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetTypedElements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Materialise `collection` with each element cast to its concrete</span>
 <span class="sd">        LCM interface.</span>
@@ -1869,10 +1985,10 @@
 <span class="sd">        See Also:</span>
 <span class="sd">            _GetTypedOwner, flexicon.code.lcm_casting.cast_all</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.lcm_casting</span> <span class="kn">import</span> <span class="n">cast_all</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_all</span>
         <span class="k">return</span> <span class="n">cast_all</span><span class="p">(</span><span class="n">collection</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_ResolveFeatureStrucOwner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ResolveFeatureStrucOwner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve which atomic-owning (&#39;OA&#39;) property on ``owner`` holds an</span>
 <span class="sd">        ``IFsFeatStruc``, and return ``owner`` cast to the CONCRETE LCM</span>
@@ -2019,7 +2135,7 @@
             <span class="c1"># error), even if the caller supplied one.</span>
             <span class="n">_row_slot</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">,</span> <span class="n">_props_key</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="kn">import</span> <span class="nn">SIL.LCModel</span> <span class="k">as</span> <span class="nn">_lcm_module</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_lcm_module</span>
 
         <span class="n">iface_name</span> <span class="o">=</span> <span class="s2">&quot;I&quot;</span> <span class="o">+</span> <span class="n">class_name</span>
         <span class="n">interface_type</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_lcm_module</span><span class="p">,</span> <span class="n">iface_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -2039,7 +2155,7 @@
 
         <span class="k">return</span> <span class="n">concrete_owner</span><span class="p">,</span> <span class="n">prop_name</span>
 
-    <span class="k">def</span> <span class="nf">_GetFeatureStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">struct</span><span class="p">,</span> <span class="n">_top_level</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetFeatureStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">struct</span><span class="p">,</span> <span class="n">_top_level</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Serialize an ``IFsFeatStruc`` into the frozen C4 sync wire-format</span>
 <span class="sd">        dict, RECURSIVELY -- an ``IFsComplexValue`` spec&#39;s ``ValueOA``</span>
@@ -2134,7 +2250,7 @@
         <span class="k">if</span> <span class="n">struct</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IFsFeatStruc</span><span class="p">,</span> <span class="n">IFsComplexValue</span><span class="p">,</span> <span class="n">IFsClosedValue</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IFsFeatStruc</span><span class="p">,</span> <span class="n">IFsComplexValue</span><span class="p">,</span> <span class="n">IFsClosedValue</span>
 
         <span class="n">fs</span> <span class="o">=</span> <span class="n">IFsFeatStruc</span><span class="p">(</span><span class="n">struct</span><span class="p">)</span>
 
@@ -2182,7 +2298,7 @@
 
         <span class="k">return</span> <span class="n">result</span>
 
-    <span class="k">def</span> <span class="nf">_ResolveFsByGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ResolveFsByGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve a GUID string to an LCM object in THIS project, returning</span>
 <span class="sd">        ``None`` on failure rather than raising.</span>
@@ -2220,7 +2336,7 @@
 <span class="sd">              default&#39;s own upcoming policy flip, which is unrelated to</span>
 <span class="sd">              this method&#39;s own contract).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">import</span> <span class="nn">logging</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
@@ -2231,7 +2347,7 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">_CastFsFeatStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_CastFsFeatStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Cast ``obj`` to the concrete ``IFsFeatStruc`` LCM interface.</span>
 
@@ -2250,24 +2366,24 @@
 <span class="sd">        Production callers are unaffected -- this performs exactly the</span>
 <span class="sd">        cast the inline call used to.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IFsFeatStruc</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IFsFeatStruc</span>
         <span class="k">return</span> <span class="n">IFsFeatStruc</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_CastFsClosedValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_CastFsClosedValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Cast ``obj`` to the concrete ``IFsClosedValue`` LCM interface.</span>
 <span class="sd">        See ``_CastFsFeatStruc`` for why this one-line cast is its own</span>
 <span class="sd">        method (test-seam, since ``SIL.LCModel`` rejects ``setattr``).&quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IFsClosedValue</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IFsClosedValue</span>
         <span class="k">return</span> <span class="n">IFsClosedValue</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_CastFsComplexValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_CastFsComplexValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Cast ``obj`` to the concrete ``IFsComplexValue`` LCM interface.</span>
 <span class="sd">        See ``_CastFsFeatStruc`` for why this one-line cast is its own</span>
 <span class="sd">        method (test-seam, since ``SIL.LCModel`` rejects ``setattr``).&quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IFsComplexValue</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IFsComplexValue</span>
         <span class="k">return</span> <span class="n">IFsComplexValue</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_ApplyFeatureStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">,</span> <span class="n">spec_dict</span><span class="p">,</span> <span class="n">struct_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ApplyFeatureStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">,</span> <span class="n">spec_dict</span><span class="p">,</span> <span class="n">struct_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                             <span class="n">on_unresolved</span><span class="o">=</span><span class="s2">&quot;raise&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Rewrite ``owner``&#39;s ``prop_name``-owned ``IFsFeatStruc`` from a</span>
@@ -2403,7 +2519,7 @@
         <span class="k">if</span> <span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">label</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;object&quot;</span>
 
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">IFsFeatStrucFactory</span><span class="p">,</span>
             <span class="n">IFsClosedValueFactory</span><span class="p">,</span>
         <span class="p">)</span>
@@ -2515,7 +2631,7 @@
 
         <span class="k">return</span> <span class="n">struct</span>
 
-    <span class="k">def</span> <span class="nf">_ApplyFeatureStrucSpecMap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">struct</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">on_unresolved</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ApplyFeatureStrucSpecMap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">struct</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">on_unresolved</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span>
                                    <span class="n">cv_factory</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Apply a single C4-dict LEVEL onto an already-attached</span>
@@ -2545,7 +2661,7 @@
 <span class="sd">                section, for an unresolved feature/value/type GUID when</span>
 <span class="sd">                ``on_unresolved == &quot;raise&quot;``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">IFsComplexValueFactory</span><span class="p">,</span>
             <span class="n">IFsFeatStrucFactory</span><span class="p">,</span>
         <span class="p">)</span>
@@ -2655,7 +2771,7 @@
                 <span class="n">cv</span><span class="o">.</span><span class="n">ValueRA</span> <span class="o">=</span> <span class="n">val_obj</span>
             <span class="n">existing_closed</span><span class="p">[</span><span class="n">feat_guid</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="n">cv</span>
 
-    <span class="k">def</span> <span class="nf">_MakeFeatStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specs</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_MakeFeatStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specs</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Build (and attach) an ``IFsFeatStruc`` from user-facing specs.</span>
 
@@ -2740,13 +2856,12 @@
 <span class="sd">              one used to fall through unresolved and fail at the LCM</span>
 <span class="sd">              property-set call; routing it through ``project.Object()``</span>
 <span class="sd">              is a strict improvement with no back-compat risk. Plain</span>
-<span class="sd">              NAME-string resolution (e.g. passing ``&quot;back&quot;`` instead of</span>
-<span class="sd">              the feature object returned by ``Find(&quot;back&quot;)``) is</span>
-<span class="sd">              deliberately NOT added -- neither pre-T5 body supported it,</span>
-<span class="sd">              no shipped test exercises it, and guessing which of</span>
-<span class="sd">              several ``Find``-style lookups applies to an arbitrary</span>
-<span class="sd">              string would be exactly the kind of silent guess C1&#39;s</span>
-<span class="sd">              resolver exists to forbid.</span>
+<span class="sd">              feature/value NAME strings (issue #265) are also accepted:</span>
+<span class="sd">              non-GUID strings resolve via the owner-driven morphological</span>
+<span class="sd">              or phonological feature system using the same analysis-WS</span>
+<span class="sd">              casefold rules as ``InflectionFeatures.Find`` /</span>
+<span class="sd">              ``PhonFeatures.Find``, raising on ambiguity rather than</span>
+<span class="sd">              guessing.</span>
 <span class="sd">            - Ownership-first (C5 invariant) at EVERY nesting level: the</span>
 <span class="sd">              struct/``ValueOA`` is attached to its owner BEFORE its</span>
 <span class="sd">              ``FeatureSpecsOC`` is populated or even read -- a free-</span>
@@ -2785,10 +2900,12 @@
                 <span class="s2">&quot;_ResolveFeatureStrucOwner.&quot;</span>
             <span class="p">)</span>
 
+        <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_FeatStrucOperandDomain</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
+
         <span class="c1"># Normalize (resolve + validate shape) ALL specs, recursively,</span>
         <span class="c1"># BEFORE touching owner or opening a transaction -- mirrors both</span>
         <span class="c1"># pre-T5 bodies&#39; up-front normalization pass.</span>
-        <span class="n">normalized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__NormalizeFeatStrucLevel</span><span class="p">(</span><span class="n">specs</span><span class="p">)</span>
+        <span class="n">normalized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__NormalizeFeatStrucLevel</span><span class="p">(</span><span class="n">specs</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">)</span>
 
         <span class="c1"># THE #256 FIX: resolve owner via the C1 table instead of the</span>
         <span class="c1"># `hasattr(owner, &quot;FeaturesOA&quot;)` gate. Raises FP_ParameterError</span>
@@ -2799,7 +2916,7 @@
             <span class="n">owner</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="n">slot</span>
         <span class="p">)</span>
 
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IFsFeatStrucFactory</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IFsFeatStrucFactory</span>
 
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
             <span class="n">IFsFeatStrucFactory</span>
@@ -2817,7 +2934,7 @@
 
             <span class="k">return</span> <span class="n">struct</span>
 
-    <span class="k">def</span> <span class="nf">__NormalizeFeatStrucLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level_specs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__NormalizeFeatStrucLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level_specs</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Recursively resolve ONE level of ``_MakeFeatStruc`` specs (either</span>
 <span class="sd">        shape from C3) into a list of ``(resolved_feat, resolved_val)``</span>
@@ -2841,16 +2958,23 @@
 
         <span class="n">normalized</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">feat_raw</span><span class="p">,</span> <span class="n">val_raw</span> <span class="ow">in</span> <span class="n">raw_pairs</span><span class="p">:</span>
-            <span class="n">feat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveFeatStrucOperand</span><span class="p">(</span><span class="n">feat_raw</span><span class="p">)</span>
+            <span class="n">feat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveFeatStrucOperand</span><span class="p">(</span>
+                <span class="n">feat_raw</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span> <span class="n">operand_role</span><span class="o">=</span><span class="s2">&quot;feature&quot;</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val_raw</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="n">nested</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__NormalizeFeatStrucLevel</span><span class="p">(</span><span class="n">val_raw</span><span class="p">)</span>
+                <span class="n">nested</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__NormalizeFeatStrucLevel</span><span class="p">(</span><span class="n">val_raw</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">)</span>
                 <span class="n">normalized</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">feat</span><span class="p">,</span> <span class="n">nested</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveFeatStrucOperand</span><span class="p">(</span><span class="n">val_raw</span><span class="p">)</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveFeatStrucOperand</span><span class="p">(</span>
+                    <span class="n">val_raw</span><span class="p">,</span>
+                    <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span>
+                    <span class="n">operand_role</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
+                    <span class="n">value_feature</span><span class="o">=</span><span class="n">feat</span><span class="p">,</span>
+                <span class="p">)</span>
                 <span class="n">normalized</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">feat</span><span class="p">,</span> <span class="n">val</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">normalized</span>
 
-    <span class="k">def</span> <span class="nf">__PopulateFeatStrucLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">struct</span><span class="p">,</span> <span class="n">normalized_pairs</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__PopulateFeatStrucLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">struct</span><span class="p">,</span> <span class="n">normalized_pairs</span><span class="p">,</span>
                                   <span class="n">_factories</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Populate an ALREADY-ATTACHED ``IFsFeatStruc`` ``struct`` from a</span>
@@ -2865,7 +2989,7 @@
 <span class="sd">        method recurses into it.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">_factories</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
                 <span class="n">IFsClosedValueFactory</span><span class="p">,</span>
                 <span class="n">IFsComplexValueFactory</span><span class="p">,</span>
                 <span class="n">IFsFeatStrucFactory</span><span class="p">,</span>
@@ -2910,18 +3034,41 @@
                     <span class="n">cv</span><span class="o">.</span><span class="n">FeatureRA</span> <span class="o">=</span> <span class="n">feat</span>
                     <span class="n">cv</span><span class="o">.</span><span class="n">ValueRA</span> <span class="o">=</span> <span class="n">val</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveFeatStrucOperand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveFeatStrucOperand</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">operand_role</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value_feature</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve one ``_MakeFeatStruc`` feature/value operand: an HVO</span>
-<span class="sd">        (``int``), a GUID (``str``), or an already-resolved LCM</span>
-<span class="sd">        object/wrapper. See ``_MakeFeatStruc``&#39;s Notes for why GUID</span>
-<span class="sd">        strings are additive-only and plain name strings are</span>
-<span class="sd">        deliberately unsupported.</span>
+<span class="sd">        (``int``), a GUID (``str``), a plain feature/value name (``str``,</span>
+<span class="sd">        issue #265), or an already-resolved LCM object/wrapper.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Polymorphic LCM object for the operand. HVO and GUID paths use</span>
+<span class="sd">            ``project.Object(...)`` and return the bare pythonnet view (often</span>
+<span class="sd">            ``ICmObject``); this helper intentionally does **not** cast --</span>
+<span class="sd">            downstream ``_MakeFeatStruc`` logic accepts several concrete</span>
+<span class="sd">            operand types and must not narrow here (issue #494).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_IsWellFormedGuidString</span><span class="p">(</span><span class="n">raw</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">domain</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">operand_role</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;MakeFeatStruc name operands require an owner so the &quot;</span>
+                    <span class="s2">&quot;correct feature system can be chosen (issue #265).&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">operand_role</span> <span class="o">==</span> <span class="s2">&quot;feature&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveFeatStrucFeatureName</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">value_feature</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;MakeFeatStruc value name operands require a resolved &quot;</span>
+                    <span class="s2">&quot;feature for the same (feature, value) pair.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveFeatStrucValueName</span><span class="p">(</span>
+                <span class="n">raw</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">value_feature</span>
+            <span class="p">)</span>
         <span class="c1"># Peel off LCMObjectWrapper-style wrappers -- mirrors</span>
         <span class="c1"># InflectionFeatureOperations.__Unwrap / PhonFeatureOperations</span>
         <span class="c1"># .__Unwrap.</span>
@@ -2931,7 +3078,122 @@
             <span class="k">return</span> <span class="n">raw</span><span class="o">.</span><span class="n">_obj</span>
         <span class="k">return</span> <span class="n">raw</span>
 
-    <span class="k">def</span> <span class="nf">_RejectLegacyKwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">legacy_to_new</span><span class="p">):</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_IsWellFormedGuidString</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">uuid</span><span class="o">.</span><span class="n">UUID</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_FeatStrucOperandDomain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Morphological vs phonological feature-system domain for name</span>
+<span class="sd">        operands, derived from ``owner.ClassName`` (issue #265 ruling).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">unwrapped</span> <span class="o">=</span> <span class="n">owner</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">unwrapped</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">unwrapped</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+            <span class="n">unwrapped</span> <span class="o">=</span> <span class="n">unwrapped</span><span class="o">.</span><span class="n">_obj</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">unwrapped</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">unwrapped</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+            <span class="n">unwrapped</span> <span class="o">=</span> <span class="n">unwrapped</span><span class="o">.</span><span class="n">_obj</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">unwrapped</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;PhPhoneme&quot;</span><span class="p">,</span> <span class="s2">&quot;PhNCFeatures&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">&quot;phon&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;ms&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ResolveFeatStrucFeatureName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">domain</span><span class="p">):</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_FindFeaturesByName</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">matches</span><span class="p">:</span>
+            <span class="n">system_label</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;phonological&quot;</span> <span class="k">if</span> <span class="n">domain</span> <span class="o">==</span> <span class="s2">&quot;phon&quot;</span> <span class="k">else</span> <span class="s2">&quot;morphological&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;MakeFeatStruc: no </span><span class="si">{</span><span class="n">system_label</span><span class="si">}</span><span class="s2"> feature named </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(analysis writing system, case-insensitive).&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;MakeFeatStruc: feature name </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> is ambiguous &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span><span class="si">}</span><span class="s2"> matches in the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;phonological&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">domain</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;phon&#39;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;morphological&#39;</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;feature system).&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ResolveFeatStrucValueName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">feature</span><span class="p">):</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_FindFeatureValuesByName</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">feature</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">matches</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;MakeFeatStruc: no value named </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> on feature &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(analysis writing system, case-insensitive).&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;MakeFeatStruc: value name </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> is ambiguous on the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;given feature (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span><span class="si">}</span><span class="s2"> matches).&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_FindFeaturesByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">domain</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IFsClosedFeature</span><span class="p">,</span> <span class="n">IFsFeatDefn</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">flexicon.code.Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Feature name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">if</span> <span class="n">domain</span> <span class="o">==</span> <span class="s2">&quot;phon&quot;</span><span class="p">:</span>
+            <span class="n">feature_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhFeatureSystemOA</span>
+            <span class="n">cast</span> <span class="o">=</span> <span class="n">IFsClosedFeature</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">feature_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">MsFeatureSystemOA</span>
+            <span class="n">cast</span> <span class="o">=</span> <span class="n">IFsFeatDefn</span>
+
+        <span class="k">if</span> <span class="n">feature_system</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="n">matches</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">feature_system</span><span class="o">.</span><span class="n">FeaturesOC</span><span class="p">:</span>
+            <span class="n">feat</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+            <span class="n">feat_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">feat</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">feat_name</span>
+                <span class="ow">and</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">feat_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span>
+            <span class="p">):</span>
+                <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">matches</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_FindFeatureValuesByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">feature</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">flexicon.code.Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Feature value name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">if</span> <span class="n">domain</span> <span class="o">==</span> <span class="s2">&quot;phon&quot;</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">PhonFeatures</span><span class="o">.</span><span class="n">GetValues</span><span class="p">(</span><span class="n">feature</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">InflectionFeatures</span><span class="o">.</span><span class="n">FeatureGetValues</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
+
+        <span class="n">matches</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">val_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">val_name</span>
+                <span class="ow">and</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">val_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span>
+            <span class="p">):</span>
+                <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">matches</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_RejectLegacyKwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">legacy_to_new</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Trap unexpected legacy keyword arguments with a clear,</span>
 <span class="sd">        actionable TypeError pointing at the rename + migration guide.</span>
@@ -2981,7 +3243,7 @@
                 <span class="sa">f</span><span class="s2">&quot;unexpected keyword argument(s) </span><span class="si">{</span><span class="n">unknown</span><span class="si">!r}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_FindCommonSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_FindCommonSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find the sequence that contains both items.</span>
 
@@ -3029,6 +3291,9 @@
 <span class="sd">        See Also:</span>
 <span class="sd">            MoveBefore, MoveAfter, Swap</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">item2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
         <span class="c1"># Verify items have Owner property</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item1</span><span class="p">,</span> <span class="s2">&quot;Owner&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item2</span><span class="p">,</span> <span class="s2">&quot;Owner&quot;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Items must have Owner property to find common sequence&quot;</span><span class="p">)</span>
@@ -3084,7 +3349,7 @@
 
     <span class="c1"># ========== VALIDATION METHODS ==========</span>
 
-    <span class="k">def</span> <span class="nf">_EnsureWriteEnabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_EnsureWriteEnabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Verify that the project is open in write mode.</span>
 
@@ -3121,7 +3386,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">writeEnabled</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ReadOnlyError</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_TransactionCM</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_TransactionCM</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return a transaction context manager appropriate to the project mode.</span>
 
@@ -3207,11 +3472,11 @@
 <span class="sd">                absorbed into the enclosing operation&#39;s undo task, and its</span>
 <span class="sd">                rollback decision covers them too.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.transaction</span> <span class="kn">import</span> <span class="n">_NestingAwareTransaction</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.transaction</span><span class="w"> </span><span class="kn">import</span> <span class="n">_NestingAwareTransaction</span>
 
         <span class="k">return</span> <span class="n">_NestingAwareTransaction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_CreateWithGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factory</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_CreateWithGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factory</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create an object through an LCM factory, preserving a caller-supplied GUID.</span>
 
@@ -3257,7 +3522,7 @@
 <span class="sd">        See Also:</span>
 <span class="sd">            _ValidateParam</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">import</span> <span class="nn">logging</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
         <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Create </span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">kind</span> <span class="k">else</span> <span class="s2">&quot;Create object&quot;</span>
 
@@ -3270,12 +3535,12 @@
         <span class="c1"># D5&#39;s validate-then-mutate discipline).</span>
         <span class="n">guid_arg</span> <span class="o">=</span> <span class="n">guid</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="kn">from</span> <span class="nn">System</span> <span class="kn">import</span> <span class="n">Guid</span> <span class="k">as</span> <span class="n">_DotNetGuid</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">Guid</span> <span class="k">as</span> <span class="n">_DotNetGuid</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">guid_arg</span> <span class="o">=</span> <span class="n">_DotNetGuid</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                    <span class="s2">&quot;guid </span><span class="si">%r</span><span class="s2"> is not a valid GUID&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">guid</span><span class="p">,))</span> <span class="kn">from</span> <span class="nn">exc</span>
+                    <span class="s2">&quot;guid </span><span class="si">%r</span><span class="s2"> is not a valid GUID&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">guid</span><span class="p">,))</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
 
         <span class="c1"># The attempt-then-fallback pair is ONE transaction. The failed</span>
         <span class="c1"># Create(Guid) is caught here rather than escaping, so the block still</span>
@@ -3291,7 +3556,26 @@
                     <span class="n">kind</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">factory</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_ValidateParam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;parameter&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_UnwrapLcmObject</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Peel LCMObjectWrapper-style wrappers before pythonnet interface casts.</span>
+
+<span class="sd">        Plain LCM objects pass through unchanged. Shared resolvers call this</span>
+<span class="sd">        so items from wrapper-returning ``GetAll()`` round-trip back into</span>
+<span class="sd">        Operations methods (issue #449).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;lcm_object&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">lcm_object</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">_obj</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">_obj</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ValidateParam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;parameter&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validate that a parameter is not None and not a stale LCM object.</span>
 
@@ -3353,7 +3637,7 @@
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2"> refers to a deleted or invalid LCM object&quot;</span>
             <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_ValidateParamNotEmpty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;parameter&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ValidateParamNotEmpty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;parameter&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validate that a parameter is not None and not empty.</span>
 
@@ -3404,7 +3688,7 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2"> cannot be empty&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_ValidateInstanceOf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">expected_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;object&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ValidateInstanceOf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">expected_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;object&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validate that an object is an instance of expected type.</span>
 
@@ -3459,7 +3743,7 @@
                 <span class="n">type_names</span> <span class="o">=</span> <span class="n">expected_type</span><span class="o">.</span><span class="vm">__name__</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2"> must be </span><span class="si">{</span><span class="n">type_names</span><span class="si">}</span><span class="s2">, &quot;</span> <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_ValidateStringNotEmpty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ValidateStringNotEmpty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validate that a string is not None and not empty.</span>
 
@@ -3512,7 +3796,7 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2"> cannot be empty or contain only whitespace&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_ValidateIndexBounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;index&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ValidateIndexBounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;index&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validate that an index is within bounds [0, max_count-1].</span>
 
@@ -3569,7 +3853,7 @@
         <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="n">max_count</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2"> out of bounds: </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> &gt;= </span><span class="si">{</span><span class="n">max_count</span><span class="si">}</span><span class="s2"> &quot;</span> <span class="sa">f</span><span class="s2">&quot;(valid range: 0-</span><span class="si">{</span><span class="n">max_count</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_ValidateOwner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">expected_owner</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;object&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ValidateOwner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">expected_owner</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;object&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validate that an object has expected owner.</span>
 
@@ -3627,7 +3911,7 @@
 
     <span class="c1"># ========== DATA TRANSFORMATION HELPERS ==========</span>
 
-    <span class="k">def</span> <span class="nf">_NormalizeMultiString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_NormalizeMultiString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Convert FLEx empty placeholder to Python empty string.</span>
 
@@ -3697,7 +3981,7 @@
     <span class="c1"># attribute (raises TypeError at the pythonnet boundary) or passing a</span>
     <span class="c1"># raw ITsString through a Python-string normaliser (returns garbage).</span>
 
-    <span class="k">def</span> <span class="nf">_MakeTsString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_MakeTsString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Build an ITsString for assignment to a single-string ITsString field.</span>
 
@@ -3718,7 +4002,7 @@
 <span class="sd">              directly with a TsStringUtils.MakeString result; do NOT</span>
 <span class="sd">              assign through this helper.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
         <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
@@ -3728,7 +4012,7 @@
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_ReadTsString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tss</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ReadTsString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tss</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Read an ITsString field as a Python str.</span>
 
@@ -3752,7 +4036,7 @@
 <span class="sd">              and call ``ITsString(...).Text`` yourself; do NOT route a</span>
 <span class="sd">              per-WS read through this helper.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
 
         <span class="k">if</span> <span class="n">tss</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="s2">&quot;&quot;</span>
@@ -3767,7 +4051,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -3783,7 +4067,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -3798,8 +4082,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

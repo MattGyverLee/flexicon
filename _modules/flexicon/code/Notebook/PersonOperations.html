@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Notebook.PersonOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,7 +55,7 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ICmPerson</span><span class="p">,</span>
     <span class="n">ICmPersonFactory</span><span class="p">,</span>
     <span class="n">ICmPersonRepository</span><span class="p">,</span>
@@ -64,20 +64,21 @@
     <span class="n">ICmLocation</span><span class="p">,</span>
     <span class="n">ILangProject</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.gendate_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">gendate_from_input</span>
 
 
 <div class="viewcode-block" id="PersonOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.PersonOperations.PersonOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">PersonOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PersonOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing people (consultants, speakers,</span>
 <span class="sd">    researchers) in a FieldWorks project.</span>
@@ -103,22 +104,18 @@
 <span class="sd">        # Create a new person</span>
 <span class="sd">        person = project.Person.Create(&quot;John Smith&quot;)</span>
 
-<span class="sd">        # Set properties</span>
-<span class="sd">        project.Person.SetEmail(person, &quot;john.smith@example.com&quot;)</span>
+<span class="sd">        # Set properties (Gender is an int code; ICmPerson has no</span>
+<span class="sd">        # email/phone fields, issue #352)</span>
 <span class="sd">        project.Person.SetDateOfBirth(person, &quot;1985-03-15&quot;)</span>
-<span class="sd">        project.Person.SetGender(person, &quot;Male&quot;)</span>
+<span class="sd">        project.Person.SetGender(person, 1)</span>
 
 <span class="sd">        # Add contact information</span>
-<span class="sd">        project.Person.SetPhone(person, &quot;+1-555-123-4567&quot;)</span>
 <span class="sd">        project.Person.SetAddress(person, &quot;123 Main St, City, Country&quot;)</span>
-
-<span class="sd">        # Add notes</span>
-<span class="sd">        project.Person.AddNote(person, &quot;Primary consultant for dialect study&quot;)</span>
 
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize PersonOperations with a FLExProject instance.</span>
 
@@ -131,7 +128,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all people in the project.</span>
 
@@ -144,11 +141,10 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; for person in project.Person.GetAll():</span>
 <span class="sd">            ...     name = project.Person.GetName(person)</span>
-<span class="sd">            ...     email = project.Person.GetEmail(person)</span>
-<span class="sd">            ...     print(f&quot;{name}: {email}&quot;)</span>
-<span class="sd">            John Smith: john.smith@example.com</span>
-<span class="sd">            Maria Garcia: maria.garcia@example.com</span>
-<span class="sd">            Ahmed Hassan: ahmed.hassan@example.com</span>
+<span class="sd">            ...     print(name)</span>
+<span class="sd">            John Smith</span>
+<span class="sd">            Maria Garcia</span>
+<span class="sd">            Ahmed Hassan</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access</span>
@@ -162,7 +158,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ObjectsIn</span><span class="p">(</span><span class="n">ICmPersonRepository</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new person in the FLEx project.</span>
 
@@ -190,8 +186,7 @@
 
 <span class="sd">            &gt;&gt;&gt; # Create and set additional properties</span>
 <span class="sd">            &gt;&gt;&gt; consultant = project.Person.Create(&quot;Ahmed Hassan&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; project.Person.SetEmail(consultant, &quot;ahmed@example.com&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; project.Person.SetGender(consultant, &quot;Male&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Person.SetGender(consultant, 1)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - The person is added to the project&#39;s people collection</span>
@@ -226,7 +221,7 @@
             <span class="k">return</span> <span class="n">new_person</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a person from the FLEx project.</span>
 
@@ -273,7 +268,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PeopleOA</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a person with the given name exists.</span>
 
@@ -312,7 +307,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a person by name.</span>
 
@@ -329,9 +324,8 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; person = project.Person.Find(&quot;John Smith&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; if person:</span>
-<span class="sd">            ...     email = project.Person.GetEmail(person)</span>
-<span class="sd">            ...     print(f&quot;Found: {email}&quot;)</span>
-<span class="sd">            Found: john.smith@example.com</span>
+<span class="sd">            ...     print(f&quot;Found: {project.Person.GetName(person)}&quot;)</span>
+<span class="sd">            Found: John Smith</span>
 
 <span class="sd">            &gt;&gt;&gt; # Search in specific writing system</span>
 <span class="sd">            &gt;&gt;&gt; person = project.Person.Find(&quot;María García&quot;,</span>
@@ -366,7 +360,7 @@
     <span class="c1"># --- Name Management ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the name of a person.</span>
 
@@ -406,7 +400,7 @@
         <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the name of a person.</span>
 
@@ -456,30 +450,31 @@
     <span class="c1"># --- Gender ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGender</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGender</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the gender of a person.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            person_or_hvo: Either an ICmPerson object or its HVO</span>
-<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+<span class="sd">            wsHandle: Accepted for compatibility but ignored (gender is</span>
+<span class="sd">                not a writing-system field).</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: The gender (empty string if not set)</span>
+<span class="sd">            int: The LCM gender code (0 for new persons)</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If person_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; person = project.Person.Find(&quot;John Smith&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; gender = project.Person.GetGender(person)</span>
-<span class="sd">            &gt;&gt;&gt; print(gender)</span>
-<span class="sd">            Male</span>
+<span class="sd">            &gt;&gt;&gt; project.Person.SetGender(person, 1)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Person.GetGender(person))</span>
+<span class="sd">            1</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns empty string if gender not set</span>
-<span class="sd">            - Gender is stored as a string field</span>
-<span class="sd">            - Common values: &quot;Male&quot;, &quot;Female&quot;, &quot;Other&quot;, but can be any text</span>
+<span class="sd">            - Gender is an Int32 field on ICmPerson, not a string</span>
+<span class="sd">              (live-proven, issue #352); code meanings are defined by</span>
+<span class="sd">              FieldWorks</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetGender</span>
@@ -487,36 +482,35 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">,</span> <span class="s2">&quot;person_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
-        <span class="n">gender</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">Gender</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">gender</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">person</span><span class="o">.</span><span class="n">Gender</span> <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">Gender</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetGender</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">gender</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetGender</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">gender</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the gender of a person.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            person_or_hvo: Either an ICmPerson object or its HVO</span>
-<span class="sd">            gender (str): The gender to set</span>
-<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+<span class="sd">            gender (int): The LCM gender code to set</span>
+<span class="sd">            wsHandle: Accepted for compatibility but ignored (gender is</span>
+<span class="sd">                not a writing-system field).</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If person_or_hvo or gender is None</span>
+<span class="sd">            FP_ParameterError: If gender is not an int</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; person = project.Person.Find(&quot;John Smith&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; project.Person.SetGender(person, &quot;Male&quot;)</span>
-
-<span class="sd">            &gt;&gt;&gt; # Clear gender</span>
-<span class="sd">            &gt;&gt;&gt; project.Person.SetGender(person, &quot;&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Person.SetGender(person, 1)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Person.GetGender(person))</span>
+<span class="sd">            1</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Gender can be any text value</span>
-<span class="sd">            - Common values: &quot;Male&quot;, &quot;Female&quot;, &quot;Other&quot;</span>
-<span class="sd">            - Can be empty string to clear</span>
+<span class="sd">            - Gender is an Int32 field on ICmPerson, not a string</span>
+<span class="sd">              (live-proven, issue #352); code meanings are defined by</span>
+<span class="sd">              FieldWorks</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetGender</span>
@@ -526,17 +520,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">,</span> <span class="s2">&quot;person_or_hvo&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gender</span><span class="p">,</span> <span class="s2">&quot;gender&quot;</span><span class="p">)</span>
 
-        <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gender</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gender</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;gender must be an int (ICmPerson.Gender is Int32)&quot;</span><span class="p">)</span>
 
-        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">gender</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">)</span>
+
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set person gender&quot;</span><span class="p">):</span>
-            <span class="n">person</span><span class="o">.</span><span class="n">Gender</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+            <span class="n">person</span><span class="o">.</span><span class="n">Gender</span> <span class="o">=</span> <span class="n">gender</span>
 
     <span class="c1"># --- Date of Birth ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateOfBirth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateOfBirth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the date of birth of a person.</span>
 
@@ -573,17 +568,19 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetDateOfBirth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">date_str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDateOfBirth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">date_str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the date of birth of a person.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            person_or_hvo: Either an ICmPerson object or its HVO</span>
-<span class="sd">            date_str (str): Date of birth as string (e.g., &quot;1985-03-15&quot;)</span>
+<span class="sd">            date_str (str): Date of birth as string (e.g., &quot;1985-03-15&quot;); a</span>
+<span class="sd">                System.DateTime is also accepted</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If person_or_hvo or date_str is None</span>
+<span class="sd">            FP_ParameterError: If date_str does not parse as a date</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; person = project.Person.Find(&quot;John Smith&quot;)</span>
@@ -593,10 +590,11 @@
 <span class="sd">            &gt;&gt;&gt; project.Person.SetDateOfBirth(person, &quot;&quot;)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Accepts various date formats</span>
+<span class="sd">            - Accepts any format System.DateTime.Parse does</span>
 <span class="sd">            - ISO format (YYYY-MM-DD) recommended</span>
 <span class="sd">            - Can be empty string to clear</span>
-<span class="sd">            - Invalid dates may raise FLEx internal errors</span>
+<span class="sd">            - Stored as an exact AD GenDate; ICmPerson.DateOfBirth is not a</span>
+<span class="sd">              string field, and assigning a str raised TypeError (issue #330)</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetDateOfBirth</span>
@@ -608,14 +606,17 @@
 
         <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># DateOfBirth is a GenDate field - set as string</span>
+        <span class="c1"># Parse outside the bracket so a malformed date raises before any</span>
+        <span class="c1"># undo task opens.</span>
+        <span class="n">gen_date</span> <span class="o">=</span> <span class="n">gendate_from_input</span><span class="p">(</span><span class="n">date_str</span><span class="p">,</span> <span class="n">allow_empty</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set person date of birth&quot;</span><span class="p">):</span>
-            <span class="n">person</span><span class="o">.</span><span class="n">DateOfBirth</span> <span class="o">=</span> <span class="n">date_str</span>
+            <span class="n">person</span><span class="o">.</span><span class="n">DateOfBirth</span> <span class="o">=</span> <span class="n">gen_date</span>
 
     <span class="c1"># --- Contact Information ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetEmail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetEmail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the email address of a person.</span>
 
@@ -636,23 +637,21 @@
 <span class="sd">            john.smith@example.com</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns empty string if email not set</span>
-<span class="sd">            - No email validation is performed</span>
-<span class="sd">            - Can store multiple emails as comma-separated values</span>
+<span class="sd">            - ICmPerson has no Email field (live-proven: hasattr is</span>
+<span class="sd">              False, issue #352), so this method always raises. It is</span>
+<span class="sd">              kept only to fail with an actionable message instead of</span>
+<span class="sd">              a bare AttributeError.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetEmail, GetPhone</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">,</span> <span class="s2">&quot;person_or_hvo&quot;</span><span class="p">)</span>
-
-        <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
-
-        <span class="n">email</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">Email</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">email</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+            <span class="s2">&quot;ICmPerson has no Email field (issue #352); &quot;</span>
+            <span class="s2">&quot;GetEmail cannot return a value&quot;</span>
+        <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetEmail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">email</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetEmail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">email</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the email address of a person.</span>
 
@@ -677,27 +676,21 @@
 <span class="sd">            &gt;&gt;&gt; project.Person.SetEmail(person, &quot;&quot;)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - No email validation is performed</span>
-<span class="sd">            - Can be empty string to clear</span>
-<span class="sd">            - Multiple emails can be comma-separated</span>
+<span class="sd">            - ICmPerson has no Email field (live-proven: hasattr is</span>
+<span class="sd">              False, issue #352), so this method always raises. It is</span>
+<span class="sd">              kept only to fail with an actionable message instead of</span>
+<span class="sd">              a bare AttributeError.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetEmail, SetPhone</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">,</span> <span class="s2">&quot;person_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">email</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">)</span>
-
-        <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
-
-        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">email</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set person email&quot;</span><span class="p">):</span>
-            <span class="n">person</span><span class="o">.</span><span class="n">Email</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+            <span class="s2">&quot;ICmPerson has no Email field (issue #352); &quot;</span>
+            <span class="s2">&quot;SetEmail cannot store a value&quot;</span>
+        <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetPhone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetPhone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the phone number of a person.</span>
 
@@ -718,23 +711,23 @@
 <span class="sd">            +1-555-123-4567</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns empty string if phone not set</span>
-<span class="sd">            - No phone number validation or formatting is performed</span>
-<span class="sd">            - Can store multiple numbers</span>
+<span class="sd">            - ICmPerson has no phone field: the old code read a</span>
+<span class="sd">              multistring off PlaceOfBirth, which does not exist either</span>
+<span class="sd">              (only PlaceOfBirthRA, an ICmLocation reference;</span>
+<span class="sd">              live-proven, issue #352). This method always raises and is</span>
+<span class="sd">              kept only to fail with an actionable message instead of</span>
+<span class="sd">              a bare AttributeError.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetPhone, GetEmail</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">,</span> <span class="s2">&quot;person_or_hvo&quot;</span><span class="p">)</span>
-
-        <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
-
-        <span class="n">phone</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">PlaceOfBirth</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">phone</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+            <span class="s2">&quot;ICmPerson has no phone field (issue #352); &quot;</span>
+            <span class="s2">&quot;GetPhone cannot return a value&quot;</span>
+        <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetPhone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">phone</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetPhone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">phone</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the phone number of a person.</span>
 
@@ -759,27 +752,23 @@
 <span class="sd">            &gt;&gt;&gt; project.Person.SetPhone(person, &quot;&quot;)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - No phone validation or formatting is performed</span>
-<span class="sd">            - Can be empty string to clear</span>
-<span class="sd">            - Multiple numbers can be listed</span>
+<span class="sd">            - ICmPerson has no phone field: the old code wrote a</span>
+<span class="sd">              multistring to PlaceOfBirth, which does not exist either</span>
+<span class="sd">              (only PlaceOfBirthRA, an ICmLocation reference;</span>
+<span class="sd">              live-proven, issue #352). This method always raises and is</span>
+<span class="sd">              kept only to fail with an actionable message instead of</span>
+<span class="sd">              a bare AttributeError.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetPhone, SetEmail</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">,</span> <span class="s2">&quot;person_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phone</span><span class="p">,</span> <span class="s2">&quot;phone&quot;</span><span class="p">)</span>
-
-        <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
-
-        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">phone</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set person phone&quot;</span><span class="p">):</span>
-            <span class="n">person</span><span class="o">.</span><span class="n">PlaceOfBirth</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+            <span class="s2">&quot;ICmPerson has no phone field (issue #352); &quot;</span>
+            <span class="s2">&quot;SetPhone cannot store a value&quot;</span>
+        <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAddress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAddress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the address of a person.</span>
 
@@ -817,7 +806,7 @@
         <span class="k">return</span> <span class="n">address</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetAddress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetAddress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the address of a person.</span>
 
@@ -861,7 +850,7 @@
     <span class="c1"># --- Academic Information ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetEducation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetEducation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the education information of a person.</span>
 
@@ -898,7 +887,7 @@
         <span class="k">return</span> <span class="n">education</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetEducation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">education</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetEducation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">education</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the education information of a person.</span>
 
@@ -941,7 +930,7 @@
             <span class="n">person</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetPositions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetPositions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the positions/roles associated with a person.</span>
 
@@ -979,7 +968,7 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">PositionsRC</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddPosition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">position</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddPosition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">position</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a position/role to a person.</span>
 
@@ -1025,7 +1014,7 @@
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;position must be a valid ICmPossibility object&quot;</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a person, creating a new copy with a new GUID.</span>
 
@@ -1052,16 +1041,18 @@
 <span class="sd">            Duplicate: 87654321-4321-4321-4321-cba987654321</span>
 
 <span class="sd">            &gt;&gt;&gt; # Verify properties copied</span>
-<span class="sd">            &gt;&gt;&gt; print(project.Person.GetEmail(dup))</span>
-<span class="sd">            john.smith@example.com</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Person.GetGender(dup))</span>
+<span class="sd">            1</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Factory.Create() automatically generates a new GUID</span>
 <span class="sd">            - insert_after=True preserves the original person&#39;s position</span>
-<span class="sd">            - Simple properties copied: Name, Gender, Email, DateOfBirth</span>
-<span class="sd">            - MultiString properties copied: Abbreviation (address), Description (education),</span>
-<span class="sd">              Comment (notes), PlaceOfBirth (phone)</span>
-<span class="sd">            - Reference collections copied: PositionsRC, PlacesOfResidenceRC, LanguagesRC</span>
+<span class="sd">            - Copied: Name, Gender (int), DateOfBirth, Abbreviation</span>
+<span class="sd">              (address), Description (education), PlaceOfBirthRA</span>
+<span class="sd">              (reference)</span>
+<span class="sd">            - Email/phone have no backing field and are not copied</span>
+<span class="sd">              (issue #352)</span>
+<span class="sd">            - Reference collections copied: PositionsRC, PlacesOfResidenceRC</span>
 <span class="sd">            - DateCreated and DateModified are NOT copied (set automatically)</span>
 <span class="sd">            - deep parameter has no effect (persons have no owned objects)</span>
 
@@ -1087,14 +1078,15 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PeopleOA</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
 
-            <span class="c1"># Copy simple MultiString properties</span>
+            <span class="c1"># Copy MultiString/MultiUnicode properties. Gender is Int32</span>
+            <span class="c1"># (direct assignment, issue #352); Email/PlaceOfBirth/Comment</span>
+            <span class="c1"># do not exist on ICmPerson (live-proven) and are not copied.</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
-            <span class="n">duplicate</span><span class="o">.</span><span class="n">Gender</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Gender</span><span class="p">)</span>
-            <span class="n">duplicate</span><span class="o">.</span><span class="n">Email</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Email</span><span class="p">)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Gender</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Gender</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>  <span class="c1"># Address</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>  <span class="c1"># Education</span>
-            <span class="n">duplicate</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Comment</span><span class="p">)</span>  <span class="c1"># Notes</span>
-            <span class="n">duplicate</span><span class="o">.</span><span class="n">PlaceOfBirth</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">PlaceOfBirth</span><span class="p">)</span>  <span class="c1"># Phone</span>
+            <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">PlaceOfBirthRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">PlaceOfBirthRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">PlaceOfBirthRA</span>
 
             <span class="c1"># Copy DateOfBirth (GenDate field)</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;DateOfBirth&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">DateOfBirth</span><span class="p">:</span>
@@ -1109,9 +1101,8 @@
                 <span class="k">for</span> <span class="n">residence</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">PlacesOfResidenceRC</span><span class="p">:</span>
                     <span class="n">duplicate</span><span class="o">.</span><span class="n">PlacesOfResidenceRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">residence</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;LanguagesRC&quot;</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">language</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">LanguagesRC</span><span class="p">:</span>
-                    <span class="n">duplicate</span><span class="o">.</span><span class="n">LanguagesRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">language</span><span class="p">)</span>
+            <span class="c1"># Email, phone, notes and LanguagesRC have no backing field</span>
+            <span class="c1"># on ICmPerson (live-proven, issue #352) and are not copied.</span>
 
             <span class="c1"># Note: deep parameter has no effect for persons (no owned objects)</span>
 
@@ -1120,7 +1111,7 @@
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get syncable properties for cross-project synchronization.</span>
 
@@ -1136,7 +1127,7 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; props = project.Person.GetSyncableProperties(person)</span>
 <span class="sd">            &gt;&gt;&gt; print(props)</span>
-<span class="sd">            {&#39;Name&#39;: &#39;John Smith&#39;, &#39;Gender&#39;: &#39;Male&#39;, &#39;Email&#39;: &#39;john@...&#39;, ...}</span>
+<span class="sd">            {&#39;Name&#39;: &#39;John Smith&#39;, &#39;Gender&#39;: 1, ...}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;item&quot;</span><span class="p">)</span>
 
@@ -1145,14 +1136,16 @@
 
         <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="c1"># MultiString properties</span>
+        <span class="c1"># MultiString properties. Gender is Int32 (issue #352); Email,</span>
+        <span class="c1"># phone and Comment have no backing field and are not synced.</span>
         <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Gender&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">Gender</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Email&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">Email</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Gender&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">person</span><span class="o">.</span><span class="n">Gender</span> <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">Gender</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
         <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Abbreviation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>  <span class="c1"># Address</span>
         <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>  <span class="c1"># Education</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Comment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>  <span class="c1"># Notes</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;PlaceOfBirth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">PlaceOfBirth</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>  <span class="c1"># Phone</span>
+        <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">PlaceOfBirthRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;PlaceOfBirthRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">PlaceOfBirthRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;PlaceOfBirthRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># GenDate field</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="s2">&quot;DateOfBirth&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">person</span><span class="o">.</span><span class="n">DateOfBirth</span><span class="p">:</span>
@@ -1165,13 +1158,11 @@
             <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Positions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">person</span><span class="o">.</span><span class="n">PositionsRC</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="s2">&quot;PlacesOfResidenceRC&quot;</span><span class="p">):</span>
             <span class="n">props</span><span class="p">[</span><span class="s2">&quot;PlacesOfResidence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">place</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="k">for</span> <span class="n">place</span> <span class="ow">in</span> <span class="n">person</span><span class="o">.</span><span class="n">PlacesOfResidenceRC</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="s2">&quot;LanguagesRC&quot;</span><span class="p">):</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Languages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">lang</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="k">for</span> <span class="n">lang</span> <span class="ow">in</span> <span class="n">person</span><span class="o">.</span><span class="n">LanguagesRC</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two persons and return detailed differences.</span>
 
@@ -1222,7 +1213,7 @@
     <span class="c1"># --- Metadata ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the GUID (Globally Unique Identifier) of a person.</span>
 
@@ -1262,7 +1253,7 @@
         <span class="k">return</span> <span class="n">person</span><span class="o">.</span><span class="n">Guid</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the creation date of a person record.</span>
 
@@ -1297,7 +1288,7 @@
         <span class="k">return</span> <span class="n">person</span><span class="o">.</span><span class="n">DateCreated</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the last modification date of a person record.</span>
 
@@ -1334,7 +1325,7 @@
     <span class="c1"># --- Relationships ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetResidences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetResidences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the places of residence for a person.</span>
 
@@ -1371,7 +1362,7 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">PlacesOfResidenceRC</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddResidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddResidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a place of residence to a person.</span>
 
@@ -1415,7 +1406,7 @@
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;location must be a valid ICmLocation object&quot;</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetLanguages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLanguages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the languages known by a person.</span>
 
@@ -1453,7 +1444,7 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">LanguagesRC</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddLanguage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">language</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddLanguage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">language</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a language to a person&#39;s known languages.</span>
 
@@ -1502,7 +1493,7 @@
     <span class="c1"># --- Notes ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetNotes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetNotes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the notes for a person.</span>
 
@@ -1523,24 +1514,24 @@
 <span class="sd">            Primary consultant for dialect study. Available weekdays.</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns empty string if no notes</span>
-<span class="sd">            - Can be multi-line text</span>
-<span class="sd">            - Useful for storing additional information</span>
+<span class="sd">            - ICmPerson has no notes field: the old code used Comment,</span>
+<span class="sd">              which does not exist (live-proven: hasattr is False,</span>
+<span class="sd">              issue #352). NotesOA belongs to ICmAgent, and ICmPerson</span>
+<span class="sd">              implements ICmPossibility, not ICmAgent, so the StText</span>
+<span class="sd">              is not reachable either. This method always raises and is</span>
+<span class="sd">              kept only to fail with an actionable message instead of</span>
+<span class="sd">              a bare AttributeError.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            AddNote, SetEducation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">,</span> <span class="s2">&quot;person_or_hvo&quot;</span><span class="p">)</span>
-
-        <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
-
-        <span class="c1"># Use Comment field for notes</span>
-        <span class="n">notes</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">notes</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+            <span class="s2">&quot;ICmPerson has no notes field (issue #352); &quot;</span>
+            <span class="s2">&quot;GetNotes cannot return a value&quot;</span>
+        <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddNote</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddNote</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a note to a person (appends to existing notes).</span>
 
@@ -1562,8 +1553,7 @@
 <span class="sd">            Available weekdays</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Appends to existing notes with newline separator</span>
-<span class="sd">            - Use GetNotes() and SetNotes() for replacing all notes</span>
+<span class="sd">            - Appends to existing notes as a new NotesOA paragraph</span>
 <span class="sd">            - Empty note text is ignored</span>
 
 <span class="sd">        See Also:</span>
@@ -1574,28 +1564,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">,</span> <span class="s2">&quot;person_or_hvo&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">note</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">note</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">return</span>  <span class="c1"># Ignore empty notes</span>
-
-        <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">person_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
-
-        <span class="c1"># Get existing notes</span>
-        <span class="n">existing</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-
-        <span class="c1"># Append new note</span>
-        <span class="k">if</span> <span class="n">existing</span><span class="p">:</span>
-            <span class="n">new_notes</span> <span class="o">=</span> <span class="n">existing</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">note</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">new_notes</span> <span class="o">=</span> <span class="n">note</span>
-
-        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">new_notes</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add note to person&quot;</span><span class="p">):</span>
-            <span class="n">person</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+        <span class="c1"># No backing field (see GetNotes): ICmPerson has no Comment</span>
+        <span class="c1"># member and NotesOA is ICmAgent-only (issue #352).</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+            <span class="s2">&quot;ICmPerson has no notes field (issue #352); &quot;</span>
+            <span class="s2">&quot;AddNote cannot store a value&quot;</span>
+        <span class="p">)</span>
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to ICmPerson.</span>
 
@@ -1625,7 +1603,7 @@
                 <span class="k">pass</span>
         <span class="k">return</span> <span class="n">person_or_hvo</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to vernacular WS.</span>
 
@@ -1639,7 +1617,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandleAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
 
@@ -1659,7 +1637,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1675,7 +1653,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1690,8 +1668,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

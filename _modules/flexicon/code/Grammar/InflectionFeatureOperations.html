@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Grammar.InflectionFeatureOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -63,10 +63,10 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import BaseOperations parent class</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IMoInflClass</span><span class="p">,</span>
     <span class="n">IMoInflClassFactory</span><span class="p">,</span>
     <span class="n">IFsFeatStruc</span><span class="p">,</span>
@@ -83,26 +83,26 @@
     <span class="n">IFsFeatStrucType</span><span class="p">,</span>
     <span class="n">IFsFeatStrucTypeFactory</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># .NET Guid for value-child creation (mixin handles the parent feature)</span>
-<span class="kn">import</span> <span class="nn">System</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Import LCM casting utilities for pythonnet interface casting</span>
-<span class="kn">from</span> <span class="nn">..lcm_casting</span> <span class="kn">import</span> <span class="n">cast_to_concrete</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
 
 <span class="c1"># Import string utilities</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">best_analysis_text</span><span class="p">,</span> <span class="n">normalize_match_key</span>
 
 <span class="c1"># Catalog (eticGlossList) parsing helpers</span>
-<span class="kn">from</span> <span class="nn">..Shared.catalog</span> <span class="kn">import</span> <span class="n">parse_etic_gloss_list</span>
-<span class="kn">from</span> <span class="nn">..Shared.catalog_backed</span> <span class="kn">import</span> <span class="n">CatalogBackedMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.catalog</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_etic_gloss_list</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.catalog_backed</span><span class="w"> </span><span class="kn">import</span> <span class="n">CatalogBackedMixin</span>
 
 
 <span class="c1"># Canonical relative subdir for the MGA inflection-feature catalog under</span>
@@ -120,7 +120,7 @@
 
 <div class="viewcode-block" id="InflectionFeatureOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.InflectionFeatureOperations.InflectionFeatureOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">InflectionFeatureOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">,</span> <span class="n">CatalogBackedMixin</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">InflectionFeatureOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">,</span> <span class="n">CatalogBackedMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing inflection classes, feature</span>
 <span class="sd">    structures, and features in a FieldWorks project.</span>
@@ -173,7 +173,7 @@
     <span class="n">DOMAIN_LABEL</span> <span class="o">=</span> <span class="s2">&quot;inflection feature&quot;</span>
     <span class="n">_supports_recursive_entries</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize InflectionFeatureOperations with a FLExProject instance.</span>
 
@@ -182,7 +182,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Specify which sequence to reorder for inflection features.</span>
 <span class="sd">        For InflectionFeature, we reorder parent.FeaturesOA.PossibilitiesOS</span>
@@ -194,7 +194,7 @@
     <span class="c1"># ========================================================================</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">InflectionClassGetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">InflectionClassGetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all inflection classes in the project.</span>
 
@@ -228,7 +228,7 @@
                 <span class="k">yield</span> <span class="n">IMoInflClass</span><span class="p">(</span><span class="n">ic</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">InflectionClassCreate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">InflectionClassCreate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new inflection class.</span>
 
@@ -306,7 +306,7 @@
             <span class="k">return</span> <span class="n">new_ic</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">InflectionClassDelete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">InflectionClassDelete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete an inflection class.</span>
 
@@ -349,7 +349,7 @@
                 <span class="n">morph_data</span><span class="o">.</span><span class="n">ProdRestrictOA</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">ic</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">InflectionClassGetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">InflectionClassGetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the name of an inflection class.</span>
 
@@ -383,7 +383,7 @@
         <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">InflectionClassSetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">InflectionClassSetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the name of an inflection class.</span>
 
@@ -428,7 +428,7 @@
     <span class="c1"># ========================================================================</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FeatureStructureGetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FeatureStructureGetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all feature structures in the project.</span>
 
@@ -460,7 +460,7 @@
         <span class="k">yield</span>  <span class="c1"># pragma: no cover -- makes this a generator</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FeatureStructureCreate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FeatureStructureCreate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new feature structure.</span>
 
@@ -496,7 +496,7 @@
             <span class="k">return</span> <span class="n">new_fs</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FeatureStructureDelete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FeatureStructureDelete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a feature structure.</span>
 
@@ -544,7 +544,7 @@
     <span class="c1"># ========================================================================</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FeatureGetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FeatureGetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all feature definitions in the project.</span>
 
@@ -572,7 +572,7 @@
                 <span class="k">yield</span> <span class="n">feature</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find an inflection feature by name.</span>
 
@@ -609,7 +609,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check whether an inflection feature with the given name exists.</span>
 
@@ -624,7 +624,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">wsHandle</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">TypeFind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">TypeFind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find an inflection feature-struct type by name.</span>
 
@@ -663,7 +663,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">TypeCreate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">TypeCreate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new IFsFeatStrucType under ``MsFeatureSystemOA.TypesOC``.</span>
 
@@ -755,7 +755,7 @@
             <span class="k">return</span> <span class="n">new_type</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;closed&quot;</span><span class="p">,</span> <span class="n">catalogSourceId</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;closed&quot;</span><span class="p">,</span> <span class="n">catalogSourceId</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new inflection feature (IFsClosedFeature or IFsComplexFeature).</span>
 
@@ -865,7 +865,7 @@
             <span class="k">return</span> <span class="n">new_feat</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CreateValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">value_marker</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">value_marker</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new symbolic value (IFsSymFeatVal) under a closed inflection</span>
 <span class="sd">        feature.</span>
@@ -926,7 +926,7 @@
             <span class="k">return</span> <span class="n">new_val</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CreateClosedFeatureWithValues</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateClosedFeatureWithValues</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">catalogSourceId</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1012,7 +1012,7 @@
             <span class="k">return</span> <span class="n">feature</span><span class="p">,</span> <span class="n">created_values</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">MakeFeatStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specs</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MakeFeatStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specs</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Build an IFsFeatStruc populated from user-facing specs.</span>
 
@@ -1057,7 +1057,183 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MakeFeatStruc</span><span class="p">(</span><span class="n">specs</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="n">owner</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="n">slot</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FeatureCreate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">DescribeFeatStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs_or_spec</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Render a feature structure as a short human-readable string</span>
+<span class="sd">        (READ-ONLY, display only).</span>
+
+<span class="sd">        The MSA feature getters (``project.MSA.GetFeatures`` and the</span>
+<span class="sd">        per-class ``GetStemFeatures`` / ``GetInflAffFeatures`` /</span>
+<span class="sd">        ``GetDerivFromFeatures`` / ``GetDerivToFeatures``, issue #544)</span>
+<span class="sd">        return GUID-keyed specs so they round-trip safely through</span>
+<span class="sd">        ``MakeFeatStruc``. This method turns such a spec -- or a live</span>
+<span class="sd">        ``IFsFeatStruc`` -- into abbreviated bracket notation, e.g.</span>
+<span class="sd">        ``&quot;[nc: 1/2; num: sg]&quot;``, with complex values nested:</span>
+<span class="sd">        ``&quot;[agr: [pers: 3; num: pl]]&quot;``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fs_or_spec: Any of:</span>
+
+<span class="sd">                - a spec dict as returned by the #544 getters</span>
+<span class="sd">                  (``{featGuid: valGuid | {...}}``); keys/values may also</span>
+<span class="sd">                  be HVOs, LCM objects or wrappers, as ``MakeFeatStruc``</span>
+<span class="sd">                  accepts;</span>
+<span class="sd">                - the C4 sync dict produced for ``GetSyncableProperties``</span>
+<span class="sd">                  (``{&quot;TypeGuid&quot;: ..., &quot;specs&quot;: {...}}``);</span>
+<span class="sd">                - an ``IFsFeatStruc`` (object, HVO or wrapper);</span>
+<span class="sd">                - an object that owns a feature structure (an MSA, a POS,</span>
+<span class="sd">                  a natural class, ...), read via its owning property;</span>
+<span class="sd">                - ``None``.</span>
+<span class="sd">            slot: Only for an owner with two feature-structure properties</span>
+<span class="sd">                (``MoDerivAffMsa``: ``&quot;From&quot;``/``&quot;To&quot;``; ``PartOfSpeech``:</span>
+<span class="sd">                ``&quot;Default&quot;``/``&quot;InherFeatVal&quot;``). Ignored otherwise.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: ``&quot;&quot;`` for ``None`` (or an owner whose feature structure</span>
+<span class="sd">            is null); ``&quot;[]&quot;`` for an empty structure; otherwise</span>
+<span class="sd">            ``&quot;[feat: val; ...]&quot;``. Each feature and value is labelled by</span>
+<span class="sd">            its analysis abbreviation, falling back to its name, falling</span>
+<span class="sd">            back to the raw key when neither is set or the GUID/HVO no</span>
+<span class="sd">            longer resolves.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If ``fs_or_spec`` is not one of the shapes</span>
+<span class="sd">                above, or is an owner whose ``ClassName`` does not own a</span>
+<span class="sd">                feature structure (or needs ``slot=`` and none was given).</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; spec = project.MSA.GetFeatures(sense)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.InflectionFeatures.DescribeFeatStruc(spec))</span>
+<span class="sd">            [nc: 1/2; num: sg]</span>
+<span class="sd">            &gt;&gt;&gt; project.InflectionFeatures.DescribeFeatStruc(deriv_msa,</span>
+<span class="sd">            ...                                              slot=&quot;To&quot;)</span>
+<span class="sd">            &#39;[gen: f]&#39;</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Display only. Abbreviations can be renamed or collide, so the</span>
+<span class="sd">              result is NOT valid ``MakeFeatStruc`` input -- keep the GUID</span>
+<span class="sd">              spec for round-trips.</span>
+<span class="sd">            - Features appear in the spec&#39;s own order (for an</span>
+<span class="sd">              ``IFsFeatStruc``, the ``FeatureSpecsOC`` order LCM returns).</span>
+<span class="sd">            - A complex feature literally named ``specs`` keeps its</span>
+<span class="sd">              label and nesting; only the C4 envelope (``TypeGuid``</span>
+<span class="sd">              plus ``specs``) is unwrapped.</span>
+<span class="sd">            - Like ``_GetFeatureStruc``, only closed and complex values are</span>
+<span class="sd">              shown; disjunctions and malformed specs are skipped.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            MakeFeatStruc, MSAOperations.GetFeatures</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">fs_or_spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fs_or_spec</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">spec</span> <span class="o">=</span> <span class="n">fs_or_spec</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetObject</span><span class="p">(</span><span class="n">fs_or_spec</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;DescribeFeatStruc: expected a spec dict, an &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;IFsFeatStruc or a feature-structure owner; got &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">fs_or_spec</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;FsFeatStruc&quot;</span><span class="p">:</span>
+                <span class="n">struct</span> <span class="o">=</span> <span class="n">obj</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">concrete_owner</span><span class="p">,</span> <span class="n">prop_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveFeatureStrucOwner</span><span class="p">(</span>
+                    <span class="n">obj</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="n">slot</span>
+                <span class="p">)</span>
+                <span class="n">struct</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">concrete_owner</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">)</span>
+            <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetFeatureStruc</span><span class="p">(</span><span class="n">struct</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__DescribeSpecLevel</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+
+    <span class="c1"># Keys of the C4 sync envelope: ``_GetFeatureStruc`` emits exactly</span>
+    <span class="c1"># ``{&quot;TypeGuid&quot;, &quot;specs&quot;}`` at the top level, plus ``&quot;Guid&quot;`` on</span>
+    <span class="c1"># nested levels. A bare feature spec is a mapping of feature</span>
+    <span class="c1"># operands to values, and a complex feature may itself be named</span>
+    <span class="c1"># ``&quot;specs&quot;`` -- so the ``&quot;specs&quot;`` member alone cannot mark the</span>
+    <span class="c1"># envelope.</span>
+    <span class="n">_C4_ENVELOPE_KEYS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;TypeGuid&quot;</span><span class="p">,</span> <span class="s2">&quot;Guid&quot;</span><span class="p">,</span> <span class="s2">&quot;specs&quot;</span><span class="p">})</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__IsC4Envelope</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        True when ``spec`` is the C4 sync envelope (contract C4), not a</span>
+<span class="sd">        bare feature spec that happens to hold a complex feature named</span>
+<span class="sd">        ``&quot;specs&quot;``. The envelope must carry the ``TypeGuid`` metadata</span>
+<span class="sd">        field and contain no other (feature-operand) keys; ``specs``</span>
+<span class="sd">        must hold the wrapped pairs mapping.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;specs&quot;</span><span class="p">),</span> <span class="nb">dict</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="s2">&quot;TypeGuid&quot;</span> <span class="ow">in</span> <span class="n">spec</span>
+            <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_C4_ENVELOPE_KEYS</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">spec</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__DescribeSpecLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Render one level of a feature-structure spec as ``&quot;[f: v; ...]&quot;``,</span>
+<span class="sd">        recursing into nested (complex-value) levels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># The C4 sync shape wraps each level&#39;s pairs in a &quot;specs&quot; key</span>
+        <span class="c1"># (alongside the TypeGuid/Guid metadata); the getter shape is the</span>
+        <span class="c1"># bare pairs. Unwrap only a real envelope -- a bare complex</span>
+        <span class="c1"># feature named &quot;specs&quot; keeps its label and nesting.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__IsC4Envelope</span><span class="p">(</span><span class="n">spec</span><span class="p">):</span>
+            <span class="n">spec</span> <span class="o">=</span> <span class="n">spec</span><span class="p">[</span><span class="s2">&quot;specs&quot;</span><span class="p">]</span>
+
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">feat_key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">spec</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">rendered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__DescribeSpecLevel</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rendered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__FeatStrucLabel</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__FeatStrucLabel</span><span class="p">(</span><span class="n">feat_key</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">rendered</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;[&quot;</span> <span class="o">+</span> <span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;]&quot;</span>
+
+    <span class="c1"># ClassNames whose Abbreviation/Name are read through IFsFeatDefn.</span>
+    <span class="n">_FEAT_DEFN_CLASSES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;FsClosedFeature&quot;</span><span class="p">,</span> <span class="s2">&quot;FsComplexFeature&quot;</span><span class="p">,</span> <span class="s2">&quot;FsOpenFeature&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__FeatStrucLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Display label for one feature or value key: analysis abbreviation,</span>
+<span class="sd">        then name, then the raw key. Never raises -- a stale GUID/HVO or an</span>
+<span class="sd">        unexpected object shows as the raw key rather than hiding the pair.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_IsWellFormedGuidString</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+                <span class="c1"># A plain feature/value name (a MakeFeatStruc name operand).</span>
+                <span class="k">return</span> <span class="n">key</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">FP_ParameterError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">key</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">FP_ParameterError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Unwrap</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="n">class_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;FsSymFeatVal&quot;</span><span class="p">:</span>
+            <span class="n">typed</span> <span class="o">=</span> <span class="n">IFsSymFeatVal</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_FEAT_DEFN_CLASSES</span><span class="p">:</span>
+            <span class="n">typed</span> <span class="o">=</span> <span class="n">IFsFeatDefn</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">best_analysis_text</span><span class="p">(</span><span class="n">typed</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="n">best_analysis_text</span><span class="p">(</span><span class="n">typed</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FeatureCreate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new feature definition.</span>
 
@@ -1127,7 +1303,7 @@
             <span class="k">return</span> <span class="n">new_feature</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FeatureDelete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FeatureDelete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a feature definition.</span>
 
@@ -1171,7 +1347,7 @@
                 <span class="n">feature_system</span><span class="o">.</span><span class="n">FeaturesOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">FeatureGetValues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FeatureGetValues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all possible values for a feature.</span>
 
@@ -1218,7 +1394,7 @@
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetFeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_system_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_system_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all features in the feature system (READ-ONLY).</span>
 
@@ -1273,7 +1449,7 @@
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetFeatureConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_system_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFeatureConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_system_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all feature constraints in the feature system (READ-ONLY).</span>
 
@@ -1322,7 +1498,7 @@
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_system_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_system_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the feature types collection from a feature system (READ-ONLY).</span>
 
@@ -1408,17 +1584,17 @@
 
     <span class="c1"># --- CatalogBackedMixin hooks --------------------------------------</span>
 
-    <span class="k">def</span> <span class="nf">_get_root_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_root_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the top-level owner (MsFeatureSystemOA).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">MsFeatureSystemOA</span>
 
-    <span class="k">def</span> <span class="nf">_get_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve the IFsClosedFeature factory for the mixin&#39;s Path B.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
             <span class="n">IFsClosedFeatureFactory</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_factory_create_attached</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_factory_create_attached</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Path A: try the 2-arg factory overload. For inflection features,</span>
 <span class="sd">        parent_obj is always None (features are flat, owned directly by</span>
@@ -1440,7 +1616,7 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">_path_b_attach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_obj</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_path_b_attach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_obj</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Path B fallback: attach a free-floating feature to</span>
 <span class="sd">        MsFeatureSystemOA.FeaturesOC. parent_obj is ignored (always None</span>
@@ -1450,18 +1626,18 @@
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Attach inflection feature from catalog&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_get_root_list</span><span class="p">()</span><span class="o">.</span><span class="n">FeaturesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_obj</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_cast_to_domain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cast_to_domain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the IFsClosedFeature view of a raw LCM feature object.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">IFsClosedFeature</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_set_localized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">abbrev</span><span class="p">,</span> <span class="n">def_</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_localized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">abbrev</span><span class="p">,</span> <span class="n">def_</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-WS multistring writes for Name/Abbreviation/Description.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">,</span> <span class="n">abbrev</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Description</span><span class="p">,</span> <span class="n">def_</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_walk_existing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_walk_existing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Yield each IFsClosedFeature in MsFeatureSystemOA. Features are</span>
 <span class="sd">        flat (no hierarchy among themselves), so this is a single-level</span>
@@ -1482,7 +1658,7 @@
             <span class="c1"># else: complex/other feature types live alongside but</span>
             <span class="c1"># aren&#39;t part of this catalog domain; skip silently.</span>
 
-    <span class="k">def</span> <span class="nf">_handle_entry_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">created_feature</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_entry_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">created_feature</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create IFsSymFeatVal items for each value child of `entry` under</span>
 <span class="sd">        `created_feature.ValuesOC`. Idempotency is checked per-feature</span>
@@ -1521,7 +1697,7 @@
     <span class="c1"># _create_from_entry contract (no CatalogSourceId field; different</span>
     <span class="c1"># parent shape). Mirrors the PhonFeats implementation.</span>
 
-    <span class="k">def</span> <span class="nf">_CreateValueFromEntry</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_CreateValueFromEntry</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">value_entry</span><span class="p">,</span> <span class="n">parent_feature</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1538,7 +1714,14 @@
         <span class="p">)</span>
         <span class="c1"># Parsed outside the transaction: a malformed catalog GUID must raise</span>
         <span class="c1"># before any undo task is opened (mirrors the mixin&#39;s own ordering).</span>
-        <span class="n">guid</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Guid</span><span class="p">(</span><span class="n">value_entry</span><span class="o">.</span><span class="n">guid</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">guid</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Guid</span><span class="p">(</span><span class="n">value_entry</span><span class="o">.</span><span class="n">guid</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">System</span><span class="o">.</span><span class="n">FormatException</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">ArgumentNullException</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Malformed catalog GUID &#39;</span><span class="si">{</span><span class="n">value_entry</span><span class="o">.</span><span class="n">guid</span><span class="si">}</span><span class="s2">&#39; for feature &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;value &#39;</span><span class="si">{</span><span class="n">value_entry</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&#39;; the shipped catalog data is &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;invalid.&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 
         <span class="c1"># Create-and-populate is one unit: a Path-B create whose Add or</span>
         <span class="c1"># subsequent per-WS writes fail must not leave a half-built value.</span>
@@ -1569,7 +1752,7 @@
                         <span class="sa">f</span><span class="s2">&quot;with canonical GUID </span><span class="si">{</span><span class="n">value_entry</span><span class="o">.</span><span class="n">guid</span><span class="si">}</span><span class="s2"> via either &quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;Create(Guid, parent) or Create(Guid) factory &quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;overloads.&quot;</span>
-                    <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+                    <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
                 <span class="n">parent_feature</span><span class="o">.</span><span class="n">ValuesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span>
 
             <span class="n">new_val</span> <span class="o">=</span> <span class="n">IFsSymFeatVal</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span>
@@ -1598,7 +1781,7 @@
     <span class="c1"># PRIVATE HELPER METHODS</span>
     <span class="c1"># ========================================================================</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveInflectionClass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveInflectionClass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IMoInflClass.</span>
 
@@ -1609,10 +1792,10 @@
 <span class="sd">            IMoInflClass: The resolved inflection class object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ic_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">ic_or_hvo</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">ic_or_hvo</span>
+            <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">ic_or_hvo</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">ic_or_hvo</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveFeatureStructure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveFeatureStructure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IFsFeatStruc.</span>
 
@@ -1623,10 +1806,10 @@
 <span class="sd">            IFsFeatStruc: The resolved feature structure object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fs_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">fs_or_hvo</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">fs_or_hvo</span>
+            <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">fs_or_hvo</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">fs_or_hvo</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveFeature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveFeature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IFsFeatureDefn.</span>
 
@@ -1637,10 +1820,10 @@
 <span class="sd">            IFsFeatureDefn: The resolved feature definition object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">feature_or_hvo</span>
+            <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveFeatureSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveFeatureSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IFsFeatureSystem.</span>
 
@@ -1651,13 +1834,13 @@
 <span class="sd">            IFsFeatureSystem: The resolved feature system object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fs_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">fs_or_hvo</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">fs_or_hvo</span>
+            <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">fs_or_hvo</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">fs_or_hvo</span><span class="p">)</span>
 
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get dictionary of syncable properties for cross-project synchronization.</span>
 
@@ -1708,7 +1891,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply syncable properties (from GetSyncableProperties) onto an item.</span>
 
 <span class="sd">        Inherited from BaseOperations; declared on the concrete class so static</span>
@@ -1718,7 +1901,7 @@
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two inflection classes and return detailed differences.</span>
 
@@ -1781,7 +1964,7 @@
     <span class="c1"># PRIVATE HELPER METHODS</span>
     <span class="c1"># ========================================================================</span>
 
-    <span class="k">def</span> <span class="nf">__OverlayCanonicalLabels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feat</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">,</span> <span class="n">force</span><span class="p">,</span> <span class="n">catalogSourceId</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__OverlayCanonicalLabels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feat</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">,</span> <span class="n">force</span><span class="p">,</span> <span class="n">catalogSourceId</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overlay user-supplied name + abbreviation onto a feature returned</span>
 <span class="sd">        by CreateFromCatalog -- but only when it is safe to do so.</span>
@@ -1826,7 +2009,7 @@
             <span class="n">feat</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
             <span class="n">feat</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__Unwrap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__Unwrap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Peel off LCMObjectWrapper-style wrappers, if any. Plain LCM</span>
 <span class="sd">        objects pass through unchanged. Mirrors PhonFeatureOperations.__Unwrap</span>
@@ -1839,7 +2022,7 @@
             <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">_obj</span>
         <span class="k">return</span> <span class="n">obj</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
 
@@ -1859,7 +2042,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1875,7 +2058,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1890,8 +2073,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

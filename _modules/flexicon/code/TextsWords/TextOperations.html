@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.TextsWords.TextOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -51,12 +51,12 @@
 <span class="c1">#   Copyright Craig Farrow, 2008 - 2024</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span> <span class="nn">clr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
 
 <span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
-<span class="kn">import</span> <span class="nn">System</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
 
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IText</span><span class="p">,</span>
     <span class="n">ITextFactory</span><span class="p">,</span>
     <span class="n">IStTextFactory</span><span class="p">,</span>
@@ -64,24 +64,21 @@
     <span class="n">ITextRepository</span><span class="p">,</span>
     <span class="n">IStTxtPara</span><span class="p">,</span>
     <span class="n">ICmPossibility</span><span class="p">,</span>
-    <span class="n">ICmMedia</span><span class="p">,</span>
-    <span class="n">ICmMediaFactory</span><span class="p">,</span>
-    <span class="n">ICmFolderFactory</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
 
 
 <div class="viewcode-block" id="TextOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.TextOperations.TextOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">TextOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TextOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Text operations for managing FLEx Text objects.</span>
 
@@ -99,7 +96,7 @@
 <span class="sd">        # new_text = project.Texts.Create(&quot;Story 1&quot;)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize TextOperations with a FLEx project.</span>
 
@@ -108,7 +105,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper for writing system handles.</span>
 
@@ -122,7 +119,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__GetTextObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetTextObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve text_or_hvo to IText object.</span>
 
@@ -162,7 +159,7 @@
     <span class="c1"># --- Core CRUD Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">genre</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">contents_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">genre</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">contents_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new text in the project.</span>
 
@@ -246,7 +243,7 @@
             <span class="k">return</span> <span class="n">new_text</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a text from the project.</span>
 
@@ -285,7 +282,7 @@
             <span class="n">text_obj</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a text, creating a new text with the same properties.</span>
 
@@ -365,11 +362,12 @@
             <span class="c1"># Create the new text (sets Name and Genre via Create helper)</span>
             <span class="n">new_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">new_name</span><span class="p">,</span> <span class="n">genre</span><span class="o">=</span><span class="n">source_genre</span><span class="p">)</span>
 
-            <span class="c1"># Copy remaining MultiString properties (all writing systems)</span>
+            <span class="c1"># Copy remaining MultiString properties (all writing systems).</span>
+            <span class="c1"># IText declares no Title (issue #352) -- that guarded copy</span>
+            <span class="c1"># was dead code and is removed. Description IS present live</span>
+            <span class="c1"># (inherited multistring) and stays.</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">text_obj</span><span class="p">,</span> <span class="s2">&quot;Abbreviation&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">:</span>
                 <span class="n">new_text</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">text_obj</span><span class="p">,</span> <span class="s2">&quot;Title&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">Title</span><span class="p">:</span>
-                <span class="n">new_text</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">Title</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">text_obj</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">Description</span><span class="p">:</span>
                 <span class="n">new_text</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">text_obj</span><span class="p">,</span> <span class="s2">&quot;Source&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">Source</span><span class="p">:</span>
@@ -391,7 +389,7 @@
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all syncable properties of a text.</span>
 
@@ -403,22 +401,32 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; props = project.Texts.GetSyncableProperties(text)</span>
-<span class="sd">            &gt;&gt;&gt; print(props[&#39;Title&#39;])</span>
-<span class="sd">            {&#39;en&#39;: &#39;Genesis&#39;}</span>
 <span class="sd">            &gt;&gt;&gt; print(props[&#39;Description&#39;])</span>
 <span class="sd">            {&#39;en&#39;: &#39;First book of the Bible&#39;}</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - MultiString properties: Title, Description, Source</span>
+<span class="sd">            - MultiString properties: Name, Description, Source</span>
 <span class="sd">            - DateTime properties: DateCreated, DateModified</span>
-<span class="sd">            - Reference Collection properties: GenresRC, MediaFilesRC (GUIDs)</span>
+<span class="sd">            - Reference Collection properties: GenresRC (GUIDs)</span>
+<span class="sd">            - Owned-container properties: media_uris (list of</span>
+<span class="sd">              {&quot;uri&quot;: str, &quot;file_guid&quot;: str|None} dicts, R4). ``file_guid``</span>
+<span class="sd">              is always None on this LCM: ``ICmMediaURI`` exposes only</span>
+<span class="sd">              ``MediaURI`` (no ``MediaFileRA``; live reflection 2026-09-25)</span>
 <span class="sd">            - Does NOT include owned sequences (paragraphs) - those are children</span>
+
+<span class="sd">        R4 note: MediaFilesOA is on the concrete DomainImpl.Text, NOT on the</span>
+<span class="sd">        IText interface; cast_to_concrete() is required. Access path:</span>
+<span class="sd">        MediaFilesOA -&gt; MediaURIsOC (same path as GetMediaFiles/AddMediaFile).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
+
         <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="c1"># MultiString properties</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Title&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">Title</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Title&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetMultiStringDict</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Title</span><span class="p">)</span>
+        <span class="c1"># MultiString properties.</span>
+        <span class="c1"># Name (IText.Name) is the user-facing title; present on IText</span>
+        <span class="c1"># interface (R8, issue #325).</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">Name</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetMultiStringDict</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">Description</span><span class="p">:</span>
             <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetMultiStringDict</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
@@ -437,13 +445,162 @@
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;GenresRC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">GenresRC</span><span class="p">:</span>
             <span class="n">props</span><span class="p">[</span><span class="s2">&quot;GenresRC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">GenresRC</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;MediaFilesRC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">MediaFilesRC</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;MediaFilesRC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">MediaFilesRC</span><span class="p">]</span>
+        <span class="c1"># Media URIs (R4): MediaFilesOA is on the concrete impl, not IText</span>
+        <span class="c1"># interface. cast_to_concrete() is required; hasattr guard is still</span>
+        <span class="c1"># needed because MediaFilesOA itself may be None (no container).</span>
+        <span class="c1"># Access path: concrete_text -&gt; MediaFilesOA (None-safe) -&gt;</span>
+        <span class="c1"># MediaURIsOC -&gt; iterate ICmMediaURI elements.</span>
+        <span class="n">concrete</span> <span class="o">=</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">concrete</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">concrete</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOA&quot;</span><span class="p">):</span>
+            <span class="n">container</span> <span class="o">=</span> <span class="n">concrete</span><span class="o">.</span><span class="n">MediaFilesOA</span>
+            <span class="k">if</span> <span class="n">container</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="s2">&quot;MediaURIsOC&quot;</span><span class="p">):</span>
+                <span class="n">media_uris</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">uri_obj</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">MediaURIsOC</span><span class="p">:</span>
+                    <span class="n">file_guid</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">uri_obj</span><span class="p">,</span> <span class="s2">&quot;MediaFileRA&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">file_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uri_obj</span><span class="o">.</span><span class="n">MediaFileRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                            <span class="k">pass</span>
+                    <span class="n">media_uris</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                        <span class="s2">&quot;uri&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">uri_obj</span><span class="o">.</span><span class="n">MediaURI</span><span class="p">)</span> <span class="k">if</span> <span class="n">uri_obj</span><span class="o">.</span><span class="n">MediaURI</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;file_guid&quot;</span><span class="p">:</span> <span class="n">file_guid</span><span class="p">,</span>
+                    <span class="p">})</span>
+                <span class="k">if</span> <span class="n">media_uris</span><span class="p">:</span>
+                    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;media_uris&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">media_uris</span>
 
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply a syncable-properties dict onto an IText item.</span>
+
+<span class="sd">        Extends the base implementation to handle the Text-specific fields</span>
+<span class="sd">        that are not plain MultiString or plain string attributes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: Target IText object (must already exist in target project).</span>
+<span class="sd">            props: dict produced by GetSyncableProperties on a source text.</span>
+<span class="sd">            ws_map: Optional source-&gt;target writing-system Id mapping.</span>
+<span class="sd">            fill_gaps (bool): When True, only write fields whose current</span>
+<span class="sd">                target value is empty/absent; passed through to BaseOperations.</span>
+<span class="sd">                media_uris is always applied regardless (reconcile-by-URI</span>
+<span class="sd">                semantics; missing entries are added, existing ones kept).</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - MultiString fields (Name, Description, Source) are handled by</span>
+<span class="sd">              the base class loop.</span>
+<span class="sd">            - media_uris: if the key is absent or the list is empty the</span>
+<span class="sd">              container is left as-is (don&#39;t destroy existing media per R4</span>
+<span class="sd">              apply strategy). If populated, reconcile by URI string -- add</span>
+<span class="sd">              missing URIs; do not delete extras without an explicit delete</span>
+<span class="sd">              call (R4). Requires write-enabled project.</span>
+<span class="sd">            - GenresRC, DateCreated, DateModified: not applied here (read-only</span>
+<span class="sd">              or cross-project resolution not yet implemented).</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; props = source.Texts.GetSyncableProperties(src_text)</span>
+<span class="sd">            &gt;&gt;&gt; target.Texts.ApplySyncableProperties(tgt_text, props)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_logging</span>
+        <span class="n">_log</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">_special_fields</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;media_uris&quot;</span><span class="p">,</span> <span class="s2">&quot;GenresRC&quot;</span><span class="p">,</span> <span class="s2">&quot;DateCreated&quot;</span><span class="p">,</span> <span class="s2">&quot;DateModified&quot;</span><span class="p">)</span>
+        <span class="n">remaining_props</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">special_props</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">props</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_special_fields</span><span class="p">:</span>
+                <span class="n">special_props</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">remaining_props</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Apply text sync properties&quot;</span><span class="p">):</span>
+            <span class="c1"># Apply Name, Description, Source (MultiString) via base class.</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span>
+                <span class="n">item</span><span class="p">,</span> <span class="n">remaining_props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span>
+            <span class="p">)</span>
+
+            <span class="c1"># --- media_uris (R4) ---</span>
+            <span class="c1"># Reconcile by URI: add missing entries; leave extras untouched.</span>
+            <span class="c1"># An absent or empty media_uris key means do-nothing (R4 apply</span>
+            <span class="c1"># strategy: do not destroy existing media).</span>
+            <span class="c1">#</span>
+            <span class="c1"># Live LCM facts (issue #325 probe, 2026-09-22):</span>
+            <span class="c1"># - MediaFilesOA requires ICmMediaContainer (ICmMediaContainerFactory),</span>
+            <span class="c1">#   NOT ICmFolder (ICmFolderFactory raises type conversion failure).</span>
+            <span class="c1"># - Elements of MediaURIsOC are ICmMediaURI (ICmMediaURIFactory),</span>
+            <span class="c1">#   NOT ICmMedia (ICmMediaFactory cannot Add to MediaURIsOC).</span>
+            <span class="c1"># - set_MediaURI NREs on an unowned factory instance; Add to</span>
+            <span class="c1">#   MediaURIsOC BEFORE setting MediaURI (same ownership pattern</span>
+            <span class="c1">#   as ConstChartMovedText / issue #290).</span>
+            <span class="n">media_uris_data</span> <span class="o">=</span> <span class="n">special_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;media_uris&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">media_uris_data</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">Type</span> <span class="k">as</span> <span class="n">_ClrType</span>
+
+                <span class="n">concrete</span> <span class="o">=</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">concrete</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">concrete</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOA&quot;</span><span class="p">):</span>
+                    <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s2">&quot;[WARN] ApplySyncableProperties: media_uris present but &quot;</span>
+                        <span class="s2">&quot;MediaFilesOA not accessible on concrete text -- skipping&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span>
+                    <span class="c1"># Resolve factories by CLR type name -- pythonnet dir() of</span>
+                    <span class="c1"># SIL.LCModel omits these interfaces, but GetService finds them.</span>
+                    <span class="n">cont_fac</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                        <span class="n">_ClrType</span><span class="o">.</span><span class="n">GetType</span><span class="p">(</span>
+                            <span class="s2">&quot;SIL.LCModel.ICmMediaContainerFactory, SIL.LCModel&quot;</span><span class="p">,</span>
+                            <span class="kc">True</span><span class="p">,</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="n">uri_fac</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                        <span class="n">_ClrType</span><span class="o">.</span><span class="n">GetType</span><span class="p">(</span>
+                            <span class="s2">&quot;SIL.LCModel.ICmMediaURIFactory, SIL.LCModel&quot;</span><span class="p">,</span>
+                            <span class="kc">True</span><span class="p">,</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+
+                    <span class="c1"># Ensure container exists.</span>
+                    <span class="k">if</span> <span class="n">concrete</span><span class="o">.</span><span class="n">MediaFilesOA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">concrete</span><span class="o">.</span><span class="n">MediaFilesOA</span> <span class="o">=</span> <span class="n">cont_fac</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                    <span class="n">container</span> <span class="o">=</span> <span class="n">concrete</span><span class="o">.</span><span class="n">MediaFilesOA</span>
+
+                    <span class="c1"># Build set of existing URIs to avoid duplicates.</span>
+                    <span class="n">existing_uris</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="s2">&quot;MediaURIsOC&quot;</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">uri_obj</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">MediaURIsOC</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">uri_obj</span><span class="o">.</span><span class="n">MediaURI</span><span class="p">:</span>
+                                <span class="n">existing_uris</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">uri_obj</span><span class="o">.</span><span class="n">MediaURI</span><span class="p">))</span>
+
+                    <span class="c1"># Add missing entries (own first, then set MediaURI).</span>
+                    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">media_uris_data</span><span class="p">:</span>
+                        <span class="n">uri_str</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;uri&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">uri_str</span> <span class="ow">or</span> <span class="n">uri_str</span> <span class="ow">in</span> <span class="n">existing_uris</span><span class="p">:</span>
+                            <span class="k">continue</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="s2">&quot;MediaURIsOC&quot;</span><span class="p">):</span>
+                                <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                                    <span class="s2">&quot;[WARN] ApplySyncableProperties: MediaURIsOC &quot;</span>
+                                    <span class="s2">&quot;absent on media container -- skipping </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span>
+                                    <span class="n">uri_str</span><span class="p">,</span>
+                                <span class="p">)</span>
+                                <span class="k">continue</span>
+                            <span class="n">new_uri</span> <span class="o">=</span> <span class="n">uri_fac</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                            <span class="n">container</span><span class="o">.</span><span class="n">MediaURIsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_uri</span><span class="p">)</span>
+                            <span class="n">new_uri</span><span class="o">.</span><span class="n">MediaURI</span> <span class="o">=</span> <span class="n">uri_str</span>
+                            <span class="n">existing_uris</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">uri_str</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                                <span class="s2">&quot;[WARN] ApplySyncableProperties: could not add &quot;</span>
+                                <span class="s2">&quot;media URI </span><span class="si">%r</span><span class="s2"> -- </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">uri_str</span><span class="p">,</span> <span class="n">exc</span>
+                            <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two texts for differences.</span>
 
@@ -487,8 +644,10 @@
             <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
-            <span class="c1"># Compare values</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_CompareValues</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">):</span>
+            <span class="c1"># Compare values inline: FLExProject has no _CompareValues</span>
+            <span class="c1"># member (calling it raised AttributeError on every compare;</span>
+            <span class="c1"># same fix as MediaOperations.CompareTo).</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
                 <span class="c1"># Values are different</span>
                 <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
 
@@ -496,7 +655,7 @@
         <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a text with the given name exists in the project.</span>
 
@@ -542,7 +701,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all texts in the project.</span>
 
@@ -569,7 +728,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ObjectsIn</span><span class="p">(</span><span class="n">ITextRepository</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find a text by title, returning None when no match exists.</span>
 
 <span class="sd">        ``IText.Name`` is the user-facing title in FieldWorks, so Find</span>
@@ -596,20 +755,20 @@
     <span class="c1"># first-class methods rather than as deprecated aliases.</span>
 <div class="viewcode-block" id="TextOperations.GetTitle">
 <a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.TextOperations.TextOperations.GetTitle">[docs]</a>
-    <span class="k">def</span> <span class="nf">GetTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the text&#39;s title (same field as GetName).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">wsHandle</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="TextOperations.SetTitle">
 <a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.TextOperations.TextOperations.SetTitle">[docs]</a>
-    <span class="k">def</span> <span class="nf">SetTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the text&#39;s title (same field as SetName).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">SetName</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">wsHandle</span><span class="p">)</span></div>
 
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the name of a text.</span>
 
@@ -650,7 +809,7 @@
         <span class="k">return</span> <span class="n">name_str</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the name of a text.</span>
 
@@ -713,7 +872,7 @@
             <span class="n">text_obj</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGenre</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGenre</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the genre of a text.</span>
 
@@ -753,7 +912,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGenres</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGenres</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get every genre assigned to a text.</span>
 
@@ -803,7 +962,7 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">GenresRC</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetGenre</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">genre</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetGenre</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">genre</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the genre of a text.</span>
 
@@ -857,7 +1016,7 @@
     <span class="c1"># --- Advanced Text Content Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetContents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetContents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the StText contents object for a text.</span>
 
@@ -891,7 +1050,7 @@
         <span class="k">return</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span> <span class="k">if</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetParagraphs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParagraphs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all paragraphs in a text.</span>
 
@@ -926,7 +1085,7 @@
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetParagraphCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParagraphCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the number of paragraphs in a text.</span>
 
@@ -958,7 +1117,7 @@
         <span class="k">return</span> <span class="mi">0</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetMediaFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMediaFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get media files associated with a text.</span>
 
@@ -970,8 +1129,8 @@
 <span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            list: List of ICmMedia objects. Returns empty list if no media</span>
-<span class="sd">                container exists or no media files are attached.</span>
+<span class="sd">            list: List of ICmMediaURI objects. Returns empty list if no media</span>
+<span class="sd">                container exists or no media URIs are attached.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
@@ -980,21 +1139,26 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
 <span class="sd">            &gt;&gt;&gt; media = project.Texts.GetMediaFiles(text)</span>
-<span class="sd">            &gt;&gt;&gt; for m in media:</span>
-<span class="sd">            ...     if m.MediaFileRA:</span>
-<span class="sd">            ...         path = m.MediaFileRA.AbsoluteInternalPath</span>
+<span class="sd">            &gt;&gt;&gt; for uri in media:</span>
+<span class="sd">            ...     if uri.MediaFileRA:</span>
+<span class="sd">            ...         path = uri.MediaFileRA.AbsoluteInternalPath</span>
 <span class="sd">            ...         print(f&quot;Media file: {path}&quot;)</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            AddMediaFile</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
+
         <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">MediaFilesOA</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">MediaFilesOA</span><span class="o">.</span><span class="n">MediaFilesOC</span><span class="p">)</span>
+        <span class="n">concrete</span> <span class="o">=</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">text_obj</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">concrete</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">concrete</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOA&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">container</span> <span class="o">=</span> <span class="n">concrete</span><span class="o">.</span><span class="n">MediaFilesOA</span>
+            <span class="k">if</span> <span class="n">container</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="s2">&quot;MediaURIsOC&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">MediaURIsOC</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">filepath</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">filepath</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a media file to a text.</span>
 
@@ -1008,7 +1172,7 @@
 <span class="sd">            label (str, optional): Descriptive label for the media file.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            ICmMedia: The created media object with file properly linked.</span>
+<span class="sd">            ICmMediaURI: The created media URI with ICmFile properly linked.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
@@ -1027,12 +1191,15 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - File is copied to project&#39;s LinkedFiles/AudioVisual directory</span>
 <span class="sd">            - Unique filename generated if collision occurs (file_1.mp3, etc.)</span>
-<span class="sd">            - Creates ICmMedia object with proper ICmFile reference</span>
-<span class="sd">            - Media is automatically added to text&#39;s MediaFilesOC collection</span>
+<span class="sd">            - Creates ICmMediaURI owned in MediaURIsOC with ICmFile reference</span>
+<span class="sd">            - Uses ICmMediaContainerFactory (not ICmFolderFactory) per R4</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetMediaFiles, project.Media.CopyToProject</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">Type</span> <span class="k">as</span> <span class="n">_ClrType</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;filepath&quot;</span><span class="p">)</span>
@@ -1041,32 +1208,47 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;filepath&quot;</span><span class="p">)</span>
 
         <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+        <span class="n">concrete</span> <span class="o">=</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">text_obj</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">concrete</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">concrete</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOA&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;Text object does not expose MediaFilesOA on its concrete type&quot;</span>
+            <span class="p">)</span>
 
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add media file&quot;</span><span class="p">):</span>
-            <span class="c1"># Create media container if needed</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">MediaFilesOA</span><span class="p">:</span>
-                <span class="n">folder_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmFolderFactory</span><span class="p">)</span>
-                <span class="n">container</span> <span class="o">=</span> <span class="n">folder_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
-                <span class="n">text_obj</span><span class="o">.</span><span class="n">MediaFilesOA</span> <span class="o">=</span> <span class="n">container</span>
+            <span class="n">sl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span>
+            <span class="n">cont_fac</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                <span class="n">_ClrType</span><span class="o">.</span><span class="n">GetType</span><span class="p">(</span>
+                    <span class="s2">&quot;SIL.LCModel.ICmMediaContainerFactory, SIL.LCModel&quot;</span><span class="p">,</span>
+                    <span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">uri_fac</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                <span class="n">_ClrType</span><span class="o">.</span><span class="n">GetType</span><span class="p">(</span>
+                    <span class="s2">&quot;SIL.LCModel.ICmMediaURIFactory, SIL.LCModel&quot;</span><span class="p">,</span>
+                    <span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
 
-            <span class="c1"># Use MediaOperations to properly copy file and create ICmFile</span>
-            <span class="c1"># Copy file to project and get ICmFile reference</span>
-            <span class="n">cm_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Media</span><span class="o">.</span><span class="n">CopyToProject</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">internal_subdir</span><span class="o">=</span><span class="s2">&quot;AudioVisual&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+            <span class="n">cm_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Media</span><span class="o">.</span><span class="n">CopyToProject</span><span class="p">(</span>
+                <span class="n">filepath</span><span class="p">,</span> <span class="n">internal_subdir</span><span class="o">=</span><span class="s2">&quot;AudioVisual&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span>
+            <span class="p">)</span>
 
-            <span class="c1"># Create ICmMedia object</span>
-            <span class="n">media_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmMediaFactory</span><span class="p">)</span>
-            <span class="n">media</span> <span class="o">=</span> <span class="n">media_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">concrete</span><span class="o">.</span><span class="n">MediaFilesOA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">concrete</span><span class="o">.</span><span class="n">MediaFilesOA</span> <span class="o">=</span> <span class="n">cont_fac</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="n">container</span> <span class="o">=</span> <span class="n">concrete</span><span class="o">.</span><span class="n">MediaFilesOA</span>
 
-            <span class="c1"># Add to text&#39;s media collection (must be done before setting properties)</span>
-            <span class="n">text_obj</span><span class="o">.</span><span class="n">MediaFilesOA</span><span class="o">.</span><span class="n">MediaFilesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
+            <span class="n">media_uri</span> <span class="o">=</span> <span class="n">uri_fac</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">MediaURIsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">media_uri</span><span class="p">)</span>
+            <span class="n">media_uri</span><span class="o">.</span><span class="n">MediaFileRA</span> <span class="o">=</span> <span class="n">cm_file</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">media_uri</span><span class="o">.</span><span class="n">MediaURI</span> <span class="o">=</span> <span class="n">cm_file</span><span class="o">.</span><span class="n">AbsoluteInternalPath</span> <span class="ow">or</span> <span class="n">filepath</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">media_uri</span><span class="o">.</span><span class="n">MediaURI</span> <span class="o">=</span> <span class="n">filepath</span>
 
-            <span class="c1"># Link the ICmFile to ICmMedia</span>
-            <span class="n">media</span><span class="o">.</span><span class="n">MediaFileRA</span> <span class="o">=</span> <span class="n">cm_file</span>
-
-            <span class="k">return</span> <span class="n">media</span>
+            <span class="k">return</span> <span class="n">media_uri</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the abbreviation for a text.</span>
 
@@ -1108,7 +1290,7 @@
         <span class="k">return</span> <span class="n">abbr_str</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetIsTranslated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetIsTranslated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a text&#39;s translation is marked as complete.</span>
 
@@ -1146,7 +1328,7 @@
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">IsTranslated</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetIsTranslated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetIsTranslated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Mark a text as translated or untranslated.</span>
 
@@ -1202,7 +1384,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1218,7 +1400,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1233,8 +1415,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

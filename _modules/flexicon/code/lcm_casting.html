@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.lcm_casting &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,7 +55,6 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">LCM Object Casting Utilities for pythonnet.</span>
-<span class="sd">import logging</span>
 
 <span class="sd">This module provides utilities for casting LCM objects from their base interface</span>
 <span class="sd">types to their concrete derived interfaces. This is necessary because pythonnet</span>
@@ -103,7 +102,7 @@
 <span class="sd">Supported Types:</span>
 <span class="sd">    - MSA types: MoStemMsa, MoDerivAffMsa, MoInflAffMsa, MoUnclassifiedAffixMsa</span>
 <span class="sd">    - Allomorph types: MoStemAllomorph, MoAffixAllomorph</span>
-<span class="sd">    - Phonological rule types: PhRegularRule, PhMetathesisRule, PhReduplicationRule</span>
+<span class="sd">    - Phonological rule types: PhRegularRule, PhMetathesisRule</span>
 <span class="sd">    - Compound rule types: MoEndoCompound, MoExoCompound</span>
 <span class="sd">    - Morphosyntactic prohibition types: MoAdhocProhibGr, MoAdhocProhibMorph, MoAdhocProhibAllomorph</span>
 <span class="sd">    - Owner / container types (used by .Owner casting paths in Lexicon,</span>
@@ -119,12 +118,16 @@
 <span class="sd">    available until after FLExInit has run.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
 <span class="c1"># Interface cache - populated on first use</span>
 <span class="n">_interface_cache</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="n">_interfaces_loaded</span> <span class="o">=</span> <span class="kc">False</span>
 
 
-<span class="k">def</span> <span class="nf">_ensure_interfaces</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_interfaces</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Load and cache LCM interface types from SIL.LCModel.</span>
 
@@ -151,7 +154,7 @@
     <span class="k">if</span> <span class="n">_interfaces_loaded</span><span class="p">:</span>
         <span class="k">return</span>
 
-    <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
         <span class="c1"># MSA (MorphoSyntaxAnalysis) interfaces</span>
         <span class="n">IMoStemMsa</span><span class="p">,</span>
         <span class="n">IMoDerivAffMsa</span><span class="p">,</span>
@@ -164,14 +167,13 @@
     <span class="p">)</span>
 
     <span class="c1"># Phonological rule interfaces - try to import, but don&#39;t fail if unavailable</span>
-    <span class="c1"># LCM defines two concrete subclasses of PhSegmentRule:</span>
+    <span class="c1"># LCM defines exactly two concrete subclasses of PhSegmentRule:</span>
     <span class="c1">#   - PhRegularRule: Standard phonological rules (most common)</span>
     <span class="c1">#   - PhMetathesisRule: Metathesis rules (swapping segments)</span>
-    <span class="c1"># There is no IPhReduplicationRule interface in LCM (no PhReduplicationRule</span>
-    <span class="c1"># class in MasterLCModel.xml); the slot is kept as None for back-compat</span>
-    <span class="c1"># callers that still pass the legacy key.</span>
+    <span class="c1"># There is no PhReduplicationRule class or IPhReduplicationRule interface</span>
+    <span class="c1"># in this LCM (issue #326, T1 live reflection).</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">IPhRegularRule</span><span class="p">,</span>
             <span class="n">IPhMetathesisRule</span><span class="p">,</span>
             <span class="n">IPhSimpleContextSeg</span><span class="p">,</span>
@@ -181,14 +183,13 @@
     <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
         <span class="n">IPhRegularRule</span> <span class="o">=</span> <span class="n">IPhMetathesisRule</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">IPhSimpleContextSeg</span> <span class="o">=</span> <span class="n">IPhSimpleContextNC</span> <span class="o">=</span> <span class="n">IPhSegRuleRHS</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">IPhReduplicationRule</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># Compound rule interfaces - try to import, but don&#39;t fail if unavailable</span>
     <span class="c1"># These are the two main compound rule types:</span>
     <span class="c1"># - MoEndoCompound: Head is internal to the compound</span>
     <span class="c1"># - MoExoCompound: Head is external to the compound</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">IMoEndoCompound</span><span class="p">,</span>
             <span class="n">IMoExoCompound</span><span class="p">,</span>
         <span class="p">)</span>
@@ -206,7 +207,7 @@
     <span class="c1"># Use the real LCM names and expose them under both keys so existing</span>
     <span class="c1"># cache callers keep working.</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">IMoAdhocProhibGr</span><span class="p">,</span>
             <span class="n">IMoMorphAdhocProhib</span><span class="p">,</span>
             <span class="n">IMoAlloAdhocProhib</span><span class="p">,</span>
@@ -220,7 +221,7 @@
     <span class="c1"># Affix template interface - try to import, but don&#39;t fail if unavailable</span>
     <span class="c1"># - MoInflAffixTemplate: Inflectional affix template patterns</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">IMoInflAffixTemplate</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
@@ -235,7 +236,7 @@
     <span class="c1"># ClassName -&gt; concrete interface so callers can reach those typed</span>
     <span class="c1"># collections without doing the cast themselves.</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">ILexEntry</span><span class="p">,</span>
             <span class="n">ILexSense</span><span class="p">,</span>
             <span class="n">ILexRefType</span><span class="p">,</span>
@@ -243,6 +244,7 @@
             <span class="n">ICmPossibility</span><span class="p">,</span>
             <span class="n">ICmAnthroItem</span><span class="p">,</span>
             <span class="n">IDsConstChart</span><span class="p">,</span>
+            <span class="n">IDsDiscourseData</span><span class="p">,</span>
             <span class="n">IText</span><span class="p">,</span>
             <span class="n">IStText</span><span class="p">,</span>
             <span class="n">IStTxtPara</span><span class="p">,</span>
@@ -252,7 +254,8 @@
     <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
         <span class="n">ILexEntry</span> <span class="o">=</span> <span class="n">ILexSense</span> <span class="o">=</span> <span class="n">ILexRefType</span> <span class="o">=</span> <span class="n">IRnGenericRec</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">ICmPossibility</span> <span class="o">=</span> <span class="n">ICmAnthroItem</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">IDsConstChart</span> <span class="o">=</span> <span class="n">IText</span> <span class="o">=</span> <span class="n">IStText</span> <span class="o">=</span> <span class="n">IStTxtPara</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">IDsConstChart</span> <span class="o">=</span> <span class="n">IDsDiscourseData</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">IText</span> <span class="o">=</span> <span class="n">IStText</span> <span class="o">=</span> <span class="n">IStTxtPara</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">IWfiAnalysis</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">ILangProject</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -265,9 +268,29 @@
     <span class="c1"># ComplexEntryTypesRS / ComponentLexemesRS / PrimaryLexemesRS /</span>
     <span class="c1"># VariantEntryTypesRS are unreachable without this cast (issue #280).</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">ILexEntryRef</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">ILexEntryRef</span>
     <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
         <span class="n">ILexEntryRef</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Interlinear bundle/wordform + inflection-class interfaces</span>
+    <span class="c1"># (issue #333). project.Object(hvo) returns a bare, gate-limited</span>
+    <span class="c1"># ICmObject; cast_to_concrete() can only recover the derived surface</span>
+    <span class="c1"># (MsaRA, MorphBundlesOS, ...) when the ClassName is registered in</span>
+    <span class="c1"># _interface_cache. WfiAnalysis was already registered below, but</span>
+    <span class="c1"># WfiMorphBundle / WfiWordform / MoInflClass were missing -- so a</span>
+    <span class="c1"># resolver-side cast_to_concrete() call returned the object unchanged</span>
+    <span class="c1"># (total-function miss) and the AttributeError survived the &quot;fix&quot;.</span>
+    <span class="c1"># All three names are already in the LCM contract baseline</span>
+    <span class="c1"># (tests/contract/snapshots/expected_contract.json), so this import</span>
+    <span class="c1"># adds no new type dependency.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">IWfiMorphBundle</span><span class="p">,</span>
+            <span class="n">IWfiWordform</span><span class="p">,</span>
+            <span class="n">IMoInflClass</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="n">IWfiMorphBundle</span> <span class="o">=</span> <span class="n">IWfiWordform</span> <span class="o">=</span> <span class="n">IMoInflClass</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># Feature-structure owner interfaces (phonology) - spec</span>
     <span class="c1"># feature-structure-sync-gap, decision D3. IPhNCFeatures and</span>
@@ -276,7 +299,7 @@
     <span class="c1"># because all three are queried through the same PhNC/Phoneme</span>
     <span class="c1"># ClassName-discrimination path.</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">IPhNCFeatures</span><span class="p">,</span>
             <span class="n">IPhNCSegments</span><span class="p">,</span>
             <span class="n">IPhPhoneme</span><span class="p">,</span>
@@ -290,7 +313,7 @@
     <span class="c1"># an absent/renamed type. Kept in its own guarded block regardless,</span>
     <span class="c1"># per this module&#39;s established per-interface isolation convention.</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IPartOfSpeech</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IPartOfSpeech</span>
     <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
         <span class="n">IPartOfSpeech</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -300,10 +323,8 @@
     <span class="c1"># `liblcm_snapshot[&quot;missing_types&quot;] == [&quot;IPosFeatures&quot;]`). Only a</span>
     <span class="c1"># descriptive comment at InflectionFeatureOperations.py:486</span>
     <span class="c1"># (&quot;IPosFeatures.FeaturesOA&quot;) ever referenced this name; no snapshot,</span>
-    <span class="c1"># probe, or existing import confirms it. Per this module&#39;s own</span>
-    <span class="c1"># precedent for a name that plainly does not exist in LCM</span>
-    <span class="c1"># (IPhReduplicationRule below), this is a hardcoded None with NO</span>
-    <span class="c1"># `from SIL.LCModel import IPosFeatures` attempt -- a real import</span>
+    <span class="c1"># probe, or existing import confirms it. This is a hardcoded None with</span>
+    <span class="c1"># NO `from SIL.LCModel import IPosFeatures` attempt -- a real import</span>
     <span class="c1"># statement would (a) always raise ImportError on every environment,</span>
     <span class="c1"># and (b) get picked up by tests/contract/test_lcm_contract.py&#39;s</span>
     <span class="c1"># static AST extractor as an &quot;expected&quot; type, permanently failing</span>
@@ -320,7 +341,7 @@
     <span class="c1"># even though it is absent from tests/contract/snapshots/</span>
     <span class="c1"># liblcm_baseline.json (a documented P2 snapshot gap, spec section 7).</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">IFsComplexFeature</span><span class="p">,</span>
             <span class="n">IFsFeatStruc</span><span class="p">,</span>
             <span class="n">IFsComplexValue</span><span class="p">,</span>
@@ -342,13 +363,11 @@
     <span class="p">}</span>
 
     <span class="c1"># Add phonological rule types if imports succeeded</span>
-    <span class="c1"># The 3 main rule types in FLEx phonology:</span>
+    <span class="c1"># The 2 concrete subclasses of PhSegmentRule in this LCM:</span>
     <span class="k">if</span> <span class="n">IPhRegularRule</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;PhRegularRule&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhRegularRule</span>
     <span class="k">if</span> <span class="n">IPhMetathesisRule</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;PhMetathesisRule&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhMetathesisRule</span>
-    <span class="k">if</span> <span class="n">IPhReduplicationRule</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;PhReduplicationRule&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhReduplicationRule</span>
 
     <span class="c1"># Context and RHS types used within rules:</span>
     <span class="k">if</span> <span class="n">IPhSimpleContextSeg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -396,6 +415,13 @@
         <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;CmAnthroItem&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ICmAnthroItem</span>
     <span class="k">if</span> <span class="n">IDsConstChart</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;DsConstChart&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IDsConstChart</span>
+    <span class="k">if</span> <span class="n">IDsDiscourseData</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># DsDiscourseData is the project-level owner of ChartsOC. Without</span>
+        <span class="c1"># this mapping _GetTypedOwner() returned it unchanged (a bare</span>
+        <span class="c1"># ICmObject), silently no-opping DiscourseOperations.Delete/Duplicate&#39;s</span>
+        <span class="c1"># `hasattr(parent, &quot;ChartsOC&quot;)` checks -- same failure shape as the</span>
+        <span class="c1"># LangProject/AnnotationsOC mapping just below.</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;DsDiscourseData&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IDsDiscourseData</span>
     <span class="k">if</span> <span class="n">IText</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IText</span>
     <span class="k">if</span> <span class="n">IStText</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -404,6 +430,12 @@
         <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;StTxtPara&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IStTxtPara</span>
     <span class="k">if</span> <span class="n">IWfiAnalysis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;WfiAnalysis&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IWfiAnalysis</span>
+    <span class="k">if</span> <span class="n">IWfiMorphBundle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;WfiMorphBundle&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IWfiMorphBundle</span>
+    <span class="k">if</span> <span class="n">IWfiWordform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;WfiWordform&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IWfiWordform</span>
+    <span class="k">if</span> <span class="n">IMoInflClass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;MoInflClass&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoInflClass</span>
     <span class="k">if</span> <span class="n">ILangProject</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># LangProject is the sole owner of AnnotationsOC in this LCM</span>
         <span class="c1"># version -- no domain object (ILexEntry, ILexSense, IText, ...)</span>
@@ -483,21 +515,21 @@
     <span class="c1"># over CellsOS work at all -- uncast it matches nothing and the filter</span>
     <span class="c1"># silently yields an empty list.</span>
     <span class="c1">#</span>
-    <span class="c1"># IPartOfSpeech / ICmAnthroItem / ICmPossibility are already</span>
-    <span class="c1"># registered above. ILexEntryInflType, ICmCustomItem, IChkTerm and</span>
-    <span class="c1"># IConstituentChartCellPart are deliberately NOT registered: they are</span>
-    <span class="c1"># absent from tests/contract/snapshots/expected_contract.json, so</span>
-    <span class="c1"># importing them here would trip</span>
-    <span class="c1"># test_no_new_type_dependencies without a baseline regeneration and a</span>
-    <span class="c1"># live contract re-verification.</span>
+    <span class="c1"># IPartOfSpeech / ICmAnthroItem / ICmPossibility are already registered</span>
+    <span class="c1"># above. The four types below were deferred in #270 until the contract</span>
+    <span class="c1"># baseline covered their imports (#279).</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">ICmSemanticDomain</span><span class="p">,</span>
             <span class="n">ICmLocation</span><span class="p">,</span>
             <span class="n">ICmPerson</span><span class="p">,</span>
             <span class="n">IMoMorphType</span><span class="p">,</span>
             <span class="n">ICmAnnotationDefn</span><span class="p">,</span>
             <span class="n">ILexEntryType</span><span class="p">,</span>
+            <span class="n">ILexEntryInflType</span><span class="p">,</span>
+            <span class="n">ICmCustomItem</span><span class="p">,</span>
+            <span class="n">IChkTerm</span><span class="p">,</span>
+            <span class="n">IConstituentChartCellPart</span><span class="p">,</span>
             <span class="n">IConstChartRow</span><span class="p">,</span>
             <span class="n">IConstChartTag</span><span class="p">,</span>
             <span class="n">IConstChartWordGroup</span><span class="p">,</span>
@@ -507,6 +539,8 @@
     <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
         <span class="n">ICmSemanticDomain</span> <span class="o">=</span> <span class="n">ICmLocation</span> <span class="o">=</span> <span class="n">ICmPerson</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">IMoMorphType</span> <span class="o">=</span> <span class="n">ICmAnnotationDefn</span> <span class="o">=</span> <span class="n">ILexEntryType</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">ILexEntryInflType</span> <span class="o">=</span> <span class="n">ICmCustomItem</span> <span class="o">=</span> <span class="n">IChkTerm</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">IConstituentChartCellPart</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">IConstChartRow</span> <span class="o">=</span> <span class="n">IConstChartTag</span> <span class="o">=</span> <span class="n">IConstChartWordGroup</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">IConstChartMovedTextMarker</span> <span class="o">=</span> <span class="n">IConstChartClauseMarker</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -517,6 +551,10 @@
         <span class="p">(</span><span class="s2">&quot;MoMorphType&quot;</span><span class="p">,</span> <span class="n">IMoMorphType</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">&quot;CmAnnotationDefn&quot;</span><span class="p">,</span> <span class="n">ICmAnnotationDefn</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">&quot;LexEntryType&quot;</span><span class="p">,</span> <span class="n">ILexEntryType</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;LexEntryInflType&quot;</span><span class="p">,</span> <span class="n">ILexEntryInflType</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;CmCustomItem&quot;</span><span class="p">,</span> <span class="n">ICmCustomItem</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ChkTerm&quot;</span><span class="p">,</span> <span class="n">IChkTerm</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ConstituentChartCellPart&quot;</span><span class="p">,</span> <span class="n">IConstituentChartCellPart</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">&quot;ConstChartRow&quot;</span><span class="p">,</span> <span class="n">IConstChartRow</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">&quot;ConstChartTag&quot;</span><span class="p">,</span> <span class="n">IConstChartTag</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">&quot;ConstChartWordGroup&quot;</span><span class="p">,</span> <span class="n">IConstChartWordGroup</span><span class="p">),</span>
@@ -526,12 +564,69 @@
         <span class="k">if</span> <span class="n">_iface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">_interface_cache</span><span class="p">[</span><span class="n">_class_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_iface</span>
 
+    <span class="c1"># HVO-resolver targets (4.10.0 release gate). The #455-#508 resolver</span>
+    <span class="c1"># fixes route `project.Object(hvo)` through cast_to_concrete(), but</span>
+    <span class="c1"># these ClassNames were never registered, so the cast was a total-</span>
+    <span class="c1"># function miss and every resolver below still returned a bare</span>
+    <span class="c1"># ICmObject -- caught only by the live HVO gates. The set was taken</span>
+    <span class="c1"># empirically from cache misses logged across the full live suite,</span>
+    <span class="c1"># plus a static sweep of every cast_to_concrete(self.project.Object())</span>
+    <span class="c1"># resolver&#39;s documented return interface.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">ICmPossibilityList</span><span class="p">,</span>
+            <span class="n">ICmBaseAnnotation</span><span class="p">,</span>
+            <span class="n">IFsClosedFeature</span><span class="p">,</span>
+            <span class="n">IFsFeatureSystem</span><span class="p">,</span>
+            <span class="n">ILexExampleSentence</span><span class="p">,</span>
+            <span class="n">ILexPronunciation</span><span class="p">,</span>
+            <span class="n">ILexReference</span><span class="p">,</span>
+            <span class="n">ILexEtymology</span><span class="p">,</span>
+            <span class="n">IPhCode</span><span class="p">,</span>
+            <span class="n">IPhFeatureConstraint</span><span class="p">,</span>
+            <span class="n">IRnResearchNbk</span><span class="p">,</span>
+            <span class="n">IScrBook</span><span class="p">,</span>
+            <span class="n">IScrSection</span><span class="p">,</span>
+            <span class="n">IScrTxtPara</span><span class="p">,</span>
+            <span class="n">IScrScriptureNote</span><span class="p">,</span>
+            <span class="n">ISegment</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="n">ICmPossibilityList</span> <span class="o">=</span> <span class="n">ICmBaseAnnotation</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">IFsClosedFeature</span> <span class="o">=</span> <span class="n">IFsFeatureSystem</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">ILexExampleSentence</span> <span class="o">=</span> <span class="n">ILexPronunciation</span> <span class="o">=</span> <span class="n">ILexReference</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">ILexEtymology</span> <span class="o">=</span> <span class="n">IPhCode</span> <span class="o">=</span> <span class="n">IPhFeatureConstraint</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">IRnResearchNbk</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">IScrBook</span> <span class="o">=</span> <span class="n">IScrSection</span> <span class="o">=</span> <span class="n">IScrTxtPara</span> <span class="o">=</span> <span class="n">IScrScriptureNote</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">ISegment</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">_class_name</span><span class="p">,</span> <span class="n">_iface</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="p">(</span><span class="s2">&quot;CmPossibilityList&quot;</span><span class="p">,</span> <span class="n">ICmPossibilityList</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;CmBaseAnnotation&quot;</span><span class="p">,</span> <span class="n">ICmBaseAnnotation</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;FsClosedFeature&quot;</span><span class="p">,</span> <span class="n">IFsClosedFeature</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;FsFeatureSystem&quot;</span><span class="p">,</span> <span class="n">IFsFeatureSystem</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;LexExampleSentence&quot;</span><span class="p">,</span> <span class="n">ILexExampleSentence</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;LexPronunciation&quot;</span><span class="p">,</span> <span class="n">ILexPronunciation</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;LexReference&quot;</span><span class="p">,</span> <span class="n">ILexReference</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;LexEtymology&quot;</span><span class="p">,</span> <span class="n">ILexEtymology</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;PhCode&quot;</span><span class="p">,</span> <span class="n">IPhCode</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;PhFeatureConstraint&quot;</span><span class="p">,</span> <span class="n">IPhFeatureConstraint</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;RnResearchNbk&quot;</span><span class="p">,</span> <span class="n">IRnResearchNbk</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ScrBook&quot;</span><span class="p">,</span> <span class="n">IScrBook</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ScrSection&quot;</span><span class="p">,</span> <span class="n">IScrSection</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ScrTxtPara&quot;</span><span class="p">,</span> <span class="n">IScrTxtPara</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ScrScriptureNote&quot;</span><span class="p">,</span> <span class="n">IScrScriptureNote</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;Segment&quot;</span><span class="p">,</span> <span class="n">ISegment</span><span class="p">),</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">_iface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_interface_cache</span><span class="p">[</span><span class="n">_class_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_iface</span>
+
     <span class="n">_interfaces_loaded</span> <span class="o">=</span> <span class="kc">True</span>
 
 
 <div class="viewcode-block" id="cast_to_concrete">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.cast_to_concrete">[docs]</a>
-<span class="k">def</span> <span class="nf">cast_to_concrete</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cast_to_concrete</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Cast an LCM object to its concrete interface type based on ClassName.</span>
 
@@ -634,20 +729,30 @@
     <span class="c1"># Look up the interface type</span>
     <span class="n">interface_type</span> <span class="o">=</span> <span class="n">_interface_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">interface_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;cast_to_concrete: ClassName </span><span class="si">%r</span><span class="s2"> is not in the interface cache; &quot;</span>
+            <span class="s2">&quot;returning object unchanged (issue #281 / #279)&quot;</span><span class="p">,</span>
+            <span class="n">class_name</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="n">obj</span>
 
     <span class="c1"># Cast to the concrete interface</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">interface_type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-        <span class="c1"># If casting fails for any reason, return original</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;cast_to_concrete: cast to </span><span class="si">%r</span><span class="s2"> failed for ClassName </span><span class="si">%r</span><span class="s2">; &quot;</span>
+            <span class="s2">&quot;returning object unchanged&quot;</span><span class="p">,</span>
+            <span class="n">interface_type</span><span class="p">,</span>
+            <span class="n">class_name</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="n">obj</span></div>
 
 
 
 <div class="viewcode-block" id="cast_all">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.cast_all">[docs]</a>
-<span class="k">def</span> <span class="nf">cast_all</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cast_all</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Materialise `collection` as a list with every element cast to its</span>
 <span class="sd">    concrete LCM interface.</span>
@@ -713,7 +818,7 @@
 
 <div class="viewcode-block" id="get_pos_from_msa">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.get_pos_from_msa">[docs]</a>
-<span class="k">def</span> <span class="nf">get_pos_from_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_pos_from_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the Part of Speech from any MSA type.</span>
 
@@ -811,7 +916,7 @@
 
 <div class="viewcode-block" id="get_inflection_class_from_msa">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.get_inflection_class_from_msa">[docs]</a>
-<span class="k">def</span> <span class="nf">get_inflection_class_from_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_inflection_class_from_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the inflection class (IMoInflClass) from an MSA, if any.</span>
 
@@ -879,7 +984,7 @@
 
 <div class="viewcode-block" id="set_inflection_class_on_msa">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.set_inflection_class_on_msa">[docs]</a>
-<span class="k">def</span> <span class="nf">set_inflection_class_on_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="n">infl_class</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_inflection_class_on_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="n">infl_class</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set the inflection class (IMoInflClass) on an MSA&#39;s InflectionClassRA,</span>
 <span class="sd">    if that MSA subtype carries one.</span>
@@ -938,9 +1043,23 @@
 
 
 
+
+<span class="c1"># LCM naming convention suffixes that denote a genuine backing-store</span>
+<span class="c1"># collection/atomic member (as opposed to a derived, rebuilt-per-access</span>
+<span class="c1"># property). See clone_properties() below (issue #321) for how this is used</span>
+<span class="c1"># to structurally exclude derived members like AllSenses/MorphTypes/</span>
+<span class="c1"># PublishIn/ShowMainEntryIn/MinimalLexReferences/ReferringObjects from the</span>
+<span class="c1"># collection-clone branch, instead of relying on Count/Add duck-typing alone.</span>
+<span class="c1">#   OS/OC/OA -&gt; owned sequence/collection/atomic (safe to Clear()+Add())</span>
+<span class="c1">#   RS/RC/RA -&gt; reference sequence/collection/atomic (shared, not owned;</span>
+<span class="c1">#               already routed through the same branch prior to this fix,</span>
+<span class="c1">#               so kept here to avoid narrowing existing behaviour)</span>
+<span class="n">_OWNED_OR_REFERENCE_SUFFIXES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;OS&quot;</span><span class="p">,</span> <span class="s2">&quot;OC&quot;</span><span class="p">,</span> <span class="s2">&quot;OA&quot;</span><span class="p">,</span> <span class="s2">&quot;RS&quot;</span><span class="p">,</span> <span class="s2">&quot;RC&quot;</span><span class="p">,</span> <span class="s2">&quot;RA&quot;</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="clone_properties">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.clone_properties">[docs]</a>
-<span class="k">def</span> <span class="nf">clone_properties</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">dest_obj</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">clone_properties</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">dest_obj</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Deep clone all properties from source object to destination object.</span>
 
@@ -1005,8 +1124,31 @@
             <span class="c1"># Try to set the property on destination</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">):</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="c1"># Check if it&#39;s a collection (OS/OC) - these need special handling</span>
-                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">attr_value</span><span class="p">,</span> <span class="s2">&quot;Count&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">attr_value</span><span class="p">,</span> <span class="s2">&quot;Add&quot;</span><span class="p">):</span>
+                    <span class="c1"># Check if it&#39;s a genuine LCM-owned/reference collection (OS/OC/OA/</span>
+                    <span class="c1"># RS/RC/RA) - these need special Clear()+Add() handling.</span>
+                    <span class="c1">#</span>
+                    <span class="c1"># Issue #321: the old predicate was pure duck-typing --</span>
+                    <span class="c1"># `hasattr(attr_value, &quot;Count&quot;) and hasattr(attr_value, &quot;Add&quot;)` --</span>
+                    <span class="c1"># which also matches DERIVED, rebuilt-per-access properties such as</span>
+                    <span class="c1"># ILexEntry.AllSenses, .MorphTypes, .PublishIn, .ShowMainEntryIn,</span>
+                    <span class="c1"># .MinimalLexReferences, and the universal ICmObject.ReferringObjects.</span>
+                    <span class="c1"># Those expose Count/Add but are recomputed on every access, so</span>
+                    <span class="c1"># `dest_collection.Clear()` silently no-ops against them (confirmed</span>
+                    <span class="c1"># live on Sena 3, see</span>
+                    <span class="c1"># specs/318-321-nonexistent-member-mutations/evidence/live-321-derived-lists.md).</span>
+                    <span class="c1">#</span>
+                    <span class="c1"># LCM&#39;s naming convention encodes real backing-store membership in</span>
+                    <span class="c1"># the attribute name&#39;s suffix: OS/OC/OA = owned (sequence/collection/</span>
+                    <span class="c1"># atomic), RS/RC/RA = reference (sequence/collection/atomic). Members</span>
+                    <span class="c1"># without one of these suffixes are derived/computed views and must</span>
+                    <span class="c1"># NOT be routed through the collection-clone branch. Gating on the</span>
+                    <span class="c1"># suffix *in addition to* the existing Count/Add duck-type check</span>
+                    <span class="c1"># keeps every genuine OS/OC/RS/RC/RA member clone_properties already</span>
+                    <span class="c1"># clones today (see cycle2-programmer-321.md for the before/after</span>
+                    <span class="c1"># member comparison) while structurally excluding the derived ones.</span>
+                    <span class="k">if</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">_OWNED_OR_REFERENCE_SUFFIXES</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
+                        <span class="n">attr_value</span><span class="p">,</span> <span class="s2">&quot;Count&quot;</span>
+                    <span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">attr_value</span><span class="p">,</span> <span class="s2">&quot;Add&quot;</span><span class="p">):</span>
                         <span class="c1"># This is a collection - clone each item</span>
                         <span class="n">dest_collection</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">)</span>
                         <span class="k">try</span><span class="p">:</span>
@@ -1039,7 +1181,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">_get_factory_for_class</span><span class="p">(</span><span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">project</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Optional[object]&quot;</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_factory_for_class</span><span class="p">(</span><span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">project</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Optional[object]&quot;</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the factory for creating an object of the given class.</span>
 
@@ -1051,7 +1193,7 @@
 <span class="sd">        The factory object, or None if not found.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">IPhRegularRuleFactory</span><span class="p">,</span>
             <span class="n">IPhMetathesisRuleFactory</span><span class="p">,</span>
             <span class="n">IPhSegRuleRHSFactory</span><span class="p">,</span>
@@ -1059,10 +1201,6 @@
             <span class="n">IPhSimpleContextNCFactory</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="c1"># LCM has no PhReduplicationRule class -- PhSegmentRule only branches</span>
-        <span class="c1"># into PhRegularRule (129) and PhMetathesisRule (130). The factory map</span>
-        <span class="c1"># therefore omits any reduplication entry; callers that pass that key</span>
-        <span class="c1"># fall through to None.</span>
         <span class="n">factory_map</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># The 2 concrete PhSegmentRule subclasses</span>
             <span class="s2">&quot;PhRegularRule&quot;</span><span class="p">:</span> <span class="n">IPhRegularRuleFactory</span><span class="p">,</span>
@@ -1084,7 +1222,7 @@
 
 <div class="viewcode-block" id="cast_phonological_rule">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.cast_phonological_rule">[docs]</a>
-<span class="k">def</span> <span class="nf">cast_phonological_rule</span><span class="p">(</span><span class="n">rule_obj</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cast_phonological_rule</span><span class="p">(</span><span class="n">rule_obj</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Cast a phonological rule to its concrete interface type.</span>
 
@@ -1092,7 +1230,9 @@
 <span class="sd">    This function casts to the concrete interface based on ClassName:</span>
 <span class="sd">    - PhRegularRule -&gt; IPhRegularRule</span>
 <span class="sd">    - PhMetathesisRule -&gt; IPhMetathesisRule</span>
-<span class="sd">    - PhReduplicationRule -&gt; IPhReduplicationRule</span>
+
+<span class="sd">    PhReduplicationRule is not a concrete type in this LCM (issue #326),</span>
+<span class="sd">    so any object claiming that ClassName is returned unchanged.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        rule_obj: A phonological rule object (typed as IPhSegmentRule or similar).</span>
@@ -1135,7 +1275,7 @@
 
 <div class="viewcode-block" id="validate_merge_compatibility">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.validate_merge_compatibility">[docs]</a>
-<span class="k">def</span> <span class="nf">validate_merge_compatibility</span><span class="p">(</span><span class="n">survivor_obj</span><span class="p">,</span> <span class="n">victim_obj</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_merge_compatibility</span><span class="p">(</span><span class="n">survivor_obj</span><span class="p">,</span> <span class="n">victim_obj</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Validate that two objects can be safely merged.</span>
 
@@ -1198,7 +1338,7 @@
 
 <div class="viewcode-block" id="get_from_pos_from_msa">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.get_from_pos_from_msa">[docs]</a>
-<span class="k">def</span> <span class="nf">get_from_pos_from_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_from_pos_from_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the source Part of Speech from a derivational MSA.</span>
 
@@ -1251,7 +1391,7 @@
 
 <div class="viewcode-block" id="get_common_properties">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.get_common_properties">[docs]</a>
-<span class="k">def</span> <span class="nf">get_common_properties</span><span class="p">(</span><span class="n">objects</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_common_properties</span><span class="p">(</span><span class="n">objects</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Find properties that are available on ALL objects in a list.</span>
 
@@ -1330,7 +1470,7 @@
 
 <div class="viewcode-block" id="get_concrete_type_properties">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.get_concrete_type_properties">[docs]</a>
-<span class="k">def</span> <span class="nf">get_concrete_type_properties</span><span class="p">(</span><span class="n">lcm_obj</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_concrete_type_properties</span><span class="p">(</span><span class="n">lcm_obj</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get properties that are unique to an object&#39;s concrete type.</span>
 
@@ -1362,7 +1502,7 @@
 <span class="sd">            print(unique_props[&#39;RightHandSidesOS&#39;])  # The actual RHS collection</span>
 
 <span class="sd">        if rule.ClassName == &#39;PhMetathesisRule&#39;:</span>
-<span class="sd">            print(&#39;LeftPartOfMetathesisOS&#39; in unique_props)  # True</span>
+<span class="sd">            print(&#39;StrucDescOS&#39; in unique_props)  # True</span>
 
 <span class="sd">    Notes:</span>
 <span class="sd">        - Returns empty dict if object has no ClassName attribute</span>
@@ -1409,7 +1549,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1425,7 +1565,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1440,8 +1580,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

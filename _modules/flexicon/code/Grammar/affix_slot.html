@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Grammar.affix_slot &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.affix_slot</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Grammar.affix_slot</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   affix_slot.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: AffixSlot</span>
+<span class="c1">#          Wrapper for inflectional affix slot objects providing unified</span>
+<span class="c1">#          interface access to slot properties and the affixes that fill</span>
+<span class="c1">#          them.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2026</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Wrapper class for affix slot objects with unified interface.</span>
+
+<span class="sd">This module provides AffixSlot, a wrapper class that transparently handles</span>
+<span class="sd">inflectional affix slot objects (MoInflAffixSlot), providing convenient</span>
+<span class="sd">access to a slot&#39;s name, whether it is optional, and the affixes that fill</span>
+<span class="sd">it.</span>
+
+<span class="sd">Problem:</span>
+<span class="sd">    ``IMoInflAffixSlot.Name`` is an ``IMultiUnicode``, not a string, so</span>
+<span class="sd">    printing it directly (``print(slot.Name)``) does not produce readable</span>
+<span class="sd">    text -- issue #542. Callers had no public way to read a slot&#39;s name,</span>
+<span class="sd">    optionality, or the affixes filling it without dropping to raw LCM</span>
+<span class="sd">    access.</span>
+
+<span class="sd">Solution:</span>
+<span class="sd">    AffixSlot wrapper provides:</span>
+<span class="sd">    - ``.name`` -- the slot name as a plain string (analysis WS, ``***``</span>
+<span class="sd">      normalized to empty)</span>
+<span class="sd">    - ``.optional`` -- bool</span>
+<span class="sd">    - ``.affixes`` -- the ``IMoInflAffMsa`` objects whose ``SlotsRC``</span>
+<span class="sd">      contains this slot, read via the direct ``IMoInflAffixSlot.Affixes``</span>
+<span class="sd">      back-reference</span>
+<span class="sd">    - ``.owner_pos`` -- the owning ``IPartOfSpeech``, if any</span>
+
+<span class="sd">Example::</span>
+
+<span class="sd">    from flexicon.code.Grammar.affix_slot import AffixSlot</span>
+
+<span class="sd">    slot = posOps.GetAffixSlots(verb)[0]  # already an AffixSlot</span>
+<span class="sd">    print(slot.name)</span>
+<span class="sd">    print(slot.optional)</span>
+<span class="sd">    for affix_msa in slot.affixes:</span>
+<span class="sd">        print(affix_msa.Hvo)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.wrapper_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LCMObjectWrapper</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IPartOfSpeech</span><span class="p">,</span> <span class="n">PartOfSpeechTags</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="c1"># Mock for testing without FieldWorks installed</span>
+    <span class="n">IPartOfSpeech</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">PartOfSpeechTags</span><span class="p">:</span>
+        <span class="n">kClassId</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+<div class="viewcode-block" id="AffixSlot">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_slot.AffixSlot">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AffixSlot</span><span class="p">(</span><span class="n">LCMObjectWrapper</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper for inflectional affix slot objects providing unified</span>
+<span class="sd">    interface access.</span>
+
+<span class="sd">    Handles MoInflAffixSlot objects transparently, providing common</span>
+<span class="sd">    properties without exposing ClassName or casting.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        _obj: The base interface object (IMoInflAffixSlot)</span>
+<span class="sd">        _concrete: The concrete type object (IMoInflAffixSlot)</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        slot = posOps.GetAffixSlots(verb)[0]</span>
+<span class="sd">        print(slot.name)</span>
+<span class="sd">        if slot.optional:</span>
+<span class="sd">            print(&quot;Slot may be left empty&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lcm_slot</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize AffixSlot wrapper with a slot object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lcm_slot: An IMoInflAffixSlot object. Typically from</span>
+<span class="sd">                ``POSOperations.GetAffixSlots()`` or</span>
+<span class="sd">                ``AffixTemplate.prefix_slots`` / ``.suffix_slots`` /</span>
+<span class="sd">                ``.proclitic_slots`` / ``.enclitic_slots``.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            slot = posOps.GetAffixSlots(verb)[0]</span>
+<span class="sd">            wrapped = AffixSlot(slot)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">lcm_slot</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the slot&#39;s name.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The slot name in the analysis writing system, or empty</span>
+<span class="sd">            string if not set (including FLEx&#39;s ``***`` null marker).</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            print(f&quot;Slot: {slot.name}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+
+        <span class="n">name_multistring</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Name</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name_multistring</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">default_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Cache</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="n">name_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">name_multistring</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">default_ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">name_text</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">optional</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check whether the slot may be left empty.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the slot is optional, False if it is obligatory</span>
+<span class="sd">            (FLEx&#39;s default for a newly-created slot).</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if slot.optional:</span>
+<span class="sd">                print(&quot;This slot may be left empty&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Optional</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">affixes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;list[object]&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the inflectional-affix MSAs that fill this slot.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: ``IMoInflAffMsa`` objects whose ``SlotsRC`` contains this</span>
+<span class="sd">            slot, read via the direct ``IMoInflAffixSlot.Affixes``</span>
+<span class="sd">            back-reference. Empty list if none.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            for affix_msa in slot.affixes:</span>
+<span class="sd">                print(affix_msa.Hvo)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Access via the ``Affixes`` back-reference property on the</span>
+<span class="sd">              concrete interface (confirmed by live reflection: returns</span>
+<span class="sd">              ``IEnumerable&lt;IMoInflAffMsa&gt;``); this is the single most</span>
+<span class="sd">              direct LCM path, since it is already the inverse of</span>
+<span class="sd">              ``IMoInflAffMsa.SlotsRC``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;Affixes&quot;</span><span class="p">):</span>
+                <span class="n">affixes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Affixes</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">affixes</span><span class="p">)</span> <span class="k">if</span> <span class="n">affixes</span> <span class="k">else</span> <span class="p">[]</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">owner_pos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the owner Part of Speech for this slot.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPartOfSpeech or None: The owner POS, or None if not available.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if slot.owner_pos:</span>
+<span class="sd">                print(f&quot;Slot for POS: {slot.owner_pos.Name}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;OwnerOfClass&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">pos_lcm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">OwnerOfClass</span><span class="p">(</span><span class="n">PartOfSpeechTags</span><span class="o">.</span><span class="n">kClassId</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pos_lcm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">pos_lcm</span><span class="p">)</span> <span class="k">if</span> <span class="n">IPartOfSpeech</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">pos_lcm</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation showing slot name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;AffixSlot(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;Unnamed&#39;</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Human-readable description.&quot;&quot;&quot;</span>
+        <span class="n">suffix</span> <span class="o">=</span> <span class="s2">&quot; (optional)&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">optional</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Slot &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Unnamed slot</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.affix_slot</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

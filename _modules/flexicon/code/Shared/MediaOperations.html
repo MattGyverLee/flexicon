@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Shared.MediaOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -54,36 +54,36 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ICmFile</span><span class="p">,</span>
     <span class="n">ICmFileFactory</span><span class="p">,</span>
     <span class="n">ICmFileRepository</span><span class="p">,</span>
     <span class="n">ICmFolder</span><span class="p">,</span>
     <span class="n">ICmFolderFactory</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
 
 <span class="c1"># --- Media Type Enum ---</span>
 
 
 <div class="viewcode-block" id="MediaType">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.MediaOperations.MediaType">[docs]</a>
-<span class="k">class</span> <span class="nc">MediaType</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MediaType</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Media file type constants.&quot;&quot;&quot;</span>
 
     <span class="n">UNKNOWN</span> <span class="o">=</span> <span class="mi">0</span>
@@ -98,7 +98,7 @@
 
 <div class="viewcode-block" id="MediaOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.MediaOperations.MediaOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">MediaOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MediaOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Provides operations for managing media files in a FLEx project.</span>
 
@@ -124,7 +124,7 @@
 <span class="sd">        &gt;&gt;&gt; project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize MediaOperations.</span>
 
@@ -133,7 +133,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal helper to resolve writing system handle.</span>
 
@@ -150,7 +150,7 @@
     <span class="c1"># Image extensions used to route a new file to the Pictures folder.</span>
     <span class="n">__IMAGE_EXTS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;.jpg&quot;</span><span class="p">,</span> <span class="s2">&quot;.jpeg&quot;</span><span class="p">,</span> <span class="s2">&quot;.png&quot;</span><span class="p">,</span> <span class="s2">&quot;.gif&quot;</span><span class="p">,</span> <span class="s2">&quot;.bmp&quot;</span><span class="p">,</span> <span class="s2">&quot;.tif&quot;</span><span class="p">,</span> <span class="s2">&quot;.tiff&quot;</span><span class="p">,</span> <span class="s2">&quot;.svg&quot;</span><span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">__GetOrCreateMediaFolder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetOrCreateMediaFolder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return an owned CmFolder suitable for a new media file, creating one if</span>
 <span class="sd">        the project has none yet.</span>
@@ -197,7 +197,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieve all media files in the FLEx project.</span>
 
@@ -232,7 +232,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ObjectsIn</span><span class="p">(</span><span class="n">ICmFileRepository</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new media file reference in the FLEx project.</span>
 
@@ -305,7 +305,7 @@
             <span class="k">return</span> <span class="n">new_media</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a media file reference from the FLEx project.</span>
 
@@ -363,12 +363,16 @@
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="k">pass</span>
 
-        <span class="c1"># Delete the object (this removes all references)</span>
-        <span class="c1"># Note: LCModel handles cascading deletion of references</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">DomainDataByFlid</span><span class="o">.</span><span class="n">DeleteObj</span><span class="p">(</span><span class="n">media</span><span class="o">.</span><span class="n">Hvo</span><span class="p">)</span>
+        <span class="c1"># Delete the object (this removes all references).</span>
+        <span class="c1"># Note: LCModel handles cascading deletion of references.</span>
+        <span class="c1"># (Was self.project.cache... -- FLExProject exposes Cache,</span>
+        <span class="c1"># not cache; ICmObject.Delete() is the public deletion entry</span>
+        <span class="c1"># point. Found live while verifying issue #352.)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete media file&quot;</span><span class="p">):</span>
+            <span class="n">media</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a media file reference, creating a new reference to the same file.</span>
 
@@ -494,17 +498,22 @@
             <span class="c1"># Create the new media reference</span>
             <span class="n">new_media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">new_path</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">new_label</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">wsHandle</span><span class="p">)</span>
 
-            <span class="c1"># Copy full Description MultiString (all writing systems)</span>
-            <span class="c1"># Create() only sets a single-WS label; CopyAlternatives preserves all WS</span>
+            <span class="c1"># Copy full Description MultiString (all writing systems),</span>
+            <span class="c1"># then re-apply the &quot; (copy)&quot; label in the default WS: the</span>
+            <span class="c1"># copy must not silently revert to the source label (found</span>
+            <span class="c1"># live while verifying issue #352).</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_media</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_media</span><span class="o">.</span><span class="n">Description</span><span class="p">:</span>
                 <span class="n">new_media</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_media</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+            <span class="n">new_media</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span>
+                <span class="n">wsHandle</span><span class="p">,</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">new_label</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="p">)</span>
 
             <span class="k">return</span> <span class="n">new_media</span>
 
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all syncable properties of a media file.</span>
 
@@ -539,7 +548,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two media files for differences.</span>
 
@@ -582,8 +591,11 @@
             <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
-            <span class="c1"># Compare values</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_CompareValues</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">):</span>
+            <span class="c1"># Compare values inline: FLExProject has no _CompareValues</span>
+            <span class="c1"># member (calling it raised AttributeError on every compare;</span>
+            <span class="c1"># found live while verifying issue #352). Same shape as the</span>
+            <span class="c1"># DataNotebook/Person/SemanticDomain CompareTo methods.</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
                 <span class="c1"># Values are different</span>
                 <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
 
@@ -591,7 +603,7 @@
         <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a media file by its filename (internal path).</span>
 
@@ -641,7 +653,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a media file exists in the FLEx project.</span>
 
@@ -673,7 +685,7 @@
     <span class="c1"># --- File Properties ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetInternalPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetInternalPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the internal path of a media file.</span>
 
@@ -728,7 +740,7 @@
         <span class="k">return</span> <span class="n">media</span><span class="o">.</span><span class="n">InternalPath</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetExternalPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetExternalPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the external (absolute) path of a media file.</span>
 
@@ -803,7 +815,7 @@
         <span class="k">return</span> <span class="n">internal_path</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetInternalPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetInternalPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the internal path of a media file.</span>
 
@@ -862,7 +874,7 @@
             <span class="n">media</span><span class="o">.</span><span class="n">InternalPath</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RenameMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RenameMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Rename a media file on disk and update the database reference.</span>
 
@@ -1016,7 +1028,7 @@
         <span class="k">return</span> <span class="n">new_internal_path</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the label/description of a media file.</span>
 
@@ -1078,7 +1090,7 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the label/description of a media file.</span>
 
@@ -1144,7 +1156,7 @@
     <span class="c1"># --- Media Type Detection ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetMediaType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMediaType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the media type (audio/video/image) based on file extension.</span>
 
@@ -1226,7 +1238,7 @@
             <span class="k">return</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">UNKNOWN</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsAudio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsAudio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a media file is an audio file.</span>
 
@@ -1263,7 +1275,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetMediaType</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span> <span class="o">==</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">AUDIO</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsVideo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsVideo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a media file is a video file.</span>
 
@@ -1299,7 +1311,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetMediaType</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span> <span class="o">==</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">VIDEO</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsImage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsImage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a media file is an image file.</span>
 
@@ -1336,7 +1348,7 @@
     <span class="c1"># --- Usage Tracking ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetOwners</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwners</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all objects that reference this media file.</span>
 
@@ -1405,7 +1417,7 @@
         <span class="k">return</span> <span class="n">owners</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetOwnerCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwnerCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the count of objects referencing this media file.</span>
 
@@ -1442,7 +1454,7 @@
     <span class="c1"># --- Utility Methods ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CopyToProject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">external_path</span><span class="p">,</span> <span class="n">internal_subdir</span><span class="o">=</span><span class="s2">&quot;AudioVisual&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CopyToProject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">external_path</span><span class="p">,</span> <span class="n">internal_subdir</span><span class="o">=</span><span class="s2">&quot;AudioVisual&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Copy an external file into the project&#39;s LinkedFiles directory</span>
 <span class="sd">        and create a media reference.</span>
@@ -1544,7 +1556,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">internal_path</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsValid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsValid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a media file&#39;s referenced file exists on disk.</span>
 
@@ -1595,7 +1607,7 @@
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the GUID (Globally Unique Identifier) of a media file.</span>
 
@@ -1657,7 +1669,7 @@
         <span class="k">return</span> <span class="n">media</span><span class="o">.</span><span class="n">Guid</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetHvo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetHvo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the HVO (database ID) of a media file.</span>
 
@@ -1695,7 +1707,7 @@
         <span class="k">return</span> <span class="n">media</span><span class="o">.</span><span class="n">Hvo</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetFileSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFileSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the file size of a media file in bytes.</span>
 
@@ -1747,7 +1759,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAllByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_type</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_type</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all media files of a specific type.</span>
 
@@ -1792,7 +1804,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetOrphanedMedia</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOrphanedMedia</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all media files that are not referenced by any object.</span>
 
@@ -1830,7 +1842,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1846,7 +1858,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1861,8 +1873,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

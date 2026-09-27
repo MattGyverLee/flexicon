@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Grammar.MorphRuleOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -72,33 +72,45 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import BaseOperations parent class</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
 
 <span class="c1"># Import wrapper classes</span>
-<span class="kn">from</span> <span class="nn">.affix_template</span> <span class="kn">import</span> <span class="n">AffixTemplate</span>
-<span class="kn">from</span> <span class="nn">.affix_template_collection</span> <span class="kn">import</span> <span class="n">AffixTemplateCollection</span>
-<span class="kn">from</span> <span class="nn">.compound_rule</span> <span class="kn">import</span> <span class="n">CompoundRule</span>
-<span class="kn">from</span> <span class="nn">.compound_rule_collection</span> <span class="kn">import</span> <span class="n">CompoundRuleCollection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.affix_template</span><span class="w"> </span><span class="kn">import</span> <span class="n">AffixTemplate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.affix_template_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">AffixTemplateCollection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.compound_rule</span><span class="w"> </span><span class="kn">import</span> <span class="n">CompoundRule</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.compound_rule_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">CompoundRuleCollection</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IMoEndoCompoundFactory</span><span class="p">,</span>
     <span class="n">IMoExoCompoundFactory</span><span class="p">,</span>
     <span class="n">IMoInflAffixTemplateFactory</span><span class="p">,</span>
     <span class="n">IPartOfSpeech</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_NullParameterError</span><span class="p">,</span>  <span class="c1"># noqa: F401  -- raised by _ValidateParam</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
+    <span class="n">FP_ReadOnlyError</span><span class="p">,</span>  <span class="c1"># noqa: F401  -- raised by _EnsureWriteEnabled</span>
 <span class="p">)</span>
+
+<span class="c1"># IMoInflAffixTemplate reference sequences. clr reflection on</span>
+<span class="c1"># ILcmReferenceSequence&lt;IMoInflAffixSlot&gt; (SIL.LCModel 11.0.0) shows</span>
+<span class="c1"># IList.Insert(Int32, T) and ICollection.Add(T). There is no InsertAt.</span>
+<span class="n">_AFFIX_TEMPLATE_SLOT_SIDES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;prefix&quot;</span><span class="p">:</span> <span class="s2">&quot;PrefixSlotsRS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;suffix&quot;</span><span class="p">:</span> <span class="s2">&quot;SuffixSlotsRS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;proclitic&quot;</span><span class="p">:</span> <span class="s2">&quot;ProcliticSlotsRS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;enclitic&quot;</span><span class="p">:</span> <span class="s2">&quot;EncliticSlotsRS&quot;</span><span class="p">,</span>
+<span class="p">}</span>
 
 
 <div class="viewcode-block" id="MorphRuleOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.MorphRuleOperations.MorphRuleOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">MorphRuleOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MorphRuleOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Operations for managing morphological rules in a FieldWorks project.</span>
 
@@ -142,7 +154,7 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize MorphRuleOperations with a FLExProject instance.</span>
 
@@ -151,7 +163,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the appropriate rule sequence for reordering.</span>
 
@@ -172,7 +184,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all compound rules and affix templates in the project.</span>
 
@@ -183,7 +195,17 @@
 <span class="sd">        use GetAllAdhocCoProhibitions() separately.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            EnumerableWrapper[IMoCompoundRule | IMoInflAffixTemplate]: Each compound rule or affix template object.</span>
+<span class="sd">            EnumerableWrapper[CompoundRule | AffixTemplate]: Each item is a</span>
+<span class="sd">                ``CompoundRule`` or ``AffixTemplate`` wrapper object (NOT a</span>
+<span class="sd">                raw ``IMoCompoundRule``/``IMoInflAffixTemplate``), yielded</span>
+<span class="sd">                from ``GetAllCompoundRules()`` then ``GetAllAffixTemplates()``.</span>
+<span class="sd">                Items can be passed straight back into other</span>
+<span class="sd">                MorphRuleOperations methods (e.g. ``GetName(item)``,</span>
+<span class="sd">                ``Delete(item)``, ``SetStratum(item, ...)``) -- resolvers</span>
+<span class="sd">                unwrap the wrapper internally (issue #449). A caller</span>
+<span class="sd">                performing a direct pythonnet cast, e.g.</span>
+<span class="sd">                ``IMoInflAffixTemplate(item)``, must use ``item.lcm_object``</span>
+<span class="sd">                instead.</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; ruleOps = MorphRuleOperations(project)</span>
@@ -200,7 +222,7 @@
         <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAllAffixTemplates</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAllCompoundRules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllCompoundRules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all compound rules from MoMorphData.CompoundRulesOS.</span>
 
@@ -220,6 +242,10 @@
 <span class="sd">            - MoExoCompound: head is outside (e.g., exocentric compounds)</span>
 <span class="sd">            - Returns empty collection if no morphological data defined</span>
 <span class="sd">            - Returns CompoundRuleCollection (supports filtering and chaining)</span>
+<span class="sd">            - Items can be passed straight back into other</span>
+<span class="sd">              MorphRuleOperations methods -- resolvers unwrap the wrapper</span>
+<span class="sd">              internally (issue #449). A direct pythonnet cast needs</span>
+<span class="sd">              ``item.lcm_object``.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            CreateCompoundRule, GetAll, CompoundRuleCollection</span>
@@ -231,7 +257,7 @@
         <span class="k">return</span> <span class="n">CompoundRuleCollection</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAllAffixTemplates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllAffixTemplates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all inflectional affix templates from all parts of speech.</span>
 
@@ -255,6 +281,10 @@
 <span class="sd">            - Subcategories are included (full hierarchy walk)</span>
 <span class="sd">            - Returns AffixTemplateCollection (supports filtering and chaining)</span>
 <span class="sd">            - Use with_prefix_slots(), with_suffix_slots(), etc. for filtering</span>
+<span class="sd">            - Items can be passed straight back into other</span>
+<span class="sd">              MorphRuleOperations methods -- resolvers unwrap the wrapper</span>
+<span class="sd">              internally (issue #449). A direct pythonnet cast needs</span>
+<span class="sd">              ``item.lcm_object``.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAllAffixTemplatesForPOS, CreateAffixTemplate, GetAll, AffixTemplateCollection</span>
@@ -269,7 +299,7 @@
         <span class="k">return</span> <span class="n">AffixTemplateCollection</span><span class="p">(</span><span class="n">wrapped</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAllAffixTemplatesForPOS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllAffixTemplatesForPOS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get affix templates for a specific part of speech (non-recursive).</span>
 
@@ -295,6 +325,10 @@
 <span class="sd">            - Does not include templates from sub-categories</span>
 <span class="sd">            - Use GetAllAffixTemplates() to get templates from all POS</span>
 <span class="sd">            - Returns AffixTemplateCollection (supports filtering and chaining)</span>
+<span class="sd">            - Items can be passed straight back into other</span>
+<span class="sd">              MorphRuleOperations methods -- resolvers unwrap the wrapper</span>
+<span class="sd">              internally (issue #449). A direct pythonnet cast needs</span>
+<span class="sd">              ``item.lcm_object``.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAllAffixTemplates, CreateAffixTemplate, AffixTemplateCollection</span>
@@ -309,7 +343,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAllAdhocCoProhibitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllAdhocCoProhibitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all ad hoc co-occurrence prohibitions from MoMorphData.</span>
 
@@ -341,7 +375,7 @@
     <span class="c1"># ========== CREATION ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CreateCompoundRule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">endocentric</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateCompoundRule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">endocentric</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new compound rule in MoMorphData.CompoundRulesOS.</span>
 
@@ -403,7 +437,7 @@
             <span class="k">return</span> <span class="n">new_rule</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CreateAffixTemplate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateAffixTemplate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new inflectional affix template on a part of speech.</span>
 
@@ -429,10 +463,10 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Templates are owned by PartOfSpeech, not MoMorphData</span>
 <span class="sd">            - New templates are added at the end of AffixTemplatesOS</span>
-<span class="sd">            - Slot assignments (prefix/suffix slots) must be configured separately</span>
+<span class="sd">            - Slot assignments are made with AddSlotToTemplate</span>
 
 <span class="sd">        See Also:</span>
-<span class="sd">            CreateCompoundRule, Delete, GetAllAffixTemplates</span>
+<span class="sd">            CreateCompoundRule, Delete, GetAllAffixTemplates, AddSlotToTemplate</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
@@ -461,10 +495,105 @@
 
             <span class="k">return</span> <span class="n">new_template</span>
 
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddSlotToTemplate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Insert an affix slot into one side of an inflectional template.</span>
+
+<span class="sd">        Access via FLExProject as ``project.MorphRules.AddSlotToTemplate``.</span>
+<span class="sd">        The slot must already be in the template category&#39;s AllAffixSlots:</span>
+<span class="sd">        that category&#39;s own slots, or a slot owned by an ancestor category</span>
+<span class="sd">        (see ``project.POS.CreateAffixSlot``). The four sides are reference</span>
+<span class="sd">        sequences, so this method does not create the slot.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            template: The IMoInflAffixTemplate object or HVO.</span>
+<span class="sd">            slot: The IMoInflAffixSlot object, its HVO, or the AffixSlot</span>
+<span class="sd">                wrapper returned by ``project.POS.CreateAffixSlot``.</span>
+<span class="sd">            side (str): ``prefix``, ``suffix``, ``proclitic``, or</span>
+<span class="sd">                ``enclitic``. Case-insensitive.</span>
+<span class="sd">            index (int, optional): Position to insert at. ``None`` (the</span>
+<span class="sd">                default) appends. An index outside ``0..Count`` is rejected.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoInflAffixTemplate: The template the slot was added to.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If template, slot, or side is None.</span>
+<span class="sd">            FP_ParameterError: If side is not one of the four sides, if the</span>
+<span class="sd">                slot is not in the template category&#39;s AllAffixSlots, or</span>
+<span class="sd">                if index is not an integer in range.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; slot = project.POS.CreateAffixSlot(verb, &quot;PossConcord&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; template = project.MorphRules.CreateAffixTemplate(verb, &quot;Verb Inflection&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.MorphRules.AddSlotToTemplate(template, slot, &quot;prefix&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            CreateAffixTemplate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s2">&quot;template&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="s2">&quot;slot&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">side</span><span class="p">,</span> <span class="s2">&quot;side&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">side</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;side must be one of prefix, suffix, proclitic, enclitic&quot;</span>
+            <span class="p">)</span>
+        <span class="n">prop_name</span> <span class="o">=</span> <span class="n">_AFFIX_TEMPLATE_SLOT_SIDES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">side</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">prop_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;side must be one of prefix, suffix, proclitic, enclitic&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">template</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+
+        <span class="c1"># Owner can be a bare ICmObject. __ResolveObject casts a</span>
+        <span class="c1"># PartOfSpeech to IPartOfSpeech so AllAffixSlots is visible.</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s2">&quot;Owner&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="n">visible</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;PartOfSpeech&quot;</span><span class="p">:</span>
+            <span class="n">visible</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__AllAffixSlotHvos</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+        <span class="n">slot_hvo</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">visible</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="ow">or</span> <span class="n">slot_hvo</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">slot_hvo</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visible</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;Affix slot must be in the template category&#39;s AllAffixSlots &quot;</span>
+                <span class="s2">&quot;(the category itself or an ancestor)&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">sequence</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">insert_at</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;index must be an integer or None&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="n">sequence</span><span class="o">.</span><span class="n">Count</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="n">count</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> is out of range for a slot sequence of length </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="n">insert_at</span> <span class="o">=</span> <span class="n">index</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Add affix slot to </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">insert_at</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">sequence</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sequence</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">insert_at</span><span class="p">,</span> <span class="n">slot</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">template</span>
+
     <span class="c1"># ========== DELETION ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a morphological rule.</span>
 
@@ -506,9 +635,10 @@
                 <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete compound rule&quot;</span><span class="p">):</span>
                     <span class="n">morph_data</span><span class="o">.</span><span class="n">CompoundRulesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoInflAffixTemplate&quot;</span><span class="p">:</span>
-            <span class="c1"># Template is owned by a PartOfSpeech</span>
-            <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetObject</span><span class="p">(</span><span class="n">rule</span><span class="o">.</span><span class="n">Owner</span><span class="o">.</span><span class="n">Hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;AffixTemplatesOS&quot;</span><span class="p">):</span>
+            <span class="c1"># AffixTemplatesOS lives on IPartOfSpeech, not on the base</span>
+            <span class="c1"># ICmObject returned from .Owner / _GetObject(Hvo). (issue #467)</span>
+            <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;AffixTemplatesOS&quot;</span><span class="p">):</span>
                 <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete affix template&quot;</span><span class="p">):</span>
                     <span class="n">owner</span><span class="o">.</span><span class="n">AffixTemplatesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;MoAdhocProhibGr&quot;</span><span class="p">,</span> <span class="s2">&quot;MoAdhocProhibMorph&quot;</span><span class="p">,</span> <span class="s2">&quot;MoAdhocProhibAllomorph&quot;</span><span class="p">):</span>
@@ -519,7 +649,7 @@
     <span class="c1"># ========== PROPERTIES ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the name of a morphological rule or template.</span>
 
@@ -549,7 +679,7 @@
         <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the name of a morphological rule or template.</span>
 
@@ -586,7 +716,7 @@
             <span class="n">rule</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the description of a morphological rule or template.</span>
 
@@ -616,7 +746,7 @@
         <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the description of a morphological rule or template.</span>
 
@@ -649,7 +779,7 @@
             <span class="n">rule</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetStratum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetStratum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the stratum of a morphological rule or template.</span>
 
@@ -685,7 +815,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetStratum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">stratum</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetStratum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">stratum</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the stratum of a morphological rule or template.</span>
 
@@ -725,7 +855,7 @@
                 <span class="n">rule</span><span class="o">.</span><span class="n">StratumRA</span> <span class="o">=</span> <span class="n">stratum</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsDisabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsDisabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a morphological rule is disabled.</span>
 
@@ -759,7 +889,7 @@
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetDisabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">disabled</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDisabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">disabled</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the disabled state of a morphological rule.</span>
 
@@ -797,7 +927,7 @@
     <span class="c1"># ========== DUPLICATION ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a morphological rule or template, creating a copy with a new GUID.</span>
 
@@ -887,7 +1017,7 @@
 
             <span class="k">return</span> <span class="n">duplicate</span>
 
-    <span class="k">def</span> <span class="nf">__DuplicateCompoundRule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">class_name</span><span class="p">,</span> <span class="n">insert_after</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__DuplicateCompoundRule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">class_name</span><span class="p">,</span> <span class="n">insert_after</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create and insert a duplicate compound rule.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoEndoCompound&quot;</span><span class="p">:</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IMoEndoCompoundFactory</span><span class="p">)</span>
@@ -902,14 +1032,26 @@
             <span class="n">morph_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">MorphologicalDataOA</span>
 
             <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
-                <span class="n">idx</span> <span class="o">=</span> <span class="n">morph_data</span><span class="o">.</span><span class="n">CompoundRulesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-                <span class="n">morph_data</span><span class="o">.</span><span class="n">CompoundRulesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="c1"># Index by HVO (issue #537). CompoundRulesOS can yield bare interface</span>
+                <span class="c1"># views whose Python identity differs from source.</span>
+                <span class="n">rule_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">morph_data</span><span class="o">.</span><span class="n">CompoundRulesOS</span><span class="p">)</span>
+                <span class="n">target_hvo</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Hvo</span>
+                <span class="n">source_index</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">rule</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rule_list</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">rule</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">target_hvo</span><span class="p">:</span>
+                        <span class="n">source_index</span> <span class="o">=</span> <span class="n">i</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="n">source_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">insert_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rule_list</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">insert_index</span> <span class="o">=</span> <span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">morph_data</span><span class="o">.</span><span class="n">CompoundRulesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">insert_index</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">morph_data</span><span class="o">.</span><span class="n">CompoundRulesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">duplicate</span>
 
-    <span class="k">def</span> <span class="nf">__DuplicateAffixTemplate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">insert_after</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__DuplicateAffixTemplate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">insert_after</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create and insert a duplicate affix template on the same POS.&quot;&quot;&quot;</span>
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IMoInflAffixTemplateFactory</span><span class="p">)</span>
 
@@ -919,11 +1061,25 @@
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate affix template&quot;</span><span class="p">):</span>
             <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-            <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetObject</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Owner</span><span class="o">.</span><span class="n">Hvo</span><span class="p">)</span>
+            <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Affix template has no owning Part of Speech&quot;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
-                <span class="n">idx</span> <span class="o">=</span> <span class="n">owner</span><span class="o">.</span><span class="n">AffixTemplatesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-                <span class="n">owner</span><span class="o">.</span><span class="n">AffixTemplatesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="c1"># Index by HVO (issue #537). AffixTemplatesOS can yield bare interface</span>
+                <span class="c1"># views whose Python identity differs from source.</span>
+                <span class="n">template_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">owner</span><span class="o">.</span><span class="n">AffixTemplatesOS</span><span class="p">)</span>
+                <span class="n">target_hvo</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Hvo</span>
+                <span class="n">source_index</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">tmpl</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">template_list</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">target_hvo</span><span class="p">:</span>
+                        <span class="n">source_index</span> <span class="o">=</span> <span class="n">i</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="n">source_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">insert_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">template_list</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">insert_index</span> <span class="o">=</span> <span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">owner</span><span class="o">.</span><span class="n">AffixTemplatesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">insert_index</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">owner</span><span class="o">.</span><span class="n">AffixTemplatesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
 
@@ -932,7 +1088,7 @@
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get dictionary of syncable properties for cross-project synchronization.</span>
 
@@ -986,7 +1142,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply syncable properties (from GetSyncableProperties) onto an item.</span>
 
 <span class="sd">        Inherited from BaseOperations; declared on the concrete class so static</span>
@@ -996,7 +1152,7 @@
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two morphological rules and return detailed differences.</span>
 
@@ -1043,19 +1199,76 @@
 
     <span class="c1"># ========== PRIVATE HELPERS ==========</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve HVO or object to LCM object.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">rule_or_hvo</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve an HVO or object to a concretely-typed LCM object.</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="sd">        Every resolved object is routed through ``cast_to_concrete``</span>
+<span class="sd">        (issue #561), replacing the previous ``ClassName ==</span>
+<span class="sd">        &quot;PartOfSpeech&quot;``-gated cast. That gate covered only one of the</span>
+<span class="sd">        four types this class resolves: ``PartOfSpeech``,</span>
+<span class="sd">        ``MoInflAffixTemplate``, ``MoEndoCompound`` and ``MoExoCompound``.</span>
+<span class="sd">        The other three came back as a bare ``ICmObject``, on which no</span>
+<span class="sd">        subtype-only member is reachable -- so a documented input shape</span>
+<span class="sd">        (HVO) raised ``AttributeError: &#39;ICmObject&#39; object has no</span>
+<span class="sd">        attribute &#39;Name&#39;`` on every call, e.g.</span>
+<span class="sd">        ``Duplicate(project.Object(hvo))``. The ``hasattr``-guarded</span>
+<span class="sd">        copies in ``Duplicate`` would likewise have been silently</span>
+<span class="sd">        skipped rather than reported.</span>
+
+<span class="sd">        ``cast_to_concrete`` is total -- an unrecognised ``ClassName`` (or</span>
+<span class="sd">        a failed cast) yields the original object unchanged -- and</span>
+<span class="sd">        ``lcm_casting``&#39;s registry already carries all four ClassNames</span>
+<span class="sd">        above, so this is a strict widening of the old gate rather than a</span>
+<span class="sd">        behaviour change for any call that works today.</span>
+
+<span class="sd">        ``rule_or_hvo`` may also be a ``CompoundRule``/``AffixTemplate``</span>
+<span class="sd">        wrapper item from ``GetAll()``/``GetAllCompoundRules()``/</span>
+<span class="sd">        ``GetAllAffixTemplates()``/``GetAllAffixTemplatesForPOS()``</span>
+<span class="sd">        (issue #449); such wrappers are unwrapped to their raw LCM object</span>
+<span class="sd">        before any further processing, since a wrapper cannot be compared</span>
+<span class="sd">        against or removed/indexed within a raw LCM sequence, and</span>
+<span class="sd">        assigning through a wrapper&#39;s proxied setters (e.g.</span>
+<span class="sd">        ``rule.StratumRA = ...``) is a silent no-op.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
+
+        <span class="n">rule_or_hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcm</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">rule_or_hvo</span>
+
+        <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__AllAffixSlotHvos</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;HVOs in ``IPartOfSpeech.AllAffixSlots``, or None if that property is absent.</span>
+
+<span class="sd">        Confirmed on the live interface with ``clr.GetClrType``:</span>
+<span class="sd">        ``AllAffixSlots`` is ``IEnumerable&lt;IMoInflAffixSlot&gt;``. It is the</span>
+<span class="sd">        category&#39;s own affix slots plus the owner&#39;s ``AllAffixSlots``,</span>
+<span class="sd">        walking up. There is no same-owner HVO fallback.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IPartOfSpeech</span> <span class="k">as</span> <span class="n">PartOfSpeechIface</span>
+
+        <span class="n">prop</span> <span class="o">=</span> <span class="n">clr</span><span class="o">.</span><span class="n">GetClrType</span><span class="p">(</span><span class="n">PartOfSpeechIface</span><span class="p">)</span><span class="o">.</span><span class="n">GetProperty</span><span class="p">(</span><span class="s2">&quot;AllAffixSlots&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">prop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">slots</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">AllAffixSlots</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">slots</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Hvo</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">slots</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get writing system handle, defaulting to analysis WS.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__WalkPOSForTemplates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WalkPOSForTemplates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Recursively yield affix templates from a POS and its subcategories.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">template</span> <span class="ow">in</span> <span class="n">pos</span><span class="o">.</span><span class="n">AffixTemplatesOS</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">template</span>
@@ -1069,7 +1282,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1085,7 +1298,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1100,8 +1313,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

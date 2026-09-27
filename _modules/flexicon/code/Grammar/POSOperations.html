@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Grammar.POSOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,32 +55,43 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import BaseOperations parent class and decorators</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="n">IPartOfSpeechFactory</span><span class="p">,</span> <span class="n">IPartOfSpeech</span><span class="p">,</span> <span class="n">ILexEntryRepository</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.KernelInterfaces</span> <span class="kn">import</span> <span class="n">ITsString</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel.Core.Text</span> <span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ILexEntryRepository</span><span class="p">,</span>
+    <span class="n">IMoInflAffixSlot</span><span class="p">,</span>
+    <span class="n">IMoInflAffixSlotFactory</span><span class="p">,</span>
+    <span class="n">IPartOfSpeech</span><span class="p">,</span>
+    <span class="n">IPartOfSpeechFactory</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_NullParameterError</span><span class="p">,</span>  <span class="c1"># noqa: F401  -- raised by _ValidateParam</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
+    <span class="n">FP_ReadOnlyError</span><span class="p">,</span>  <span class="c1"># noqa: F401  -- raised by _EnsureWriteEnabled</span>
 <span class="p">)</span>
 
 <span class="c1"># Import LCM casting utilities for pythonnet interface casting</span>
-<span class="kn">from</span> <span class="nn">..lcm_casting</span> <span class="kn">import</span> <span class="n">get_pos_from_msa</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_pos_from_msa</span>
 
 <span class="c1"># Import string utilities</span>
-<span class="kn">from</span> <span class="nn">..Shared.string_utils</span> <span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span><span class="p">,</span> <span class="n">normalize_text</span>
+
+<span class="c1"># Import the AffixSlot wrapper (issue #542 read-side pair for CreateAffixSlot)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.affix_slot</span><span class="w"> </span><span class="kn">import</span> <span class="n">AffixSlot</span>
 
 <span class="c1"># Catalog (GOLDEtic) parsing helpers</span>
-<span class="kn">from</span> <span class="nn">..Shared.catalog</span> <span class="kn">import</span> <span class="n">parse_etic_catalog</span>
-<span class="kn">from</span> <span class="nn">..Shared.catalog_backed</span> <span class="kn">import</span> <span class="n">CatalogBackedMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.catalog</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_etic_catalog</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.catalog_backed</span><span class="w"> </span><span class="kn">import</span> <span class="n">CatalogBackedMixin</span>
 
 
 <div class="viewcode-block" id="POSOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.POSOperations.POSOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">POSOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">,</span> <span class="n">CatalogBackedMixin</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">POSOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">,</span> <span class="n">CatalogBackedMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing Parts of Speech in a</span>
 <span class="sd">    FieldWorks project.</span>
@@ -125,7 +136,7 @@
     <span class="n">DOMAIN_LABEL</span> <span class="o">=</span> <span class="s2">&quot;POS&quot;</span>
     <span class="n">_supports_recursive_entries</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize POSOperations with a FLExProject instance.</span>
 
@@ -134,7 +145,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Specify which sequence to reorder for POS.</span>
 <span class="sd">        For POS, we reorder parent.SubPossibilitiesOS</span>
@@ -143,7 +154,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all parts of speech in the project.</span>
 
@@ -179,7 +190,7 @@
         <span class="k">if</span> <span class="n">pos_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="k">def</span> <span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
                 <span class="n">pos</span> <span class="o">=</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
                 <span class="k">yield</span> <span class="n">pos</span>
@@ -189,15 +200,21 @@
         <span class="k">yield from</span> <span class="n">walk</span><span class="p">(</span><span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">catalogSourceId</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">catalogSourceId</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new part of speech.</span>
+
+<span class="sd">        This is the canonical creation path for both top-level categories</span>
+<span class="sd">        and subcategories; AddSubcategory delegates to it.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): The name of the POS (e.g., &quot;Noun&quot;, &quot;Verb&quot;).</span>
 <span class="sd">            abbreviation (str): Short abbreviation (e.g., &quot;N&quot;, &quot;V&quot;).</span>
 <span class="sd">            catalogSourceId (str, optional): Optional catalog identifier for</span>
 <span class="sd">                linguistic databases (e.g., &quot;GOLD:Noun&quot;). Defaults to None.</span>
+<span class="sd">            parent: Optional parent IPartOfSpeech object or HVO. If None</span>
+<span class="sd">                (default), creates a top-level category; if given, creates</span>
+<span class="sd">                a subcategory of that parent. Defaults to None.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IPartOfSpeech: The newly created POS object.</span>
@@ -205,8 +222,8 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
 <span class="sd">            FP_NullParameterError: If name or abbreviation is None.</span>
-<span class="sd">            FP_ParameterError: If name or abbreviation is empty, or if a POS</span>
-<span class="sd">                with this name already exists.</span>
+<span class="sd">            FP_ParameterError: If name or abbreviation is empty, or if a</span>
+<span class="sd">                top-level POS with this name already exists.</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
@@ -218,14 +235,19 @@
 <span class="sd">            &gt;&gt;&gt; print(posOps.GetAbbreviation(proper_noun))</span>
 <span class="sd">            PN</span>
 
+<span class="sd">            &gt;&gt;&gt; # A subcategory is just a Create with a parent</span>
+<span class="sd">            &gt;&gt;&gt; proper = posOps.Create(&quot;Proper Noun&quot;, &quot;PN&quot;, parent=noun)</span>
+
 <span class="sd">        Notes:</span>
-<span class="sd">            - Name must be unique within the project</span>
+<span class="sd">            - Top-level names must be unique within the project (the</span>
+<span class="sd">              pre-existing Exists check); subcategory names are not</span>
+<span class="sd">              uniqueness-checked, preserving AddSubcategory&#39;s behaviour.</span>
 <span class="sd">            - Abbreviations don&#39;t need to be unique but should be distinct</span>
 <span class="sd">            - CatalogSourceId links to linguistic ontologies (e.g., GOLD)</span>
 <span class="sd">            - The POS is created in the default analysis writing system</span>
 
 <span class="sd">        See Also:</span>
-<span class="sd">            Delete, Exists, Find</span>
+<span class="sd">            AddSubcategory, Delete, Exists, Find</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
@@ -237,14 +259,21 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">abbreviation</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">abbreviation</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Abbreviation cannot be empty&quot;</span><span class="p">)</span>
 
+        <span class="n">parent_pos</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;parent&quot;</span><span class="p">)</span>
+            <span class="n">parent_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+
+        <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Add subcategory &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span> <span class="k">if</span> <span class="n">parent_pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;Create part of speech &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+
         <span class="c1"># If the caller supplied a &quot;GOLD:...&quot; catalog id, defer to the</span>
         <span class="c1"># catalog path so the POS gets the canonical GUID and any extra</span>
         <span class="c1"># WS data the catalog provides. We then overlay the user&#39;s</span>
         <span class="c1"># name/abbreviation on top so explicit args still win.</span>
         <span class="k">if</span> <span class="n">catalogSourceId</span> <span class="ow">and</span> <span class="n">catalogSourceId</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;GOLD:&quot;</span><span class="p">):</span>
             <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create part of speech &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
-                <span class="n">new_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CreateFromCatalog</span><span class="p">(</span><span class="n">catalogSourceId</span><span class="p">)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="n">label</span><span class="p">):</span>
+                <span class="n">new_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CreateFromCatalog</span><span class="p">(</span><span class="n">catalogSourceId</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">parent_pos</span><span class="p">)</span>
                 <span class="c1"># Overlay user-supplied name and abbreviation in the</span>
                 <span class="c1"># analysis WS (catalog values stay in other WSes).</span>
                 <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
@@ -253,8 +282,9 @@
                 <span class="n">new_pos</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">new_pos</span>
 
-        <span class="c1"># Check if POS already exists</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+        <span class="c1"># Check if POS already exists (top-level creates only, preserving</span>
+        <span class="c1"># AddSubcategory&#39;s no-uniqueness-check behaviour for children).</span>
+        <span class="k">if</span> <span class="n">parent_pos</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Part of Speech &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; already exists&quot;</span><span class="p">)</span>
 
         <span class="c1"># Get the writing system handle</span>
@@ -262,12 +292,16 @@
 
         <span class="c1"># Create the new POS using the factory</span>
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPartOfSpeechFactory</span><span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create part of speech &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="n">label</span><span class="p">):</span>
             <span class="n">new_pos</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-            <span class="c1"># Add to the POS list (must be done before setting properties)</span>
-            <span class="n">pos_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PartsOfSpeechOA</span>
-            <span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_pos</span><span class="p">)</span>
+            <span class="c1"># Attach to the parent subcategory list or the top-level POS</span>
+            <span class="c1"># list (must be done before setting properties)</span>
+            <span class="k">if</span> <span class="n">parent_pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parent_pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_pos</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pos_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PartsOfSpeechOA</span>
+                <span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_pos</span><span class="p">)</span>
 
             <span class="c1"># Set name and abbreviation</span>
             <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
@@ -283,7 +317,7 @@
             <span class="k">return</span> <span class="n">new_pos</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a part of speech.</span>
 
@@ -324,7 +358,7 @@
             <span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a part of speech with the given name exists.</span>
 
@@ -355,7 +389,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find a part of speech by name.</span>
 
@@ -391,7 +425,7 @@
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
 
         <span class="c1"># Search recursively through POS hierarchy</span>
-        <span class="k">def</span> <span class="nf">search_pos_list</span><span class="p">(</span><span class="n">pos_collection</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">search_pos_list</span><span class="p">(</span><span class="n">pos_collection</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">pos_collection</span><span class="p">:</span>
                 <span class="n">pos_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
                 <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">pos_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
@@ -414,7 +448,7 @@
         <span class="k">return</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="k">if</span> <span class="n">found</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the name of a part of speech.</span>
 
@@ -450,7 +484,7 @@
         <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the name of a part of speech.</span>
 
@@ -490,7 +524,7 @@
             <span class="n">pos</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the abbreviation of a part of speech.</span>
 
@@ -523,7 +557,7 @@
         <span class="k">return</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">abbr</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">abbr</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the abbreviation of a part of speech.</span>
 
@@ -563,7 +597,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSubcategories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSubcategories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the subcategories of a part of speech.</span>
 
@@ -605,7 +639,7 @@
             <span class="k">return</span> <span class="p">[</span><span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">]</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">def</span> <span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
                 <span class="n">child</span> <span class="o">=</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
                 <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
@@ -615,7 +649,7 @@
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetParent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the parent category of a part of speech.</span>
 
@@ -681,14 +715,19 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">AddSubcategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddSubcategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">catalogSourceId</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a subcategory to a part of speech.</span>
+
+<span class="sd">        Thin wrapper over Create with parent=pos_or_hvo; all creation</span>
+<span class="sd">        logic (including the &quot;GOLD:...&quot; catalog path) lives on Create.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO to add subcategory to.</span>
 <span class="sd">            name (str): The name of the subcategory.</span>
 <span class="sd">            abbreviation (str): Short abbreviation for the subcategory.</span>
+<span class="sd">            catalogSourceId (str, optional): Optional catalog identifier for</span>
+<span class="sd">                linguistic databases (e.g., &quot;GOLD:Noun&quot;). Defaults to None.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IPartOfSpeech: The newly created subcategory object.</span>
@@ -705,48 +744,36 @@
 <span class="sd">            &gt;&gt;&gt; print(posOps.GetName(proper_noun))</span>
 <span class="sd">            Proper Noun</span>
 
+<span class="sd">            &gt;&gt;&gt; proper_noun = posOps.AddSubcategory(noun, &quot;Proper Noun&quot;, &quot;PN&quot;, &quot;GOLD:Noun&quot;)</span>
+
 <span class="sd">        Notes:</span>
-<span class="sd">            - The subcategory is created as a child of the parent POS</span>
-<span class="sd">            - Subcategories inherit the parent&#39;s properties where applicable</span>
-<span class="sd">            - Can be nested to create multi-level POS hierarchies</span>
-<span class="sd">            - Uses default analysis writing system</span>
+<span class="sd">            - Equivalent to ``Create(name, abbreviation,</span>
+<span class="sd">              catalogSourceId=catalogSourceId, parent=pos_or_hvo)``.</span>
+<span class="sd">            - If the catalog GUID already exists, the existing item is</span>
+<span class="sd">              returned with name/abbreviation overlaid, not re-parented</span>
+<span class="sd">              (same idempotency as CreateFromCatalog).</span>
 
 <span class="sd">        See Also:</span>
-<span class="sd">            RemoveSubcategory, GetSubcategories, Create</span>
+<span class="sd">            Create, RemoveSubcategory, GetSubcategories</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="s2">&quot;abbreviation&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">abbreviation</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">abbreviation</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Abbreviation cannot be empty&quot;</span><span class="p">)</span>
-
-        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
-        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
-
-        <span class="c1"># Create the subcategory using the factory</span>
-        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPartOfSpeechFactory</span><span class="p">)</span>
+        <span class="c1"># Bracketed per D5 (the scanner cannot see through same-class</span>
+        <span class="c1"># delegation): joins Create&#39;s inner transaction via nesting</span>
+        <span class="c1"># (B1) rather than opening a separate undo unit. House pattern:</span>
+        <span class="c1"># Shared/FilterOperations.ImportFilter, Shared/MediaOperations.</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Add subcategory &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
-            <span class="n">subcat</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
-
-            <span class="c1"># Add to parent&#39;s SubPossibilitiesOS (must be done before setting properties)</span>
-            <span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">subcat</span><span class="p">)</span>
-
-            <span class="c1"># Set name and abbreviation</span>
-            <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-            <span class="n">subcat</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
-
-            <span class="n">mkstr_abbr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-            <span class="n">subcat</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">subcat</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span>
+                <span class="n">name</span><span class="p">,</span>
+                <span class="n">abbreviation</span><span class="p">,</span>
+                <span class="n">catalogSourceId</span><span class="o">=</span><span class="n">catalogSourceId</span><span class="p">,</span>
+                <span class="n">parent</span><span class="o">=</span><span class="n">pos_or_hvo</span><span class="p">,</span>
+            <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">RemoveSubcategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">subcat_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveSubcategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">subcat_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a subcategory from a part of speech.</span>
 
@@ -789,7 +816,7 @@
             <span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">subcat</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetCatalogSourceId</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCatalogSourceId</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the catalog source ID of a part of speech.</span>
 
@@ -825,7 +852,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetInflectionClasses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetInflectionClasses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all inflection classes associated with a part of speech.</span>
 
@@ -866,7 +893,7 @@
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAffixSlots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAffixSlots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all affix slots associated with a part of speech.</span>
 
@@ -874,7 +901,12 @@
 <span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            list: List of affix slot objects (empty list if none).</span>
+<span class="sd">            list: List of AffixSlot wrapper objects (empty list if none).</span>
+<span class="sd">            Each wrapper exposes ``.name`` (str), ``.optional`` (bool), and</span>
+<span class="sd">            ``.affixes`` (the IMoInflAffMsa objects filling the slot), and</span>
+<span class="sd">            still proxies raw LCM member access (``.Name``, ``.Optional``,</span>
+<span class="sd">            ``.Hvo``) through to the underlying IMoInflAffixSlot for</span>
+<span class="sd">            backward compatibility with existing callers.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If pos_or_hvo is None.</span>
@@ -884,7 +916,7 @@
 <span class="sd">            &gt;&gt;&gt; verb = posOps.Find(&quot;Verb&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; slots = posOps.GetAffixSlots(verb)</span>
 <span class="sd">            &gt;&gt;&gt; for slot in slots:</span>
-<span class="sd">            ...     print(slot.Name)</span>
+<span class="sd">            ...     print(slot.name)</span>
 <span class="sd">            Tense</span>
 <span class="sd">            Aspect</span>
 <span class="sd">            Mood</span>
@@ -896,17 +928,282 @@
 <span class="sd">            - Used for morphological parsing and generation</span>
 
 <span class="sd">        See Also:</span>
-<span class="sd">            GetInflectionClasses</span>
+<span class="sd">            GetInflectionClasses, CreateAffixSlot, GetSlotName, IsSlotOptional,</span>
+<span class="sd">            GetAffixesInSlot</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
 
         <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># IPartOfSpeech has AffixSlotsOC</span>
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">AffixSlotsOC</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">AffixSlot</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span> <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="n">pos</span><span class="o">.</span><span class="n">AffixSlotsOC</span><span class="p">]</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetEntryCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateAffixSlot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create an inflectional affix slot owned by a part of speech.</span>
+
+<span class="sd">        Access via FLExProject as ``project.POS.CreateAffixSlot``. The new</span>
+<span class="sd">        slot is attached to ``IPartOfSpeech.AffixSlotsOC`` before its Name</span>
+<span class="sd">        or Optional is written. Place it on a template with</span>
+<span class="sd">        ``project.MorphRules.AddSlotToTemplate``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos: The IPartOfSpeech object or HVO that will own the slot.</span>
+<span class="sd">            name (str): Slot name, written in the analysis writing system.</span>
+<span class="sd">            optional (bool): Whether the slot may be left empty. Defaults</span>
+<span class="sd">                to False. A new FLEx affix slot is obligatory; pass True</span>
+<span class="sd">                to create an optional slot.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            AffixSlot: A wrapper around the newly created IMoInflAffixSlot,</span>
+<span class="sd">            exposing ``.name`` (str), ``.optional`` (bool), and ``.affixes``,</span>
+<span class="sd">            while still proxying raw LCM member access (``.Name``,</span>
+<span class="sd">            ``.Optional``, ``.Hvo``) through to the underlying</span>
+<span class="sd">            IMoInflAffixSlot for backward compatibility. Pass it directly</span>
+<span class="sd">            to ``MorphRules.AddSlotToTemplate`` or</span>
+<span class="sd">            ``MSA.SetInflAffMsaSlots``; both unwrap it automatically.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If pos or name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; verb = project.POS.Find(&quot;Verb&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; slot = project.POS.CreateAffixSlot(verb, &quot;PossConcord&quot;, optional=False)</span>
+<span class="sd">            &gt;&gt;&gt; slot.name</span>
+<span class="sd">            &#39;PossConcord&#39;</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAffixSlots</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="s2">&quot;pos&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IMoInflAffixSlotFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create affix slot &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="n">slot</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Attach before property writes (Phase 2 ownership rule).</span>
+            <span class="n">pos</span><span class="o">.</span><span class="n">AffixSlotsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+
+            <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">slot</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+            <span class="c1"># Boolean property is Optional (clr reflection, SIL.LCModel 11).</span>
+            <span class="n">slot</span><span class="o">.</span><span class="n">Optional</span> <span class="o">=</span> <span class="n">optional</span>
+
+            <span class="k">return</span> <span class="n">AffixSlot</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSlotName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of an inflectional affix slot.</span>
+
+<span class="sd">        Read-side pair for ``CreateAffixSlot`` (issue #542).</span>
+<span class="sd">        ``IMoInflAffixSlot.Name`` is an ``IMultiUnicode``, not a string;</span>
+<span class="sd">        this method reads it and returns plain text.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slot_or_hvo: The IMoInflAffixSlot object, its HVO, or an</span>
+<span class="sd">                AffixSlot wrapper (from ``GetAffixSlots`` or</span>
+<span class="sd">                ``AffixTemplate.prefix_slots``/etc.).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The slot name, or empty string if not set (FLEx&#39;s</span>
+<span class="sd">            ``***`` null marker is normalized to empty).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If slot_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If slot_or_hvo does not resolve to an</span>
+<span class="sd">                IMoInflAffixSlot.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; verb = posOps.Find(&quot;Verb&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; slot = posOps.CreateAffixSlot(verb, &quot;Tense&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; posOps.GetSlotName(slot)</span>
+<span class="sd">            &#39;Tense&#39;</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetSlotName, IsSlotOptional, GetAffixesInSlot</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">,</span> <span class="s2">&quot;slot_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">slot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSlot</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">slot</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetSlotName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of an inflectional affix slot.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slot_or_hvo: The IMoInflAffixSlot object, its HVO, or an</span>
+<span class="sd">                AffixSlot wrapper.</span>
+<span class="sd">            name (str): The new name.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If slot_or_hvo or name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty, or slot_or_hvo does not</span>
+<span class="sd">                resolve to an IMoInflAffixSlot.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; slot = posOps.CreateAffixSlot(verb, &quot;Tense&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; posOps.SetSlotName(slot, &quot;Aspect&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetSlotName, IsSlotOptional, SetSlotOptional</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">,</span> <span class="s2">&quot;slot_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">slot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSlot</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set affix slot name &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="n">slot</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsSlotOptional</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check whether an inflectional affix slot may be left empty.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slot_or_hvo: The IMoInflAffixSlot object, its HVO, or an</span>
+<span class="sd">                AffixSlot wrapper.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the slot is optional, False if obligatory</span>
+<span class="sd">            (FLEx&#39;s default for a newly-created slot).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If slot_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If slot_or_hvo does not resolve to an</span>
+<span class="sd">                IMoInflAffixSlot.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; slot = posOps.CreateAffixSlot(verb, &quot;PossConcord&quot;, optional=True)</span>
+<span class="sd">            &gt;&gt;&gt; posOps.IsSlotOptional(slot)</span>
+<span class="sd">            True</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetSlotOptional, GetSlotName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">,</span> <span class="s2">&quot;slot_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">slot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSlot</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">slot</span><span class="o">.</span><span class="n">Optional</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetSlotOptional</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_or_hvo</span><span class="p">,</span> <span class="n">optional</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set whether an inflectional affix slot may be left empty.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slot_or_hvo: The IMoInflAffixSlot object, its HVO, or an</span>
+<span class="sd">                AffixSlot wrapper.</span>
+<span class="sd">            optional (bool): True to make the slot optional, False to make</span>
+<span class="sd">                it obligatory.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If slot_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If slot_or_hvo does not resolve to an</span>
+<span class="sd">                IMoInflAffixSlot.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; slot = posOps.CreateAffixSlot(verb, &quot;PossConcord&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; posOps.SetSlotOptional(slot, True)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsSlotOptional, SetSlotName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">,</span> <span class="s2">&quot;slot_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">slot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSlot</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set affix slot optional=</span><span class="si">{</span><span class="nb">bool</span><span class="p">(</span><span class="n">optional</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="n">slot</span><span class="o">.</span><span class="n">Optional</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">optional</span><span class="p">)</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAffixesInSlot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the inflectional-affix MSAs that fill an affix slot.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slot_or_hvo: The IMoInflAffixSlot object, its HVO, or an</span>
+<span class="sd">                AffixSlot wrapper.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: IMoInflAffMsa objects whose SlotsRC contains this slot</span>
+<span class="sd">            (empty list if none).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If slot_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If slot_or_hvo does not resolve to an</span>
+<span class="sd">                IMoInflAffixSlot.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; slot = posOps.CreateAffixSlot(verb, &quot;Tense&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.MSA.SetInflAffMsaSlots(sense, [slot])</span>
+<span class="sd">            &gt;&gt;&gt; affixes = posOps.GetAffixesInSlot(slot)</span>
+<span class="sd">            &gt;&gt;&gt; len(affixes)</span>
+<span class="sd">            1</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Read via ``IMoInflAffixSlot.Affixes``, the direct</span>
+<span class="sd">              back-reference to every ``IMoInflAffMsa`` whose ``SlotsRC``</span>
+<span class="sd">              contains this slot (confirmed by live reflection: returns</span>
+<span class="sd">              ``IEnumerable&lt;IMoInflAffMsa&gt;``). This is the single most</span>
+<span class="sd">              direct LCM path -- it is the exact inverse of</span>
+<span class="sd">              ``MSAOperations.GetInflAffMsaSlots`` (issue #543), which</span>
+<span class="sd">              reads ``IMoInflAffMsa.SlotsRC`` from the MSA side. No</span>
+<span class="sd">              repository scan or entry walk is needed.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAffixSlots, MSA.GetInflAffMsaSlots, MSA.SetInflAffMsaSlots</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">,</span> <span class="s2">&quot;slot_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">slot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSlot</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">)</span>
+
+        <span class="n">affixes</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="s2">&quot;Affixes&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">affixes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">affixes</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetEntryCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Count the number of lexical entries using this part of speech.</span>
 
@@ -970,7 +1267,7 @@
         <span class="k">return</span> <span class="n">count</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Duplicate a part of speech, creating a new copy with a new GUID.</span>
 
@@ -1071,7 +1368,7 @@
 
             <span class="k">return</span> <span class="n">duplicate</span>
 
-    <span class="k">def</span> <span class="nf">__DuplicateSubcategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_sub</span><span class="p">,</span> <span class="n">parent_duplicate</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__DuplicateSubcategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_sub</span><span class="p">,</span> <span class="n">parent_duplicate</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Helper method to recursively duplicate a subcategory.</span>
 
@@ -1127,15 +1424,15 @@
 
     <span class="c1"># --- CatalogBackedMixin hooks --------------------------------------</span>
 
-    <span class="k">def</span> <span class="nf">_get_root_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_root_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the top-level owner (PartsOfSpeechOA).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PartsOfSpeechOA</span>
 
-    <span class="k">def</span> <span class="nf">_get_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve the IPartOfSpeech factory for the mixin&#39;s Path B.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPartOfSpeechFactory</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_factory_create_attached</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_factory_create_attached</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Path A: try the 2-arg factory overload that creates and attaches</span>
 <span class="sd">        in one step. parent_obj is either an IPartOfSpeech (subcategory</span>
@@ -1161,7 +1458,7 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">_path_b_attach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_obj</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_path_b_attach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_obj</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Path B fallback: attach a just-created free-floating POS to the</span>
 <span class="sd">        right owner. parent_obj is the IPartOfSpeech parent for a</span>
@@ -1176,17 +1473,17 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_get_root_list</span><span class="p">()</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_obj</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_cast_to_domain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cast_to_domain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the IPartOfSpeech view of a raw LCM POS object.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_set_localized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">abbrev</span><span class="p">,</span> <span class="n">def_</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_localized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">abbrev</span><span class="p">,</span> <span class="n">def_</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-WS multistring writes for Name/Abbreviation/Description.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">,</span> <span class="n">abbrev</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Description</span><span class="p">,</span> <span class="n">def_</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_walk_existing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_walk_existing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Yield (IPartOfSpeech, parent_or_None) for every POS in the</span>
 <span class="sd">        project, walking SubPossibilitiesOS recursively. parent is None</span>
@@ -1197,7 +1494,7 @@
         <span class="k">if</span> <span class="n">pos_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="k">def</span> <span class="nf">_walk</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_walk</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
                 <span class="n">pos</span> <span class="o">=</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
                 <span class="k">yield</span> <span class="n">pos</span><span class="p">,</span> <span class="n">parent</span>
@@ -1206,7 +1503,7 @@
 
         <span class="k">yield from</span> <span class="n">_walk</span><span class="p">(</span><span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_handle_entry_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">created_obj</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_entry_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">created_obj</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        POS uses _supports_recursive_entries=True so the mixin recurses</span>
 <span class="sd">        on entry.children itself; this hook is a no-op.</span>
@@ -1215,7 +1512,7 @@
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IPartOfSpeech.</span>
 
@@ -1246,11 +1543,50 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">obj</span> <span class="o">=</span> <span class="n">pos_or_hvo</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcmObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;PartOfSpeech&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveSlot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO, raw LCM object, or AffixSlot wrapper to IMoInflAffixSlot.</span>
+
+<span class="sd">        Unlike ``__ResolveObject`` (which never raises on a ClassName</span>
+<span class="sd">        miss -- deliberately, per its own docstring), this resolver</span>
+<span class="sd">        *really casts*: it performs an actual pythonnet interface cast to</span>
+<span class="sd">        ``IMoInflAffixSlot`` and raises ``FP_ParameterError`` when the cast</span>
+<span class="sd">        fails, rather than silently handing back an object that is missing</span>
+<span class="sd">        the members every slot reader/writer method here needs (``Name``,</span>
+<span class="sd">        ``Optional``, ``Affixes``). The 4.10.0 live gate (commit</span>
+<span class="sd">        9218b3c) found resolvers &quot;that never cast&quot; across the #455-#508</span>
+<span class="sd">        series; this method exists specifically to not repeat that shape.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slot_or_hvo: An ``IMoInflAffixSlot`` object, its HVO (int), or</span>
+<span class="sd">                an ``AffixSlot`` wrapper (unwrapped via</span>
+<span class="sd">                ``_UnwrapLcmObject`` before casting).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoInflAffixSlot: The resolved, cast slot object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If the resolved object cannot be cast to</span>
+<span class="sd">                IMoInflAffixSlot (wrong type, or a stale/invalid HVO).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_UnwrapLcmObject</span><span class="p">(</span><span class="n">slot_or_hvo</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">IMoInflAffixSlot</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;slot_or_hvo must be an IMoInflAffixSlot, its HVO, or an &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;AffixSlot wrapper; got </span><span class="si">{</span><span class="n">obj</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
 
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
     <span class="c1">#</span>
@@ -1272,7 +1608,7 @@
     <span class="c1"># methods route through.</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get dictionary of syncable properties for cross-project synchronization.</span>
 
@@ -1359,7 +1695,7 @@
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Apply syncable properties (from GetSyncableProperties) onto a POS.</span>
 
@@ -1440,7 +1776,7 @@
         <span class="s2">&quot;InherFeatVal&quot;</span><span class="p">,</span> <span class="s2">&quot;InherFeatValGuid&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__CaptureFeatureStrucProp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Capture one C1 &quot;PartOfSpeech&quot; feature-struct row into ``props``,</span>
 <span class="sd">        in place.</span>
@@ -1473,7 +1809,7 @@
             <span class="n">props</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetFeatureStruc</span><span class="p">(</span><span class="n">struct</span><span class="p">)</span>
             <span class="n">props</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">Guid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">props</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ApplyFeatureStrucProp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">props</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Apply one C1 &quot;PartOfSpeech&quot; feature-struct row from ``props`` onto</span>
 <span class="sd">        ``pos``, if present.</span>
@@ -1511,8 +1847,118 @@
                 <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;PartOfSpeech (</span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
             <span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ReadPOSFeatureStrucSpec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">slot</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a C4 feature-struct dict for one PartOfSpeech slot, or None.&quot;&quot;&quot;</span>
+        <span class="n">concrete_owner</span><span class="p">,</span> <span class="n">prop_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveFeatureStrucOwner</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="n">slot</span><span class="p">)</span>
+        <span class="n">struct</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">concrete_owner</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">struct</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetFeatureStruc</span><span class="p">(</span><span class="n">struct</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WritePOSFeatureStrucSpec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">struct_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply a C4 feature-struct dict onto one PartOfSpeech slot.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;spec cannot be None; pass </span><span class="si">{}</span><span class="s2"> to clear entries&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;spec must be a dict (C4 feature-struct shape), got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">concrete_owner</span><span class="p">,</span> <span class="n">prop_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveFeatureStrucOwner</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="n">slot</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ApplyFeatureStruc</span><span class="p">(</span>
+            <span class="n">concrete_owner</span><span class="p">,</span>
+            <span class="n">prop_name</span><span class="p">,</span>
+            <span class="n">spec</span><span class="p">,</span>
+            <span class="n">struct_guid</span><span class="o">=</span><span class="n">struct_guid</span><span class="p">,</span>
+            <span class="n">on_unresolved</span><span class="o">=</span><span class="s2">&quot;raise&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;PartOfSpeech (</span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDefaultFeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read ``DefaultFeaturesOA`` as a C4 feature-structure dict.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: ``IPartOfSpeech`` or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict or None: Recursive feature-structure spec (same shape as</span>
+<span class="sd">            ``GetSyncableProperties()[&#39;DefaultFeatures&#39;]`` when present),</span>
+<span class="sd">            or ``None`` when ``DefaultFeaturesOA`` is unset.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; noun = project.POS.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; spec = project.POS.GetDefaultFeatures(noun)</span>
+<span class="sd">            &gt;&gt;&gt; if spec:</span>
+<span class="sd">            ...     print(spec.get(&quot;specs&quot;, {}))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ReadPOSFeatureStrucSpec</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="s2">&quot;Default&quot;</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDefaultFeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">struct_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Replace ``DefaultFeaturesOA`` from a C4 feature-structure dict.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: ``IPartOfSpeech`` or HVO.</span>
+<span class="sd">            spec (dict): C4 recursive dict (see ``BaseOperations._GetFeatureStruc``).</span>
+<span class="sd">            struct_guid (str, optional): Preserve or assign struct GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: When the project is not write-enabled.</span>
+<span class="sd">            FP_ParameterError: On malformed ``spec`` or unresolved feature GUIDs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set POS DefaultFeatures&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__WritePOSFeatureStrucSpec</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="s2">&quot;Default&quot;</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">struct_guid</span><span class="o">=</span><span class="n">struct_guid</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetInherFeatVal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read ``InherFeatValOA`` as a C4 feature-structure dict.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: ``IPartOfSpeech`` or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict or None: Same shape as ``GetSyncableProperties()[&#39;InherFeatVal&#39;]``</span>
+<span class="sd">            when present, or ``None`` when ``InherFeatValOA`` is unset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ReadPOSFeatureStrucSpec</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="s2">&quot;InherFeatVal&quot;</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetInherFeatVal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">struct_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Replace ``InherFeatValOA`` from a C4 feature-structure dict.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: ``IPartOfSpeech`` or HVO.</span>
+<span class="sd">            spec (dict): C4 recursive dict.</span>
+<span class="sd">            struct_guid (str, optional): Preserve or assign struct GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: When the project is not write-enabled.</span>
+<span class="sd">            FP_ParameterError: On malformed ``spec`` or unresolved feature GUIDs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set POS InherFeatVal&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__WritePOSFeatureStrucSpec</span><span class="p">(</span>
+                <span class="n">pos</span><span class="p">,</span> <span class="s2">&quot;InherFeatVal&quot;</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">struct_guid</span><span class="o">=</span><span class="n">struct_guid</span>
+            <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare two parts of speech and return detailed differences.</span>
 
@@ -1573,7 +2019,7 @@
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
 
@@ -1593,7 +2039,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1609,7 +2055,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1624,8 +2070,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

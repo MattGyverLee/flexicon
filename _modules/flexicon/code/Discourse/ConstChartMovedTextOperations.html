@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>flexicon.code.Discourse.ConstChartMovedTextOperations &#8212; flexicon  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=bc59a08c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
     <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
-    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -20,7 +20,7 @@
 
   </head><body>
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,25 +55,26 @@
 <span class="c1">#</span>
 
 <span class="c1"># Import BaseOperations parent class</span>
-<span class="kn">from</span> <span class="nn">..BaseOperations</span> <span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
 
 <span class="c1"># Import FLEx LCM types</span>
-<span class="kn">from</span> <span class="nn">SIL.LCModel</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IConstChartMovedTextMarker</span><span class="p">,</span>
     <span class="n">IConstChartMovedTextMarkerFactory</span><span class="p">,</span>
+    <span class="n">IConstChartRow</span><span class="p">,</span>
     <span class="n">IConstChartWordGroup</span><span class="p">,</span>
     <span class="n">IDsConstChart</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Import flexlibs exceptions</span>
-<span class="kn">from</span> <span class="nn">..FLExProject</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FP_ParameterError</span><span class="p">,</span>
 <span class="p">)</span>
 
 
 <div class="viewcode-block" id="ConstChartMovedTextOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Discourse.html#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations">[docs]</a>
-<span class="k">class</span> <span class="nc">ConstChartMovedTextOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConstChartMovedTextOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class provides operations for managing moved text markers in constituent</span>
 <span class="sd">    charts for discourse analysis in FieldWorks projects.</span>
@@ -106,7 +107,7 @@
 <span class="sd">        project.CloseProject()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize ConstChartMovedTextOperations with a FLExProject instance.</span>
 
@@ -118,7 +119,7 @@
     <span class="c1"># --- Core CRUD Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_group_or_hvo</span><span class="p">,</span> <span class="n">preposed</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_group_or_hvo</span><span class="p">,</span> <span class="n">preposed</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a moved text marker for a word group.</span>
 
@@ -152,8 +153,10 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Preposed text appears earlier than its canonical position</span>
 <span class="sd">            - Postposed text appears later than its canonical position</span>
-<span class="sd">            - Factory.Create() automatically adds marker to repository</span>
-<span class="sd">            - Word group can have only one moved text marker</span>
+<span class="sd">            - Marker is inserted into row.CellsOS (the row that owns the word</span>
+<span class="sd">              group); WordGroupRA and ColumnRA are set before Preposed to avoid</span>
+<span class="sd">              NullReferenceException (R5, #290 model).</span>
+<span class="sd">            - Word group can reference at most one moved text marker.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Delete, Find, IsPreposed, SetPreposed</span>
@@ -164,21 +167,33 @@
 
         <span class="n">word_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordGroup</span><span class="p">(</span><span class="n">word_group_or_hvo</span><span class="p">)</span>
 
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__RowFromWordGroup</span><span class="p">(</span><span class="n">word_group</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">row</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;word_group has no owning row (Owner is None)&quot;</span><span class="p">)</span>
+
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create moved text marker&quot;</span><span class="p">):</span>
-            <span class="c1"># Create the new moved text marker using the factory</span>
+            <span class="c1"># Create the new moved text marker using the factory.</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IConstChartMovedTextMarkerFactory</span><span class="p">)</span>
             <span class="n">new_marker</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-            <span class="c1"># Set as owned by the word group</span>
-            <span class="n">word_group</span><span class="o">.</span><span class="n">MovedTextMarkerOA</span> <span class="o">=</span> <span class="n">new_marker</span>
+            <span class="c1"># Step 1: insert into row.CellsOS BEFORE setting any property</span>
+            <span class="c1"># setters (avoids NullReferenceException -- R5, issue #290 model).</span>
+            <span class="n">row</span><span class="o">.</span><span class="n">CellsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_marker</span><span class="p">)</span>
 
-            <span class="c1"># Set preposed flag</span>
+            <span class="c1"># Step 2: set WordGroupRA and ColumnRA before Preposed.</span>
+            <span class="n">new_marker</span><span class="o">.</span><span class="n">WordGroupRA</span> <span class="o">=</span> <span class="n">word_group</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">word_group</span><span class="p">,</span> <span class="s2">&quot;ColumnRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">word_group</span><span class="o">.</span><span class="n">ColumnRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">new_marker</span><span class="o">.</span><span class="n">ColumnRA</span> <span class="o">=</span> <span class="n">word_group</span><span class="o">.</span><span class="n">ColumnRA</span>
+
+            <span class="c1"># Step 3: set Preposed after the above.</span>
+            <span class="c1"># VERIFY in T3: full path with live segments needed to confirm</span>
+            <span class="c1"># NRE is resolved (analogical basis: #290 resolution).</span>
             <span class="n">new_marker</span><span class="o">.</span><span class="n">Preposed</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">preposed</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">new_marker</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete a moved text marker.</span>
 
@@ -214,7 +229,7 @@
             <span class="n">marker</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_group_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_group_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find the moved text marker for a word group.</span>
 
@@ -236,8 +251,10 @@
 <span class="sd">            ...         print(&quot;Text is preposed&quot;)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns None if word group has no moved text marker</span>
-<span class="sd">            - Each word group can have at most one marker</span>
+<span class="sd">            - Returns None if no marker in the row references this word group.</span>
+<span class="sd">            - Navigates from the word group&#39;s owning row through row.CellsOS</span>
+<span class="sd">              and matches on WordGroupRA (R5/#290 model -- the marker is a peer</span>
+<span class="sd">              cell in the row, not an owned child of the word group).</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetAll</span>
@@ -246,11 +263,29 @@
 
         <span class="n">word_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordGroup</span><span class="p">(</span><span class="n">word_group_or_hvo</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">word_group</span><span class="o">.</span><span class="n">MovedTextMarkerOA</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">word_group</span><span class="p">,</span> <span class="s2">&quot;MovedTextMarkerOA&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__RowFromWordGroup</span><span class="p">(</span><span class="n">word_group</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">row</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">CellsOS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;ConstChartMovedTextMarker&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">IConstChartMovedTextMarker</span><span class="p">):</span>
+                    <span class="k">continue</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">marker</span> <span class="o">=</span> <span class="n">IConstChartMovedTextMarker</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">marker</span> <span class="o">=</span> <span class="n">cell</span>
+            <span class="n">wgra</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">marker</span><span class="p">,</span> <span class="s2">&quot;WordGroupRA&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">wgra</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">wgra</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">word_group</span><span class="o">.</span><span class="n">Hvo</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">wgra</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">word_group</span><span class="o">.</span><span class="n">Guid</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">marker</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chart_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chart_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all moved text markers in a constituent chart.</span>
 
@@ -271,9 +306,11 @@
 <span class="sd">            &gt;&gt;&gt; print(f&quot;Found {preposed_count} preposed markers&quot;)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns empty list if chart has no moved text markers</span>
-<span class="sd">            - Searches through all rows and word groups in chart</span>
-<span class="sd">            - Includes both preposed and postposed markers</span>
+<span class="sd">            - Returns empty list if chart has no moved text markers.</span>
+<span class="sd">            - Searches row.CellsOS directly for IConstChartMovedTextMarker</span>
+<span class="sd">              instances (R5/#290 model -- markers are peer cells, not word</span>
+<span class="sd">              group children).</span>
+<span class="sd">            - Includes both preposed and postposed markers.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Find, Create</span>
@@ -283,20 +320,23 @@
         <span class="n">chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveChart</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">)</span>
 
         <span class="n">markers</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="c1"># Iterate through all rows and word groups</span>
+        <span class="c1"># Iterate CellsOS directly; markers are peer cells in the row.</span>
         <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">word_group</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">CellsOS</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">word_group</span><span class="p">,</span> <span class="n">IConstChartWordGroup</span><span class="p">):</span>
-                    <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">word_group</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">marker</span><span class="p">:</span>
-                        <span class="n">markers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">marker</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">CellsOS</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;ConstChartMovedTextMarker&quot;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">IConstChartMovedTextMarker</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">markers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">IConstChartMovedTextMarker</span><span class="p">(</span><span class="n">cell</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">markers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">markers</span>
 
     <span class="c1"># --- Marker Properties ---</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">IsPreposed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsPreposed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a moved text marker indicates preposed text.</span>
 
@@ -332,7 +372,7 @@
         <span class="k">return</span> <span class="n">marker</span><span class="o">.</span><span class="n">Preposed</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">SetPreposed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetPreposed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set whether moved text is preposed or postposed.</span>
 
@@ -369,7 +409,7 @@
             <span class="n">marker</span><span class="o">.</span><span class="n">Preposed</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span> <span class="nf">GetWordGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetWordGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the word group associated with a moved text marker.</span>
 
@@ -390,9 +430,10 @@
 <span class="sd">            ...         print(f&quot;Marker belongs to word group {word_group.Hvo}&quot;)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns None if marker has no owner</span>
-<span class="sd">            - Word group owns the moved text marker</span>
-<span class="sd">            - Each marker is associated with exactly one word group</span>
+<span class="sd">            - Returns None if WordGroupRA is not set.</span>
+<span class="sd">            - Navigation is via WordGroupRA (R5/#290 model): the marker&#39;s owner</span>
+<span class="sd">              is the row (row.CellsOS), not the word group. The word group is</span>
+<span class="sd">              reached through the WordGroupRA reference attribute.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Find</span>
@@ -401,19 +442,24 @@
 
         <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Get owner (should be IConstChartWordGroup). .Owner is on every</span>
-        <span class="c1"># ICmObject; the truthiness check still discriminates orphans /</span>
-        <span class="c1"># detached markers. (issue #133 sweep)</span>
-        <span class="k">if</span> <span class="n">marker</span><span class="o">.</span><span class="n">Owner</span><span class="p">:</span>
-            <span class="n">owner</span> <span class="o">=</span> <span class="n">marker</span><span class="o">.</span><span class="n">Owner</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">IConstChartWordGroup</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">owner</span>
-
-        <span class="k">return</span> <span class="kc">None</span>
+        <span class="c1"># Navigate via WordGroupRA: marker -&gt; word group reference.</span>
+        <span class="k">return</span> <span class="n">marker</span><span class="o">.</span><span class="n">WordGroupRA</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">marker</span><span class="p">,</span> <span class="s2">&quot;WordGroupRA&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__RowFromWordGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_group</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cast word_group.Owner to IConstChartRow (Owner is ICmObject at runtime).&quot;&quot;&quot;</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="n">word_group</span><span class="o">.</span><span class="n">Owner</span>
+        <span class="k">if</span> <span class="n">row</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">IConstChartRow</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">row</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">IConstChartRow</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IConstChartMovedTextMarker.</span>
 
@@ -443,7 +489,7 @@
                 <span class="k">pass</span>
         <span class="k">return</span> <span class="n">marker_or_hvo</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveWordGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_group_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveWordGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_group_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IConstChartWordGroup.</span>
 
@@ -473,7 +519,7 @@
                 <span class="k">pass</span>
         <span class="k">return</span> <span class="n">word_group_or_hvo</span>
 
-    <span class="k">def</span> <span class="nf">__ResolveChart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chart_or_hvo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveChart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chart_or_hvo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resolve HVO or object to IDsConstChart.</span>
 
@@ -505,16 +551,19 @@
 
     <span class="c1"># --- Reordering Support ---</span>
 
-    <span class="k">def</span> <span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Not applicable for moved text markers (owned objects, not sequences).</span>
+<span class="sd">        Not applicable for moved text markers.</span>
+
+<span class="sd">        Moved text markers are cells in row.CellsOS (R5/#290 model). They do</span>
+<span class="sd">        not expose a reorderable sub-sequence of their own.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            NotImplementedError: Moved text markers don&#39;t use sequences</span>
+<span class="sd">            NotImplementedError: Moved text markers don&#39;t use a sub-sequence.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s2">&quot;Moved text markers are owned objects (OA), not owning sequences (OS). &quot;</span>
-            <span class="s2">&quot;Reordering methods are not applicable.&quot;</span>
+            <span class="s2">&quot;Moved text markers live in row.CellsOS as peer cells. &quot;</span>
+            <span class="s2">&quot;Reordering methods are not applicable to this type.&quot;</span>
         <span class="p">)</span></div>
 
 </pre></div>
@@ -523,7 +572,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -539,7 +588,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -554,8 +603,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright %Y, Matthew Lee. Based on flexlibs by Craig Farrow..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>
