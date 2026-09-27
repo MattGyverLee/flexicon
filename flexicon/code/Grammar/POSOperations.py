@@ -151,15 +151,21 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         yield from walk(pos_list.PossibilitiesOS)
 
     @OperationsMethod
-    def Create(self, name, abbreviation, catalogSourceId=None):
+    def Create(self, name, abbreviation, catalogSourceId=None, parent=None):
         """
         Create a new part of speech.
+
+        This is the canonical creation path for both top-level categories
+        and subcategories; AddSubcategory delegates to it.
 
         Args:
             name (str): The name of the POS (e.g., "Noun", "Verb").
             abbreviation (str): Short abbreviation (e.g., "N", "V").
             catalogSourceId (str, optional): Optional catalog identifier for
                 linguistic databases (e.g., "GOLD:Noun"). Defaults to None.
+            parent: Optional parent IPartOfSpeech object or HVO. If None
+                (default), creates a top-level category; if given, creates
+                a subcategory of that parent. Defaults to None.
 
         Returns:
             IPartOfSpeech: The newly created POS object.
@@ -167,8 +173,8 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If name or abbreviation is None.
-            FP_ParameterError: If name or abbreviation is empty, or if a POS
-                with this name already exists.
+            FP_ParameterError: If name or abbreviation is empty, or if a
+                top-level POS with this name already exists.
 
         Example:
             >>> posOps = POSOperations(project)
@@ -180,14 +186,19 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             >>> print(posOps.GetAbbreviation(proper_noun))
             PN
 
+            >>> # A subcategory is just a Create with a parent
+            >>> proper = posOps.Create("Proper Noun", "PN", parent=noun)
+
         Notes:
-            - Name must be unique within the project
+            - Top-level names must be unique within the project (the
+              pre-existing Exists check); subcategory names are not
+              uniqueness-checked, preserving AddSubcategory's behaviour.
             - Abbreviations don't need to be unique but should be distinct
             - CatalogSourceId links to linguistic ontologies (e.g., GOLD)
             - The POS is created in the default analysis writing system
 
         See Also:
-            Delete, Exists, Find
+            AddSubcategory, Delete, Exists, Find
         """
         self._EnsureWriteEnabled()
 
@@ -199,14 +210,21 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         if not abbreviation or not abbreviation.strip():
             raise FP_ParameterError("Abbreviation cannot be empty")
 
+        parent_pos = None
+        if parent is not None:
+            self._ValidateParam(parent, "parent")
+            parent_pos = self.__ResolveObject(parent)
+
+        label = f"Add subcategory '{name}'" if parent_pos is not None else f"Create part of speech '{name}'"
+
         # If the caller supplied a "GOLD:..." catalog id, defer to the
         # catalog path so the POS gets the canonical GUID and any extra
         # WS data the catalog provides. We then overlay the user's
         # name/abbreviation on top so explicit args still win.
         if catalogSourceId and catalogSourceId.upper().startswith("GOLD:"):
             wsHandle = self.project.project.DefaultAnalWs
-            with self._TransactionCM(f"Create part of speech '{name}'"):
-                new_pos = self.CreateFromCatalog(catalogSourceId)
+            with self._TransactionCM(label):
+                new_pos = self.CreateFromCatalog(catalogSourceId, parent=parent_pos)
                 # Overlay user-supplied name and abbreviation in the
                 # analysis WS (catalog values stay in other WSes).
                 mkstr_name = TsStringUtils.MakeString(name, wsHandle)
@@ -215,8 +233,9 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
                 new_pos.Abbreviation.set_String(wsHandle, mkstr_abbr)
                 return new_pos
 
-        # Check if POS already exists
-        if self.Exists(name):
+        # Check if POS already exists (top-level creates only, preserving
+        # AddSubcategory's no-uniqueness-check behaviour for children).
+        if parent_pos is None and self.Exists(name):
             raise FP_ParameterError(f"Part of Speech '{name}' already exists")
 
         # Get the writing system handle
@@ -224,12 +243,16 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
 
         # Create the new POS using the factory
         factory = self.project.project.ServiceLocator.GetService(IPartOfSpeechFactory)
-        with self._TransactionCM(f"Create part of speech '{name}'"):
+        with self._TransactionCM(label):
             new_pos = factory.Create()
 
-            # Add to the POS list (must be done before setting properties)
-            pos_list = self.project.lp.PartsOfSpeechOA
-            pos_list.PossibilitiesOS.Add(new_pos)
+            # Attach to the parent subcategory list or the top-level POS
+            # list (must be done before setting properties)
+            if parent_pos is not None:
+                parent_pos.SubPossibilitiesOS.Add(new_pos)
+            else:
+                pos_list = self.project.lp.PartsOfSpeechOA
+                pos_list.PossibilitiesOS.Add(new_pos)
 
             # Set name and abbreviation
             mkstr_name = TsStringUtils.MakeString(name, wsHandle)
@@ -647,6 +670,9 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         """
         Add a subcategory to a part of speech.
 
+        Thin wrapper over Create with parent=pos_or_hvo; all creation
+        logic (including the "GOLD:..." catalog path) lives on Create.
+
         Args:
             pos_or_hvo: The IPartOfSpeech object or HVO to add subcategory to.
             name (str): The name of the subcategory.
@@ -672,71 +698,30 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             >>> proper_noun = posOps.AddSubcategory(noun, "Proper Noun", "PN", "GOLD:Noun")
 
         Notes:
-            - The subcategory is created as a child of the parent POS
-            - Subcategories inherit the parent's properties where applicable
-            - Can be nested to create multi-level POS hierarchies
-            - Uses default analysis writing system
-            - CatalogSourceId links to linguistic ontologies (e.g., GOLD),
-              matching Create. A "GOLD:..." id takes the catalog path so
-              the subcategory gets the canonical GUID; any other id is
-              stored verbatim. If the catalog GUID already exists, the
-              existing item is returned with name/abbreviation overlaid,
-              not re-parented (same idempotency as CreateFromCatalog).
+            - Equivalent to ``Create(name, abbreviation,
+              catalogSourceId=catalogSourceId, parent=pos_or_hvo)``.
+            - If the catalog GUID already exists, the existing item is
+              returned with name/abbreviation overlaid, not re-parented
+              (same idempotency as CreateFromCatalog).
 
         See Also:
-            RemoveSubcategory, GetSubcategories, Create
+            Create, RemoveSubcategory, GetSubcategories
         """
         self._EnsureWriteEnabled()
 
         self._ValidateParam(pos_or_hvo, "pos_or_hvo")
-        self._ValidateParam(name, "name")
-        self._ValidateParam(abbreviation, "abbreviation")
 
-        if not name or not name.strip():
-            raise FP_ParameterError("Name cannot be empty")
-        if not abbreviation or not abbreviation.strip():
-            raise FP_ParameterError("Abbreviation cannot be empty")
-
-        pos = self.__ResolveObject(pos_or_hvo)
-
-        # If the caller supplied a "GOLD:..." catalog id, defer to the
-        # catalog path so the subcategory gets the canonical GUID and any
-        # extra WS data the catalog provides. We then overlay the user's
-        # name/abbreviation on top so explicit args still win.
-        if catalogSourceId and catalogSourceId.upper().startswith("GOLD:"):
-            wsHandle = self.project.project.DefaultAnalWs
-            with self._TransactionCM(f"Add subcategory '{name}'"):
-                subcat = self.CreateFromCatalog(catalogSourceId, parent=pos)
-                # Overlay user-supplied name and abbreviation in the
-                # analysis WS (catalog values stay in other WSes).
-                mkstr_name = TsStringUtils.MakeString(name, wsHandle)
-                subcat.Name.set_String(wsHandle, mkstr_name)
-                mkstr_abbr = TsStringUtils.MakeString(abbreviation, wsHandle)
-                subcat.Abbreviation.set_String(wsHandle, mkstr_abbr)
-                return subcat
-
-        wsHandle = self.project.project.DefaultAnalWs
-
-        # Create the subcategory using the factory
-        factory = self.project.project.ServiceLocator.GetService(IPartOfSpeechFactory)
+        # Bracketed per D5 (the scanner cannot see through same-class
+        # delegation): joins Create's inner transaction via nesting
+        # (B1) rather than opening a separate undo unit. House pattern:
+        # Shared/FilterOperations.ImportFilter, Shared/MediaOperations.
         with self._TransactionCM(f"Add subcategory '{name}'"):
-            subcat = factory.Create()
-
-            # Add to parent's SubPossibilitiesOS (must be done before setting properties)
-            pos.SubPossibilitiesOS.Add(subcat)
-
-            # Set name and abbreviation
-            mkstr_name = TsStringUtils.MakeString(name, wsHandle)
-            subcat.Name.set_String(wsHandle, mkstr_name)
-
-            mkstr_abbr = TsStringUtils.MakeString(abbreviation, wsHandle)
-            subcat.Abbreviation.set_String(wsHandle, mkstr_abbr)
-
-            # Set catalog source ID if provided
-            if catalogSourceId:
-                subcat.CatalogSourceId = catalogSourceId
-
-            return subcat
+            return self.Create(
+                name,
+                abbreviation,
+                catalogSourceId=catalogSourceId,
+                parent=pos_or_hvo,
+            )
 
     @OperationsMethod
     def RemoveSubcategory(self, pos_or_hvo, subcat_or_hvo):

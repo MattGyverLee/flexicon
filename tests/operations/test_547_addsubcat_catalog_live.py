@@ -2,7 +2,8 @@
 #   test_547_addsubcat_catalog_live.py
 #
 #   Live verification for issue #547: POSOperations.AddSubcategory
-#   accepts catalogSourceId like Create.
+#   accepts catalogSourceId like Create, and Create is canonical with
+#   parent=None while AddSubcategory delegates to it.
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+
@@ -119,3 +120,60 @@ class TestAddSubcategoryCatalogSourceId:
                 target_sandbox.POS.Delete(parent)
             except Exception:
                 pass
+
+
+class TestCreateParentDelegation:
+    @pytest.mark.live_phase("POSOperations", "add")
+    def test_create_with_parent_matches_addsubcategory(self, target_sandbox):
+        """Create(parent=...) and AddSubcategory produce the same shape."""
+        parent = target_sandbox.POS.Create(
+            f"{TEST_PREFIX}CanonParent", f"{TEST_PREFIX}CP"
+        )
+        try:
+            via_create = target_sandbox.POS.Create(
+                f"{TEST_PREFIX}ViaCreate",
+                f"{TEST_PREFIX}VC",
+                catalogSourceId="ProjectSpecific:547Bar",
+                parent=parent,
+            )
+            via_addsub = target_sandbox.POS.AddSubcategory(
+                parent,
+                f"{TEST_PREFIX}ViaAddSub",
+                f"{TEST_PREFIX}VA",
+                catalogSourceId="ProjectSpecific:547Bar",
+            )
+            for sub in (via_create, via_addsub):
+                assert sub is not None
+                assert target_sandbox.POS.GetCatalogSourceId(sub) == "ProjectSpecific:547Bar"
+                got_parent = target_sandbox.POS.GetParent(sub)
+                assert got_parent is not None
+                assert str(got_parent.Guid) == str(parent.Guid)
+        finally:
+            for sub in list(target_sandbox.POS.GetSubcategories(parent, recursive=False)):
+                try:
+                    target_sandbox.POS.RemoveSubcategory(parent, sub)
+                except Exception:
+                    pass
+            target_sandbox.POS.Delete(parent)
+
+    @pytest.mark.live_phase("POSOperations", "add")
+    def test_create_with_hvo_parent(self, target_sandbox):
+        """Create accepts an HVO parent, like AddSubcategory does."""
+        parent = target_sandbox.POS.Create(
+            f"{TEST_PREFIX}HvoParent", f"{TEST_PREFIX}HP"
+        )
+        try:
+            sub = target_sandbox.POS.Create(
+                f"{TEST_PREFIX}HvoSub", f"{TEST_PREFIX}HS", parent=parent.Hvo
+            )
+            assert sub is not None
+            got_parent = target_sandbox.POS.GetParent(sub)
+            assert got_parent is not None
+            assert str(got_parent.Guid) == str(parent.Guid)
+        finally:
+            for sub in list(target_sandbox.POS.GetSubcategories(parent, recursive=False)):
+                try:
+                    target_sandbox.POS.RemoveSubcategory(parent, sub)
+                except Exception:
+                    pass
+            target_sandbox.POS.Delete(parent)
