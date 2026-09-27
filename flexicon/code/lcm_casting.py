@@ -201,6 +201,7 @@ def _ensure_interfaces() -> None:
             ICmPossibility,
             ICmAnthroItem,
             IDsConstChart,
+            IDsDiscourseData,
             IText,
             IStText,
             IStTxtPara,
@@ -210,7 +211,8 @@ def _ensure_interfaces() -> None:
     except ImportError:
         ILexEntry = ILexSense = ILexRefType = IRnGenericRec = None
         ICmPossibility = ICmAnthroItem = None
-        IDsConstChart = IText = IStText = IStTxtPara = None
+        IDsConstChart = IDsDiscourseData = None
+        IText = IStText = IStTxtPara = None
         IWfiAnalysis = None
         ILangProject = None
 
@@ -370,6 +372,13 @@ def _ensure_interfaces() -> None:
         _interface_cache["CmAnthroItem"] = ICmAnthroItem
     if IDsConstChart is not None:
         _interface_cache["DsConstChart"] = IDsConstChart
+    if IDsDiscourseData is not None:
+        # DsDiscourseData is the project-level owner of ChartsOC. Without
+        # this mapping _GetTypedOwner() returned it unchanged (a bare
+        # ICmObject), silently no-opping DiscourseOperations.Delete/Duplicate's
+        # `hasattr(parent, "ChartsOC")` checks -- same failure shape as the
+        # LangProject/AnnotationsOC mapping just below.
+        _interface_cache["DsDiscourseData"] = IDsDiscourseData
     if IText is not None:
         _interface_cache["Text"] = IText
     if IStText is not None:

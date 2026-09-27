@@ -29,7 +29,9 @@ def _replace_analysis_block(text: str) -> str:
 def test_issue528_replace_analysis_uses_hvo_membership():
     block = _replace_analysis_block(SEGMENT_OPS.read_text(encoding="utf-8"))
     assert "issue #528" in block
-    assert "token.Hvo == old_hvo" in block
+    # Elements without an HVO never match -- they are skipped via getattr,
+    # not dereferenced (gate fix: mock fillers carry no Hvo).
+    assert 'getattr(token, "Hvo", None) == old_hvo' in block
     assert "analyses.index(old_obj)" not in block
     assert "old_obj not in analyses" not in block
 

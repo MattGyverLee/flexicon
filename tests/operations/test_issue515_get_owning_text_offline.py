@@ -26,9 +26,12 @@ def _get_owning_text_block(text: str) -> str:
     return text[start:next_def] if next_def != -1 else text[start:]
 
 
-def test_issue515_get_owning_text_uses_typed_owner_and_gettext():
+def test_issue515_get_owning_text_uses_basedon_and_gettext():
+    # Charts are owned project-level (lp.DiscourseDataOA), so the text is
+    # reached through the chart's BasedOnRA StText reference, not the owner
+    # chain. The StText's owner is resolved through the #508 cast.
     block = _get_owning_text_block(DISCOURSE.read_text(encoding="utf-8"))
-    assert "_GetTypedOwner(chart_obj)" in block
+    assert "BasedOnRA" in block
     assert "__GetTextObject(st_text.Owner)" in block
     assert "chart_obj.Owner" not in block
     assert "issue #515" in block

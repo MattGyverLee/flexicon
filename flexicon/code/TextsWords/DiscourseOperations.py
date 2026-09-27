@@ -18,6 +18,7 @@ from SIL.LCModel import (
     IDsConstChartFactory,  # Fixed: was IConstChartFactory
     IDsChart,
     IDsDiscourseData,  # Fixed: was IDiscourseData
+    IDsDiscourseDataFactory,
     IConstChartRow,
     IConstChartRowFactory,
     IConstChartWordGroup,
@@ -296,7 +297,8 @@ class DiscourseOperations(BaseOperations):
 
         Notes:
             - Returns both constituent charts and discourse charts
-            - Charts are accessed through the text's DiscourseData property
+            - Charts are owned project-level; only charts whose BasedOnRA
+              references this text's StText contents are returned
             - Returns empty generator if no charts exist
             - Use list() to convert to a list if needed
 
@@ -305,48 +307,78 @@ class DiscourseOperations(BaseOperations):
         """
         text_obj = self.__GetTextObject(text_or_hvo)
 
-        # Check if text has discourse data
+        # Charts are owned project-level by lp.DiscourseDataOA.ChartsOC --
+        # never by the text -- and link back to their text through the
+        # chart's BasedOnRA reference to the text's StText contents
+        # (live-proven: DsConstChart.BasedOnRA is IStText). Yield the charts
+        # based on this text's contents.
         if not text_obj.ContentsOA:
             return
-
-        # Get the discourse data container
-        discourse_data = None
-        if hasattr(text_obj, "ContentsOA") and text_obj.ContentsOA:
-            # DiscourseData is typically stored in the text's contents
-            # Access charts through the owning text's structure
-            if hasattr(text_obj.ContentsOA, "ChartsOC"):
-                for chart in text_obj.ContentsOA.ChartsOC:
-                    yield chart
+        discourse = self.project.lp.DiscourseDataOA
+        if discourse is None:
+            return
+        contents_hvo = text_obj.ContentsOA.Hvo
+        for chart in discourse.ChartsOC:
+            # ChartsOC yields a limited view on which BasedOnRA is not
+            # projected -- cast by ClassName first (same #275 pattern as
+            # __GetChartObject); without it every chart reads as unlinked.
+            typed = self.__CastChartView(chart)
+            based_on = getattr(typed, "BasedOnRA", None)
+            if based_on is not None and based_on.Hvo == contents_hvo:
+                yield typed
 
     @OperationsMethod
+    def __GetOrCreateDiscourseData(self):
+        """
+        Get or create the project-level DsDiscourseData chart container.
+
+        Returns:
+            IDsDiscourseData: The discourse data container.
+
+        Notes:
+            - Charts are owned project-level, never per-text; the container
+              lives at ``LangProject.DiscourseDataOA`` (same helper as
+              ConstChartOperations, which owns the other half of this path).
+            - The ``is None`` guard stays OUTSIDE the transaction so an
+              already-initialised container is a true no-op.
+        """
+        discourse = self.project.lp.DiscourseDataOA
+        if discourse is None:
+            factory = self.project.project.ServiceLocator.GetService(IDsDiscourseDataFactory)
+            with self._TransactionCM("Initialise discourse data"):
+                discourse = factory.Create()
+                self.project.lp.DiscourseDataOA = discourse
+        return discourse
+
     def CreateChart(self, text_or_hvo, name, chart_type="constituent"):
         """
-        Create a new chart for a text.
+        Create a new constituent chart based on a text.
 
-        Creates either a constituent chart (IConstChart) or discourse chart based
-        on the chart_type parameter. The chart will be added to the text's chart
-        collection.
+        The chart is owned project-level by ``lp.DiscourseDataOA.ChartsOC``
+        (that is where the LCM keeps charts -- texts carry no chart
+        collection) and links back to the text through its ``BasedOnRA``
+        reference to the text's StText contents, which is what
+        GetAllCharts/GetOwningText read.
 
         Args:
             text_or_hvo: Either an IText object or its HVO (integer identifier).
             name (str): The name of the chart. Must be non-empty.
                 Note: leading/trailing whitespace in the value is preserved
                 verbatim (Q-242A); a value that is entirely whitespace still
-                raises FP_ParameterError. This method's persist behaviour
-                is correct by code inspection but could not be
-                independently live-verified through its own public API,
-                blocked by two pre-existing, unrelated defects (Q-DISC1).
-            chart_type (str): Type of chart to create. Either "constituent" or
-                "discourse". Defaults to "constituent".
+                raises FP_ParameterError.
+            chart_type (str): Must be "constituent" (the default). "discourse"
+                raises FP_ParameterError: the LCM exposes no factory for
+                discourse (DsChart) creation, so only constituent
+                (DsConstChart) charts can be created through this API.
 
         Returns:
-            Chart object (IConstChart): The newly created chart.
+            Chart object (IDsConstChart): The newly created chart.
 
         Raises:
             FP_ReadOnlyError: If project was not opened with writeEnabled=True.
             FP_NullParameterError: If text_or_hvo or name is None.
-            FP_ParameterError: If name is empty, text is invalid, or chart_type
-                is not recognized.
+            FP_ParameterError: If name is empty, text is invalid, text has no
+                StText contents, or chart_type is not "constituent".
 
         Example:
             >>> discourse_ops = DiscourseOperations(project)
@@ -356,14 +388,9 @@ class DiscourseOperations(BaseOperations):
             >>> chart = discourse_ops.CreateChart(text, "Main Analysis")
             >>> print(discourse_ops.GetChartName(chart))
             Main Analysis
-            >>>
-            >>> # Create a discourse chart
-            >>> discourse_chart = discourse_ops.CreateChart(text, "Discourse", "discourse")
 
         Notes:
             - Chart name should be descriptive of the analysis being performed
-            - Constituent charts are more common for syntactic analysis
-            - Discourse charts focus on discourse structure and relations
             - The text must have a ContentsOA (StText) object
 
         See Also:
@@ -372,30 +399,31 @@ class DiscourseOperations(BaseOperations):
         self._EnsureWriteEnabled()
         self._ValidateStringNotEmpty(name, "chart name")
 
-        # Validate chart_type
+        # Only constituent charts can be created: IDsConstChartFactory is the
+        # only chart factory the LCM exposes (verified by live reflection --
+        # no DsChart factory exists under any name).
         chart_type_lower = chart_type.lower() if chart_type else "constituent"
-        if chart_type_lower not in ["constituent", "discourse"]:
-            raise FP_ParameterError(f"chart_type must be 'constituent' or 'discourse', got '{chart_type}'")
+        if chart_type_lower != "constituent":
+            raise FP_ParameterError(
+                f"chart_type must be 'constituent', got '{chart_type}'"
+            )
 
         text_obj = self.__GetTextObject(text_or_hvo)
 
-        # Ensure text has contents
+        # Ensure text has contents -- the chart's BasedOnRA points at it.
         if not text_obj.ContentsOA:
             raise FP_ParameterError("Text has no StText contents")
 
+        discourse = self.__GetOrCreateDiscourseData()
+
         with self._TransactionCM(f"Create chart '{name}'"):
             # Create the chart using the factory
-            factory = self.project.project.ServiceLocator.GetService(IConstChartFactory)
+            factory = self.project.project.ServiceLocator.GetService(IDsConstChartFactory)
             chart = factory.Create()
 
-            # Add to the text's chart collection
-            # Charts are stored in ContentsOA.ChartsOC
-            if hasattr(text_obj.ContentsOA, "ChartsOC"):
-                text_obj.ContentsOA.ChartsOC.Add(chart)
-            else:
-                # Alternative: If charts are stored differently, adjust accordingly
-                # For now, assume standard structure
-                raise FP_ParameterError("Text contents does not support charts")
+            # Own project-level, link to the text.
+            discourse.ChartsOC.Add(chart)
+            chart.BasedOnRA = text_obj.ContentsOA
 
             # Set the chart name
             wsHandle = self.__WSHandle(None)
@@ -599,7 +627,7 @@ class DiscourseOperations(BaseOperations):
             # Try to determine by checking for specific interfaces
             # Catch TypeError (pythonnet casting) and any .NET exceptions
             try:
-                IConstChart(chart_obj)
+                IDsConstChart(chart_obj)
                 return "constituent"
             except (TypeError, AttributeError, SystemError):
                 try:
@@ -1066,19 +1094,23 @@ class DiscourseOperations(BaseOperations):
             Chart belongs to text: Genesis
 
         Notes:
-            - Charts are always owned by a text's StText contents
+            - Charts are owned project-level; the text is reached through
+              the chart's BasedOnRA reference, not the ownership chain
             - Useful for navigation and context
-            - The owner is accessed through the chart's ownership chain
+            - A chart with no BasedOnRA (or whose StText has no owning text)
+              raises FP_ParameterError
 
         See Also:
             GetAllCharts, CreateChart
         """
         chart_obj = self.__GetChartObject(chart_or_hvo)
 
-        # Navigate Chart -> StText -> IText (issue #515). Raw .Owner returns
-        # ICmObject, so cast the StText owner before reading .Owner for the
-        # text (same pattern as ParagraphOperations.Duplicate parent lookup).
-        st_text = self._GetTypedOwner(chart_obj)
+        # Navigate Chart -> StText -> IText (issue #515). Charts are owned
+        # project-level by lp.DiscourseDataOA, so the owner chain cannot
+        # reach a text; the link is the chart's BasedOnRA reference to the
+        # text's StText contents (live-proven: DsConstChart.BasedOnRA is
+        # IStText). The text is that StText's owner.
+        st_text = getattr(chart_obj, "BasedOnRA", None)
         if st_text is None or st_text.Owner is None:
             raise FP_ParameterError("Chart has no valid owning text")
         return self.__GetTextObject(st_text.Owner)
@@ -1187,10 +1219,18 @@ class DiscourseOperations(BaseOperations):
             # semantic meaning and is ignored.
             if parent is not None and hasattr(parent, "ChartsOC"):
                 parent.ChartsOC.Add(duplicate)
+            else:
+                raise FP_ParameterError("Chart has no valid owning collection")
 
             # Copy MultiString properties (AFTER adding to parent)
             if hasattr(source, "Name") and source.Name:
                 duplicate.Name.CopyAlternatives(source.Name)
+
+            # Keep the text link: a duplicate of a text's chart is based on
+            # the same text (BasedOnRA is the IStText reference GetAllCharts
+            # and GetOwningText read).
+            if getattr(source, "BasedOnRA", None) is not None:
+                duplicate.BasedOnRA = source.BasedOnRA
 
             # Deep copy: duplicate rows
             if deep and hasattr(source, "RowsOS") and source.RowsOS.Count > 0:

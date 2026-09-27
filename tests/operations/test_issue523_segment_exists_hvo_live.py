@@ -15,8 +15,8 @@ class TestIssue523SegmentExistsHvoLive:
     """Exists must return True when segment is passed as raw Object(hvo)."""
 
     def test_exists_true_for_raw_object_hvo_view(self, target_sandbox):
-        text = target_sandbox.Texts.Create("TEST_523_exists", "Hello world.")
-        para = list(target_sandbox.Paragraphs.GetAll(text))[0]
+        text = target_sandbox.Texts.Create("TEST_523_exists")
+        para = target_sandbox.Paragraphs.Create(text, "Hello world.")
         seg = list(target_sandbox.Segments.GetAll(para))[0]
         raw = target_sandbox.Object(seg.Hvo)
 
@@ -25,8 +25,10 @@ class TestIssue523SegmentExistsHvoLive:
         assert target_sandbox.Segments.Exists(para, seg.Hvo) is True
 
     def test_exists_false_for_foreign_segment(self, target_sandbox):
-        text = target_sandbox.Texts.Create("TEST_523_exists_neg", "One. Two.")
+        text = target_sandbox.Texts.Create("TEST_523_exists_neg")
+        para0 = target_sandbox.Paragraphs.Create(text, "One.")
+        para1 = target_sandbox.Paragraphs.Create(text, "Two.")
         paras = list(target_sandbox.Paragraphs.GetAll(text))
         assert len(paras) >= 2
-        seg_para0 = list(target_sandbox.Segments.GetAll(paras[0]))[0]
-        assert target_sandbox.Segments.Exists(paras[1], seg_para0) is False
+        seg_para0 = list(target_sandbox.Segments.GetAll(para0))[0]
+        assert target_sandbox.Segments.Exists(para1, seg_para0) is False

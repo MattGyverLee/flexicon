@@ -18,20 +18,25 @@ class TestIssue552ExampleDuplicateHvoLive:
 
     @pytest.mark.live_phase("ExampleOperations", "write")
     def test_duplicate_insert_after_raw_object_view(self, target_sandbox):
-        entry = target_sandbox.LexiconAllEntries().__next__()
+        # Target is a blank scratch project: create the entry rather than
+        # assuming one exists (same pattern as the #550 sense gate).
+        entry = target_sandbox.LexEntry.Create(f"{TEST_PREFIX}entry")
         sense = target_sandbox.Senses.Create(entry, f"{TEST_PREFIX}gloss")
-        e0 = target_sandbox.Examples.Create(sense, f"{TEST_PREFIX}first")
-        e1 = target_sandbox.Examples.Create(sense, f"{TEST_PREFIX}second")
-        e2 = target_sandbox.Examples.Create(sense, f"{TEST_PREFIX}third")
+        try:
+            e0 = target_sandbox.Examples.Create(sense, f"{TEST_PREFIX}first")
+            e1 = target_sandbox.Examples.Create(sense, f"{TEST_PREFIX}second")
+            e2 = target_sandbox.Examples.Create(sense, f"{TEST_PREFIX}third")
 
-        raw_mid = target_sandbox.Object(e1.Hvo)
-        dup = target_sandbox.Examples.Duplicate(raw_mid, insert_after=True, deep=False)
+            raw_mid = target_sandbox.Object(e1.Hvo)
+            dup = target_sandbox.Examples.Duplicate(raw_mid, insert_after=True, deep=False)
 
-        order = [ex.Hvo for ex in target_sandbox.Examples.GetAll(sense)]
-        assert order.index(dup.Hvo) == order.index(e1.Hvo) + 1
+            order = [ex.Hvo for ex in target_sandbox.Examples.GetAll(sense)]
+            assert order.index(dup.Hvo) == order.index(e1.Hvo) + 1
 
-        target_sandbox.Examples.Delete(dup)
-        target_sandbox.Examples.Delete(e2)
-        target_sandbox.Examples.Delete(e1)
-        target_sandbox.Examples.Delete(e0)
-        target_sandbox.Senses.Delete(sense)
+            target_sandbox.Examples.Delete(dup)
+            target_sandbox.Examples.Delete(e2)
+            target_sandbox.Examples.Delete(e1)
+            target_sandbox.Examples.Delete(e0)
+            target_sandbox.Senses.Delete(sense)
+        finally:
+            target_sandbox.LexEntry.Delete(entry)

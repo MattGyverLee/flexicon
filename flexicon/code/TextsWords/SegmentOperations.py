@@ -830,11 +830,12 @@ class SegmentOperations(BaseOperations):
 
         # Membership by HVO (issue #528). AnalysesRS can yield interface views
         # while __GetAnalysisObject may return a different Python wrapper for
-        # the same token; ``in`` / list.index then false-negative.
+        # the same token; ``in`` / list.index then false-negative. Elements
+        # without an HVO never match -- they are skipped, not dereferenced.
         old_hvo = old_obj.Hvo
         index = None
         for i, token in enumerate(segment_obj.AnalysesRS):
-            if token.Hvo == old_hvo:
+            if getattr(token, "Hvo", None) == old_hvo:
                 index = i
                 break
         if index is None:
