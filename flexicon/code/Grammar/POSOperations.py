@@ -643,7 +643,7 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         return self.__ResolveObject(owner)
 
     @OperationsMethod
-    def AddSubcategory(self, pos_or_hvo, name, abbreviation):
+    def AddSubcategory(self, pos_or_hvo, name, abbreviation, catalogSourceId=None):
         """
         Add a subcategory to a part of speech.
 
@@ -651,6 +651,8 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             pos_or_hvo: The IPartOfSpeech object or HVO to add subcategory to.
             name (str): The name of the subcategory.
             abbreviation (str): Short abbreviation for the subcategory.
+            catalogSourceId (str, optional): Optional catalog identifier for
+                linguistic databases (e.g., "GOLD:Noun"). Defaults to None.
 
         Returns:
             IPartOfSpeech: The newly created subcategory object.
@@ -667,11 +669,19 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             >>> print(posOps.GetName(proper_noun))
             Proper Noun
 
+            >>> proper_noun = posOps.AddSubcategory(noun, "Proper Noun", "PN", "GOLD:Noun")
+
         Notes:
             - The subcategory is created as a child of the parent POS
             - Subcategories inherit the parent's properties where applicable
             - Can be nested to create multi-level POS hierarchies
             - Uses default analysis writing system
+            - CatalogSourceId links to linguistic ontologies (e.g., GOLD),
+              matching Create. A "GOLD:..." id takes the catalog path so
+              the subcategory gets the canonical GUID; any other id is
+              stored verbatim. If the catalog GUID already exists, the
+              existing item is returned with name/abbreviation overlaid,
+              not re-parented (same idempotency as CreateFromCatalog).
 
         See Also:
             RemoveSubcategory, GetSubcategories, Create
@@ -688,6 +698,23 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             raise FP_ParameterError("Abbreviation cannot be empty")
 
         pos = self.__ResolveObject(pos_or_hvo)
+
+        # If the caller supplied a "GOLD:..." catalog id, defer to the
+        # catalog path so the subcategory gets the canonical GUID and any
+        # extra WS data the catalog provides. We then overlay the user's
+        # name/abbreviation on top so explicit args still win.
+        if catalogSourceId and catalogSourceId.upper().startswith("GOLD:"):
+            wsHandle = self.project.project.DefaultAnalWs
+            with self._TransactionCM(f"Add subcategory '{name}'"):
+                subcat = self.CreateFromCatalog(catalogSourceId, parent=pos)
+                # Overlay user-supplied name and abbreviation in the
+                # analysis WS (catalog values stay in other WSes).
+                mkstr_name = TsStringUtils.MakeString(name, wsHandle)
+                subcat.Name.set_String(wsHandle, mkstr_name)
+                mkstr_abbr = TsStringUtils.MakeString(abbreviation, wsHandle)
+                subcat.Abbreviation.set_String(wsHandle, mkstr_abbr)
+                return subcat
+
         wsHandle = self.project.project.DefaultAnalWs
 
         # Create the subcategory using the factory
@@ -704,6 +731,10 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
 
             mkstr_abbr = TsStringUtils.MakeString(abbreviation, wsHandle)
             subcat.Abbreviation.set_String(wsHandle, mkstr_abbr)
+
+            # Set catalog source ID if provided
+            if catalogSourceId:
+                subcat.CatalogSourceId = catalogSourceId
 
             return subcat
 
