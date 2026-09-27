@@ -13,6 +13,24 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Added
 
+### Fixed
+
+---
+
+## [4.11.0] - 2026-09-27
+
+> **New readers, HVO-everywhere duplicates, and the chart path rebuilt on
+> the real ownership model.** Also completes the record: two dozen changes
+> merged since 4.10.0 shipped with no entry and are documented here, in
+> the release they ship in.
+>
+> **Contains a `BREAKING (behavioural)` entry -- read it before upgrading.**
+> Ships as a **minor** bump, not `v5.0.0`, per the precedent set by 4.4.0,
+> 4.6.0, 4.7.0, 4.8.0 and 4.10.0: no signature changes, no default's meaning
+> changes for a caller that passes it explicitly.
+
+### Added
+
 - **`POSOperations.GetSlotName`/`SetSlotName`/`IsSlotOptional`/
   `SetSlotOptional`/`GetAffixesInSlot`, and an `AffixSlot` wrapper**
   (#542). `AffixTemplate.prefix_slots`/`suffix_slots`/`proclitic_slots`/
@@ -32,17 +50,81 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `RemoveDoNotPublishIn`** (#545), with the same signatures and semantics
   as the `LexEntry` and `Examples` versions. Sense-level publication
   exclusion previously needed raw LCM (`sense.DoNotPublishInRC.Add(pub)`).
+- **`MSAOperations.GetInflAffMsaSlots`** (#543), the read-side pair for
+  `SetInflAffMsaSlots`: pass a sense or an infl-aff MSA (or HVO) and get
+  `SlotsRC` order back as a list, empty when not inflectional.
+- **`MSAOperations.GetStemFeatures` / `GetInflAffFeatures` /
+  `GetDerivFromFeatures` / `GetDerivToFeatures`, and a dispatching
+  `GetFeatures(sense_or_msa, slot=None)`** (#544). These are the reverse
+  of `InflectionFeatures.MakeFeatStruc`: each returns a plain recursive
+  `{featureGuid: valueGuid | {...}}` dict in exactly the shape
+  `MakeFeatStruc` accepts back. `None` for a missing MSA, `{}` for a
+  present-but-empty struct.
+- **`AllomorphOperations.GetIsAbstract` / `SetIsAbstract`** (#546) over
+  `IMoForm.IsAbstract` (the FLEx "Abstract form" checkbox), resolving
+  through `__GetAllomorphObject` so object, HVO, and wrapper inputs all
+  work, including the lexeme form. `Duplicate` now copies `IsAbstract`
+  so an abstract form stays abstract.
+- **`POSOperations.AddSubcategory` accepts `catalogSourceId`** (#547),
+  like `Create` already did.
+- **`InflectionFeatures.DescribeFeatStruc(fs_or_spec, slot=None)`**
+  (#557), a display helper rendering a feature structure (or a
+  MakeFeatStruc-style spec dict, including the bare-feature C4 envelope)
+  as readable text.
+- **`Paragraphs.GetOwningText`** (#519): the StText-to-IText link,
+  resolving object, HVO, and raw `project.Object(hvo)` views.
+- **`LexSenseOperations.Create` over an entry-or-sense parent** (#567):
+  pass a sense to create a subsense through the same call; notebook
+  (`#569`) and POS `Create` are canonicalised the same way with
+  `CreateSub*` delegating.
 
 ### Fixed
 
-- **New entries, senses, subsenses and examples are published in every
-  publication again** (#545). This backs out the #338 default, which
-  seeded `DoNotPublishInRC` with every publication on each new item, so
-  flexicon-created lexicon data was hidden from every dictionary until a
-  caller opted it back in. For senses there was no flexicon call to do
-  that at all. Like the FLEx GUI, exclusion is now a specialty flag set
-  explicitly with `AddDoNotPublishIn`. The
+- **BREAKING (behavioural): new entries, senses, subsenses and examples
+  are published in every publication again** (#545). This backs out the
+  #338 default, which seeded `DoNotPublishInRC` with every publication
+  on each new item, so flexicon-created lexicon data was hidden from
+  every dictionary until a caller opted it back in. For senses there was
+  no flexicon call to do that at all. Like the FLEx GUI, exclusion is
+  now a specialty flag set explicitly with `AddDoNotPublishIn`. The
   `BaseOperations._DefaultExcludeFromAllPublications` helper is removed.
+- **Discourse charts rest on the real LCM ownership model**
+  (#510, #513, #515, release gate). Charts are owned project-level by
+  `lp.DiscourseDataOA.ChartsOC` -- texts carry no chart collection -- and
+  link to their text through the chart's `BasedOnRA` reference to the
+  text's StText contents (all live-proven, including that `BasedOnRA`
+  wants the StText, not the text, and that `ChartsOC` yields a limited
+  view on which `BasedOnRA` is not projected until cast). Consequences:
+  `Discourse.CreateChart` works for the first time (it raised `NameError`
+  on a stale factory name, then `FP_ParameterError`, on every call);
+  `GetAllCharts` returns the text's charts instead of always yielding
+  nothing; `GetOwningText` reads the `BasedOnRA` link for object, HVO,
+  and raw views; `Duplicate` preserves the link and raises instead of
+  orphaning when the parent has no chart collection. `chart_type=
+  "discourse"` now raises `FP_ParameterError`: the LCM exposes no
+  discourse-chart factory, so only constituent charts can be created.
+  `DsDiscourseData` is registered in `cast_to_concrete`, which also
+  un-breaks chart delete/duplicate owner routing.
+- **Segment owner chain and HVO membership** (#521, #523, #525, #528):
+  `GetOwningParagraph` / `MergeSegments` route through the typed owner
+  chain; `Exists`, `MergeSegments`, and `ReplaceAnalysis` match by HVO
+  instead of Python identity, so raw `project.Object(hvo)` views and
+  HVO ints work. `ReplaceAnalysis` additionally skips elements without
+  an HVO instead of raising `AttributeError` on them.
+- **`Duplicate(insert_after=True)` looks the source up by HVO** in eight
+  more operations, so a raw `project.Object(hvo)` source inserts after
+  itself instead of appending: Paragraph (#531), WfiMorphBundle (#533),
+  NaturalClass (#535), MorphRule (#537), PhonologicalRule (#540),
+  Environment (#548), LexSense (#550), Example (#552).
+- **Discourse chart/row pass-through resolvers cast before returning**
+  (#510), and chart/row delete and duplicate route through
+  `_GetTypedOwner` (#513).
+- **MorphRule `__ResolveObject` casts every resolved type** (#561):
+  only `PartOfSpeech` was cast, so an HVO/raw view of an affix template
+  or compound rule came back a bare `ICmObject` and raised
+  `AttributeError` on the first subtype member.
+- **Paragraph `Duplicate` routes the parent text through
+  `__GetTextObject`** (#517), so HVO and raw views resolve.
 
 ---
 

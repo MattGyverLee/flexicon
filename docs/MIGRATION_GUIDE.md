@@ -818,3 +818,35 @@ was constructed from. Do not reach into `slot._obj` directly -- it is the
 same value, but `lcm_object` is the supported public accessor.
 
 ---
+
+## Breaking Change: new lexicon items publish everywhere again (issue #545)
+
+4.10.0 made every flexicon-created entry, sense, subsense, and example
+invisible in every publication until a caller opted it back in (the #338
+default, which seeded `DoNotPublishInRC` with every publication on each
+new item). 4.11.0 backs that out: like the FLEx GUI, a new item is
+visible in every publication until a caller excludes it explicitly with
+`AddDoNotPublishIn` (now also available at sense level --
+`LexSenseOperations.AddDoNotPublishIn`).
+
+### Who is affected
+
+Only scripts written against 4.10.0 that relied on new items being born
+excluded -- either by never calling the opt-back-in, or by working
+around the missing sense-level call with raw LCM
+(`sense.DoNotPublishInRC.Add(pub)`). Scripts written against 4.9.0 or
+earlier already lived with publish-everywhere and are unaffected.
+
+### Before (4.10.0) / After (4.11.0)
+
+```python
+entry = project.LexEntry.Create("word")
+# 4.10.0: entry.DoNotPublishInRC holds every publication -> hidden everywhere
+# 4.11.0: entry.DoNotPublishInRC is empty -> visible everywhere (FLEx GUI default)
+
+# To hide an item from a publication under 4.11.0, exclude it explicitly:
+project.LexEntry.AddDoNotPublishIn(entry, publication)
+project.Senses.AddDoNotPublishIn(sense, publication)  # new in 4.11.0 (#545)
+```
+
+---

@@ -10,6 +10,33 @@ None
 
 ## History
 
+### 2026-09-27 - v4.11.0: the chart path rebuilt, and the changelog caught up
+
+Cuts v4.11.0 from `main`. New readers (affix slots, MSA feature
+structures, sense-level publication exclusion), HVO-everywhere duplicates,
+and one behavioural break carried openly: the #338 publication default
+that 4.10.0 introduced is backed out, so new lexicon items publish
+everywhere again like the FLEx GUI.
+
+**The gate found seven live failures, and the largest one was a wrong
+premise, not a typo.** `Discourse.CreateChart` had never worked -- a
+stale factory name hid a deeper error, a per-text chart collection that
+does not exist in the LCM. The fix was measured first: live reflection
+showed charts owned project-level by `lp.DiscourseDataOA.ChartsOC`,
+linked to their text by `BasedOnRA` (an `IStText`, not an `IText`), with
+`ChartsOC` yielding a view too limited to read the link until cast. The
+rewrite follows exactly that shape, and the name-field probe that had
+characterised the breakage as untestable now asserts the fixed behaviour.
+The same run caught an unregistered `DsDiscourseData` owner silently
+orphaning chart duplicates, an HVO dereference in `ReplaceAnalysis`, and
+three live gates that had never run live.
+
+**The changelog was missing two dozen entries.** Everything merged since
+4.10.0 except #542/#543/#545 shipped with no record -- the Duplicate-HVO
+series, the segment owner chain, the MSA getters, `DescribeFeatStruc`,
+sense-level exclusion reads, the create-parent canonicalisations. They
+are written here, in the release they ship in, rather than back-dated.
+
 ### 2026-09-25 - v4.10.0: the HVO path stops being second-class
 
 A repair release: about sixty fixes merged between 4.9.0 and this cut,
