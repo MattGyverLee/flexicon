@@ -1155,6 +1155,35 @@ if spec is not None:
 
 ---
 
+## Category 15: Unreadable GUID feature-structure specs (issue #557)
+
+**Problem**: The #544 getters deliberately key their output by GUID
+(`{featGuid: valGuid | {...}}`) because feature names and abbreviations
+can be renamed or collide, which makes them unsafe round-trip keys. That
+output is unreadable to a person, so scripts and reports that print each
+sense's MSA features were hand-rolling the GUID -> abbreviation lookup,
+which needs raw LCM access (`ServiceLocator.GetObject`, `IFsFeatDefn` /
+`IFsSymFeatVal` casts).
+
+**Fix**: `InflectionFeatures.DescribeFeatStruc(fs_or_spec, slot=None)`
+returns a display string such as `"[nc: 1/2; num: sg]"`, with complex
+values nested (`"[agr: [pers: 3; num: pl]]"`). It accepts the #544 spec
+dict, the C4 sync dict, an `IFsFeatStruc`, or any feature-structure owner
+(MSA, POS, natural class, ...; `slot=` for the two-slot owners). Labels
+use the analysis abbreviation, then the name, then the raw key, so a
+stale GUID is shown rather than dropped. It returns `""` for `None` or a
+null owning property and `"[]"` for an empty structure.
+
+The result is for display only. It is not valid `MakeFeatStruc` input,
+so keep the GUID spec for round-trips.
+
+```python
+spec = project.MSA.GetFeatures(sense)
+print(project.InflectionFeatures.DescribeFeatStruc(spec))  # [nc: 1/2; num: sg]
+```
+
+---
+
 ## Summary Statistics
 
 ### By Status (Updated):

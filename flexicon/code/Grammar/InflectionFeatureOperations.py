@@ -55,7 +55,7 @@ from ..FLExProject import (
 from ..lcm_casting import cast_to_concrete
 
 # Import string utilities
-from ..Shared.string_utils import normalize_match_key
+from ..Shared.string_utils import best_analysis_text, normalize_match_key
 
 # Catalog (eticGlossList) parsing helpers
 from ..Shared.catalog import parse_etic_gloss_list
@@ -1010,6 +1010,182 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
                 ``BaseOperations._ResolveFeatureStrucOwner``).
         """
         return self._MakeFeatStruc(specs, owner=owner, slot=slot)
+
+    @OperationsMethod
+    def DescribeFeatStruc(self, fs_or_spec, slot=None):
+        """
+        Render a feature structure as a short human-readable string
+        (READ-ONLY, display only).
+
+        The MSA feature getters (``project.MSA.GetFeatures`` and the
+        per-class ``GetStemFeatures`` / ``GetInflAffFeatures`` /
+        ``GetDerivFromFeatures`` / ``GetDerivToFeatures``, issue #544)
+        return GUID-keyed specs so they round-trip safely through
+        ``MakeFeatStruc``. This method turns such a spec -- or a live
+        ``IFsFeatStruc`` -- into abbreviated bracket notation, e.g.
+        ``"[nc: 1/2; num: sg]"``, with complex values nested:
+        ``"[agr: [pers: 3; num: pl]]"``.
+
+        Args:
+            fs_or_spec: Any of:
+
+                - a spec dict as returned by the #544 getters
+                  (``{featGuid: valGuid | {...}}``); keys/values may also
+                  be HVOs, LCM objects or wrappers, as ``MakeFeatStruc``
+                  accepts;
+                - the C4 sync dict produced for ``GetSyncableProperties``
+                  (``{"TypeGuid": ..., "specs": {...}}``);
+                - an ``IFsFeatStruc`` (object, HVO or wrapper);
+                - an object that owns a feature structure (an MSA, a POS,
+                  a natural class, ...), read via its owning property;
+                - ``None``.
+            slot: Only for an owner with two feature-structure properties
+                (``MoDerivAffMsa``: ``"From"``/``"To"``; ``PartOfSpeech``:
+                ``"Default"``/``"InherFeatVal"``). Ignored otherwise.
+
+        Returns:
+            str: ``""`` for ``None`` (or an owner whose feature structure
+            is null); ``"[]"`` for an empty structure; otherwise
+            ``"[feat: val; ...]"``. Each feature and value is labelled by
+            its analysis abbreviation, falling back to its name, falling
+            back to the raw key when neither is set or the GUID/HVO no
+            longer resolves.
+
+        Raises:
+            FP_ParameterError: If ``fs_or_spec`` is not one of the shapes
+                above, or is an owner whose ``ClassName`` does not own a
+                feature structure (or needs ``slot=`` and none was given).
+
+        Example:
+            >>> spec = project.MSA.GetFeatures(sense)
+            >>> print(project.InflectionFeatures.DescribeFeatStruc(spec))
+            [nc: 1/2; num: sg]
+            >>> project.InflectionFeatures.DescribeFeatStruc(deriv_msa,
+            ...                                              slot="To")
+            '[gen: f]'
+
+        Notes:
+            - Display only. Abbreviations can be renamed or collide, so the
+              result is NOT valid ``MakeFeatStruc`` input -- keep the GUID
+              spec for round-trips.
+            - Features appear in the spec's own order (for an
+              ``IFsFeatStruc``, the ``FeatureSpecsOC`` order LCM returns).
+            - A complex feature literally named ``specs`` keeps its
+              label and nesting; only the C4 envelope (``TypeGuid``
+              plus ``specs``) is unwrapped.
+            - Like ``_GetFeatureStruc``, only closed and complex values are
+              shown; disjunctions and malformed specs are skipped.
+
+        See Also:
+            MakeFeatStruc, MSAOperations.GetFeatures
+        """
+        if fs_or_spec is None:
+            return ""
+
+        if isinstance(fs_or_spec, dict):
+            spec = fs_or_spec
+        else:
+            obj = self._GetObject(fs_or_spec)
+            if not hasattr(obj, "ClassName"):
+                raise FP_ParameterError(
+                    f"DescribeFeatStruc: expected a spec dict, an "
+                    f"IFsFeatStruc or a feature-structure owner; got "
+                    f"{type(fs_or_spec).__name__}."
+                )
+            if obj.ClassName == "FsFeatStruc":
+                struct = obj
+            else:
+                concrete_owner, prop_name = self._ResolveFeatureStrucOwner(
+                    obj, slot=slot
+                )
+                struct = getattr(concrete_owner, prop_name)
+            spec = self._GetFeatureStruc(struct)
+            if spec is None:
+                return ""
+
+        return self.__DescribeSpecLevel(spec)
+
+    # Keys of the C4 sync envelope: ``_GetFeatureStruc`` emits exactly
+    # ``{"TypeGuid", "specs"}`` at the top level, plus ``"Guid"`` on
+    # nested levels. A bare feature spec is a mapping of feature
+    # operands to values, and a complex feature may itself be named
+    # ``"specs"`` -- so the ``"specs"`` member alone cannot mark the
+    # envelope.
+    _C4_ENVELOPE_KEYS = frozenset({"TypeGuid", "Guid", "specs"})
+
+    def __IsC4Envelope(self, spec):
+        """
+        True when ``spec`` is the C4 sync envelope (contract C4), not a
+        bare feature spec that happens to hold a complex feature named
+        ``"specs"``. The envelope must carry the ``TypeGuid`` metadata
+        field and contain no other (feature-operand) keys; ``specs``
+        must hold the wrapped pairs mapping.
+        """
+        return (
+            isinstance(spec.get("specs"), dict)
+            and "TypeGuid" in spec
+            and all(key in self._C4_ENVELOPE_KEYS for key in spec)
+        )
+
+    def __DescribeSpecLevel(self, spec):
+        """
+        Render one level of a feature-structure spec as ``"[f: v; ...]"``,
+        recursing into nested (complex-value) levels.
+        """
+        # The C4 sync shape wraps each level's pairs in a "specs" key
+        # (alongside the TypeGuid/Guid metadata); the getter shape is the
+        # bare pairs. Unwrap only a real envelope -- a bare complex
+        # feature named "specs" keeps its label and nesting.
+        if self.__IsC4Envelope(spec):
+            spec = spec["specs"]
+
+        parts = []
+        for feat_key, value in spec.items():
+            if isinstance(value, dict):
+                rendered = self.__DescribeSpecLevel(value)
+            else:
+                rendered = self.__FeatStrucLabel(value)
+            parts.append(f"{self.__FeatStrucLabel(feat_key)}: {rendered}")
+        return "[" + "; ".join(parts) + "]"
+
+    # ClassNames whose Abbreviation/Name are read through IFsFeatDefn.
+    _FEAT_DEFN_CLASSES = ("FsClosedFeature", "FsComplexFeature", "FsOpenFeature")
+
+    def __FeatStrucLabel(self, key):
+        """
+        Display label for one feature or value key: analysis abbreviation,
+        then name, then the raw key. Never raises -- a stale GUID/HVO or an
+        unexpected object shows as the raw key rather than hiding the pair.
+        """
+        if isinstance(key, str):
+            if not self._IsWellFormedGuidString(key):
+                # A plain feature/value name (a MakeFeatStruc name operand).
+                return key
+            try:
+                obj = self.project.Object(key)
+            except FP_ParameterError:
+                return key
+        elif isinstance(key, int) and not isinstance(key, bool):
+            try:
+                obj = self.project.Object(key)
+            except FP_ParameterError:
+                return str(key)
+        else:
+            obj = self.__Unwrap(key)
+
+        class_name = getattr(obj, "ClassName", None)
+        if class_name == "FsSymFeatVal":
+            typed = IFsSymFeatVal(obj)
+        elif class_name in self._FEAT_DEFN_CLASSES:
+            typed = IFsFeatDefn(obj)
+        else:
+            return str(key)
+
+        return (
+            best_analysis_text(typed.Abbreviation)
+            or best_analysis_text(typed.Name)
+            or str(key)
+        )
 
     @OperationsMethod
     def FeatureCreate(self, name, type):

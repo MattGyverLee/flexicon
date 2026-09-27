@@ -1400,6 +1400,9 @@ Phase 5a/d expanded the surface to match PhonFeatureOperations for symmetry.
 #### `project.InflectionFeatures.MakeFeatStruc(specs, owner=None)`
 **Replaces:** `IFsFeatStrucFactory.Create()`, owner-attach, per-spec `IFsClosedValueFactory.Create()` + `FeatureSpecsOC.Add()` — mirrors the PhonFeatures version but produces an inflection feature structure suitable for MSAs and inflection templates.
 
+#### `project.InflectionFeatures.DescribeFeatStruc(fs_or_spec, slot=None)`
+**Replaces:** Hand-rolled walk of `IFsFeatStruc.FeatureSpecsOC` (or GUID lookups through `ServiceLocator.GetObject`) plus `IFsFeatDefn` / `IFsSymFeatVal` casts to read `Abbreviation` / `Name`. Returns display text such as `"[nc: 1/2; num: sg]"` for a #544 getter spec, an `IFsFeatStruc` or an owner. It is for display only and cannot be passed back to `MakeFeatStruc`.
+
 #### `project.InflectionFeatures.TypeFind(name, wsHandle=None)`
 **Replaces:** Iteration through `ILangProject.MsFeatureSystemOA.TypesOC` with name match.
 
