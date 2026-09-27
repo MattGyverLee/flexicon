@@ -173,10 +173,16 @@ class LexSenseOperations(BaseOperations):
     @OperationsMethod
     def Create(self, entry_or_hvo, gloss, wsHandle=None):
         """
-        Create a new sense for a lexical entry.
+        Create a new sense for a lexical entry, or a subsense under a sense.
+
+        This is the canonical creation path for both top-level senses and
+        subsenses; CreateSubsense and LexEntry.AddSense delegate to it.
 
         Args:
-            entry_or_hvo: The ILexEntry object or HVO.
+            entry_or_hvo: The parent object or HVO -- an ILexEntry for a
+                top-level sense, or an ILexSense for a subsense. A
+                subsense is itself an ILexSense owned by another sense,
+                so sense and subsense parents take the same path.
             gloss (str): The gloss text for the sense.
             wsHandle: Optional writing system handle. Defaults to analysis WS.
 
@@ -186,7 +192,8 @@ class LexSenseOperations(BaseOperations):
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If entry_or_hvo or gloss is None.
-            FP_ParameterError: If gloss is empty.
+            FP_ParameterError: If gloss is empty, or if an HVO parent is
+                provably neither an entry nor a sense.
 
         Example:
             >>> entry = list(project.LexiconAllEntries())[0]
@@ -198,11 +205,16 @@ class LexSenseOperations(BaseOperations):
             >>> sense_fr = project.Senses.Create(entry, "courir",
             ...                                   project.WSHandle('fr'))
 
+            >>> # A sense parent creates a subsense
+            >>> sub = project.Senses.Create(sense, "to run (of water)")
+
         Notes:
-            - The new sense is added at the end of the entry's sense list
+            - The new sense is added at the end of the parent's sense list
             - Gloss is set in the specified writing system (default: analysis)
             - Use SetDefinition, SetPartOfSpeech, etc. to add more information
             - Sense number is automatically assigned
+            - A parent with no ClassName (a non-LCM stand-in) takes the
+              entry path, preserving the historical behaviour
 
         See Also:
             Delete, SetGloss, SetDefinition, CreateSubsense
@@ -214,16 +226,18 @@ class LexSenseOperations(BaseOperations):
 
         self._ValidateStringNotEmpty(gloss, "gloss")
 
-        entry = self.__GetEntryObject(entry_or_hvo)
+        owner, is_subsense = self.__GetSenseOwnerObject(entry_or_hvo)
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
-        with self._TransactionCM("Create sense"):
+        label = "Create subsense" if is_subsense else "Create sense"
+        with self._TransactionCM(label):
             # Create the new sense using the factory
             factory = self.project.project.ServiceLocator.GetService(ILexSenseFactory)
             new_sense = factory.Create()
 
-            # Add to entry (must be done before setting properties)
-            entry.SensesOS.Add(new_sense)
+            # Add to the owning entry or parent sense (must be done
+            # before setting properties)
+            owner.SensesOS.Add(new_sense)
 
             # Set gloss
             mkstr = TsStringUtils.MakeString(gloss, wsHandle)
@@ -1991,6 +2005,9 @@ class LexSenseOperations(BaseOperations):
         """
         Create a new subsense under a parent sense.
 
+        Thin wrapper over Create with a sense parent; all creation logic
+        lives on Create.
+
         Args:
             parent_sense_or_hvo: The parent ILexSense object or HVO.
             gloss (str): The gloss text for the subsense.
@@ -2002,7 +2019,8 @@ class LexSenseOperations(BaseOperations):
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If parent_sense_or_hvo or gloss is None.
-            FP_ParameterError: If gloss is empty.
+            FP_ParameterError: If gloss is empty, or if the parent is
+                provably not a sense (an entry goes via Create).
 
         Example:
             >>> entry = list(project.LexiconAllEntries())[0]
@@ -2013,36 +2031,32 @@ class LexSenseOperations(BaseOperations):
             to run (of water)
 
         Notes:
+            - Equivalent to ``Create(parent_sense_or_hvo, gloss, ...)``.
             - The subsense is added at the end of parent's subsense list
             - Subsense inherits some properties from parent
             - Subsense numbers are formatted with parent number (e.g., 1.1, 1.2)
 
         See Also:
-            GetSubsenses, GetParentSense
+            Create, GetSubsenses, GetParentSense
         """
         self._EnsureWriteEnabled()
 
         self._ValidateParam(parent_sense_or_hvo, "parent_sense_or_hvo")
-        self._ValidateParam(gloss, "gloss")
 
-        self._ValidateStringNotEmpty(gloss, "gloss")
+        # Narrow contract: the parent must be a sense. An entry takes the
+        # Create path; without this check an entry parent would silently
+        # gain a top-level sense (both classes expose SensesOS).
+        if not self.__IsSenseParent(parent_sense_or_hvo):
+            raise FP_ParameterError(
+                "CreateSubsense() parent must be a sense; "
+                "for a lexical entry use Create() instead"
+            )
 
-        parent_sense = self.__GetSenseObject(parent_sense_or_hvo)
-        wsHandle = self.__WSHandleAnalysis(wsHandle)
-
+        # Bracketed per D5 (the scanner cannot see through same-class
+        # delegation): joins Create's inner transaction via nesting
+        # (B1) rather than opening a separate undo unit.
         with self._TransactionCM("Create subsense"):
-            # Create the new subsense using the factory
-            factory = self.project.project.ServiceLocator.GetService(ILexSenseFactory)
-            new_subsense = factory.Create()
-
-            # Add to parent sense (must be done before setting properties)
-            parent_sense.SensesOS.Add(new_subsense)
-
-            # Set gloss
-            mkstr = TsStringUtils.MakeString(gloss, wsHandle)
-            new_subsense.Gloss.set_String(wsHandle, mkstr)
-
-            return new_subsense
+            return self.Create(parent_sense_or_hvo, gloss, wsHandle=wsHandle)
 
     @OperationsMethod
     def GetParentSense(self, sense_or_hvo):
@@ -4128,6 +4142,61 @@ class LexSenseOperations(BaseOperations):
         if isinstance(sense_or_hvo, int):
             return cast_to_concrete(self.project.Object(sense_or_hvo))
         return cast_to_concrete(sense_or_hvo)
+
+    def __GetSenseOwnerObject(self, parent_or_hvo):
+        """
+        Resolve the owner of a new sense: an ILexEntry (top-level sense)
+        or an ILexSense (subsense), from an object or HVO.
+
+        Discrimination is by ClassName: "LexSense" takes the subsense
+        path, "LexEntry" the entry path. A parent with no usable
+        ClassName (a non-LCM stand-in, or an HVO resolving outside the
+        LCM) takes the entry path, preserving Create's historical
+        behaviour; an HVO resolving to a provably different LCM class
+        raises.
+
+        Args:
+            parent_or_hvo: An ILexEntry or ILexSense object, or an HVO.
+
+        Returns:
+            tuple: (owner, is_subsense) with the owner cast for SensesOS
+            access and is_subsense True for a sense parent.
+
+        Raises:
+            FP_ParameterError: If an HVO parent is provably neither an
+                entry nor a sense.
+        """
+        if isinstance(parent_or_hvo, int):
+            class_name = getattr(
+                self.project.Object(parent_or_hvo), "ClassName", None
+            )
+            if class_name == "LexSense":
+                return self.__GetSenseObject(parent_or_hvo), True
+            if class_name == "LexEntry" or not isinstance(class_name, str):
+                return self.__GetEntryObject(parent_or_hvo), False
+            raise FP_ParameterError(
+                "Create() parent must be a lexical entry or a sense "
+                f"(HVO resolves to ClassName {class_name!r})"
+            )
+        owner = cast_to_concrete(parent_or_hvo)
+        return owner, getattr(owner, "ClassName", None) == "LexSense"
+
+    def __IsSenseParent(self, parent_or_hvo):
+        """
+        True when the parent is provably -- or possibly -- a sense.
+
+        Only a present, non-"LexSense" ClassName answers False (narrowing
+        the CreateSubsense contract); anything unknowable (no ClassName,
+        non-string ClassName on a stand-in) answers True and flows to
+        Create, which applies the entry-path default.
+        """
+        if isinstance(parent_or_hvo, int):
+            class_name = getattr(
+                self.project.Object(parent_or_hvo), "ClassName", None
+            )
+        else:
+            class_name = getattr(parent_or_hvo, "ClassName", None)
+        return not (isinstance(class_name, str) and class_name != "LexSense")
 
     def __GetSemanticDomainObject(self, domain_or_hvo):
         """

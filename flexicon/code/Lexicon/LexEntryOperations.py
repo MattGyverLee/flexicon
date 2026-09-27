@@ -1816,6 +1816,9 @@ class LexEntryOperations(BaseOperations):
         """
         Add a new sense to a lexical entry.
 
+        Thin wrapper over project.Senses.Create; all creation logic
+        lives there.
+
         Args:
             entry_or_hvo: Either an ILexEntry object or its HVO
             gloss (str): The gloss text for the new sense
@@ -1827,7 +1830,9 @@ class LexEntryOperations(BaseOperations):
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
             FP_NullParameterError: If entry_or_hvo or gloss is None
-            FP_ParameterError: If gloss is empty
+            FP_ParameterError: If gloss is empty, or if the parent is
+                provably not a lexical entry (a sense goes via
+                project.Senses.CreateSubsense)
 
         Example:
             >>> entry = project.LexEntry.Find("run")
@@ -1841,6 +1846,7 @@ class LexEntryOperations(BaseOperations):
             ...                                       project.WSHandle('fr'))
 
         Notes:
+            - Equivalent to ``project.Senses.Create(entry_or_hvo, gloss, ...)``.
             - Sense is appended to the end of the sense list
             - Gloss is stored in the specified writing system
             - Only gloss is set - use FLExProject methods for other properties
@@ -1852,26 +1858,28 @@ class LexEntryOperations(BaseOperations):
         self._EnsureWriteEnabled()
 
         self._ValidateParam(entry_or_hvo, "entry_or_hvo")
-        self._ValidateParam(gloss, "gloss")
 
-        self._ValidateStringNotEmpty(gloss, "gloss")
+        # Narrow contract: the parent must be an entry. The HVO leg keeps
+        # __ResolveObject's strict union (isinstance or ClassName); an
+        # object with no usable ClassName flows through to
+        # Senses.Create, which applies the entry-path default.
+        if isinstance(entry_or_hvo, int):
+            self.__ResolveObject(entry_or_hvo)
+        else:
+            class_name = getattr(entry_or_hvo, "ClassName", None)
+            if isinstance(class_name, str) and class_name != "LexEntry":
+                raise FP_ParameterError(
+                    "AddSense() parent must be a lexical entry; "
+                    "for a sense use project.Senses.CreateSubsense() instead"
+                )
 
-        entry = self.__ResolveObject(entry_or_hvo)
-        wsHandle = self.__WSHandleAnalysis(wsHandle)
-
+        # Bracketed per D5 (the scanner cannot see through cross-class
+        # delegation via self.project.Senses): joins Senses.Create's
+        # inner transaction via nesting (B1).
         with self._TransactionCM("Add sense"):
-            # Create the new sense using the factory
-            factory = self.project.project.ServiceLocator.GetService(ILexSenseFactory)
-            new_sense = factory.Create()
-
-            # Add to entry's sense list (must be done before setting properties)
-            entry.SensesOS.Add(new_sense)
-
-            # Set the gloss
-            mkstr = TsStringUtils.MakeString(gloss, wsHandle)
-            new_sense.Gloss.set_String(wsHandle, mkstr)
-
-            return new_sense
+            return self.project.Senses.Create(
+                entry_or_hvo, gloss, wsHandle=wsHandle
+            )
 
     # --- Additional Properties ---
 
