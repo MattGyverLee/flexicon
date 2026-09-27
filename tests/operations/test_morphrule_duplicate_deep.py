@@ -50,7 +50,6 @@ class _FakeAffixTemplatesOS(list):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.IndexOf = Mock(side_effect=lambda item: self.index(item))
         self.Insert = Mock(side_effect=lambda idx, item: list.insert(self, idx, item))
         self.Add = Mock(side_effect=lambda item: list.append(self, item))
 
