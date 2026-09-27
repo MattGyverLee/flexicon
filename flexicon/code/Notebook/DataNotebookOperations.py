@@ -320,9 +320,13 @@ class DataNotebookOperations(BaseOperations):
         return iter(notebook.RecordsOC)
 
     @OperationsMethod
-    def Create(self, title, content=None, wsHandle=None):
+    def Create(self, title, content=None, wsHandle=None, parent=None):
         """
         Create a new research notebook record.
+
+        This is the canonical creation path for both top-level records and
+        sub-records; CreateSubRecord delegates to it with
+        parent=parent_record_or_hvo.
 
         Creates a top-level notebook record with the specified title and optional
         content. Use CreateSubRecord() to create hierarchical sub-records.
@@ -332,6 +336,9 @@ class DataNotebookOperations(BaseOperations):
             content (str, optional): The main content/body text of the record.
                 Defaults to None (empty content).
             wsHandle: Optional writing system handle. Defaults to analysis WS.
+            parent: Optional parent record (IRnGenericRec) or its HVO. If
+                None (default), creates a top-level record; if given,
+                creates a sub-record of that parent. Defaults to None.
 
         Returns:
             IRnGenericRec: The newly created notebook record object.
@@ -339,7 +346,8 @@ class DataNotebookOperations(BaseOperations):
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled.
             FP_NullParameterError: If title is None.
-            FP_ParameterError: If title is empty.
+            FP_ParameterError: If title is empty, or if the parent doesn't
+                exist.
 
         Example:
             >>> # Create a basic record
@@ -356,6 +364,10 @@ class DataNotebookOperations(BaseOperations):
             ...     content="Notas sobre terminología de parentesco",
             ...     wsHandle=project.WSHandle('es')
             ... )
+
+            >>> # A sub-record is just a Create with a parent
+            >>> sub = project.DataNotebook.Create(
+            ...     "Kinship Terminology", parent=record)
 
             >>> # Create and configure
             >>> record = project.DataNotebook.Create("Field Observation")
@@ -382,15 +394,26 @@ class DataNotebookOperations(BaseOperations):
 
         wsHandle = self.__WSHandle(wsHandle)
 
+        parent_record = None
+        if parent is not None:
+            self._ValidateParam(parent, "parent")
+            parent_record = self.__GetRecordObject(parent)
+            label = f"Create sub-record '{title}'"
+        else:
+            label = f"Create notebook record '{title}'"
+
         factory = self.project.project.ServiceLocator.GetService(IRnGenericRecFactory)
 
-        # Create the record in the RecordsOC collection, owned by the
-        # project's single ResearchNotebookOA -- not by the repository,
-        # which has no RecordsOC member (ruling C1).
-        with self._TransactionCM(f"Create notebook record '{title}'"):
+        with self._TransactionCM(label):
 
             record = factory.Create()
-            self.project.lp.ResearchNotebookOA.RecordsOC.Add(record)
+            if parent_record is not None:
+                parent_record.SubRecordsOS.Add(record)
+            else:
+                # Create the record in the RecordsOC collection, owned by the
+                # project's single ResearchNotebookOA -- not by the repository,
+                # which has no RecordsOC member (ruling C1).
+                self.project.lp.ResearchNotebookOA.RecordsOC.Add(record)
 
             # Set title. IRnGenericRec.Title is a bare ITsString, not an
             # IMultiString -- it has no set_String/get_String (live-proven,
@@ -1176,6 +1199,9 @@ class DataNotebookOperations(BaseOperations):
         """
         Create a new sub-record under a parent notebook record.
 
+        Thin wrapper over Create with parent=parent_record_or_hvo; all
+        creation logic lives on Create.
+
         Creates a child record in the hierarchical structure. Sub-records
         inherit the context of their parent but can have their own properties,
         links, and media.
@@ -1215,6 +1241,8 @@ class DataNotebookOperations(BaseOperations):
             ... )
 
         Notes:
+            - Equivalent to ``Create(title, content, wsHandle,
+              parent=parent_record_or_hvo)``.
             - Sub-records can have their own sub-records (unlimited nesting)
             - Sub-records are independent objects with their own properties
             - Deleting parent deletes all sub-records recursively
@@ -1225,31 +1253,18 @@ class DataNotebookOperations(BaseOperations):
         """
         self._EnsureWriteEnabled()
 
-        self._ValidateParam(title, "title")
+        self._ValidateParam(parent_record_or_hvo, "parent_record_or_hvo")
 
-        if not title.strip():
-            raise FP_ParameterError("Title cannot be empty")
-
-        parent = self.__GetRecordObject(parent_record_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
-        # Create the sub-record
-        factory = self.project.project.ServiceLocator.GetService(IRnGenericRecFactory)
-
+        # Bracketed per D5 (the scanner cannot see through same-class
+        # delegation): joins Create's inner transaction via nesting
+        # (B1) rather than opening a separate undo unit.
         with self._TransactionCM(f"Create sub-record '{title}'"):
-
-            subrecord = factory.Create()
-            parent.SubRecordsOS.Add(subrecord)
-
-            # Set title (bare ITsString, issue #352)
-            subrecord.Title = self._MakeTsString(title, wsHandle)
-
-            # Set content if provided (DescriptionOA; no Text member,
-            # issue #352)
-            if content:
-                self._SetRecordContent(subrecord, content, wsHandle)
-
-            return subrecord
+            return self.Create(
+                title,
+                content=content,
+                wsHandle=wsHandle,
+                parent=parent_record_or_hvo,
+            )
 
     @OperationsMethod
     def GetParentRecord(self, record_or_hvo):

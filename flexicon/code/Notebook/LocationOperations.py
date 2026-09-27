@@ -133,14 +133,21 @@ class LocationOperations(BaseOperations):
             location_list.PossibilitiesOS, ICmLocation, recursive))
 
     @OperationsMethod
-    def Create(self, name, wsHandle=None, alias=None):
+    def Create(self, name, wsHandle=None, alias=None, parent=None):
         """
-        Create a new top-level location.
+        Create a new location.
+
+        This is the canonical creation path for both top-level locations
+        and sublocations; CreateSublocation delegates to it with
+        parent=parent_location_or_hvo.
 
         Args:
             name (str): The name of the new location.
             wsHandle: Optional writing system handle. Defaults to analysis WS.
             alias (str): Optional alias/abbreviation for the location.
+            parent: Optional parent ICmLocation object or HVO. If None
+                (default), creates a top-level location; if given, creates
+                a sublocation of that parent. Defaults to None.
 
         Returns:
             ICmLocation: The newly created location object.
@@ -148,7 +155,8 @@ class LocationOperations(BaseOperations):
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If name is None.
-            FP_ParameterError: If name is empty.
+            FP_ParameterError: If name is empty, the locations list is
+                missing (top-level only), or the parent doesn't exist.
 
         Example:
             >>> # Create a simple location
@@ -162,13 +170,17 @@ class LocationOperations(BaseOperations):
             >>> print(project.Location.GetAlias(region))
             VAU
 
+            >>> # A sublocation is just a Create with a parent
+            >>> town = project.Location.Create("Mitú", "en", parent=region)
+
             >>> # Add coordinates and elevation
             >>> project.Location.SetCoordinates(village, -1.2345, -70.6789)
             >>> project.Location.SetElevation(village, 150)
 
         Notes:
-            - Creates a top-level location (no parent region)
-            - Use CreateSublocation() to create hierarchical locations
+            - Creates a top-level location (no parent region) unless parent
+              is given -- use CreateSublocation() to create hierarchical
+              locations
             - Name is set in specified writing system
             - Alias is optional and can be set later with SetAlias()
             - Coordinates and elevation should be set separately
@@ -186,18 +198,30 @@ class LocationOperations(BaseOperations):
 
         wsHandle = self.__WSHandle(wsHandle)
 
-        # Get the locations list
-        location_list = self.project.lp.LocationsOA
-        if not location_list:
-            raise FP_ParameterError("Locations list not found in project")
+        parent_location = None
+        if parent is not None:
+            self._ValidateParam(parent, "parent")
+            parent_location = self.__ResolveObject(parent)
+            label = f"Create sublocation '{name}'"
+        else:
+            # Get the locations list (top-level creates only; a sublocation
+            # attaches to its parent, which implies the list exists)
+            location_list = self.project.lp.LocationsOA
+            if not location_list:
+                raise FP_ParameterError("Locations list not found in project")
+            label = f"Create location '{name}'"
 
         # Create the new location using the factory
-        with self._TransactionCM(f"Create location '{name}'"):
+        with self._TransactionCM(label):
             factory = self.project.project.ServiceLocator.GetService(ICmLocationFactory)
             new_location = factory.Create()
 
-            # Add to top-level list (must be done before setting properties)
-            location_list.PossibilitiesOS.Add(new_location)
+            # Add to the parent's sublocations or the top-level list
+            # (must be done before setting properties)
+            if parent_location is not None:
+                parent_location.SubPossibilitiesOS.Add(new_location)
+            else:
+                location_list.PossibilitiesOS.Add(new_location)
 
             # Set name
             mkstr_name = TsStringUtils.MakeString(name, wsHandle)
@@ -1037,6 +1061,9 @@ class LocationOperations(BaseOperations):
         """
         Create a new sublocation under a parent location.
 
+        Thin wrapper over Create with parent=parent_location_or_hvo; all
+        creation logic lives on Create.
+
         Args:
             parent_location_or_hvo: The parent ICmLocation object or HVO.
             name (str): The name of the new sublocation.
@@ -1065,6 +1092,8 @@ class LocationOperations(BaseOperations):
             Vaupés Department
 
         Notes:
+            - Equivalent to ``Create(name, wsHandle, alias=alias,
+              parent=parent_location_or_hvo)``.
             - Creates location as child of parent
             - Parent-child relationship is established automatically
             - Sublocation inherits no properties from parent (coordinates, etc.)
@@ -1077,35 +1106,17 @@ class LocationOperations(BaseOperations):
         self._EnsureWriteEnabled()
 
         self._ValidateParam(parent_location_or_hvo, "parent_location_or_hvo")
-        self._ValidateParam(name, "name")
 
-        if not name or not name.strip():
-            raise FP_ParameterError("Name cannot be empty")
-
-        parent = self.__ResolveObject(parent_location_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
-        # Create the new location using the factory
+        # Bracketed per D5 (the scanner cannot see through same-class
+        # delegation): joins Create's inner transaction via nesting
+        # (B1) rather than opening a separate undo unit.
         with self._TransactionCM(f"Create sublocation '{name}'"):
-            factory = self.project.project.ServiceLocator.GetService(ICmLocationFactory)
-            new_location = factory.Create()
-
-            # Add to parent's sublocations (must be done before setting properties)
-            parent.SubPossibilitiesOS.Add(new_location)
-
-            # Set name
-            mkstr_name = TsStringUtils.MakeString(name, wsHandle)
-            new_location.Name.set_String(wsHandle, mkstr_name)
-
-            # Set alias if provided
-            if alias:
-                mkstr_alias = TsStringUtils.MakeString(alias, wsHandle)
-                new_location.Abbreviation.set_String(wsHandle, mkstr_alias)
-
-            # Set creation date
-            new_location.DateCreated = DateTime.Now
-
-            return new_location
+            return self.Create(
+                name,
+                wsHandle,
+                alias=alias,
+                parent=parent_location_or_hvo,
+            )
 
     @OperationsMethod
     def Duplicate(self, location_or_hvo, insert_after=True, deep=True):
