@@ -442,7 +442,7 @@ class AllomorphOperations(BaseOperations):
             - Factory.Create() automatically generates a new GUID
             - Factory type determined by source ClassName (MoStemAllomorph, MoAffixAllomorph, etc.)
             - insert_after=True preserves the original allomorph's position/priority
-            - Simple properties copied: Form (MultiString)
+            - Simple properties copied: Form (MultiString), IsAbstract (bool)
             - Reference properties copied: MorphTypeRA, PhoneEnvRC
             - Allomorphs have no owned objects, so deep parameter has no effect
             - Only duplicates alternate forms, not lexeme forms
@@ -510,6 +510,9 @@ class AllomorphOperations(BaseOperations):
 
             # Copy simple MultiString properties (AFTER adding to parent)
             duplicate.Form.CopyAlternatives(source.Form)
+
+            # Copy atomic properties
+            duplicate.IsAbstract = bool(source.IsAbstract)
 
             # Copy Reference Atomic (RA) properties
             duplicate.MorphTypeRA = source.MorphTypeRA
@@ -1332,6 +1335,87 @@ class AllomorphOperations(BaseOperations):
 
         with self._TransactionCM("Set allomorph morph type"):
             allomorph.MorphTypeRA = morphType
+
+    @OperationsMethod
+    def GetIsAbstract(self, allomorph_or_hvo):
+        """
+        Check whether an allomorph is an abstract underlying form.
+
+        FLEx marks abstract underlying forms with the "Abstract form"
+        checkbox; they matter for parser work.
+
+        Args:
+            allomorph_or_hvo: The IMoForm object or HVO. Accepts a lexeme
+                form (``entry.LexemeFormOA``), an alternate form, an HVO
+                int, or an ``Allomorph`` wrapper from ``GetAll()``.
+
+        Returns:
+            bool: True if this is an abstract form, False otherwise.
+
+        Raises:
+            FP_NullParameterError: If allomorph_or_hvo is None.
+
+        Example:
+            >>> allomorphOps = AllomorphOperations(project)
+            >>> entry = project.LexiconAllEntries()[0]
+            >>> allomorphs = list(allomorphOps.GetAll(entry))
+            >>> if allomorphs:
+            ...     print(allomorphOps.GetIsAbstract(allomorphs[0]))
+            False
+
+        Notes:
+            - Works for the lexeme form as well as alternate forms.
+            - This is NOT a counterpart to the deprecated
+              ``LexEntry.DoNotUseForParsing``; recipes should not rely on
+              ``DoNotUseForParsing``.
+
+        See Also:
+            SetIsAbstract, GetSyncableProperties
+        """
+        self._ValidateParam(allomorph_or_hvo, "allomorph_or_hvo")
+
+        allomorph = self.__GetAllomorphObject(allomorph_or_hvo)
+        return bool(allomorph.IsAbstract)
+
+    @OperationsMethod
+    def SetIsAbstract(self, allomorph_or_hvo, value):
+        """
+        Set whether an allomorph is an abstract underlying form.
+
+        Args:
+            allomorph_or_hvo: The IMoForm object or HVO. Accepts a lexeme
+                form (``entry.LexemeFormOA``), an alternate form, an HVO
+                int, or an ``Allomorph`` wrapper from ``GetAll()``.
+            value (bool): True to mark as abstract, False to clear.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If allomorph_or_hvo or value is None.
+
+        Example:
+            >>> allomorphOps = AllomorphOperations(project)
+            >>> entry = project.LexiconAllEntries()[0]
+            >>> allomorphs = list(allomorphOps.GetAll(entry))
+            >>> if allomorphs:
+            ...     allomorphOps.SetIsAbstract(allomorphs[0], True)
+            ...     print(allomorphOps.GetIsAbstract(allomorphs[0]))
+            True
+
+        Notes:
+            - Works for the lexeme form as well as alternate forms.
+
+        See Also:
+            GetIsAbstract, GetSyncableProperties
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(allomorph_or_hvo, "allomorph_or_hvo")
+        self._ValidateParam(value, "value")
+
+        allomorph = self.__GetAllomorphObject(allomorph_or_hvo)
+
+        with self._TransactionCM("Set allomorph abstract flag"):
+            allomorph.IsAbstract = bool(value)
 
     @OperationsMethod
     def GetPhoneEnv(self, allomorph_or_hvo):
