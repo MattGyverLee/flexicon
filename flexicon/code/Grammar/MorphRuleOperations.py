@@ -1155,11 +1155,26 @@ class MorphRuleOperations(BaseOperations):
     # ========== PRIVATE HELPERS ==========
 
     def __ResolveObject(self, rule_or_hvo):
-        """Resolve an HVO or object to an LCM object.
+        """Resolve an HVO or object to a concretely-typed LCM object.
 
-        A ``PartOfSpeech`` is cast to ``IPartOfSpeech``. ``Owner`` and
-        ``project.Object`` can both be a bare ``ICmObject``, which does
-        not expose category members such as ``AllAffixSlots``.
+        Every resolved object is routed through ``cast_to_concrete``
+        (issue #561), replacing the previous ``ClassName ==
+        "PartOfSpeech"``-gated cast. That gate covered only one of the
+        four types this class resolves: ``PartOfSpeech``,
+        ``MoInflAffixTemplate``, ``MoEndoCompound`` and ``MoExoCompound``.
+        The other three came back as a bare ``ICmObject``, on which no
+        subtype-only member is reachable -- so a documented input shape
+        (HVO) raised ``AttributeError: 'ICmObject' object has no
+        attribute 'Name'`` on every call, e.g.
+        ``Duplicate(project.Object(hvo))``. The ``hasattr``-guarded
+        copies in ``Duplicate`` would likewise have been silently
+        skipped rather than reported.
+
+        ``cast_to_concrete`` is total -- an unrecognised ``ClassName`` (or
+        a failed cast) yields the original object unchanged -- and
+        ``lcm_casting``'s registry already carries all four ClassNames
+        above, so this is a strict widening of the old gate rather than a
+        behaviour change for any call that works today.
 
         ``rule_or_hvo`` may also be a ``CompoundRule``/``AffixTemplate``
         wrapper item from ``GetAll()``/``GetAllCompoundRules()``/
@@ -1170,15 +1185,15 @@ class MorphRuleOperations(BaseOperations):
         assigning through a wrapper's proxied setters (e.g.
         ``rule.StratumRA = ...``) is a silent no-op.
         """
+        from ..lcm_casting import cast_to_concrete
+
         rule_or_hvo = self._UnwrapLcm(rule_or_hvo)
         if isinstance(rule_or_hvo, int):
             obj = self.project.Object(rule_or_hvo)
         else:
             obj = rule_or_hvo
 
-        if getattr(obj, "ClassName", None) == "PartOfSpeech":
-            return IPartOfSpeech(obj)
-        return obj
+        return cast_to_concrete(obj)
 
     def __AllAffixSlotHvos(self, pos):
         """HVOs in ``IPartOfSpeech.AllAffixSlots``, or None if that property is absent.
