@@ -12,7 +12,7 @@ Phonological contexts in FieldWorks can have multiple concrete implementations:
 | `PhSimpleContextNC` | Simple context with natural class |
 | `PhComplexContextSeg` | Complex context with multiple segment specifications |
 | `PhComplexContextNC` | Complex context with multiple natural class specifications |
-| `PhBoundaryContext` | Word or morpheme boundary context |
+| `PhSimpleContextBdry` | Word or morpheme boundary context |
 
 All types share a common base interface, but have different properties.
 
@@ -22,6 +22,7 @@ Without wrappers, working with contexts required type checking and casting:
 
 ```python
 from flexicon import FLExProject
+from flexicon.code.Shared.string_utils import best_analysis_text
 
 project = FLExProject('TestProject')
 phonRuleOps = project.grammar.phonological_rules
@@ -40,13 +41,13 @@ for context in contexts:
         # Need to cast to concrete interface
         seg_context = IPhSimpleContextSeg(context)
         segment = seg_context.FeatureStructureRA  # Link to IPhPhoneme
-        print(f"Segment: {segment.Name}")
+        print(f"Segment: {best_analysis_text(segment.Name)}")
 
-    elif class_name == 'PhBoundaryContext':
+    elif class_name == 'PhSimpleContextBdry':
         # Different type, different cast
-        boundary_context = IPhBoundaryContext(context)
-        btype = boundary_context.Type
-        print(f"Boundary type: {btype}")
+        boundary_context = IPhSimpleContextBdry(context)
+        marker = boundary_context.FeatureStructureRA  # Link to IPhBdryMarker
+        print(f"Boundary: {best_analysis_text(marker.Name)}")
 
     # Other context types...
     # No type breakdown or filtering available
@@ -58,6 +59,7 @@ With the `PhonologicalContext` wrapper and `ContextCollection`, work is simpler 
 
 ```python
 from flexicon import FLExProject
+from flexicon.code.Shared.string_utils import best_analysis_text
 
 project = FLExProject('TestProject')
 phonRuleOps = project.grammar.phonological_rules
@@ -73,7 +75,7 @@ print(contexts)
 # Output:
 # ContextCollection (8 total)
 #   PhSimpleContextSeg: 4 (50%)
-#   PhBoundaryContext: 3 (37%)
+#   PhSimpleContextBdry: 3 (37%)
 #   PhSimpleContextNC: 1 (13%)
 
 # Iterate with transparent type access
@@ -83,11 +85,10 @@ for context in contexts:
     # Check type with simple boolean properties
     if context.is_simple_context_seg:
         segment = context.segment
-        print(f"  Segment: {segment.Name}")
+        print(f"  Segment: {best_analysis_text(segment.Name)}")
 
     if context.is_boundary_context:
-        btype = context.boundary_type
-        print(f"  Boundary type: {btype}")
+        print(f"  Boundary: {context.boundary_name}")
 ```
 
 ## Filtering Contexts
@@ -188,24 +189,37 @@ class_name = context.class_type  # str - e.g., "PhSimpleContextSeg"
 Access type-specific properties based on context type:
 
 ```python
+from flexicon.code.Shared.string_utils import best_analysis_text
+
 context = rule.input_contexts[0]
 
 # Simple segment context
 if context.is_simple_context_seg:
     segment = context.segment  # IPhPhoneme object
     if segment:
-        print(f"Segment: {segment.Name}")
+        print(f"Segment: {best_analysis_text(segment.Name)}")
 
 # Simple natural class context
 if context.is_simple_context_nc:
     nat_class = context.natural_class  # IPhNaturalClass object
     if nat_class:
-        print(f"Natural class: {nat_class.Name}")
+        print(f"Natural class: {best_analysis_text(nat_class.Name)}")
 
 # Boundary context
 if context.is_boundary_context:
-    btype = context.boundary_type  # int - 0=word, 1=morpheme, etc.
-    print(f"Boundary type: {btype}")
+    marker = context.boundary_marker  # IPhBdryMarker object
+    print(f"Boundary: {context.boundary_name}")
+
+# Iteration context (None max_count means unbounded)
+if context.is_iteration_context:
+    member = context.member  # PhonologicalContext object
+    maximum = context.max_count
+    print(f"Repeats {context.min_count}..{'*' if maximum is None else maximum}")
+
+# Sequence context
+if context.is_sequence_context:
+    for element in context.members:  # ContextCollection of pool references
+        print(element.context_name)
 ```
 
 ### Availability Pattern
@@ -263,7 +277,7 @@ if context.is_simple_context_seg:
 
 elif context.is_boundary_context:
     concrete = context.as_boundary_context()
-    # concrete is now IPhBoundaryContext
+    # concrete is now IPhSimpleContextBdry
 
 # Or get concrete directly
 concrete = context.concrete
@@ -282,7 +296,7 @@ print(contexts)
 # Output:
 # ContextCollection (12 total)
 #   PhSimpleContextSeg: 6 (50%)
-#   PhBoundaryContext: 4 (33%)
+#   PhSimpleContextBdry: 4 (33%)
 #   PhSimpleContextNC: 2 (17%)
 ```
 
@@ -329,16 +343,14 @@ boundaries = rule.input_contexts.boundary_contexts()
 print(f"Rule '{rule.name}' has {len(boundaries)} boundary contexts")
 
 for boundary in boundaries:
-    btype = boundary.boundary_type
-    if btype == 0:
-        print("  Word boundary")
-    elif btype == 1:
-        print("  Morpheme boundary")
+    print(f"  Boundary: {boundary.boundary_name}")
 ```
 
 ### Example 2: Filter Contexts by Type and Name
 
 ```python
+from flexicon.code.Shared.string_utils import best_analysis_text
+
 rule = phonRuleOps.GetAll()[0]
 
 # Find simple segment contexts with 'voiceless' in the name
@@ -348,7 +360,7 @@ voiceless_segments = (rule.input_contexts
 
 for vctx in voiceless_segments:
     segment = vctx.segment
-    print(f"Voiceless segment: {segment.Name}")
+    print(f"Voiceless segment: {best_analysis_text(segment.Name)}")
 ```
 
 ### Example 3: Analyze Context Diversity
@@ -377,23 +389,24 @@ print(f"Boundaries: {boundaries}")
 ### Example 4: Process Each Context Type
 
 ```python
+from flexicon.code.Shared.string_utils import best_analysis_text
+
 rule = phonRuleOps.GetAll()[0]
 
 for context in rule.input_contexts:
     if context.is_simple_context_seg:
         # Process simple segment context
         segment = context.segment
-        print(f"Segment: {segment.Name}")
+        print(f"Segment: {best_analysis_text(segment.Name)}")
 
     elif context.is_simple_context_nc:
         # Process simple natural class context
         nat_class = context.natural_class
-        print(f"Natural class: {nat_class.Name}")
+        print(f"Natural class: {best_analysis_text(nat_class.Name)}")
 
     elif context.is_boundary_context:
         # Process boundary context
-        btype = context.boundary_type
-        print(f"Boundary (type {btype})")
+        print(f"Boundary: {context.boundary_name}")
 
     elif context.is_complex_context:
         # Process complex context
@@ -419,12 +432,19 @@ class PhonologicalContext(LCMObjectWrapper):
     is_complex_context_seg: bool  # True if PhComplexContextSeg
     is_complex_context_nc: bool   # True if PhComplexContextNC
     is_complex_context: bool      # True if any complex context
-    is_boundary_context: bool     # True if PhBoundaryContext
+    is_boundary_context: bool     # True if PhSimpleContextBdry
+    is_iteration_context: bool    # True if PhIterationContext
+    is_sequence_context: bool     # True if PhSequenceContext
 
     # Type-specific properties
-    segment: object          # IPhSegment (for simple segment contexts)
+    segment: object          # IPhPhoneme (for simple segment contexts)
     natural_class: object    # IPhNaturalClass (for simple NC contexts)
-    boundary_type: int       # Type value (for boundary contexts)
+    boundary_marker: object  # IPhBdryMarker (for boundary contexts)
+    boundary_name: str       # Marker name text (for boundary contexts)
+    min_count: int           # Minimum repetitions (for iteration contexts)
+    max_count: int or None   # Maximum repetitions, None when unbounded
+    member: object           # Wrapped member context (for iteration contexts)
+    members: object          # ContextCollection of members (for sequence contexts)
 
     # Advanced access
     concrete: object         # Raw concrete interface object
@@ -434,7 +454,7 @@ class PhonologicalContext(LCMObjectWrapper):
     as_simple_context_nc(): IPhSimpleContextNC or None
     as_complex_context_seg(): IPhComplexContextSeg or None
     as_complex_context_nc(): IPhComplexContextNC or None
-    as_boundary_context(): IPhBoundaryContext or None
+    as_boundary_context(): IPhSimpleContextBdry or None
 ```
 
 ### ContextCollection Class

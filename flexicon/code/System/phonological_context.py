@@ -20,9 +20,11 @@ handles the multiple concrete types of phonological contexts:
 - PhSimpleContextNC: Simple context with natural class
 - PhComplexContextSeg: Complex context with segments
 - PhComplexContextNC: Complex context with natural class
-- PhBoundaryContext: Boundary context
+- PhSimpleContextBdry: Boundary context
+- PhIterationContext: Iteration (repetition) context
+- PhSequenceContext: Sequence of member contexts
 
-All share a base interface IPhPhonContext or similar.
+All share a base interface IPhPhonContext.
 
 Problem:
     Phonological contexts have different properties depending on their concrete type:
@@ -30,7 +32,9 @@ Problem:
     - PhSimpleContextNC: Represents a natural class
     - PhComplexContextSeg: Complex segment specifications
     - PhComplexContextNC: Complex natural class specifications
-    - PhBoundaryContext: Word/morpheme boundaries
+    - PhSimpleContextBdry: Word/morpheme boundaries
+    - PhIterationContext: A member context with repetition bounds
+    - PhSequenceContext: An ordered sequence of member contexts
 
     All have Name, Description, and other common properties.
 
@@ -70,6 +74,7 @@ Example::
 
 import logging
 
+from ..Shared.string_utils import best_analysis_text, normalize_text
 from ..Shared.wrapper_base import LCMObjectWrapper
 
 logger = logging.getLogger(__name__)
@@ -86,7 +91,8 @@ class PhonologicalContext(LCMObjectWrapper):
     Attributes:
         _obj: The base interface object (IPhPhonContext)
         _concrete: The concrete type object (IPhSimpleContextSeg, IPhSimpleContextNC,
-                  IPhComplexContextSeg, IPhComplexContextNC, IPhBoundaryContext, etc.)
+                   IPhComplexContextSeg, IPhComplexContextNC, IPhSimpleContextBdry,
+                   IPhIterationContext, IPhSequenceContext, etc.)
 
     Example::
 
@@ -129,12 +135,13 @@ class PhonologicalContext(LCMObjectWrapper):
         Notes:
             - For simple contexts, this may be the segment or natural class name
             - For boundary contexts, this identifies the boundary type
+            - Read through best_analysis_text, never str(): Name is an
+              IMultiString and str() returns a .NET type name.
         """
         try:
-            # Many contexts have a Name property
-            if hasattr(self._concrete, "Name"):
-                return str(self._concrete.Name) if self._concrete.Name else ""
-            return ""
+            return best_analysis_text(
+                getattr(self._concrete, "Name", None)
+            )
         except Exception:
             return ""
 
@@ -149,13 +156,44 @@ class PhonologicalContext(LCMObjectWrapper):
         Example::
 
             print(f"Context: {wrapped.description}")
+
+        Notes:
+            - DescriptionOA is an owning atomic context whose own Name
+              carries the text; an IStText paragraph fallback covers
+              projects that store it as running text instead.
         """
         try:
-            if hasattr(self._concrete, "Description"):
-                return str(self._concrete.Description) if self._concrete.Description else ""
-            return ""
+            desc_oa = getattr(self._concrete, "DescriptionOA", None)
         except Exception:
             return ""
+        if desc_oa is None:
+            return ""
+        try:
+            name = getattr(desc_oa, "Name", None)
+            if name is not None:
+                text = best_analysis_text(name)
+                if text:
+                    return text
+        except Exception:
+            pass
+        try:
+            paragraphs = getattr(desc_oa, "ParagraphsOS", None)
+            if paragraphs is not None:
+                texts = []
+                for para in paragraphs:
+                    try:
+                        contents = para.Contents
+                        para_text = (
+                            contents.Text if contents is not None else ""
+                        )
+                        if para_text:
+                            texts.append(para_text)
+                    except Exception:
+                        continue
+                return normalize_text("\n".join(texts))
+        except Exception:
+            pass
+        return ""
 
     # ========== Capability Checks (for type-specific properties) ==========
 
@@ -289,7 +327,7 @@ class PhonologicalContext(LCMObjectWrapper):
         Check if this is a boundary context.
 
         Returns:
-            bool: True if this is a PhBoundaryContext.
+            bool: True if this is a PhSimpleContextBdry.
 
         Example::
 
@@ -299,11 +337,223 @@ class PhonologicalContext(LCMObjectWrapper):
         Notes:
             - Boundary contexts represent word or morpheme boundaries
             - Different from other context types in purpose and properties
+            - The LCM class is PhSimpleContextBdry; identity is the IPhBdryMarker
+              behind FeatureStructureRA, exposed as boundary_marker/boundary_name.
         """
         try:
-            return self.class_type == "PhBoundaryContext"
+            return self.class_type == "PhSimpleContextBdry"
         except Exception:
             return False
+
+    @property
+    def boundary_marker(self):
+        """
+        Get the boundary marker for a boundary context.
+
+        Returns:
+            IPhBdryMarker or None: The marker behind FeatureStructureRA,
+                or None when this is not a boundary context or no marker
+                is set.
+
+        Example::
+
+            if wrapped.is_boundary_context:
+                marker = wrapped.boundary_marker
+                print(f"Marker: {wrapped.boundary_name}")
+
+        Notes:
+            - Only meaningful for PhSimpleContextBdry
+            - Returns None for other context types
+        """
+        if not self.is_boundary_context:
+            return None
+
+        try:
+            fsra = getattr(self._concrete, "FeatureStructureRA", None)
+            if fsra is None:
+                return None
+            from SIL.LCModel import IPhBdryMarker
+
+            return IPhBdryMarker(fsra)
+        except Exception:
+            logger.debug(
+                "boundary_marker: failed to cast FeatureStructureRA "
+                "to IPhBdryMarker",
+                exc_info=True,
+            )
+            return None
+
+    @property
+    def boundary_name(self) -> str:
+        """
+        Get the boundary marker's name text.
+
+        Returns:
+            str: The marker name, or empty string when unset or when this
+                is not a boundary context.
+
+        Example::
+
+            if wrapped.is_boundary_context:
+                print(f"Boundary: {wrapped.boundary_name}")
+        """
+        try:
+            marker = self.boundary_marker
+            if marker is None:
+                return ""
+            return best_analysis_text(getattr(marker, "Name", None))
+        except Exception:
+            return ""
+
+    # ========== Iteration and sequence contexts (C5, C6) ==========
+
+    @property
+    def is_iteration_context(self) -> bool:
+        """
+        Check if this is an iteration (repetition) context.
+
+        Returns:
+            bool: True if this is a PhIterationContext.
+
+        Example::
+
+            if wrapped.is_iteration_context:
+                print(f"Repeats {wrapped.min_count}..{wrapped.max_count}")
+        """
+        try:
+            return self.class_type == "PhIterationContext"
+        except Exception:
+            return False
+
+    @property
+    def min_count(self) -> int:
+        """
+        Get the minimum repetition count of an iteration context.
+
+        Returns:
+            int: Minimum, or -1 when this is not an iteration context.
+
+        Example::
+
+            if wrapped.is_iteration_context:
+                print(f"At least {wrapped.min_count} repetitions")
+        """
+        if not self.is_iteration_context:
+            return -1
+        try:
+            return int(self._concrete.Minimum)
+        except Exception:
+            return -1
+
+    @property
+    def max_count(self):
+        """
+        Get the maximum repetition count of an iteration context.
+
+        Returns:
+            Optional[int]: Maximum, or None when unbounded (the LCM stores
+                -1 for unbounded; FieldWorks renders it as infinity at
+                Src/LexText/Morphology/RuleFormulaVcBase.cs:554, so the raw
+                -1 is not exposed). None for a non-iteration context.
+
+        Example::
+
+            if wrapped.is_iteration_context:
+                maximum = wrapped.max_count
+                print("unbounded" if maximum is None else f"At most {maximum}")
+        """
+        if not self.is_iteration_context:
+            return None
+        try:
+            maximum = int(self._concrete.Maximum)
+        except Exception:
+            return None
+        if maximum == -1:
+            return None
+        return maximum
+
+    @property
+    def member(self):
+        """
+        Get the repeated member context of an iteration context.
+
+        Returns:
+            Optional[PhonologicalContext]: The MemberRA context wrapped,
+                or None when this is not an iteration context or no member
+                is set.
+
+        Example::
+
+            if wrapped.is_iteration_context:
+                print(f"Repeats: {wrapped.member.context_name}")
+        """
+        if not self.is_iteration_context:
+            return None
+        try:
+            member = getattr(self._concrete, "MemberRA", None)
+            if member is None:
+                return None
+            return PhonologicalContext(member)
+        except Exception:
+            logger.debug(
+                "member: failed to wrap MemberRA", exc_info=True
+            )
+            return None
+
+    @property
+    def is_sequence_context(self) -> bool:
+        """
+        Check if this is a sequence context.
+
+        Returns:
+            bool: True if this is a PhSequenceContext.
+
+        Example::
+
+            if wrapped.is_sequence_context:
+                for element in wrapped.members:
+                    print(element.context_name)
+        """
+        try:
+            return self.class_type == "PhSequenceContext"
+        except Exception:
+            return False
+
+    @property
+    def members(self):
+        """
+        Get the member contexts of a sequence context.
+
+        Returns:
+            ContextCollection: The wrapped MembersRS references. Empty for
+                a non-sequence context.
+
+        Notes:
+            - The members are references into PhonologicalDataOA.ContextsOS
+              (the project-wide owner pool), not owned children of the
+              sequence. Removing the sequence slot without removing its
+              members from the pool leaks them.
+
+        Example::
+
+            if wrapped.is_sequence_context:
+                for element in wrapped.members:
+                    print(element.context_name)
+        """
+        from .context_collection import ContextCollection
+
+        if not self.is_sequence_context:
+            return ContextCollection([])
+        try:
+            refs = getattr(self._concrete, "MembersRS", None)
+            if refs is None:
+                return ContextCollection([])
+            return ContextCollection([PhonologicalContext(m) for m in refs])
+        except Exception:
+            logger.debug(
+                "members: failed to wrap MembersRS", exc_info=True
+            )
+            return ContextCollection([])
 
     # ========== Type-Specific Property Access (via capability checks) ==========
 
@@ -320,7 +570,11 @@ class PhonologicalContext(LCMObjectWrapper):
             if wrapped.is_simple_context_seg:
                 seg = wrapped.segment
                 if seg:
-                    print(f"Segment: {seg.Name}")
+                    from flexicon.code.Shared.string_utils import (
+                        best_analysis_text,
+                    )
+
+                    print(f"Segment: {best_analysis_text(seg.Name)}")
 
         Notes:
             - Only meaningful for PhSimpleContextSeg
@@ -355,7 +609,11 @@ class PhonologicalContext(LCMObjectWrapper):
             if wrapped.is_simple_context_nc:
                 nc = wrapped.natural_class
                 if nc:
-                    print(f"Natural Class: {nc.Name}")
+                    from flexicon.code.Shared.string_utils import (
+                        best_analysis_text,
+                    )
+
+                    print(f"Natural Class: {best_analysis_text(nc.Name)}")
 
         Notes:
             - Only meaningful for PhSimpleContextNC
@@ -376,34 +634,6 @@ class PhonologicalContext(LCMObjectWrapper):
         except Exception:
             logger.debug("natural_class: failed to cast FeatureStructureRA to IPhNaturalClass", exc_info=True)
             return None
-
-    @property
-    def boundary_type(self):
-        """
-        Get the boundary type from a boundary context.
-
-        Returns:
-            int: The boundary type (0=word, 1=morpheme, etc.), or -1 if not applicable.
-
-        Example::
-
-            if wrapped.is_boundary_context:
-                btype = wrapped.boundary_type
-                print(f"Boundary type: {btype}")
-
-        Notes:
-            - Only meaningful for PhBoundaryContext
-            - Different boundary types have different values
-        """
-        if not self.is_boundary_context:
-            return -1
-
-        try:
-            if hasattr(self._concrete, "Type"):
-                return self._concrete.Type
-            return -1
-        except Exception:
-            return -1
 
     # ========== Advanced: Direct C# class access (optional for power users) ==========
 
@@ -514,27 +744,27 @@ class PhonologicalContext(LCMObjectWrapper):
 
     def as_boundary_context(self):
         """
-        Cast to IPhBoundaryContext if this is a boundary context.
+        Cast to IPhSimpleContextBdry if this is a boundary context.
 
         For advanced users who need direct access to the C# concrete interface.
-        Returns None if this is not a PhBoundaryContext.
+        Returns None if this is not a PhSimpleContextBdry.
 
         Returns:
-            IPhBoundaryContext or None: The concrete interface if this is a
-                PhBoundaryContext, None otherwise.
+            IPhSimpleContextBdry or None: The concrete interface if this is a
+                PhSimpleContextBdry, None otherwise.
 
         Example::
 
             if context_obj.as_boundary_context():
                 concrete = context_obj.as_boundary_context()
-                # Can now access IPhBoundaryContext-specific methods/properties
+                # Can now access IPhSimpleContextBdry-specific methods/properties
 
         Notes:
             - For users who know C# interfaces and want advanced control
             - Most users should use properties like is_boundary_context and
-              boundary_type instead
+              boundary_name instead
         """
-        if self.class_type == "PhBoundaryContext":
+        if self.is_boundary_context:
             return self._concrete
         return None
 
@@ -548,7 +778,8 @@ class PhonologicalContext(LCMObjectWrapper):
 
         Returns:
             The concrete interface object (IPhSimpleContextSeg, IPhSimpleContextNC,
-            IPhComplexContextSeg, IPhComplexContextNC, IPhBoundaryContext, etc.,
+            IPhComplexContextSeg, IPhComplexContextNC, IPhSimpleContextBdry,
+            IPhIterationContext, IPhSequenceContext, etc.,
             depending on the context's actual type).
 
         Example::

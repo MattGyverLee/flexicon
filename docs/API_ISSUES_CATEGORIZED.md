@@ -663,6 +663,74 @@ The actual structure is:
 
 **Fix**: the methods cast to `ICmAnnotationDefn` and use the real fields; `Duplicate` copies `InstanceOfSignature`, `AllowsInstanceOf`, `UserCanCreate`, `Multi` and `CopyCutPastable`. Evidence: `specs/live-verification-followups/evidence/live-annodef-multi.md` (2026-09-23, live reflection and read-back).
 
+### CORRECTED 2026-09-28: `IPhPhonRuleFeat` has no `FeatureStructureRA` (issue #572)
+
+Rule features are possibility-list items, not feature structures. An author
+reaching for the `FeatureStructureRA` pattern that works on phonological
+*contexts* (`IPhSimpleContextSeg` / `IPhSimpleContextNC`, Category 8 above)
+will find nothing to read on a rule feature.
+
+| Object type | Invented name | Real field | Real type | Notes |
+|---|---|---|---|---|
+| `IPhPhonRuleFeat` | `FeatureStructureRA` | *(does not exist)* | — | The feature's name is its own possibility `Name`; what it constrains hides behind the polymorphic `ItemRA` link |
+| `IPhPhonRuleFeat` | — | `ItemRA` | `ICmObject` (concretely `IMoInflClass` or another `ICmPossibility`) | Read uncast; resolve the target's display name through `best_analysis_text` with no assumption about its type |
+
+**Fix**: `RuleFeature.name` reads the feature's own `Name` via
+`best_analysis_text`; `RuleFeature.item` reads `ItemRA` uncast (or `None`);
+`RuleFeature.item_name` reads the target's `Name` via `best_analysis_text`
+whatever the target turns out to be. Nothing in
+`flexicon/code/System/rule_feature.py` reads `FeatureStructureRA`.
+
+Evidence: `specs/572-phonological-rule-readers/evidence/live-US2-rules.md`
+(SC-008 rule-feature half, constructed `TEST_` rule features re-queried by
+GUID, 2026-09-28).
+
+### CORRECTED 2026-09-28: `PhBoundaryContext` is `PhSimpleContextBdry` (issue #572)
+
+The boundary-context wrapper and its `boundary_type` member were named after
+a class that does not exist in the LCM. The real class is
+`PhSimpleContextBdry`, and it carries no discriminator: a boundary's
+identity is the `IPhBdryMarker` behind `FeatureStructureRA`.
+
+| Invented name | Real name | Old symptom |
+|---|---|---|
+| `PhBoundaryContext` / `IPhBoundaryContext` | `PhSimpleContextBdry` | `ContextCollection.boundary_contexts()` filtered `by_type` on a class that never matches; `is_boundary_context` was always `False`, `as_boundary_context()` always `None` |
+| `PhonologicalContext.boundary_type` | `boundary_marker` / `boundary_name` | Promised a `0=word, 1=morpheme` discriminator the LCM type does not have; retired silently (internal-only class), not repaired, because the name was the defect |
+
+**Fix**: `is_boundary_context` tests the real class name,
+`boundary_marker` returns `FeatureStructureRA` as `IPhBdryMarker` or
+`None`, `boundary_name` returns the marker's name text or `""`, and every
+read goes through the cast wrapper (`self._concrete`). Enforced by
+`tests/test_issue572_boundary_context_ratchet.py`, which scans
+`flexicon/`, `docs/` and `tests/` for the retired name with a three-entry
+allowlist (the 4.x `CHANGELOG.md` history entry, the live surface probe
+that records the retired class as absent, and this entry).
+
+Evidence: `specs/572-phonological-rule-readers/evidence/live-US1-contexts.md`
+(2026-09-28).
+
+### CORRECTED 2026-09-28: `IPhPhonContext.Name` is an `IMultiString` (issue #572)
+
+`PhonologicalContext.context_name` read `str(self._concrete.Name)`. `Name`
+is an `IMultiString`, so `str()` returned the literal
+`"SIL.LCModel.DomainImpl.MultiUnicodeAccessor"` for every context -- the
+same single-vs-multi confusion as `ISegment.BaselineText` above, in the
+opposite direction (multi read as single). The damage spread silently:
+`ContextCollection.filter(name_contains=)` could never match anything, and
+the copied docstring examples (`seg.Name`, `nc.Name`,
+`wrapped.stratum.Name`, `slot.owner_pos.Name`, the `inspect_rule_final.py`
+scratch script) all printed type names.
+
+**Fix**: `context_name` reads through `best_analysis_text(Name)` (or `""`);
+`description` reads the text of `DescriptionOA`'s name the same way. The
+pattern audit repaired the six in-tree sites and deleted the seventh, the
+dead WIP scratch script `inspect_rule_final.py` (recorded in
+`specs/572-phonological-rule-readers/evidence/decisions.md`).
+
+Evidence: `specs/572-phonological-rule-readers/evidence/live-US1-contexts.md`
+(SC-004, every pooled and rule-referenced context in `morphboundary`,
+2026-09-28).
+
 ### Recommended pattern
 
 Before touching a field whose type you have not verified for *this specific LCM type*, check this table. If the type is not listed here, verify via the LCM source in `liblcm/src/SIL.LCModel/InterfaceAdditions.cs` or by reading another Operations class that already handles the same type correctly.

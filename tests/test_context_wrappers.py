@@ -24,17 +24,26 @@ from unittest.mock import Mock, patch, MagicMock
 class MockPhonologicalContext:
     """Mock PhonologicalContext for testing ContextCollection."""
 
-    def __init__(self, class_type, name="Test Context"):
+    def __init__(self, class_type, name="Test Context", minimum=0,
+                 maximum=None, member=None, members=None):
         """
         Create a mock PhonologicalContext.
 
         Args:
             class_type: The ClassName (PhSimpleContextSeg, etc.)
             name: Context name
+            minimum: Minimum for a PhIterationContext mock
+            maximum: Maximum for a PhIterationContext mock (-1 unbounded)
+            member: Member context for a PhIterationContext mock
+            members: Member contexts for a PhSequenceContext mock
         """
         self.class_type = class_type
         self.ClassName = class_type
         self._name = name
+        self._minimum = minimum
+        self._maximum = maximum
+        self._member = member
+        self._members = list(members) if members is not None else []
 
     @property
     def context_name(self):
@@ -70,7 +79,7 @@ class MockPhonologicalContext:
 
     @property
     def is_boundary_context(self):
-        return self.class_type == "PhBoundaryContext"
+        return self.class_type == "PhSimpleContextBdry"
 
     @property
     def segment(self):
@@ -85,10 +94,52 @@ class MockPhonologicalContext:
         return None
 
     @property
-    def boundary_type(self):
+    def boundary_marker(self):
         if self.is_boundary_context:
-            return 0  # word boundary
-        return -1
+            return Mock(Name="test_marker")
+        return None
+
+    @property
+    def boundary_name(self):
+        if self.is_boundary_context:
+            return "test_marker"
+        return ""
+
+    @property
+    def is_iteration_context(self):
+        return self.class_type == "PhIterationContext"
+
+    @property
+    def min_count(self):
+        if not self.is_iteration_context:
+            return -1
+        return self._minimum
+
+    @property
+    def max_count(self):
+        if not self.is_iteration_context:
+            return None
+        if self._maximum == -1:
+            return None
+        return self._maximum
+
+    @property
+    def member(self):
+        if not self.is_iteration_context:
+            return None
+        return self._member
+
+    @property
+    def is_sequence_context(self):
+        return self.class_type == "PhSequenceContext"
+
+    @property
+    def members(self):
+        from flexicon.code.System.context_collection import ContextCollection
+
+        if not self.is_sequence_context:
+            return ContextCollection([])
+        return ContextCollection(list(self._members))
 
     def as_simple_context_seg(self):
         return Mock() if self.is_simple_context_seg else None
@@ -168,7 +219,7 @@ class TestContextCollection:
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),
             MockPhonologicalContext("PhSimpleContextSeg"),
-            MockPhonologicalContext("PhBoundaryContext"),
+            MockPhonologicalContext("PhSimpleContextBdry"),
         ]
         collection = ContextCollection(contexts)
 
@@ -176,7 +227,7 @@ class TestContextCollection:
         assert "ContextCollection" in str_repr
         assert "3 total" in str_repr
         assert "PhSimpleContextSeg: 2" in str_repr
-        assert "PhBoundaryContext: 1" in str_repr
+        assert "PhSimpleContextBdry: 1" in str_repr
 
     def test_collection_str_empty(self):
         """Test __str__ on empty collection."""
@@ -192,7 +243,7 @@ class TestContextCollection:
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),
-            MockPhonologicalContext("PhBoundaryContext"),
+            MockPhonologicalContext("PhSimpleContextBdry"),
             MockPhonologicalContext("PhSimpleContextSeg"),
         ]
         collection = ContextCollection(contexts)
@@ -208,7 +259,7 @@ class TestContextCollection:
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),
             MockPhonologicalContext("PhSimpleContextSeg"),
-            MockPhonologicalContext("PhBoundaryContext"),
+            MockPhonologicalContext("PhSimpleContextBdry"),
         ]
         collection = ContextCollection(contexts)
 
@@ -222,7 +273,7 @@ class TestContextCollection:
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),
-            MockPhonologicalContext("PhBoundaryContext"),
+            MockPhonologicalContext("PhSimpleContextBdry"),
             MockPhonologicalContext("PhSimpleContextNC"),
         ]
         collection = ContextCollection(contexts)
@@ -270,7 +321,7 @@ class TestContextCollection:
 
         contexts = [
             MockPhonologicalContext("PhComplexContextSeg"),
-            MockPhonologicalContext("PhBoundaryContext"),
+            MockPhonologicalContext("PhSimpleContextBdry"),
             MockPhonologicalContext("PhComplexContextNC"),
         ]
         collection = ContextCollection(contexts)
@@ -314,8 +365,8 @@ class TestContextCollection:
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),
-            MockPhonologicalContext("PhBoundaryContext"),
-            MockPhonologicalContext("PhBoundaryContext"),
+            MockPhonologicalContext("PhSimpleContextBdry"),
+            MockPhonologicalContext("PhSimpleContextBdry"),
         ]
         collection = ContextCollection(contexts)
 
@@ -324,6 +375,40 @@ class TestContextCollection:
         for ctx in boundary:
             assert ctx.is_boundary_context
 
+    def test_boundary_contexts_selects_simple_bdry(self):
+        """boundary_contexts() matches the real PhSimpleContextBdry class."""
+        from flexicon.code.System.context_collection import ContextCollection
+
+        contexts = [
+            MockPhonologicalContext("PhSimpleContextSeg"),
+            MockPhonologicalContext("PhSimpleContextBdry", "bdry_one"),
+            MockPhonologicalContext("PhSimpleContextNC"),
+            MockPhonologicalContext("PhSimpleContextBdry", "bdry_two"),
+        ]
+        collection = ContextCollection(contexts)
+
+        boundary = collection.boundary_contexts()
+        assert len(boundary) == 2
+        assert {c.context_name for c in boundary} == {"bdry_one", "bdry_two"}
+        for ctx in boundary:
+            assert ctx.boundary_marker is not None
+            assert ctx.boundary_name != ""
+
+    def test_iteration_max_count_none_when_unbounded(self):
+        """Maximum == -1 (unbounded) reads back as None (C5)."""
+        unbounded = MockPhonologicalContext(
+            "PhIterationContext", "iter_unbounded", minimum=1, maximum=-1
+        )
+        assert unbounded.is_iteration_context is True
+        assert unbounded.min_count == 1
+        assert unbounded.max_count is None
+
+        bounded = MockPhonologicalContext(
+            "PhIterationContext", "iter_bounded", minimum=0, maximum=3
+        )
+        assert bounded.min_count == 0
+        assert bounded.max_count == 3
+
     def test_filter_chaining(self):
         """Test chaining multiple filters."""
         from flexicon.code.System.context_collection import ContextCollection
@@ -331,7 +416,7 @@ class TestContextCollection:
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg", "word_initial"),
             MockPhonologicalContext("PhSimpleContextSeg", "word_final"),
-            MockPhonologicalContext("PhBoundaryContext", "word_boundary"),
+            MockPhonologicalContext("PhSimpleContextBdry", "word_boundary"),
         ]
         collection = ContextCollection(contexts)
 
@@ -390,7 +475,7 @@ class TestContextCollection:
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg", "word_initial"),
             MockPhonologicalContext("PhSimpleContextSeg", "syllable_final"),
-            MockPhonologicalContext("PhBoundaryContext", "word_boundary"),
+            MockPhonologicalContext("PhSimpleContextBdry", "word_boundary"),
         ]
         collection = ContextCollection(contexts)
 
@@ -406,7 +491,7 @@ class TestContextCollection:
             MockPhonologicalContext("PhSimpleContextNC", "obstruents"),
             MockPhonologicalContext("PhComplexContextSeg", "complex1"),
             MockPhonologicalContext("PhComplexContextNC", "complex2"),
-            MockPhonologicalContext("PhBoundaryContext", "word_boundary"),
+            MockPhonologicalContext("PhSimpleContextBdry", "word_boundary"),
         ]
         collection = ContextCollection(contexts)
 
@@ -425,7 +510,7 @@ class TestContextCollection:
             MockPhonologicalContext("PhSimpleContextNC"),
             MockPhonologicalContext("PhComplexContextSeg"),
             MockPhonologicalContext("PhComplexContextNC"),
-            MockPhonologicalContext("PhBoundaryContext"),
+            MockPhonologicalContext("PhSimpleContextBdry"),
         ]
         collection = ContextCollection(contexts)
 
@@ -434,7 +519,7 @@ class TestContextCollection:
         assert "PhSimpleContextNC: 1" in str_repr
         assert "PhComplexContextSeg: 1" in str_repr
         assert "PhComplexContextNC: 1" in str_repr
-        assert "PhBoundaryContext: 1" in str_repr
+        assert "PhSimpleContextBdry: 1" in str_repr
 
 
 if __name__ == "__main__":

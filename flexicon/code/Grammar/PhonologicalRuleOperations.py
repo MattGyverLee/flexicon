@@ -171,7 +171,7 @@ class PhonologicalRuleOperations(BaseOperations):
                 Defaults to None.
 
         Returns:
-            IPhPhonRule: The newly created phonological rule object.
+            IPhSegmentRule: The newly created phonological rule object.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -240,7 +240,7 @@ class PhonologicalRuleOperations(BaseOperations):
         Delete a phonological rule.
 
         Args:
-            rule_or_hvo: The IPhPhonRule object or HVO to delete.
+            rule_or_hvo: The IPhSegmentRule object or HVO to delete.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -350,7 +350,7 @@ class PhonologicalRuleOperations(BaseOperations):
         Get the name of a phonological rule.
 
         Args:
-            rule_or_hvo: The IPhPhonRule object or HVO.
+            rule_or_hvo: The IPhSegmentRule object or HVO.
             wsHandle: Optional writing system handle. Defaults to analysis WS.
 
         Returns:
@@ -384,7 +384,7 @@ class PhonologicalRuleOperations(BaseOperations):
         Set the name of a phonological rule.
 
         Args:
-            rule_or_hvo: The IPhPhonRule object or HVO.
+            rule_or_hvo: The IPhSegmentRule object or HVO.
             name (str): The new name.
             wsHandle: Optional writing system handle. Defaults to analysis WS.
 
@@ -423,7 +423,7 @@ class PhonologicalRuleOperations(BaseOperations):
         Get the description of a phonological rule.
 
         Args:
-            rule_or_hvo: The IPhPhonRule object or HVO.
+            rule_or_hvo: The IPhSegmentRule object or HVO.
             wsHandle: Optional writing system handle. Defaults to analysis WS.
 
         Returns:
@@ -456,7 +456,7 @@ class PhonologicalRuleOperations(BaseOperations):
         Set the description of a phonological rule.
 
         Args:
-            rule_or_hvo: The IPhPhonRule object or HVO.
+            rule_or_hvo: The IPhSegmentRule object or HVO.
             description (str): The new description.
             wsHandle: Optional writing system handle. Defaults to analysis WS.
 
@@ -492,7 +492,7 @@ class PhonologicalRuleOperations(BaseOperations):
         Get the stratum of a phonological rule.
 
         Args:
-            rule_or_hvo: The IPhPhonRule object or HVO.
+            rule_or_hvo: The IPhSegmentRule object or HVO.
 
         Returns:
             IMoStratum or None: The stratum object if set, None otherwise.
@@ -530,7 +530,7 @@ class PhonologicalRuleOperations(BaseOperations):
         Set the stratum of a phonological rule.
 
         Args:
-            rule_or_hvo: The IPhPhonRule object or HVO.
+            rule_or_hvo: The IPhSegmentRule object or HVO.
             stratum: The IMoStratum object, HVO, or None to clear.
 
         Raises:
@@ -570,7 +570,7 @@ class PhonologicalRuleOperations(BaseOperations):
         Get the direction of rule application.
 
         Args:
-            rule_or_hvo: The IPhPhonRule object or HVO.
+            rule_or_hvo: The IPhSegmentRule object or HVO.
 
         Returns:
             int: The direction value (0=left-to-right, 1=right-to-left,
@@ -604,7 +604,7 @@ class PhonologicalRuleOperations(BaseOperations):
         Set the direction of rule application.
 
         Args:
-            rule_or_hvo: The IPhPhonRule object or HVO.
+            rule_or_hvo: The IPhSegmentRule object or HVO.
             direction (int): 0=left-to-right, 1=right-to-left, 2=simultaneous.
 
         Raises:
@@ -699,6 +699,537 @@ class PhonologicalRuleOperations(BaseOperations):
             "on IPhSegRuleRHS). Use WireRule(rule, right_context=...) "
             "instead. (issue #142)"
         )
+
+    # ========================================================================
+    # RULE ENVIRONMENT, FEATURE, POS AND DISABLED READERS (C1-C4, C8)
+    # ========================================================================
+
+    @OperationsMethod
+    def GetLeftContext(self, rule_or_hvo, rhs_index=0):
+        """
+        Get the left environment of one right-hand side of a phonological rule.
+
+        Args:
+            rule_or_hvo: The IPhSegmentRule object, PhonologicalRule wrapper,
+                or HVO.
+            rhs_index: Zero-based index into RightHandSidesOS. Defaults to 0
+                because WireRule only ever writes index 0 and a single-RHS
+                rule is the overwhelming norm.
+
+        Returns:
+            PhonologicalContext or None: The LeftContextOA wrapped, or None
+                when the slot is unset or the rule is a metathesis rule
+                (which has no environment). Never a raw IPhPhonContext: the
+                raw interface declares no content members, so handing one
+                out would defeat the wrapper.
+
+        Raises:
+            FP_NullParameterError: If rule_or_hvo is None.
+            IndexError: If rhs_index is out of range on a rule that has
+                RHSs. None already means "no environment here", so an
+                out-of-range index raises instead of conflating the two.
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("morphboundary", writeEnabled=False)
+            >>> ruleOps = PhonologicalRuleOperations(project)
+            >>> rule = ruleOps.GetAll()[0]
+            >>> left = ruleOps.GetLeftContext(rule)
+            >>> print(left.context_name if left else "-")
+
+        Notes:
+            - A metathesis rule yields None silently: no warnings.warn is
+              emitted, since a caller iterating GetAll() would get one per
+              metathesis rule per call. PhonologicalRule.has_environments
+              is the documented way to ask first, and metathesis_parts is
+              where a metathesis rule's environment lives.
+            - The wrapper property is the primitive; this reader delegates
+              to it, so there is one implementation and two entry points.
+
+        See Also:
+            GetRightContext, WireRule, SetLeftContext
+        """
+        self._ValidateParam(rule_or_hvo, "rule_or_hvo")
+
+        rule = self.__ResolveObject(rule_or_hvo)
+
+        from .phonological_rule import PhonologicalRule
+
+        return PhonologicalRule(rule).left_context(rhs_index)
+
+    @OperationsMethod
+    def GetRightContext(self, rule_or_hvo, rhs_index=0):
+        """
+        Get the right environment of one right-hand side of a phonological rule.
+
+        Args:
+            rule_or_hvo: The IPhSegmentRule object, PhonologicalRule wrapper,
+                or HVO.
+            rhs_index: Zero-based index into RightHandSidesOS. Defaults to 0
+                because WireRule only ever writes index 0 and a single-RHS
+                rule is the overwhelming norm.
+
+        Returns:
+            PhonologicalContext or None: The RightContextOA wrapped, or None
+                when the slot is unset or the rule is a metathesis rule
+                (which has no environment). Never a raw IPhPhonContext: the
+                raw interface declares no content members, so handing one
+                out would defeat the wrapper.
+
+        Raises:
+            FP_NullParameterError: If rule_or_hvo is None.
+            IndexError: If rhs_index is out of range on a rule that has
+                RHSs. None already means "no environment here", so an
+                out-of-range index raises instead of conflating the two.
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("morphboundary", writeEnabled=False)
+            >>> ruleOps = PhonologicalRuleOperations(project)
+            >>> rule = ruleOps.GetAll()[0]
+            >>> right = ruleOps.GetRightContext(rule)
+            >>> print(right.context_name if right else "-")
+
+        Notes:
+            - A metathesis rule yields None silently: no warnings.warn is
+              emitted, since a caller iterating GetAll() would get one per
+              metathesis rule per call. PhonologicalRule.has_environments
+              is the documented way to ask first, and metathesis_parts is
+              where a metathesis rule's environment lives.
+            - The wrapper property is the primitive; this reader delegates
+              to it, so there is one implementation and two entry points.
+
+        See Also:
+            GetLeftContext, WireRule, SetRightContext
+        """
+        self._ValidateParam(rule_or_hvo, "rule_or_hvo")
+
+        rule = self.__ResolveObject(rule_or_hvo)
+
+        from .phonological_rule import PhonologicalRule
+
+        return PhonologicalRule(rule).right_context(rhs_index)
+
+    @OperationsMethod
+    def GetInputPOSes(self, rule_or_hvo, rhs_index=0):
+        """
+        Get the parts of speech one right-hand side is limited to.
+
+        Args:
+            rule_or_hvo: The IPhSegmentRule object, PhonologicalRule wrapper,
+                or HVO.
+            rhs_index: Zero-based index into RightHandSidesOS. Defaults to 0.
+
+        Returns:
+            list: The IPartOfSpeech objects from InputPOSesRC, uncast. The
+                LCM collection is already typed
+                (ILcmReferenceCollection<IPartOfSpeech>), so a cast would
+                only cost the caller the object. Empty when unset or when
+                the rule has no environments. Names are one attribute away:
+                best_analysis_text(pos.Name).
+
+        Raises:
+            FP_NullParameterError: If rule_or_hvo is None.
+            IndexError: If rhs_index is out of range on a rule that has
+                RHSs.
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("morphboundary", writeEnabled=False)
+            >>> ruleOps = PhonologicalRuleOperations(project)
+            >>> rule = ruleOps.GetAll()[0]
+            >>> print(len(ruleOps.GetInputPOSes(rule)))
+            0
+
+        Notes:
+            - The wrapper property is the primitive; this reader delegates
+              to it, so there is one implementation and two entry points.
+
+        See Also:
+            GetRequiredRuleFeatures, GetExcludedRuleFeatures
+        """
+        self._ValidateParam(rule_or_hvo, "rule_or_hvo")
+
+        rule = self.__ResolveObject(rule_or_hvo)
+
+        from .phonological_rule import PhonologicalRule
+
+        return PhonologicalRule(rule).input_poses(rhs_index)
+
+    @OperationsMethod
+    def GetRequiredRuleFeatures(self, rule_or_hvo, rhs_index=0):
+        """
+        Get the rule features one right-hand side requires.
+
+        Args:
+            rule_or_hvo: The IPhSegmentRule object, PhonologicalRule wrapper,
+                or HVO.
+            rhs_index: Zero-based index into RightHandSidesOS. Defaults to 0.
+
+        Returns:
+            RuleFeatureCollection: The ReqRuleFeatsRC features wrapped.
+                Always a collection, empty never None, because "the rule
+                requires nothing" and "unreadable" are different and only
+                the first is true. A caller asking "what blocks this rule"
+                gets names via .names; a caller asking "what does that
+                feature constrain" gets the object via .items.
+
+        Raises:
+            FP_NullParameterError: If rule_or_hvo is None.
+            IndexError: If rhs_index is out of range on a rule that has
+                RHSs.
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("morphboundary", writeEnabled=False)
+            >>> ruleOps = PhonologicalRuleOperations(project)
+            >>> rule = ruleOps.GetAll()[0]
+            >>> print(ruleOps.GetRequiredRuleFeatures(rule).names)
+            []
+
+        Notes:
+            - The wrapper property is the primitive; this reader delegates
+              to it, so there is one implementation and two entry points.
+
+        See Also:
+            GetExcludedRuleFeatures, GetInputPOSes
+        """
+        self._ValidateParam(rule_or_hvo, "rule_or_hvo")
+
+        rule = self.__ResolveObject(rule_or_hvo)
+
+        from .phonological_rule import PhonologicalRule
+
+        return PhonologicalRule(rule).required_rule_features(rhs_index)
+
+    @OperationsMethod
+    def GetExcludedRuleFeatures(self, rule_or_hvo, rhs_index=0):
+        """
+        Get the rule features one right-hand side excludes.
+
+        Args:
+            rule_or_hvo: The IPhSegmentRule object, PhonologicalRule wrapper,
+                or HVO.
+            rhs_index: Zero-based index into RightHandSidesOS. Defaults to 0.
+
+        Returns:
+            RuleFeatureCollection: The ExclRuleFeatsRC features wrapped.
+                Always a collection, empty never None.
+
+        Raises:
+            FP_NullParameterError: If rule_or_hvo is None.
+            IndexError: If rhs_index is out of range on a rule that has
+                RHSs.
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("morphboundary", writeEnabled=False)
+            >>> ruleOps = PhonologicalRuleOperations(project)
+            >>> rule = ruleOps.GetAll()[0]
+            >>> print(ruleOps.GetExcludedRuleFeatures(rule).names)
+            []
+
+        Notes:
+            - The wrapper property is the primitive; this reader delegates
+              to it, so there is one implementation and two entry points.
+
+        See Also:
+            GetRequiredRuleFeatures, GetInputPOSes
+        """
+        self._ValidateParam(rule_or_hvo, "rule_or_hvo")
+
+        rule = self.__ResolveObject(rule_or_hvo)
+
+        from .phonological_rule import PhonologicalRule
+
+        return PhonologicalRule(rule).excluded_rule_features(rhs_index)
+
+    @OperationsMethod
+    def IsDisabled(self, rule_or_hvo):
+        """
+        Check if a phonological rule is disabled.
+
+        Args:
+            rule_or_hvo: The IPhSegmentRule object, PhonologicalRule wrapper,
+                or HVO.
+
+        Returns:
+            bool: True if the rule is disabled, False otherwise. Never
+                raises for any rule type: Disabled is declared on the base
+                IPhSegmentRule, which every rule this class returns
+                implements, so no guard is needed.
+
+        Raises:
+            FP_NullParameterError: If rule_or_hvo is None.
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("morphboundary", writeEnabled=False)
+            >>> ruleOps = PhonologicalRuleOperations(project)
+            >>> for rule in ruleOps.GetAll():
+            ...     status = "disabled" if ruleOps.IsDisabled(rule) else "active"
+            ...     print(f"{ruleOps.GetName(rule)}: {status}")
+
+        Notes:
+            - Mirrors MorphRuleOperations.IsDisabled in signature and return
+              contract, but with no hasattr guard (R-8): that class covers
+              several unrelated rule types, while Disabled here is on the
+              base interface every rule implements.
+
+        See Also:
+            SetDisabled
+        """
+        self._ValidateParam(rule_or_hvo, "rule_or_hvo")
+
+        rule = self.__ResolveObject(rule_or_hvo)
+
+        from .phonological_rule import PhonologicalRule
+
+        return PhonologicalRule(rule).is_disabled
+
+    @OperationsMethod
+    def SetDisabled(self, rule_or_hvo, disabled):
+        """
+        Set the disabled state of a phonological rule.
+
+        Args:
+            rule_or_hvo: The IPhSegmentRule object, PhonologicalRule wrapper,
+                or HVO.
+            disabled (bool): True to disable the rule, False to enable.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If rule_or_hvo or disabled is None.
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("my project", writeEnabled=True)
+            >>> ruleOps = PhonologicalRuleOperations(project)
+            >>> rule = list(ruleOps.GetAll())[0]
+            >>> ruleOps.SetDisabled(rule, True)   # Disable
+            >>> ruleOps.SetDisabled(rule, False)  # Enable
+
+        Notes:
+            - Mirrors MorphRuleOperations.SetDisabled in signature and
+              contract, but with no hasattr guard (R-8): Disabled is on the
+              base interface, so there is no empty-unit-of-work case and
+              the transaction always opens.
+            - The wrapper method is the primitive; this reader checks
+              write permission first and runs inside the class's
+              transaction bracket.
+
+        See Also:
+            IsDisabled
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(rule_or_hvo, "rule_or_hvo")
+        self._ValidateParam(disabled, "disabled")
+
+        rule = self.__ResolveObject(rule_or_hvo)
+
+        from .phonological_rule import PhonologicalRule
+
+        with self._TransactionCM("Set phonological rule disabled flag"):
+            PhonologicalRule(rule).set_disabled(disabled)
+
+    @OperationsMethod
+    def DescribeRule(self, rule_or_hvo):
+        """
+        Render a phonological rule as a short human-readable string
+        (READ-ONLY, display only).
+
+        A regular rule renders ``input -> output / left _ right``. An
+        absent context renders as ``-``. A sequence renders its members in
+        order. An iteration context renders ``(member){min,max}``, with
+        ``*`` for an unbounded maximum (matching the None that max_count
+        returns, never the LCM's ``-1``). A metathesis rule has no
+        environment and renders its switch parts as
+        ``left <-> right`` from metathesis_parts.
+
+        Args:
+            rule_or_hvo: The IPhSegmentRule object, PhonologicalRule
+                wrapper, HVO, or None.
+
+        Returns:
+            str: Non-empty, and never raising: a rule with no RHS, a
+                metathesis rule, and contexts of iteration or sequence
+                shape all render. ``"(no rule)"`` for None. An unexpected
+                shape degrades to a ``"?"`` placeholder, never a .NET type
+                name and never a Python repr of an LCM object.
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("morphboundary", writeEnabled=False)
+            >>> ruleOps = PhonologicalRuleOperations(project)
+            >>> for rule in ruleOps.GetAll():
+            ...     print(ruleOps.DescribeRule(rule))
+
+        Notes:
+            - Display only. Like InflectionFeatureOperations.DescribeFeatStruc,
+              which this mirrors, the result is for humans, not for
+              round-trips back into WireRule.
+            - Total by contract (C11): it must produce a string for every
+              rule shape and must never raise, so a logging call that
+              prints a rule cannot break on an unusual one. This is the
+              one reader that tolerates None; the other seven raise
+              FP_NullParameterError for it.
+
+        See Also:
+            GetLeftContext, GetRightContext
+        """
+        try:
+            return self.__DescribeRuleInner(rule_or_hvo)
+        except Exception:
+            return "(unreadable rule)"
+
+    def __DescribeRuleInner(self, rule_or_hvo):
+        """DescribeRule body; the caller guarantees totality."""
+        if rule_or_hvo is None:
+            return "(no rule)"
+
+        try:
+            rule = self.__ResolveObject(rule_or_hvo)
+        except Exception:
+            return "(unreadable rule)"
+
+        from .phonological_rule import PhonologicalRule
+
+        try:
+            wrapped = PhonologicalRule(rule)
+        except Exception:
+            return "(unreadable rule)"
+
+        try:
+            is_metathesis = wrapped.class_type == "PhMetathesisRule"
+        except Exception:
+            is_metathesis = False
+
+        if is_metathesis:
+            try:
+                left, right = wrapped.metathesis_parts
+                left_text = " + ".join(
+                    self.__DescribeRuleContext(c) for c in left
+                ) or "-"
+                right_text = " + ".join(
+                    self.__DescribeRuleContext(c) for c in right
+                ) or "-"
+            except Exception:
+                left_text, right_text = "-", "-"
+            return f"{left_text} <-> {right_text}"
+
+        try:
+            inputs = [self.__DescribeRuleContext(c) for c in wrapped.input_contexts]
+        except Exception:
+            inputs = []
+        input_text = " + ".join(inputs) or "-"
+
+        output_text = "-"
+        left_text = "-"
+        right_text = "-"
+        try:
+            has_env = wrapped.has_environments
+        except Exception:
+            has_env = False
+        if has_env:
+            try:
+                rhs_list = wrapped.output_specs
+                rhs = rhs_list[0] if rhs_list else None
+            except Exception:
+                rhs = None
+            if rhs is not None:
+                try:
+                    from ..System.phonological_context import PhonologicalContext
+
+                    outs = [
+                        self.__DescribeRuleContext(PhonologicalContext(c))
+                        for c in rhs.StrucChangeOS
+                    ]
+                except Exception:
+                    outs = []
+                output_text = " + ".join(outs) or "-"
+            try:
+                left = wrapped.left_context()
+            except Exception:
+                left = None
+            if left is not None:
+                left_text = self.__DescribeRuleContext(left)
+            try:
+                right = wrapped.right_context()
+            except Exception:
+                right = None
+            if right is not None:
+                right_text = self.__DescribeRuleContext(right)
+
+        return f"{input_text} -> {output_text} / {left_text} _ {right_text}"
+
+    def __DescribeRuleContext(self, ctx):
+        """Render one wrapped context; any surprise becomes '?'."""
+        try:
+            if ctx is None:
+                return "-"
+            try:
+                if ctx.is_sequence_context:
+                    members = list(ctx.members)
+                    if not members:
+                        return "?"
+                    return "(" + " + ".join(
+                        self.__DescribeRuleContext(m) for m in members
+                    ) + ")"
+            except Exception:
+                return "?"
+            try:
+                if ctx.is_iteration_context:
+                    minimum = ctx.min_count
+                    maximum = ctx.max_count
+                    member = ctx.member
+                    max_text = "*" if maximum is None else str(maximum)
+                    member_text = (
+                        self.__DescribeRuleContext(member)
+                        if member is not None
+                        else "?"
+                    )
+                    return f"({member_text}){{{minimum},{max_text}}}"
+            except Exception:
+                return "?"
+            try:
+                if ctx.is_simple_context_seg:
+                    segment = ctx.segment
+                    if segment is None:
+                        return "?"
+                    return self.__DescribeRuleName(getattr(segment, "Name", None))
+            except Exception:
+                return "?"
+            try:
+                if ctx.is_simple_context_nc:
+                    natural_class = ctx.natural_class
+                    if natural_class is None:
+                        return "?"
+                    return self.__DescribeRuleName(
+                        getattr(natural_class, "Name", None)
+                    )
+            except Exception:
+                return "?"
+            try:
+                if ctx.is_boundary_context:
+                    return ctx.boundary_name or "?"
+            except Exception:
+                return "?"
+            try:
+                return ctx.context_name or "?"
+            except Exception:
+                return "?"
+        except Exception:
+            return "?"
+
+    def __DescribeRuleName(self, multistring):
+        """Best-analysis text of a multistring, or '?' when unset."""
+        try:
+            from ..Shared.string_utils import best_analysis_text
+
+            return best_analysis_text(multistring) or "?"
+        except Exception:
+            return "?"
 
     # ========================================================================
     # ALPHA-FEATURE CONSTRAINTS (Greek-variable agreement)
@@ -1328,14 +1859,14 @@ class PhonologicalRuleOperations(BaseOperations):
         Duplicate a phonological rule, creating a new copy with a new GUID.
 
         Args:
-            item_or_hvo: The IPhPhonRule object or HVO to duplicate.
+            item_or_hvo: The IPhSegmentRule object or HVO to duplicate.
             insert_after (bool): If True (default), insert after the source rule.
                                 If False, insert at end of rules list.
             deep (bool): If True (default), deep copy owned objects (StrucDescOS, RightHandSidesOS).
                         If False, owned objects are not copied.
 
         Returns:
-            IPhPhonRule: The newly created duplicate rule with a new GUID.
+            IPhSegmentRule: The newly created duplicate rule with a new GUID.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -1446,14 +1977,14 @@ class PhonologicalRuleOperations(BaseOperations):
 
     def __ResolveObject(self, rule_or_hvo):
         """
-        Resolve HVO or object to IPhPhonRule.
+        Resolve HVO or object to IPhSegmentRule.
 
         Args:
-            rule_or_hvo: Either an IPhPhonRule object, a PhonologicalRule
+            rule_or_hvo: Either an IPhSegmentRule object, a PhonologicalRule
                          wrapper, or an HVO (int).
 
         Returns:
-            IPhPhonRule: The resolved rule object.
+            IPhSegmentRule: The resolved rule object.
         """
         # Unwrap PhonologicalRule / PythonicWrapper wrappers (from GetAll())
         # so collection operations see the raw IPhSegmentRule (issue #449).
@@ -1475,7 +2006,7 @@ class PhonologicalRuleOperations(BaseOperations):
         Get dictionary of syncable properties for cross-project synchronization.
 
         Args:
-            item: The IPhPhonRule object.
+            item: The IPhSegmentRule object.
 
         Returns:
             dict: Dictionary mapping property names to their values.
@@ -1486,11 +2017,13 @@ class PhonologicalRuleOperations(BaseOperations):
             >>> rule = list(phonRuleOps.GetAll())[0]
             >>> props = phonRuleOps.GetSyncableProperties(rule)
             >>> print(props.keys())
-            dict_keys(['Name', 'Description', 'Direction', 'StratumGuid'])
+            dict_keys(['Name', 'Description', 'Direction', 'Disabled', 'StratumGuid'])
 
         Notes:
             - Returns all MultiString properties (all writing systems)
             - Returns Direction integer property (0=L-R, 1=R-L, 2=simultaneous)
+            - Returns Disabled boolean property (C9: a disabled rule syncs as
+              disabled instead of syncing into the target as enabled)
             - Returns StratumGuid as string (GUID of referenced stratum)
             - Does not include owned objects (StrucDescOS, RightHandSidesOS)
             - Does not include GUID or HVO of the rule itself
@@ -1520,6 +2053,11 @@ class PhonologicalRuleOperations(BaseOperations):
         # Integer properties
         if hasattr(rule, "Direction"):
             props["Direction"] = rule.Direction
+
+        # Disabled state (C9): declared on the base IPhSegmentRule, so every
+        # rule has it and no guard is needed (R-8). A plain bool read beside
+        # the Direction int; _apply_props_loop already handles bool scalars.
+        props["Disabled"] = bool(rule.Disabled)
 
         # Reference Atomic (RA) properties - return GUID as string
         if hasattr(rule, "StratumRA") and rule.StratumRA:
