@@ -190,19 +190,19 @@ Files: `tests/test_issue572_boundary_context_ratchet.py`,
 
 ### Tests (write first; it fails until Wave 1 below and US1 are done)
 
-- [ ] **T018** [US3] Ratchet, modelled on `tests/test_flexlibs2_alias_ratchet.py` (research R-4). It makes four passes (AST, string literal, prose `.md` / `.rst`, and comment+docstring via `tokenize` and `ast.get_docstring`) for the substring `PhBoundaryContext`, and asserts **zero** offenders with no count baseline. Reuse `_SKIP_DIR_NAMES` verbatim (it already skips `specs/`). The allowlist has exactly two entries, each with a reason: `CHANGELOG.md` (the 4.x history entry at `:3313`) and `tests/operations/test_issue572_phonrule_surface_live.py` (the probe that records the class does not exist). Add the backward guard `test_every_allowlisted_path_still_earns_its_hole`, which fails on an entry whose file is gone or no longer mentions the string · `tests/test_issue572_boundary_context_ratchet.py`
+- [x] **T018** [US3] Ratchet, modelled on `tests/test_flexlibs2_alias_ratchet.py` (research R-4). It makes four passes (AST, string literal, prose `.md` / `.rst`, and comment+docstring via `tokenize` and `ast.get_docstring`) for the substring `PhBoundaryContext`, and asserts **zero** offenders with no count baseline. Reuse `_SKIP_DIR_NAMES` verbatim (it already skips `specs/`). The allowlist has exactly two entries, each with a reason: `CHANGELOG.md` (the 4.x history entry at `:3313`) and `tests/operations/test_issue572_phonrule_surface_live.py` (the probe that records the class does not exist). Add the backward guard `test_every_allowlisted_path_still_earns_its_hole`, which fails on an entry whose file is gone or no longer mentions the string · `tests/test_issue572_boundary_context_ratchet.py`
 
 ### Implementation
 
 **Wave 1: independent (different files):**
 
-- [ ] **T019** [P] [US3] Rewrite the 8 `PhBoundaryContext` and 5 `boundary_type` mentions. Use `PhSimpleContextBdry`, `boundary_marker` / `boundary_name`, and the new `is_iteration_context` / `min_count` / `max_count` / `member` / `is_sequence_context` / `members`. Correct the `context_name` examples to show real text. Quality Gate 4: this lands in the same commit as T005-T007 · `docs/USAGE_CONTEXTS.md`
-- [ ] **T020** [P] [US3] Docstring example at `:163`: `wrapped.stratum.Name` becomes `best_analysis_text(wrapped.stratum.Name)` (pattern audit) · `flexicon/code/Grammar/affix_template.py`
-- [ ] **T021** [P] [US3] Docstring example at `:183`: `slot.owner_pos.Name` becomes `best_analysis_text(slot.owner_pos.Name)` (pattern audit) · `flexicon/code/Grammar/affix_slot.py`
+- [x] **T019** [P] [US3] Rewrite the 8 `PhBoundaryContext` and 5 `boundary_type` mentions. Use `PhSimpleContextBdry`, `boundary_marker` / `boundary_name`, and the new `is_iteration_context` / `min_count` / `max_count` / `member` / `is_sequence_context` / `members`. Correct the `context_name` examples to show real text. Quality Gate 4: this lands in the same commit as T005-T007 · `docs/USAGE_CONTEXTS.md`
+- [x] **T020** [P] [US3] Docstring example at `:163`: `wrapped.stratum.Name` becomes `best_analysis_text(wrapped.stratum.Name)` (pattern audit) · `flexicon/code/Grammar/affix_template.py`
+- [x] **T021** [P] [US3] Docstring example at `:183`: `slot.owner_pos.Name` becomes `best_analysis_text(slot.owner_pos.Name)` (pattern audit) · `flexicon/code/Grammar/affix_slot.py`
 
 **⟶ Wait for Wave 1 and Phase 3 to finish, then:**
 
-- [ ] **T022** [US3] Verify. Run `python -m pytest tests/test_issue572_boundary_context_ratchet.py -q` and `rg -n "PhBoundaryContext|IPhBoundaryContext" flexicon docs tests`, and expect only the two allowlisted hits. For the other SC-002 string, run `rg -n "FeatureStructureRA" flexicon/code/System/rule_feature.py docs`, and confirm no hit ties `FeatureStructureRA` to `IPhPhonRuleFeat`. Record the outputs in the Phase 6 evidence (T027) · (no file owned)
+- [x] **T022** [US3] Verify. Run `python -m pytest tests/test_issue572_boundary_context_ratchet.py -q` and `rg -n "PhBoundaryContext|IPhBoundaryContext" flexicon docs tests`, and expect only the two allowlisted hits. For the other SC-002 string, run `rg -n "FeatureStructureRA" flexicon/code/System/rule_feature.py docs`, and confirm no hit ties `FeatureStructureRA` to `IPhPhonRuleFeat`. Record the outputs in the Phase 6 evidence (T027) · (no file owned)
 
 **Checkpoint**: SC-002 holds, and the ratchet stops it regressing.
 

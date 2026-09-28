@@ -160,7 +160,9 @@ class AffixTemplate(LCMObjectWrapper):
         Example::
 
             if wrapped.stratum:
-                print(f"Stratum: {wrapped.stratum.Name}")
+                from flexicon.code.Shared.string_utils import best_analysis_text
+
+                print(f"Stratum: {best_analysis_text(wrapped.stratum.Name)}")
         """
         try:
             if hasattr(self._concrete, "StratumRA"):
