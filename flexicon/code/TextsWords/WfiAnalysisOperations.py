@@ -26,6 +26,7 @@ from SIL.LCModel import (
     IPartOfSpeech,
     ICmAgentEvaluation,
     ICmAgent,
+    Opinions,
 )
 
 from SIL.LCModel.Core.KernelInterfaces import ITsString
@@ -226,6 +227,40 @@ class WfiAnalysisOperations(BaseOperations):
             except Exception:
                 pass
         return analysis_or_hvo
+
+    def __GetAgentObject(self, agent_or_hvo):
+        """
+        Internal helper to get agent object from HVO or object.
+
+        Args:
+            agent_or_hvo: ICmAgent object or HVO integer.
+
+        Returns:
+            ICmAgent: The agent object.
+
+        Raises:
+            FP_ParameterError: If parameter doesn't refer to an agent.
+        """
+        # Same ClassName-first cast pattern as __GetAnalysisObject
+        # (issue #275): self.project.Object() returns a bare ICmObject,
+        # so isinstance(agent, ICmAgent) is False even for a genuine
+        # agent. Strict widening over the bare isinstance check.
+        if isinstance(agent_or_hvo, int):
+            agent = self.project.Object(agent_or_hvo)
+            if getattr(agent, "ClassName", None) == "CmAgent":
+                try:
+                    return ICmAgent(agent)
+                except Exception:
+                    pass
+            if isinstance(agent, ICmAgent):
+                return agent
+            raise FP_ParameterError("HVO does not refer to an agent")
+        if getattr(agent_or_hvo, "ClassName", None) == "CmAgent":
+            try:
+                return ICmAgent(agent_or_hvo)
+            except Exception:
+                pass
+        return agent_or_hvo
 
     def __ResolveOwningAnalysis(self, analysis_or_hvo):
         """
@@ -773,7 +808,8 @@ class WfiAnalysisOperations(BaseOperations):
 
         See Also:
             GetApprovalStatus, ApproveAnalysis, RejectAnalysis,
-            IsHumanApproved
+            IsHumanApproved, ClearEvaluation, RemoveAllHumanEvaluations,
+            GetEvaluationsForAgent
         """
         self._EnsureWriteEnabled()
         self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
@@ -842,8 +878,6 @@ class WfiAnalysisOperations(BaseOperations):
         # bare-int 0/1/2 (back-compat with the pre-IntEnum constants)
         # to the IntEnum members before dispatching. (issue #59)
         normalized = _coerce_approval_status(status)
-        from SIL.LCModel import Opinions
-
         opinion_map = {
             ApprovalStatusTypes.APPROVED: Opinions.approves,
             ApprovalStatusTypes.DISAPPROVED: Opinions.disapproves,
@@ -1586,17 +1620,196 @@ class WfiAnalysisOperations(BaseOperations):
             - Evaluations track approval/disapproval status
             - Each evaluation links to an ICmAgent (human or parser)
             - Use IsHumanApproved() or IsComputerApproved() for simple checks
-            - Evaluations are added/removed via SetApprovalStatus()
+            - Evaluations are added via SetApprovalStatus() and removed
+              via ClearEvaluation() / RemoveAllHumanEvaluations() --
+              never by mutating EvaluationsRC directly (issue #26)
 
         See Also:
             GetAgentEvaluation, GetHumanEvaluation, IsHumanApproved,
-            IsComputerApproved, SetApprovalStatus
+            IsComputerApproved, SetApprovalStatus, ClearEvaluation,
+            RemoveAllHumanEvaluations, GetEvaluationsForAgent
         """
         self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
 
         analysis = self.__GetAnalysisObject(analysis_or_hvo)
 
         return list(analysis.EvaluationsRC)
+
+    @OperationsMethod
+    def GetEvaluationsForAgent(self, analysis_or_hvo, agent_or_hvo):
+        """
+        Get the evaluations on an analysis recorded by a specific agent.
+
+        Unlike :meth:`GetHumanEvaluation` / :meth:`GetAgentEvaluation`,
+        which return the first evaluation of a given *kind*, this filters
+        by the exact agent -- the multi-annotator case where several
+        human agents have each recorded an evaluation on the same
+        analysis (issue #582).
+
+        Args:
+            analysis_or_hvo: Either an IWfiAnalysis object or its HVO
+            agent_or_hvo: Either an ICmAgent object or its HVO
+
+        Returns:
+            list[ICmAgentEvaluation]: Evaluations on this analysis whose
+            ``Agent`` is the given agent. Empty list if that agent has
+            recorded no evaluation here. Normally zero or one entries.
+
+        Raises:
+            FP_NullParameterError: If either parameter is None
+            FP_ParameterError: If analysis or agent doesn't exist
+
+        Example:
+            >>> agents = project.Agents.GetHumanAgents()
+            >>> analysis = analyses[0]
+            >>> for agent in agents:
+            ...     evals = project.WfiAnalyses.GetEvaluationsForAgent(
+            ...         analysis, agent)
+            ...     name = project.Agents.GetName(agent)
+            ...     print(f"{name}: {len(evals)} evaluation(s)")
+
+        Notes:
+            - Read-only: never mutates ``EvaluationsRC``
+            - Matching is by agent HVO, so an HVO and its object
+              resolve identically
+            - Each evaluation exposes ``Human`` (bool) and ``Approves``
+              (bool) per the LCM schema
+
+        See Also:
+            GetEvaluations, GetHumanEvaluation, GetAgentEvaluation,
+            ClearEvaluation
+        """
+        self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
+        self._ValidateParam(agent_or_hvo, "agent_or_hvo")
+
+        analysis = self.__GetAnalysisObject(analysis_or_hvo)
+        agent = self.__GetAgentObject(agent_or_hvo)
+        agent_hvo = agent.Hvo
+
+        return [
+            evaluation
+            for evaluation in analysis.EvaluationsRC
+            if evaluation.Agent is not None
+            and evaluation.Agent.Hvo == agent_hvo
+        ]
+
+    @OperationsMethod
+    def ClearEvaluation(self, analysis_or_hvo, agent_or_hvo):
+        """
+        Clear the evaluation a specific agent recorded on an analysis.
+
+        Removes *only* the given agent's evaluation, leaving every other
+        agent's evaluation untouched. This is the per-agent counterpart
+        to :meth:`SetApprovalStatus`, which can only ever address the
+        default human agent (issue #582).
+
+        Args:
+            analysis_or_hvo: Either an IWfiAnalysis object or its HVO
+            agent_or_hvo: Either an ICmAgent object or its HVO -- the
+                agent whose evaluation should be cleared
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with write enabled
+            FP_NullParameterError: If either parameter is None
+            FP_ParameterError: If analysis or agent doesn't exist
+
+        Example:
+            >>> # Remove one annotator's verdict, keep the others
+            >>> agents = project.Agents.GetHumanAgents()
+            >>> project.WfiAnalyses.ClearEvaluation(analysis, agents[1])
+            >>> remaining = project.WfiAnalyses.GetEvaluations(analysis)
+            >>> print(f"{len(remaining)} evaluation(s) left")
+
+        Notes:
+            - Uses ``ICmAgent.SetEvaluation(analysis, Opinions.noopinion)``,
+              the same ownership-safe LCM entry point
+              :meth:`SetApprovalStatus` uses -- never touches
+              ``EvaluationsRC`` directly (issue #26)
+            - Clearing an agent that has no evaluation here is a no-op,
+              not an error
+            - Typically used with human agents, but works for any agent
+              (e.g. clearing a stale parser evaluation)
+
+        See Also:
+            SetApprovalStatus, RemoveAllHumanEvaluations,
+            GetEvaluationsForAgent
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
+        self._ValidateParam(agent_or_hvo, "agent_or_hvo")
+
+        analysis = self.__GetAnalysisObject(analysis_or_hvo)
+        agent = self.__GetAgentObject(agent_or_hvo)
+
+        # Opinions.noopinion is LCM's "no opinion" -- SetEvaluation with
+        # it removes the agent's evaluation object (with ownership
+        # handled internally), mirroring the UNAPPROVED path of
+        # SetApprovalStatus. Wrapped in a unit of work like any other
+        # LCM mutator.
+        with self._TransactionCM("Clear agent evaluation"):
+            agent.SetEvaluation(analysis, Opinions.noopinion)
+
+    @OperationsMethod
+    def RemoveAllHumanEvaluations(self, analysis_or_hvo):
+        """
+        Remove every human evaluation on an analysis, all agents.
+
+        Bulk-clears the human evaluations regardless of how many human
+        agents recorded one -- the "clear every human-approved
+        evaluation project-wide" recipe operation (issue #582). Parser
+        evaluations are left untouched.
+
+        Args:
+            analysis_or_hvo: Either an IWfiAnalysis object or its HVO
+
+        Returns:
+            int: The number of human evaluations actually removed
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with write enabled
+            FP_NullParameterError: If analysis_or_hvo is None
+            FP_ParameterError: If analysis doesn't exist
+
+        Example:
+            >>> # Strip all human verdicts before re-running the parser
+            >>> removed = project.WfiAnalyses.RemoveAllHumanEvaluations(
+            ...     analysis)
+            >>> print(f"Cleared {removed} human evaluation(s)")
+            >>> assert not project.WfiAnalyses.IsHumanApproved(analysis)
+
+        Notes:
+            - Iterates ``AgentOperations.GetHumanAgents()`` and calls
+              ``ICmAgent.SetEvaluation(analysis, Opinions.noopinion)``
+              per agent -- the ownership-safe LCM entry point, never
+              ``EvaluationsRC.Remove`` directly (issue #26)
+            - A single ``_TransactionCM`` unit of work covers the whole
+              bulk clear, mirroring :meth:`SetApprovalStatus`
+            - The count is (human evaluations before) minus (human
+              evaluations after), so evaluations belonging to agents no
+              longer in the project are not miscounted as removed
+
+        See Also:
+            ClearEvaluation, SetApprovalStatus, GetEvaluationsForAgent
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
+
+        analysis = self.__GetAnalysisObject(analysis_or_hvo)
+
+        # Import here to avoid circular dependency (same pattern as
+        # SetApprovalStatus; AgentOperations lives in Lists/).
+        from ..Lists.AgentOperations import AgentOperations
+
+        agent_ops = AgentOperations(self.project)
+
+        def _human_evaluation_count():
+            return sum(1 for e in analysis.EvaluationsRC if e.Human)
+
+        with self._TransactionCM("Remove all human evaluations"):
+            before = _human_evaluation_count()
+            for agent in agent_ops.GetHumanAgents():
+                agent.SetEvaluation(analysis, Opinions.noopinion)
+            return before - _human_evaluation_count()
 
     # --- Utility Operations ---
 
