@@ -1050,6 +1050,62 @@ class PhonemeOperations(BaseOperations):
             return self.AddCode(phoneme, new_representation, wsHandle)
 
     @OperationsMethod
+    def GetCodeRepresentation(self, code_or_hvo, wsHandle=None):
+        """
+        Get the representation (grapheme string) of a phoneme code.
+
+        Args:
+            code_or_hvo: The IPhCode object or HVO.
+            wsHandle: Optional writing system handle. Defaults to vernacular WS.
+
+        Returns:
+            str: The code's representation (e.g., "[tʰ]"), or empty string
+            if not set.
+
+        Raises:
+            FP_NullParameterError: If code_or_hvo is None.
+
+        Example:
+            >>> # Read grapheme strings for all allophones of /t/
+            >>> phoneme = project.Phonemes.Find("/t/")
+            >>> if phoneme:
+            ...     codes = project.Phonemes.GetCodes(phoneme)
+            ...     for code in codes:
+            ...         print(project.Phonemes.GetCodeRepresentation(code))
+            [t]
+            [tʰ]
+            [ɾ]
+
+            >>> # By HVO, in a specific writing system
+            >>> phoneme = project.Phonemes.Find("/p/")
+            >>> if phoneme:
+            ...     codes = project.Phonemes.GetCodes(phoneme)
+            ...     if codes:
+            ...         ws = project.GetDefaultVernacularWSHandle()
+            ...         print(project.Phonemes.GetCodeRepresentation(codes[0].Hvo, ws))
+            [p]
+
+        Notes:
+            - Public readback for ``IPhCode.Representation``: the getter
+              companion to ``AddCode``/``FindCode``/``ReplaceCode``, which
+              all read it internally. Callers iterating ``GetCodes()``
+              results no longer reach past the wrapper into
+              ``code.Representation.get_String(...)`` (issue #578).
+            - Unset representations normalize to ``""``, not FLEx's
+              ``"***"`` null marker -- matching ``GetRepresentation``.
+
+        See Also:
+            GetCodes, AddCode, FindCode, ReplaceCode, GetRepresentation
+        """
+        self._ValidateParam(code_or_hvo, "code_or_hvo")
+
+        code = self.__GetCodeObject(code_or_hvo)
+        wsHandle = self.__WSHandle(wsHandle)
+
+        representation = normalize_text(ITsString(code.Representation.get_String(wsHandle)).Text)
+        return representation or ""
+
+    @OperationsMethod
     def GetBasicIPASymbol(self, phoneme_or_hvo, wsHandle=None):
         """
         Get the basic IPA symbol for a phoneme.
