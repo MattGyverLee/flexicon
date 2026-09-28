@@ -70,6 +70,11 @@ from ..FLExProject import (
 from .morphosyntax_analysis import MorphosyntaxAnalysis
 from .msa_collection import MSACollection
 
+# Concrete-interface cast for HVO/object resolution of inflection classes
+# (issue #573): project.Object(hvo) returns a bare ICmObject; InflectionClassRA
+# membership checks and the ClassName gate need the MoInflClass view.
+from ..lcm_casting import cast_to_concrete
+
 
 # --- Structured result for RemoveOrphaned (issue #206) ----------------------
 # Follows the namedtuple-with-docstring convention used elsewhere in this
@@ -477,7 +482,7 @@ class MSAOperations(BaseOperations):
         return IMoUnclassifiedAffixMsa(new_msa)
 
     @OperationsMethod
-    def SetStemMsaPos(self, sense, pos):
+    def SetStemMsaPos(self, sense, pos, keep_inflection_class=True):
         """
         Update the POS on an existing IMoStemMsa attached to a sense.
 
@@ -491,6 +496,14 @@ class MSAOperations(BaseOperations):
         Args:
             sense: An ILexSense whose MSA should be updated.
             pos: New IPartOfSpeech (or HVO) for the stem.
+            keep_inflection_class: When True (the default), the stem MSA's
+                existing ``InflectionClassRA`` is restored after the POS
+                change if it still belongs to the new POS or its parent
+                chain (issue #573). When the old class is not valid for
+                the new POS, a warning is logged and the class is left
+                cleared rather than attaching an incompatible class.
+                Pass False to always drop the inflection class with the
+                POS change.
         """
         self._EnsureWriteEnabled()
         self._ValidateParam(sense, "sense")
@@ -514,8 +527,28 @@ class MSAOperations(BaseOperations):
         # before a named undo entry is opened (D5).
         pos_obj = self.__Resolve(pos)
 
+        # Capture the old inflection class before the POS change drops it
+        # (issue #573). Validation against the NEW POS happens inside the
+        # bracket so the restore is atomic with the POS write.
+        old_infl_class = None
+        if keep_inflection_class:
+            old_infl_class = getattr(stem, "InflectionClassRA", None)
+
         with self._TransactionCM("Set stem MSA POS"):
             stem.PartOfSpeechRA = pos_obj
+            if old_infl_class is not None:
+                if int(old_infl_class.Hvo) in self.__PosChainInflectionClassHvos(
+                    pos_obj
+                ):
+                    stem.InflectionClassRA = old_infl_class
+                else:
+                    logger.warning(
+                        "SetStemMsaPos: inflection class %r is not valid "
+                        "for the new part of speech %r; leaving the "
+                        "inflection class cleared.",
+                        self.__PossibilityLabel(old_infl_class),
+                        self.__PossibilityLabel(pos_obj),
+                    )
 
     @OperationsMethod
     def SetDerivAffMsaPos(self, sense, from_pos=None, to_pos=None):
@@ -650,6 +683,7 @@ class MSAOperations(BaseOperations):
         return list(slots_rc)
 
     # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # MSA display-name + type discrimination (issue #575)
     # ------------------------------------------------------------------
     #
@@ -744,6 +778,191 @@ class MSAOperations(BaseOperations):
             "MoDerivAffMsa": "derivational",
             "MoUnclassifiedAffixMsa": "unclassified",
         }.get(class_name, class_name)
+
+    # Stem-MSA inflection-class accessors (issue #573)
+    # ------------------------------------------------------------------
+    #
+    # ``IMoStemMsa.InflectionClassRA`` had no public flexicon surface; the
+    # only way to restore it after ``SetStemMsaPos`` was
+    # ``IMoStemMsa(msa).InflectionClassRA = icl`` in raw LCM. These two
+    # methods are the read/write pair. The write side validates that the
+    # class belongs to the MSA's POS or its parent chain and raises
+    # ``FP_ParameterError`` rather than silently attaching an incompatible
+    # class. The POS parent-chain walk mirrors ``POSOperations.GetParent``'s
+    # owner discrimination (``Owner`` with ``ClassName == "PartOfSpeech"``)
+    # without round-tripping through the POS operations object.
+
+    @OperationsMethod
+    def GetInflectionClass(self, msa_or_hvo):
+        """
+        Read ``InflectionClassRA`` on a stem MSA.
+
+        Args:
+            msa_or_hvo: An MSA object, HVO, or GUID (resolved via the
+                internal ``__GetMsaObject``).
+
+        Returns:
+            IMoInflClass | None: The stem MSA's inflection class, or
+            ``None`` when it is unset or when the MSA is not a
+            ``MoStemMsa`` (never raises on a wrong ClassName, matching
+            this file's established never-raise idiom for type-gated
+            reads).
+
+        Raises:
+            FP_NullParameterError: If ``msa_or_hvo`` is null.
+
+        Example:
+            >>> msa = project.Senses.GetMSA(sense)
+            >>> icl = project.MSA.GetInflectionClass(msa)
+            >>> print(icl.Name.BestAnalysisAlternative.Text if icl else "none")
+            Regular Verb
+
+        See Also:
+            SetInflectionClass, SetStemMsaPos
+        """
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        if getattr(msa, "ClassName", None) != "MoStemMsa":
+            return None
+        return getattr(msa, "InflectionClassRA", None)
+
+    @OperationsMethod
+    def SetInflectionClass(self, msa_or_hvo, infl_class_or_hvo_or_None):
+        """
+        Set (or clear) ``InflectionClassRA`` on a stem MSA.
+
+        The class is validated before anything is mutated: it must belong
+        to the MSA's part of speech or to one of its ancestor categories
+        (walked upward via ``Owner``, mirroring
+        ``POSOperations.GetParent``). A class from an unrelated POS raises
+        ``FP_ParameterError`` with a clear message -- it is never silently
+        attached.
+
+        Args:
+            msa_or_hvo: An MSA object, HVO, or GUID (resolved via the
+                internal ``__GetMsaObject``).
+            infl_class_or_hvo_or_None: An ``IMoInflClass`` object or its
+                HVO, or ``None`` to clear the inflection class.
+
+        Raises:
+            FP_NullParameterError: If ``msa_or_hvo`` is null.
+            FP_ParameterError: If the MSA is not a ``MoStemMsa``, if the
+                inflection-class argument is not an ``IMoInflClass``, if
+                the stem MSA has no part of speech to validate against, or
+                if the class does not belong to the MSA's POS or its
+                parent chain.
+            FP_ReadOnlyError: If the project is not write-enabled.
+
+        Example:
+            >>> verb = project.POS.Find("Verb")
+            >>> regular = next(c for c in project.POS.GetInflectionClasses(verb)
+            ...                if "Regular" in c.Name.BestAnalysisAlternative.Text)
+            >>> project.MSA.SetInflectionClass(msa, regular)
+            >>> project.MSA.SetInflectionClass(msa, None)  # clear it
+
+        See Also:
+            GetInflectionClass, SetStemMsaPos
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        if getattr(msa, "ClassName", None) != "MoStemMsa":
+            raise FP_ParameterError(
+                "SetInflectionClass requires a stem MSA (MoStemMsa); "
+                f"got ClassName {getattr(msa, 'ClassName', None)!r}."
+            )
+
+        # Resolution stays outside the bracket so an unresolvable or
+        # invalid class raises before a named undo entry is opened (D5).
+        target = self.__ResolveInflectionClass(infl_class_or_hvo_or_None)
+        if target is not None:
+            self.__ValidateInflectionClassForMsa(target, msa)
+
+        with self._TransactionCM("Set stem MSA inflection class"):
+            msa.InflectionClassRA = target
+
+    def __ResolveInflectionClass(self, infl_class_or_hvo_or_None):
+        """Resolve an inflection-class argument to an IMoInflClass or None.
+
+        Accepts an object, HVO (int), or GUID (str). Casts to the concrete
+        interface via ``cast_to_concrete`` because
+        ``project.Object(hvo)`` returns a bare ``ICmObject``. Raises
+        ``FP_ParameterError`` when the argument resolves to a non-MoInflClass
+        object rather than silently accepting it.
+        """
+        if infl_class_or_hvo_or_None is None:
+            return None
+        if isinstance(infl_class_or_hvo_or_None, (int, str)):
+            obj = self.project.Object(infl_class_or_hvo_or_None)
+        else:
+            obj = self._UnwrapLcm(infl_class_or_hvo_or_None)
+        obj = cast_to_concrete(obj)
+        if getattr(obj, "ClassName", None) != "MoInflClass":
+            raise FP_ParameterError(
+                "infl_class must be an IMoInflClass (or its HVO); "
+                f"got ClassName {getattr(obj, 'ClassName', None)!r}."
+            )
+        return obj
+
+    def __ValidateInflectionClassForMsa(self, infl_class, msa):
+        """Raise FP_ParameterError unless the class fits the MSA's POS chain.
+
+        A class "fits" when it appears in the ``InflectionClassesOC`` of
+        the stem MSA's ``PartOfSpeechRA`` or of any ancestor category.
+        """
+        pos = getattr(msa, "PartOfSpeechRA", None)
+        if pos is None:
+            raise FP_ParameterError(
+                "Cannot set an inflection class: the stem MSA has no part "
+                "of speech, so the class cannot be validated against any "
+                "POS. Set the POS first (e.g. via SetStemMsaPos)."
+            )
+        valid_hvos = self.__PosChainInflectionClassHvos(pos)
+        if int(infl_class.Hvo) not in valid_hvos:
+            pos_name = self.__PossibilityLabel(pos)
+            class_name = self.__PossibilityLabel(infl_class)
+            raise FP_ParameterError(
+                f"Inflection class {class_name!r} does not belong to the "
+                f"MSA's part of speech {pos_name!r} or any of its ancestor "
+                "categories; refusing to attach an incompatible class."
+            )
+
+    def __PosChainInflectionClassHvos(self, pos):
+        """HVOs of every inflection class on a POS and its ancestors.
+
+        Walks upward via ``Owner`` discriminated by
+        ``ClassName == "PartOfSpeech"`` (the same shape as
+        ``POSOperations.GetParent``), collecting each category's
+        ``InflectionClassesOC``. Guards against owner cycles.
+        """
+        hvos = set()
+        seen = set()
+        current = pos
+        while current is not None and id(current) not in seen:
+            seen.add(id(current))
+            for ic in getattr(current, "InflectionClassesOC", None) or ():
+                hvos.add(int(ic.Hvo))
+            owner = getattr(current, "Owner", None)
+            current = (
+                owner
+                if getattr(owner, "ClassName", None) == "PartOfSpeech"
+                else None
+            )
+        return hvos
+
+    @staticmethod
+    def __PossibilityLabel(obj):
+        """Best-effort display label for an error message (never raises)."""
+        try:
+            return obj.Name.BestAnalysisAlternative.Text
+        except Exception:
+            pass
+        try:
+            return f"hvo={int(obj.Hvo)}"
+        except Exception:
+            return repr(obj)
 
     # ------------------------------------------------------------------
     # MSA feature-structure getters (issue #544 -- reverse of MakeFeatStruc)
