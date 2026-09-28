@@ -650,6 +650,102 @@ class MSAOperations(BaseOperations):
         return list(slots_rc)
 
     # ------------------------------------------------------------------
+    # MSA display-name + type discrimination (issue #575)
+    # ------------------------------------------------------------------
+    #
+    # Scripts frequently read ``msa.LongName`` on the raw object (what FLEx
+    # shows as the grammatical info, e.g. ``Verb  Pl.3``) and dispatch on
+    # ``msa.ClassName`` to tell a stem MSA from an inflectional-affix,
+    # derivational-affix or unclassified MSA. These two getters are the
+    # public wrappers for both idioms.
+
+    @OperationsMethod
+    def GetLongName(self, msa_or_hvo):
+        """
+        Get the MSA's display summary (what FLEx shows as grammatical info).
+
+        Reads the ``LongName`` LCM property on the resolved MSA -- e.g.
+        ``"Verb  Pl.3"`` for a stem MSA -- normalizing FLEx's empty-string
+        placeholder ``"***"`` to ``""`` (via
+        ``BaseOperations._NormalizeMultiString``) so callers never have to
+        compare against the raw placeholder.
+
+        Args:
+            msa_or_hvo: An MSA object, HVO, or GUID (resolved via the
+                internal ``__GetMsaObject``).
+
+        Returns:
+            str: The MSA's ``LongName``; ``""`` when it is unset
+            (``"***"``) or unreadable.
+
+        Raises:
+            FP_NullParameterError: If ``msa_or_hvo`` is null.
+
+        Example:
+            >>> msa = project.Senses.GetMSA(sense)
+            >>> print(project.MSA.GetLongName(msa))
+            Verb  Pl.3
+            >>> print(repr(project.MSA.GetLongName(unset_msa)))
+            ''
+
+        See Also:
+            GetMSAType, GetInflAffMsaSlots
+        """
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        long_name = getattr(msa, "LongName", None)
+        if not long_name:
+            return ""
+        return self._NormalizeMultiString(long_name)
+
+    @OperationsMethod
+    def GetMSAType(self, msa_or_hvo):
+        """
+        Classify an MSA as stem / inflectional / derivational / unclassified.
+
+        Discriminates on the MSA's ``ClassName`` so scripts stop comparing
+        ``ClassName`` strings directly (one of the most common raw-LCM
+        idioms). The recognized mapping is:
+
+        - ``MoStemMsa`` -> ``"stem"``
+        - ``MoInflAffMsa`` -> ``"inflectional"``
+        - ``MoDerivAffMsa`` -> ``"derivational"``
+        - ``MoUnclassifiedAffixMsa`` -> ``"unclassified"``
+
+        Args:
+            msa_or_hvo: An MSA object, HVO, or GUID (resolved via the
+                internal ``__GetMsaObject``).
+
+        Returns:
+            str: One of ``"stem"``, ``"inflectional"``, ``"derivational"``,
+            ``"unclassified"``. For an unrecognized MSA subtype, falls
+            back to the raw ``ClassName`` so no information is lost.
+
+        Raises:
+            FP_NullParameterError: If ``msa_or_hvo`` is null.
+
+        Example:
+            >>> msa = project.Senses.GetMSA(sense)
+            >>> if project.MSA.GetMSAType(msa) == "stem":
+            ...     print("stem MSA")
+            stem MSA
+
+        See Also:
+            GetLongName, GetFeatures
+        """
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        class_name = getattr(msa, "ClassName", None)
+        return {
+            "MoStemMsa": "stem",
+            "MoInflAffMsa": "inflectional",
+            "MoDerivAffMsa": "derivational",
+            "MoUnclassifiedAffixMsa": "unclassified",
+        }.get(class_name, class_name)
+
+    # ------------------------------------------------------------------
     # MSA feature-structure getters (issue #544 -- reverse of MakeFeatStruc)
     # ------------------------------------------------------------------
     #

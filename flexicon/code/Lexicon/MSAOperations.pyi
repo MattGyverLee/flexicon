@@ -41,6 +41,13 @@ class MSAOperations(BaseOperations[Any]):
     def SetInflAffMsaSlots(self, sense: Any, slots: Any, replace: bool = True) -> None: ...
     def GetInflAffMsaSlots(self, sense_or_msa: Any) -> list: ...
 
+    # MSA display-name + type discrimination (issue #575). GetLongName
+    # reads the LongName LCM property, normalizing "***" to "". GetMSAType
+    # maps ClassName to one of "stem"/"inflectional"/"derivational"/
+    # "unclassified" (raw ClassName fallback for unrecognized subtypes).
+    def GetLongName(self, msa_or_hvo: Any) -> str: ...
+    def GetMSAType(self, msa_or_hvo: Any) -> str: ...
+
     # Feature-structure getters (issue #544): reverse of
     # InflectionFeatures.MakeFeatStruc. Return a MakeFeatStruc-shaped
     # {featureGuid: valueGuid | {...}} spec, or None (no MSA / wrong
