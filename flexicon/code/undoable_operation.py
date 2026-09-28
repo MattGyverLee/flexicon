@@ -159,18 +159,23 @@ class _FLExUndoableOperation:
         already-open UnitOfWork, there is nothing to close here; the
         enclosing block owns disposal.
 
-        Measured caveat (2026-09-07, issue #243 spec.md C25, T8b's P-11):
-        an escaping exception here does NOT reliably discard work done
-        inside the block. Object CREATIONS made inside the block were
-        measured to SURVIVE an exception that propagated out of this
-        context manager with ``set_RollBack(True)`` and ``Dispose()`` both
-        confirmed run (per the debug log) -- 25/25 still present in the
-        still-open project immediately afterward, and 25/25 still present
-        after a genuine close-and-reopen. Do not rely on an escaping
-        exception to discard work done inside an ``UndoableOperation()``
-        block. This measurement covers object creation only; property
-        modifications and deletions were not measured and nothing is
-        claimed about them either way.
+        Measured record (2026-09-07, issue #243 spec.md C25, T8b's P-11;
+        CORRECTED 2026-09-28, issue #579): P-11's 25/25 survival reading
+        measured objects created BEFORE the block, not inside it -- the
+        probe created its 25 entries first and the block body contained
+        only a ``SaveChanges()`` call that raised, so survival was the
+        correct outcome (each bare Create outside a block commits its own
+        per-operation UnitOfWork; there was nothing inside the block's
+        UnitOfWork to roll back). Re-measured with creations INSIDE the
+        block and the same ``FP_TransactionError`` escaping: 0/10
+        in-memory and 0/10 after close-and-reopen -- rollback discards the
+        block's creations, for real, via ``set_RollBack(True)`` +
+        ``Dispose()``. The inside/outside distinction is the whole of the
+        earlier surprise; see
+        ``specs/243-closeproject-save-guard/evidence/live-p11-remeasure.md``
+        and ``tests/operations/test_undoable_mode_live.py``
+        (``TestExceptionRollsBackLive``, live-verified for creates,
+        modifications and deletes).
         """
         if self._helper is None:
             return False  # Joined block, or never started: nothing to do.
