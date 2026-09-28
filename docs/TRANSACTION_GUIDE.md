@@ -201,6 +201,31 @@ If you see this warning:
    ```
 3. **Reopen** the project and manually check/fix the data
 
+### Escaping exceptions under `undoable=True`: the block's work IS discarded (issue #579)
+
+The rollback story is mode-dependent. Under `undoable=True` (the
+default), an exception escaping a `with project.UndoableOperation(...)`
+block discards that block's mutations -- creates, field writes and
+deletes are reverted, durably. Verified live: re-measurement with
+creations inside the block and the same `FP_TransactionError` escaping
+reads 0/10 in-memory and 0/10 after close-and-reopen (issue #579;
+`specs/_archive/closed/243-closeproject-save-guard/evidence/live-p11-remeasure.md`),
+and `tests/operations/test_undoable_mode_live.py::TestExceptionRollsBackLive`
+covers creates, modifications and deletes.
+
+The inside/outside distinction is the whole of the earlier surprise:
+work created *outside* the block, before it is entered, is NOT rolled
+back -- each bare `Create` outside a block commits its own
+per-operation `UnitOfWork`. That is what the original P-11 probe
+measured (25/25 survival of the outside set), and it is the correct
+outcome, not a rollback failure.
+
+Under the explicit `undoable=False` opt-out, Phase 1 `Transaction()`
+still attempts no rollback on exception (`mark_fn` None, issue #236) --
+that half of this guide is unchanged, and the accuracy note at the top
+still stands for it. Combinations beyond what was measured remain
+unclaimed.
+
 ---
 
 ## Nesting Transactions
