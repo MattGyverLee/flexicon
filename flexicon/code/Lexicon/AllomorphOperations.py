@@ -55,8 +55,10 @@ from SIL.LCModel import (
     IMoAffixAllomorphFactory,
     ILexEntry,
     ILexEntryRepository,
+    IPartOfSpeech,
     IPhEnvironment,
     LexEntryTags,
+    PartOfSpeechTags,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
@@ -72,7 +74,7 @@ from ..Shared.string_utils import normalize_text
 # Import shared morph-type resolution utilities (single source of truth
 # shared with LexEntryOperations.Create -- see issue #213/#214)
 from ..Shared.morph_type_utils import find_morph_type, is_stem_morph_type, morph_type_not_found_error
-from ..lcm_casting import cast_to_concrete
+from ..lcm_casting import cast_to_concrete, get_pos_from_msa
 
 # Import wrapper classes
 from .allomorph import Allomorph
@@ -1625,6 +1627,146 @@ class AllomorphOperations(BaseOperations):
         # explicit interface cast.
         return ILexEntry(_owner)
 
+    @OperationsMethod
+    def GetStemName(self, allo_or_hvo):
+        """
+        Get the stem name object referenced by a stem allomorph.
+
+        Reads ``IMoStemAllomorph.StemNameRA``. Unlike the ``Allomorph``
+        wrapper's ``stem_name`` property -- which returns only the
+        best-analysis Name *text* -- this returns the ``IMoStemName``
+        object itself, so callers can distinguish "no stem name" (None)
+        from "stem name with no Name text" (object whose Name is empty),
+        and can read its other members (Abbreviation, RegionsOC).
+
+        Args:
+            allo_or_hvo: The allomorph object or HVO.
+
+        Returns:
+            IMoStemName | None: The referenced stem name object, or None
+            when the allomorph is not a MoStemAllomorph or when no stem
+            name is set. Never raises on the wrong ClassName (established
+            read idiom in this file).
+
+        Raises:
+            FP_NullParameterError: If allo_or_hvo is None.
+
+        Example:
+            >>> entry = project.LexEntry.Find("run")
+            >>> allomorphs = project.Allomorphs.GetAll(entry)
+            >>> stem_name = project.Allomorphs.GetStemName(allomorphs[0])
+            >>> if stem_name is None:
+            ...     print("no stem name set")
+            ... else:
+            ...     print(project.POS.GetStemNameText(stem_name))
+            root
+
+        Notes:
+            - Affix allomorphs (MoAffixAllomorph) have no StemNameRA;
+              they always yield None here, never an exception.
+            - Pass the result to ``POSOperations.GetStemNameText`` /
+              ``GetStemNameAbbreviation`` / ``GetStemNameRegionCount`` to
+              read its multistrings and regions.
+
+        See Also:
+            SetStemName, GetOwningEntry
+        """
+        self._ValidateParam(allo_or_hvo, "allo_or_hvo")
+
+        allomorph = self.__GetAllomorphObject(allo_or_hvo)
+
+        if getattr(allomorph, "ClassName", None) != "MoStemAllomorph":
+            return None
+        return getattr(allomorph, "StemNameRA", None)
+
+    @OperationsMethod
+    def SetStemName(self, allo_or_hvo, stem_name_or_hvo_or_None):
+        """
+        Set (or clear) the stem name referenced by a stem allomorph.
+
+        Writes ``IMoStemAllomorph.StemNameRA``. The stem name must belong
+        to the allomorph's own part of speech -- or to an ancestor POS in
+        the POS hierarchy -- mirroring the ``pos_matches_or_is_descendant``
+        check that callers previously had to hand-roll. Anything else is
+        rejected rather than silently attached.
+
+        Args:
+            allo_or_hvo: The stem allomorph object or HVO.
+            stem_name_or_hvo_or_None: The IMoStemName object or HVO to
+                attach, or None to clear the reference.
+
+        Returns:
+            IMoStemAllomorph: The updated allomorph.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If allo_or_hvo is None.
+            FP_ParameterError: If the allomorph is not a MoStemAllomorph;
+                if the stem name is not an IMoStemName; if the stem name is
+                not owned by the allomorph's own POS or an ancestor of it;
+                or if the allomorph's POS cannot be determined.
+
+        Example:
+            >>> verb = project.POS.Find("Verb")
+            >>> stem_names = project.POS.GetStemNames(verb)
+            >>> entry = project.LexEntry.Find("run")
+            >>> allomorphs = project.Allomorphs.GetAll(entry)
+            >>> project.Allomorphs.SetStemName(allomorphs[0], stem_names[0])
+            >>> # Clear it again
+            >>> project.Allomorphs.SetStemName(allomorphs[0], None)
+
+        Notes:
+            - The allomorph's POS is found through its owning entry's stem
+              MSA (``MoStemMsa.PartOfSpeechRA``); the stem name's POS is the
+              nearest owning ``PartOfSpeech`` of the stem name object.
+            - A stem name owned directly by the allomorph's POS, or by any
+              ancestor POS (e.g. a "Verb" stem name used on a
+              "Transitive Verb" subcategory allomorph), is accepted.
+            - Clearing (None) needs no POS check.
+
+        See Also:
+            GetStemName, GetOwningEntry
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(allo_or_hvo, "allo_or_hvo")
+
+        allomorph = self.__GetAllomorphObject(allo_or_hvo)
+        if getattr(allomorph, "ClassName", None) != "MoStemAllomorph":
+            raise FP_ParameterError(
+                "SetStemName requires a MoStemAllomorph; got "
+                f"{getattr(allomorph, 'ClassName', type(allomorph).__name__)}"
+            )
+
+        stem_name = None
+        if stem_name_or_hvo_or_None is not None:
+            stem_name = self.__ResolveStemName(stem_name_or_hvo_or_None)
+            if getattr(stem_name, "ClassName", None) != "MoStemName":
+                raise FP_ParameterError(
+                    "stem_name_or_hvo_or_None must be an IMoStemName, its "
+                    "HVO, or None; got "
+                    f"{getattr(stem_name, 'ClassName', type(stem_name).__name__)}"
+                )
+
+            allo_pos = self.__GetAllomorphPos(allomorph)
+            if allo_pos is None:
+                raise FP_ParameterError(
+                    "Cannot determine the part of speech of the allomorph's "
+                    "owning entry (no stem MSA found); refusing to attach a "
+                    "stem name"
+                )
+            sn_pos = self.__GetStemNamePos(stem_name)
+            if sn_pos is None or not self.__PosMatchesOrIsAncestor(sn_pos, allo_pos):
+                raise FP_ParameterError(
+                    "Stem name is not owned by the allomorph's part of "
+                    "speech or one of its ancestors; refusing to attach an "
+                    "incompatible stem name"
+                )
+
+        with self._TransactionCM("Set stem name"):
+            allomorph.StemNameRA = stem_name
+        return allomorph
+
     # --- Private Helper Methods ---
 
     def __GetEntryObject(self, entry_or_hvo):
@@ -1693,6 +1835,77 @@ class AllomorphOperations(BaseOperations):
         elif class_name == "MoAffixAllomorph":
             return IMoAffixAllomorph(obj)
         return obj
+
+    def __ResolveStemName(self, stem_name_or_hvo):
+        """Resolve HVO or object to an IMoStemName.
+
+        Never raises on a ClassName miss: ``cast_to_concrete`` is total
+        and returns the input unchanged when ``"MoStemName"`` is not
+        registered/recognized, mirroring ``__GetAllomorphObject``'s
+        never-raising shape. Callers that need a guarantee (``SetStemName``)
+        validate ``ClassName`` themselves and raise ``FP_ParameterError``.
+        """
+        stem_name_or_hvo = self._UnwrapLcm(stem_name_or_hvo)
+        if isinstance(stem_name_or_hvo, int):
+            obj = self.project.Object(stem_name_or_hvo)
+        else:
+            obj = self._UnwrapLcmObject(stem_name_or_hvo)
+
+        return cast_to_concrete(obj)
+
+    def __GetAllomorphPos(self, allomorph):
+        """POS of the allomorph's owning entry, or None.
+
+        Walks the ownership chain to the nearest ILexEntry, then reads
+        the entry's stem MSA's ``PartOfSpeechRA`` (via
+        ``get_pos_from_msa``). A stem entry can carry several MSAs, so
+        the first pass prefers ``MoStemMsa`` and a second pass accepts
+        any POS-bearing MSA before giving up with None.
+        """
+        owner = allomorph.OwnerOfClass(LexEntryTags.kClassId)
+        if owner is None:
+            return None
+        entry = ILexEntry(owner)
+
+        msas = getattr(entry, "MorphoSyntaxAnalysesOC", None) or []
+        for msa in msas:
+            if getattr(msa, "ClassName", None) == "MoStemMsa":
+                pos = get_pos_from_msa(msa)
+                if pos is not None:
+                    return pos
+        for msa in msas:
+            pos = get_pos_from_msa(msa)
+            if pos is not None:
+                return pos
+        return None
+
+    def __GetStemNamePos(self, stem_name):
+        """Nearest owning IPartOfSpeech of a stem name, or None."""
+        owner = stem_name.OwnerOfClass(PartOfSpeechTags.kClassId)
+        if owner is None:
+            return None
+        return IPartOfSpeech(owner)
+
+    @staticmethod
+    def __PosMatchesOrIsAncestor(candidate_pos, pos):
+        """True when ``candidate_pos`` is ``pos`` itself or an ancestor.
+
+        Walks ``pos``'s ``Owner`` chain (subcategory POSs are owned by
+        their parent POS) comparing HVOs. Mirrors the
+        ``pos_matches_or_is_descendant`` check callers previously
+        hand-rolled.
+        """
+        candidate_hvo = getattr(candidate_pos, "Hvo", None)
+        if candidate_hvo is None:
+            return False
+        candidate_hvo = int(candidate_hvo)
+        current = pos
+        while current is not None:
+            current_hvo = getattr(current, "Hvo", None)
+            if current_hvo is not None and int(current_hvo) == candidate_hvo:
+                return True
+            current = getattr(current, "Owner", None)
+        return False
 
     def __GetEnvironmentObject(self, env_or_hvo):
         """

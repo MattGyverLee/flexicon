@@ -545,6 +545,136 @@ class MorphRuleOperations(BaseOperations):
                 sequence.Insert(insert_at, slot)
             return template
 
+    @OperationsMethod
+    def MoveAffixTemplate(self, pos_or_hvo, template_or_hvo, new_index):
+        """
+        Move one affix template to a new position within its POS.
+
+        Reorders ``IPartOfSpeech.AffixTemplatesOS`` via the LCM
+        ``MoveTo`` sequence operation -- the collection is never cleared
+        (on an owning sequence, ``Clear()`` deletes every child object,
+        issue #470).
+
+        Args:
+            pos_or_hvo: The IPartOfSpeech object or HVO that owns the
+                template.
+            template_or_hvo: The IMoInflAffixTemplate object, its HVO, or
+                the AffixTemplate wrapper returned by
+                ``GetAllAffixTemplatesForPOS``.
+            new_index (int): Target position, ``0``-based, in
+                ``0..Count-1``.
+
+        Returns:
+            IMoInflAffixTemplate: The moved template (unchanged, when it
+            is already at ``new_index``).
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If pos_or_hvo, template_or_hvo, or
+                new_index is None.
+            FP_ParameterError: If new_index is not an integer in range, or
+                if the template is not in the POS's ``AffixTemplatesOS``.
+
+        Example:
+            >>> templates = project.MorphRules.GetAllAffixTemplatesForPOS(verb)
+            >>> project.MorphRules.MoveAffixTemplate(verb, templates[1], 0)
+
+        See Also:
+            ReorderAffixTemplates, CreateAffixTemplate, GetAllAffixTemplatesForPOS
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(pos_or_hvo, "pos_or_hvo")
+        self._ValidateParam(template_or_hvo, "template_or_hvo")
+        self._ValidateParam(new_index, "new_index")
+
+        if isinstance(new_index, bool) or not isinstance(new_index, int):
+            raise FP_ParameterError("new_index must be an integer")
+
+        pos = self.__ResolveObject(pos_or_hvo)
+        template = self.__ResolveObject(template_or_hvo)
+
+        templates = getattr(pos, "AffixTemplatesOS", None)
+        if templates is None:
+            raise FP_ParameterError("pos has no AffixTemplatesOS")
+
+        count = templates.Count
+        if new_index < 0 or new_index >= count:
+            raise FP_ParameterError(
+                f"new_index {new_index} is out of range for "
+                f"AffixTemplatesOS of length {count}"
+            )
+
+        template_hvo = getattr(template, "Hvo", None)
+        cur_index = None
+        if template_hvo is not None:
+            template_hvo = int(template_hvo)
+            for i in range(count):
+                if int(templates[i].Hvo) == template_hvo:
+                    cur_index = i
+                    break
+        if cur_index is None:
+            raise FP_ParameterError(
+                "template is not in the POS's AffixTemplatesOS"
+            )
+        if cur_index == new_index:
+            return template
+
+        with self._TransactionCM(f"Move affix template to index {new_index}"):
+            templates.MoveTo(cur_index, cur_index, templates, new_index)
+        return template
+
+    @OperationsMethod
+    def ReorderAffixTemplates(self, pos_or_hvo, ordered_templates):
+        """
+        Reorder a POS's ``AffixTemplatesOS`` to match a desired order.
+
+        Takes the full desired order and reorders the collection in place
+        via ``MoveTo`` -- never via ``Clear()``, which on an owning
+        sequence deletes every child object (issue #470). All moves run
+        inside a single transaction.
+
+        Args:
+            pos_or_hvo: The IPartOfSpeech object or HVO that owns the
+                templates.
+            ordered_templates: Every template currently in the POS's
+                ``AffixTemplatesOS``, exactly once, in the target order.
+                Each item may be an IMoInflAffixTemplate, its HVO, or an
+                AffixTemplate wrapper.
+
+        Returns:
+            IPartOfSpeech: The POS whose templates were reordered.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If pos_or_hvo or ordered_templates is None.
+            FP_ParameterError: If ordered_templates does not contain exactly
+                the same templates as the POS's ``AffixTemplatesOS``.
+
+        Example:
+            >>> templates = list(project.MorphRules.GetAllAffixTemplatesForPOS(verb))
+            >>> project.MorphRules.ReorderAffixTemplates(verb, list(reversed(templates)))
+
+        See Also:
+            MoveAffixTemplate, CreateAffixTemplate, GetAllAffixTemplatesForPOS
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(pos_or_hvo, "pos_or_hvo")
+        self._ValidateParam(ordered_templates, "ordered_templates")
+
+        pos = self.__ResolveObject(pos_or_hvo)
+
+        templates = getattr(pos, "AffixTemplatesOS", None)
+        if templates is None:
+            raise FP_ParameterError("pos has no AffixTemplatesOS")
+
+        desired = [self.__ResolveObject(t) for t in ordered_templates]
+
+        with self._TransactionCM("Reorder affix templates"):
+            self._ApplySequenceOrder(templates, desired)
+        return pos
+
     # ========== DELETION ==========
 
     @OperationsMethod
