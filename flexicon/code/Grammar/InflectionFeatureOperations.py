@@ -1517,6 +1517,111 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         return []
 
     # ========================================================================
+    # PART OF SPEECH INFLECTABLE FEATURES (issue #577)
+    # ========================================================================
+
+    @OperationsMethod
+    def GetInflectableFeatures(self, pos_or_hvo):
+        """
+        Get the inflectable features declared for a part of speech (READ-ONLY).
+
+        Args:
+            pos_or_hvo: The IPartOfSpeech object or HVO.
+
+        Returns:
+            list: The feature definition objects from the POS's
+            ``InflectableFeatsRC`` collection, each cast to its concrete
+            interface (``IFsClosedFeature`` or ``IFsComplexFeature``) so
+            callers can read ``.Name``/``.Abbreviation`` directly without
+            ``ClassName`` probing. Empty list when the POS declares no
+            inflectable features (or the collection is absent on this
+            object).
+
+        Raises:
+            FP_NullParameterError: If pos_or_hvo is None.
+
+        Example:
+            >>> infl = project.InflectionFeatures
+            >>> verb = project.POS.Find("Verb")
+            >>> [infl.GetFeatureType(f) for f in infl.GetInflectableFeatures(verb)]
+            ['closed', 'closed', 'complex']
+
+        Notes:
+            - READ-ONLY; reads ``IPartOfSpeech.InflectableFeatsRC``.
+            - A POS declares the morphosyntactic features its word forms
+              inflect for (verbs inflect for person and number; nouns for
+              number and gender) -- ``InflectableFeatsRC`` is the
+              LCM-side reference collection holding that declaration.
+            - Each element is cast through the same ``IFsClosedFeature(raw)``
+              / ``IFsComplexFeature(raw)`` idiom PhonFeatureOperations uses
+              on read, so closed and complex features are both returned in
+              usable form. A future feature-defn subtype is returned via
+              ``IFsFeatDefn``; ``GetFeatureType`` reports its raw
+              ``ClassName`` for any such subtype.
+
+        See Also:
+            GetFeatureType, FeatureGetAll, Find
+        """
+        self._ValidateParam(pos_or_hvo, "pos_or_hvo")
+
+        pos = self.__ResolvePOS(pos_or_hvo)
+
+        feats = getattr(pos, "InflectableFeatsRC", None)
+        if feats is None:
+            return []
+
+        return [self.__CastFeatureDefn(raw) for raw in feats]
+
+    @OperationsMethod
+    def GetFeatureType(self, feature_or_hvo):
+        """
+        Return the concrete type of an inflection feature as a short string.
+
+        Args:
+            feature_or_hvo: The IFsFeatDefn object or HVO.
+
+        Returns:
+            str: ``"closed"`` for IFsClosedFeature (symbolic values, e.g.
+            person 1st/2nd/3rd), ``"complex"`` for IFsComplexFeature
+            (structured sub-features), or the LCM ClassName as a
+            defensive fallback for unknown feature-defn subtypes.
+
+        Raises:
+            FP_NullParameterError: If feature_or_hvo is None.
+
+        Example:
+            >>> infl = project.InflectionFeatures
+            >>> [infl.GetFeatureType(f) for f in infl.FeatureGetAll()]
+            ['closed', 'closed', 'complex']
+
+        Notes:
+            - Discriminates on ``IFsFeatDefn.ClassName``:
+              ``"FsClosedFeature"`` -> ``"closed"``,
+              ``"FsComplexFeature"`` -> ``"complex"``.
+            - Mirrors the ``NaturalClassOperations.GetType`` convention of
+              short type strings with a raw-``ClassName`` fallback for
+              future subtypes.
+            - Use this to decide which mutators are valid for a given
+              feature: ``CreateValue``/``FeatureGetValues`` require a
+              closed feature.
+
+        See Also:
+            GetInflectableFeatures, CreateValue, FeatureGetValues
+        """
+        self._ValidateParam(feature_or_hvo, "feature_or_hvo")
+
+        feature = self.__ResolveFeature(feature_or_hvo)
+
+        # Discriminate on ClassName, mirroring
+        # NaturalClassOperations.GetType's defensive fallback.
+        class_name = getattr(feature, "ClassName", None)
+        if class_name == "FsClosedFeature":
+            return "closed"
+        if class_name == "FsComplexFeature":
+            return "complex"
+        return class_name
+
+    # ========================================================================
     # CATALOG (eticGlossList) IMPORT METHODS
     # ========================================================================
     #
@@ -1791,6 +1896,40 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         if isinstance(fs_or_hvo, int):
             return cast_to_concrete(self.project.Object(fs_or_hvo))
         return cast_to_concrete(fs_or_hvo)
+
+    def __ResolvePOS(self, pos_or_hvo):
+        """
+        Resolve HVO or object to IPartOfSpeech.
+
+        Args:
+            pos_or_hvo: Either an IPartOfSpeech object or an HVO (int).
+
+        Returns:
+            IPartOfSpeech: The resolved part of speech object.
+        """
+        if isinstance(pos_or_hvo, int):
+            return cast_to_concrete(self.project.Object(pos_or_hvo))
+        return cast_to_concrete(self._UnwrapLcmObject(pos_or_hvo))
+
+    def __CastFeatureDefn(self, raw):
+        """
+        Cast a feature-definition object to its concrete interface.
+
+        Discriminates on ``ClassName`` and returns the concrete interface
+        view -- ``IFsClosedFeature`` for ``"FsClosedFeature"``,
+        ``IFsComplexFeature`` for ``"FsComplexFeature"`` -- following the
+        same ``IFsClosedFeature(raw)`` interface-call idiom that
+        PhonFeatureOperations uses on read. Any future feature-defn
+        subtype falls back to the base ``IFsFeatDefn`` view, so
+        ``.Name``/``.Abbreviation`` stay reachable without caller-side
+        ``ClassName`` probing.
+        """
+        class_name = getattr(raw, "ClassName", None)
+        if class_name == "FsClosedFeature":
+            return IFsClosedFeature(raw)
+        if class_name == "FsComplexFeature":
+            return IFsComplexFeature(raw)
+        return IFsFeatDefn(raw)
 
     # ========== SYNC INTEGRATION METHODS ==========
 
