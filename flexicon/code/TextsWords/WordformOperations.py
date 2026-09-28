@@ -571,6 +571,119 @@ class WordformOperations(BaseOperations):
         return list(wordform.OccurrencesInTexts)
 
     @OperationsMethod
+    def GetParserCount(self, wordform_or_hvo):
+        """
+        Get the number of parser evaluations for a wordform.
+
+        Args:
+            wordform_or_hvo: Either an IWfiWordform object or its HVO
+
+        Returns:
+            int: Number of analyses the parser agent has evaluated
+
+        Raises:
+            FP_NullParameterError: If wordform_or_hvo is None
+            FP_ParameterError: If wordform doesn't exist
+
+        Example:
+            >>> wf = project.Wordforms.Find("running")
+            >>> count = project.Wordforms.GetParserCount(wf)
+            >>> print(f"Parser evaluated {count} analyses for 'running'")
+
+        Notes:
+            - Mirrors the IWfiWordform.ParserCount LCM property
+            - ParserCount counts analyses the parser agent has *evaluated*,
+              NOT only parser-approved (computer-approved) ones. A wordform
+              can have a positive ParserCount with no computer-approved
+              analysis, so ``GetParserCount(wf)`` is NOT equivalent to
+              ``sum(1 for a in project.Wordforms.GetAnalyses(wf)
+              if project.WfiAnalyses.IsComputerApproved(a))``.
+              Callers needing approval status should use that composite
+              instead of assuming the two are the same.
+
+        See Also:
+            GetUserCount, IsParsed, GetAnalyses
+        """
+        self._ValidateParam(wordform_or_hvo, "wordform_or_hvo")
+
+        wordform = self.__ResolveWordform(wordform_or_hvo)
+
+        return int(wordform.ParserCount)
+
+    @OperationsMethod
+    def GetUserCount(self, wordform_or_hvo):
+        """
+        Get the number of user-created analyses for a wordform.
+
+        Args:
+            wordform_or_hvo: Either an IWfiWordform object or its HVO
+
+        Returns:
+            int: Number of human-created (user) analyses
+
+        Raises:
+            FP_NullParameterError: If wordform_or_hvo is None
+            FP_ParameterError: If wordform doesn't exist
+
+        Example:
+            >>> wf = project.Wordforms.Find("running")
+            >>> count = project.Wordforms.GetUserCount(wf)
+            >>> print(f"'running' has {count} user-created analyses")
+
+        Notes:
+            - Mirrors the IWfiWordform.UserCount LCM property
+            - Counts human-created analyses, as distinct from the parser
+              evaluations counted by GetParserCount
+
+        See Also:
+            GetParserCount, IsParsed, GetAnalyses
+        """
+        self._ValidateParam(wordform_or_hvo, "wordform_or_hvo")
+
+        wordform = self.__ResolveWordform(wordform_or_hvo)
+
+        return int(wordform.UserCount)
+
+    @OperationsMethod
+    def IsParsed(self, wordform_or_hvo):
+        """
+        Check whether the parser has evaluated any analysis for a wordform.
+
+        Args:
+            wordform_or_hvo: Either an IWfiWordform object or its HVO
+
+        Returns:
+            bool: True if the parser has evaluated at least one analysis
+
+        Raises:
+            FP_NullParameterError: If wordform_or_hvo is None
+            FP_ParameterError: If wordform doesn't exist
+
+        Example:
+            >>> wf = project.Wordforms.Find("running")
+            >>> if project.Wordforms.IsParsed(wf):
+            ...     print("'running' has parser evaluations")
+
+        Notes:
+            - Exactly equivalent to ``GetParserCount(wordform_or_hvo) > 0``
+            - "Parsed" here means exactly one thing: the parser agent has
+              evaluated at least one analysis (ParserCount > 0). It does NOT
+              mean the wordform has a computer-approved analysis. Use the
+              ``any(project.WfiAnalyses.IsComputerApproved(a)
+              for a in project.Wordforms.GetAnalyses(wf))`` composite when
+              approval status is what you need, and do not assume the two
+              tests give the same answer.
+
+        See Also:
+            GetParserCount, GetUserCount, GetAnalyses
+        """
+        self._ValidateParam(wordform_or_hvo, "wordform_or_hvo")
+
+        wordform = self.__ResolveWordform(wordform_or_hvo)
+
+        return int(wordform.ParserCount) > 0
+
+    @OperationsMethod
     def GetChecksum(self, wordform_or_hvo):
         """
         Get the checksum of a wordform.
