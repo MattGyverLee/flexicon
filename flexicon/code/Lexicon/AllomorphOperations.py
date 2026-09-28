@@ -1274,9 +1274,8 @@ class AllomorphOperations(BaseOperations):
             >>> allomorphs = list(allomorphOps.GetAll(entry))
             >>> if allomorphs:
             ...     morphType = allomorphOps.GetMorphType(allomorphs[0])
-            ...     # Get type name
-            ...     wsHandle = project.GetDefaultAnalysisWSHandle()
-            ...     type_name = ITsString(morphType.Name.get_String(wsHandle)).Text
+            ...     # Get type name via the shared wrapper (issue #583)
+            ...     type_name = project.LexEntry.GetMorphTypeName(morphType)
             ...     print(type_name)
             stem
 
@@ -1285,9 +1284,11 @@ class AllomorphOperations(BaseOperations):
               infix, circumfix, clitic, proclitic, enclitic, simulfix, etc.
             - Type determines parsing behavior and template slots
             - Returns the IMoMorphType object which can be queried for details
+            - Use LexEntryOperations.GetMorphTypeName(morphType) for the
+              display name (the IMoMorphType objects are shared)
 
         See Also:
-            SetMorphType, Create
+            SetMorphType, Create, LexEntryOperations.GetMorphTypeName
         """
         self._ValidateParam(allomorph_or_hvo, "allomorph_or_hvo")
 
