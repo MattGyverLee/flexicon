@@ -56,3 +56,51 @@ def c4_to_feat_struc_spec(c4):
         else:
             result[feat_guid] = value
     return result
+
+
+def feat_struc_spec_to_c4(spec):
+    """
+    Wrap a ``MakeFeatStruc``-shaped spec dict in the C4 wire envelope.
+
+    Exact inverse of ``c4_to_feat_struc_spec`` (modulo the type/identity
+    information the public shape deliberately drops): converts the plain
+    recursive ``{feature: value | {...}}`` dict that
+    ``GetRequiredFeatures`` returns (and ``SetRequiredFeatures`` accepts)
+    into the ``{\"TypeGuid\": ..., \"specs\": {...}}`` envelope that
+    ``BaseOperations._ApplyFeatureStruc``'s C4 branch expects.
+
+    Args:
+        spec: A ``MakeFeatStruc``-shaped spec dict -- ``{feature_guid:
+            value_guid | {nested spec}}`` with string keys, as produced
+            by ``c4_to_feat_struc_spec``.
+
+    Returns:
+        dict: ``{"TypeGuid": None, "specs": {...}}`` with every nested
+        dict value re-enveloped the same way, recursively.
+
+    Notes:
+        - ``TypeGuid`` is ``None`` at every level: the public spec shape
+          carries no feature-structure type information (the getter
+          drops it), and ``_ApplyFeatureStruc`` skips a falsy
+          ``TypeGuid`` rather than resolving it, so ``None`` round-trips
+          cleanly. Live data's outer ``TypeRA`` is null in the common
+          case anyway.
+        - Nested levels carry no ``"Guid"`` key: the getter drops the
+          nested struct identities, so re-applying always mints fresh
+          nested structs (via ``_CreateWithGuid(guid=None)``). Only the
+          TOP-LEVEL struct identity can be preserved, through
+          ``_ApplyFeatureStruc``'s ``struct_guid`` parameter -- that is
+          why ``SetRequiredFeatures`` takes ``struct_guid`` separately
+          instead of reading it out of ``spec``.
+    """
+    return {
+        "TypeGuid": None,
+        "specs": {
+            feat_guid: (
+                feat_struc_spec_to_c4(value)
+                if isinstance(value, dict)
+                else value
+            )
+            for feat_guid, value in spec.items()
+        },
+    }

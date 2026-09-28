@@ -74,6 +74,9 @@ from ..Shared.string_utils import normalize_text
 # Import shared morph-type resolution utilities (single source of truth
 # shared with LexEntryOperations.Create -- see issue #213/#214)
 from ..Shared.morph_type_utils import find_morph_type, is_stem_morph_type, morph_type_not_found_error
+# Import shared feature-structure spec conversion (C4 wire format <->
+# MakeFeatStruc spec), shared with MSAOperations -- see issue #581.
+from ..Shared.feature_struc_utils import c4_to_feat_struc_spec, feat_struc_spec_to_c4
 from ..lcm_casting import cast_to_concrete, get_pos_from_msa
 
 # Import wrapper classes
@@ -1551,6 +1554,340 @@ class AllomorphOperations(BaseOperations):
             with self._TransactionCM("Remove phonological environment"):
                 allomorph.PhoneEnvRC.Remove(env)
 
+    # --- Inflection class membership (issue #581) ---
+
+    @OperationsMethod
+    def GetInflectionClasses(self, allo_or_hvo):
+        """
+        Get the inflection classes of a stem allomorph.
+
+        Reads ``IMoStemAllomorph.InflectionClassesRC``.
+
+        Args:
+            allo_or_hvo: The allomorph object or HVO.
+
+        Returns:
+            list: List of IMoInflClass objects -- [] when the allomorph
+            is not a stem allomorph, or when no inflection classes are
+            set. Never raises on the wrong ClassName (established read
+            idiom in this file).
+
+        Raises:
+            FP_NullParameterError: If allo_or_hvo is None.
+
+        Example:
+            >>> entry = project.LexEntry.Find("run")
+            >>> allomorphs = project.Allomorphs.GetAll(entry)
+            >>> classes = project.Allomorphs.GetInflectionClasses(allomorphs[0])
+            >>> for ic in classes:
+            ...     print(project.InflectionFeatures.InflectionClassGetName(ic))
+            Strong Verbs
+
+        Notes:
+            - Affix allomorphs (MoAffixAllomorph) carry no inflection
+              classes; they always yield [] here, never an exception.
+
+        See Also:
+            AddInflectionClass, RemoveInflectionClass, GetStemName
+        """
+        self._ValidateParam(allo_or_hvo, "allo_or_hvo")
+
+        allomorph = self.__GetAllomorphObject(allo_or_hvo)
+
+        if getattr(allomorph, "ClassName", None) != "MoStemAllomorph":
+            return []
+        rc = getattr(allomorph, "InflectionClassesRC", None)
+        return list(rc) if rc is not None else []
+
+    @OperationsMethod
+    def AddInflectionClass(self, allo_or_hvo, infl_class_or_hvo):
+        """
+        Add an inflection class to a stem allomorph.
+
+        Writes ``IMoStemAllomorph.InflectionClassesRC``.
+
+        Args:
+            allo_or_hvo: The stem allomorph object or HVO.
+            infl_class_or_hvo: The IMoInflClass object or HVO to add.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If allo_or_hvo or infl_class_or_hvo is None.
+            FP_ParameterError: If the allomorph is not a MoStemAllomorph,
+                or if infl_class_or_hvo is not an IMoInflClass.
+
+        Example:
+            >>> entry = project.LexEntry.Find("run")
+            >>> allomorphs = project.Allomorphs.GetAll(entry)
+            >>> strong = project.InflectionFeatures.InflectionClassFind("Strong Verbs")
+            >>> project.Allomorphs.AddInflectionClass(allomorphs[0], strong)
+
+        Notes:
+            - Unlike ``AddPhoneEnv`` (which re-adds a duplicate), a
+              redundant add here is a no-op: the membership test stays
+              outside the transaction so no empty named undo entry is
+              created (same D5 rationale as ``RemovePhoneEnv``).
+            - Non-stem allomorphs are rejected (FP_ParameterError) rather
+              than silently ignored. The issue defines only the getter's
+              non-stem behavior ([]); for the mutating pair, attaching an
+              inflection class to an affix allomorph is a caller error,
+              mirroring ``SetStemName``'s write-side validation.
+
+        See Also:
+            GetInflectionClasses, RemoveInflectionClass
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(allo_or_hvo, "allo_or_hvo")
+        self._ValidateParam(infl_class_or_hvo, "infl_class_or_hvo")
+
+        allomorph = self.__GetAllomorphObject(allo_or_hvo)
+        if getattr(allomorph, "ClassName", None) != "MoStemAllomorph":
+            raise FP_ParameterError(
+                "AddInflectionClass requires a MoStemAllomorph; got "
+                f"{getattr(allomorph, 'ClassName', type(allomorph).__name__)}"
+            )
+
+        infl_class = self.__ResolveInflectionClass(infl_class_or_hvo)
+        if getattr(infl_class, "ClassName", None) != "MoInflClass":
+            raise FP_ParameterError(
+                "infl_class_or_hvo must be an IMoInflClass or its HVO; got "
+                f"{getattr(infl_class, 'ClassName', type(infl_class).__name__)}"
+            )
+
+        # Membership test stays outside the bracket so a redundant add is a
+        # true no-op rather than an empty named undo entry (D5) -- see Notes.
+        if infl_class not in allomorph.InflectionClassesRC:
+            with self._TransactionCM("Add inflection class"):
+                allomorph.InflectionClassesRC.Add(infl_class)
+
+    @OperationsMethod
+    def RemoveInflectionClass(self, allo_or_hvo, infl_class_or_hvo):
+        """
+        Remove an inflection class from a stem allomorph.
+
+        Writes ``IMoStemAllomorph.InflectionClassesRC``.
+
+        Args:
+            allo_or_hvo: The stem allomorph object or HVO.
+            infl_class_or_hvo: The IMoInflClass object or HVO to remove.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If allo_or_hvo or infl_class_or_hvo is None.
+            FP_ParameterError: If the allomorph is not a MoStemAllomorph,
+                or if infl_class_or_hvo is not an IMoInflClass.
+
+        Example:
+            >>> entry = project.LexEntry.Find("run")
+            >>> allomorphs = project.Allomorphs.GetAll(entry)
+            >>> classes = project.Allomorphs.GetInflectionClasses(allomorphs[0])
+            >>> if classes:
+            ...     project.Allomorphs.RemoveInflectionClass(allomorphs[0], classes[0])
+
+        Notes:
+            - If the class is not present, this is a no-op (no error and
+              no empty undo entry), mirroring ``RemovePhoneEnv``.
+            - Non-stem allomorphs are rejected (FP_ParameterError), as in
+              ``AddInflectionClass`` -- see its Notes for the rationale.
+
+        See Also:
+            GetInflectionClasses, AddInflectionClass
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(allo_or_hvo, "allo_or_hvo")
+        self._ValidateParam(infl_class_or_hvo, "infl_class_or_hvo")
+
+        allomorph = self.__GetAllomorphObject(allo_or_hvo)
+        if getattr(allomorph, "ClassName", None) != "MoStemAllomorph":
+            raise FP_ParameterError(
+                "RemoveInflectionClass requires a MoStemAllomorph; got "
+                f"{getattr(allomorph, 'ClassName', type(allomorph).__name__)}"
+            )
+
+        infl_class = self.__ResolveInflectionClass(infl_class_or_hvo)
+        if getattr(infl_class, "ClassName", None) != "MoInflClass":
+            raise FP_ParameterError(
+                "infl_class_or_hvo must be an IMoInflClass or its HVO; got "
+                f"{getattr(infl_class, 'ClassName', type(infl_class).__name__)}"
+            )
+
+        # Membership test stays outside the bracket so a redundant remove is a
+        # true no-op rather than an empty named undo entry (D5).
+        if infl_class in allomorph.InflectionClassesRC:
+            with self._TransactionCM("Remove inflection class"):
+                allomorph.InflectionClassesRC.Remove(infl_class)
+
+    # --- Required features (MsEnvFeaturesOA, issue #581) ---
+
+    @OperationsMethod
+    def GetRequiredFeatures(self, allo_or_hvo):
+        """
+        Get the required inflection features of an affix allomorph.
+
+        Reads ``IMoAffixAllomorph.MsEnvFeaturesOA`` and converts it to the
+        public ``MakeFeatStruc`` spec shape -- the round-trip contract
+        ``MSAOperations`` documents for its own feature getters (issue
+        #544): the returned dict can be passed straight back to
+        ``project.InflectionFeatures.MakeFeatStruc(...)`` or to
+        ``SetRequiredFeatures``.
+
+        Args:
+            allo_or_hvo: The allomorph object or HVO.
+
+        Returns:
+            dict | None: None when the allomorph is not a
+            MoAffixAllomorph, or when no feature structure is set. {}
+            when a structure is present but empty. Otherwise a recursive
+            GUID-keyed dict: ``{feature_guid: value_guid | {nested}}``.
+            Never raises on the wrong ClassName (established read idiom
+            in this file).
+
+        Raises:
+            FP_NullParameterError: If allo_or_hvo is None.
+
+        Example:
+            >>> entry = project.LexEntry.Find("-s")
+            >>> affix = project.Allomorphs.GetAll(entry)[0]
+            >>> spec = project.Allomorphs.GetRequiredFeatures(affix)
+            >>> if spec is None:
+            ...     print("no required features")
+            ... else:
+            ...     print(project.InflectionFeatures.DescribeFeatStruc(spec))
+            [number: plural]
+
+        Notes:
+            - Stem allomorphs (MoStemAllomorph) carry no MsEnvFeaturesOA;
+              they always yield None here, never an exception.
+            - The conversion is shared with MSAOperations via
+              ``Shared.feature_struc_utils.c4_to_feat_struc_spec``: the C4
+              ``TypeGuid`` envelope and nested ``"Guid"`` identities are
+              dropped, so a fresh ``MakeFeatStruc`` call mints new structs
+              rather than targeting existing ones.
+
+        See Also:
+            SetRequiredFeatures, InflectionFeatureOperations.MakeFeatStruc,
+            InflectionFeatureOperations.DescribeFeatStruc
+        """
+        self._ValidateParam(allo_or_hvo, "allo_or_hvo")
+
+        allomorph = self.__GetAllomorphObject(allo_or_hvo)
+
+        if getattr(allomorph, "ClassName", None) != "MoAffixAllomorph":
+            return None
+
+        concrete_owner, prop_name = self._ResolveFeatureStrucOwner(allomorph)
+        struct = getattr(concrete_owner, prop_name)
+        return c4_to_feat_struc_spec(self._GetFeatureStruc(struct))
+
+    @OperationsMethod
+    def SetRequiredFeatures(self, allo_or_hvo, spec, struct_guid=None):
+        """
+        Set (replace) the required inflection features of an affix allomorph.
+
+        Writes ``IMoAffixAllomorph.MsEnvFeaturesOA``. ``spec`` uses the
+        PUBLIC ``MakeFeatStruc`` shape -- exactly what
+        ``GetRequiredFeatures`` returns -- not the C4 sync-wire shape.
+
+        Args:
+            allo_or_hvo: The affix allomorph object or HVO.
+            spec: ``{feature_guid: value_guid | {nested spec}}`` with
+                string GUID keys, as returned by ``GetRequiredFeatures``.
+                ``{}`` attaches a present-but-empty structure.
+            struct_guid: Optional string GUID preserved as the new
+                top-level ``IFsFeatStruc``'s identity (round-trip / sync
+                scenario). None mints a fresh GUID.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If allo_or_hvo or spec is None.
+            FP_ParameterError: If the allomorph is not a MoAffixAllomorph;
+                if spec is not a dict, has non-string keys, or has values
+                that are neither GUID strings nor nested dicts; if any
+                feature/value GUID does not resolve in this project; or if
+                struct_guid is not None and not a GUID string.
+
+        Example:
+            >>> entry = project.LexEntry.Find("-s")
+            >>> affix = project.Allomorphs.GetAll(entry)[0]
+            >>> number = project.InflectionFeatures.Find("number")
+            >>> plural = project.InflectionFeatures.FeatureGetValues(number)[0]
+            >>> spec = {str(number.Guid): str(plural.Guid)}
+            >>> project.Allomorphs.SetRequiredFeatures(affix, spec)
+            >>> # Round-trip: read back exactly what was written
+            >>> assert project.Allomorphs.GetRequiredFeatures(affix) == spec
+
+        Notes:
+            - REPLACE semantics: any existing MsEnvFeaturesOA structure is
+              dropped first, so the allomorph ends up with exactly
+              ``spec`` -- unlike ``_ApplyFeatureStruc``'s additive sync
+              behavior, ``SetRequiredFeatures(allo, {})`` clears.
+            - Shape mapping (the wire-vs-public distinction): ``spec`` is
+              re-enveloped with
+              ``Shared.feature_struc_utils.feat_struc_spec_to_c4`` into
+              the ``{"TypeGuid": None, "specs": {...}}`` envelope that
+              ``BaseOperations._ApplyFeatureStruc``'s C4 branch expects,
+              then applied with ``on_unresolved="raise"``. ``TypeGuid``
+              is None because the public shape carries no struct-type
+              information (the getter drops it); nested levels carry no
+              ``"Guid"``, so nested structs are always freshly minted.
+              ``struct_guid`` is honored ONLY for the top-level struct
+              (via ``_CreateWithGuid``) -- it cannot be read out of
+              ``spec`` because the getter deliberately drops it.
+            - Every feature/value GUID is resolved BEFORE any mutation,
+              so an unresolvable GUID raises without touching the
+              allomorph (validate-before-mutate, D5).
+
+        See Also:
+            GetRequiredFeatures, InflectionFeatureOperations.MakeFeatStruc
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(allo_or_hvo, "allo_or_hvo")
+        self._ValidateParam(spec, "spec")
+        if not isinstance(spec, dict):
+            raise FP_ParameterError(
+                "spec must be a MakeFeatStruc-shaped dict "
+                "{feature_guid: value_guid | {...}}; got "
+                f"{type(spec).__name__}"
+            )
+        if struct_guid is not None and not isinstance(struct_guid, str):
+            raise FP_ParameterError(
+                "struct_guid must be a GUID string or None; got "
+                f"{type(struct_guid).__name__}"
+            )
+
+        allomorph = self.__GetAllomorphObject(allo_or_hvo)
+        if getattr(allomorph, "ClassName", None) != "MoAffixAllomorph":
+            raise FP_ParameterError(
+                "SetRequiredFeatures requires a MoAffixAllomorph; got "
+                f"{getattr(allomorph, 'ClassName', type(allomorph).__name__)}"
+            )
+
+        concrete_owner, prop_name = self._ResolveFeatureStrucOwner(allomorph)
+
+        # Pure-read validation pass: every GUID must resolve BEFORE any
+        # mutation, so a bad spec never leaves a partially-written struct.
+        self.__ValidateRequiredFeaturesSpec(spec)
+
+        c4_spec = feat_struc_spec_to_c4(spec)
+
+        with self._TransactionCM("Set required features"):
+            # Replace, don't merge: drop the existing struct (if any) so
+            # the allomorph ends up with exactly `spec`. Clearing first
+            # also guarantees `struct_guid` is honored -- _ApplyFeatureStruc
+            # only uses it when it must CREATE the struct.
+            setattr(concrete_owner, prop_name, None)
+            self._ApplyFeatureStruc(
+                concrete_owner,
+                prop_name,
+                c4_spec,
+                struct_guid=struct_guid,
+                on_unresolved="raise",
+                label=f"Allomorph ({allomorph.ClassName}, {prop_name})",
+            )
+
     # --- Navigation Operations ---
 
     @OperationsMethod
@@ -1852,6 +2189,61 @@ class AllomorphOperations(BaseOperations):
             obj = self._UnwrapLcmObject(stem_name_or_hvo)
 
         return cast_to_concrete(obj)
+
+    def __ResolveInflectionClass(self, infl_class_or_hvo):
+        """Resolve HVO or object to an IMoInflClass.
+
+        Never raises on a ClassName miss: ``cast_to_concrete`` is total
+        and returns the input unchanged when ``"MoInflClass"`` is not
+        registered/recognized, mirroring ``__ResolveStemName``'s
+        never-raising shape. Callers that need a guarantee
+        (``AddInflectionClass``/``RemoveInflectionClass``) validate
+        ``ClassName`` themselves and raise ``FP_ParameterError``.
+        """
+        infl_class_or_hvo = self._UnwrapLcm(infl_class_or_hvo)
+        if isinstance(infl_class_or_hvo, int):
+            obj = self.project.Object(infl_class_or_hvo)
+        else:
+            obj = self._UnwrapLcmObject(infl_class_or_hvo)
+
+        return cast_to_concrete(obj)
+
+    def __ValidateRequiredFeaturesSpec(self, spec, _path="spec"):
+        """Recursively validate a ``SetRequiredFeatures`` spec WITHOUT mutating.
+
+        Pure-read pass (validate-before-mutate, D5): the shape must be
+        exactly what ``GetRequiredFeatures`` returns -- string GUID keys,
+        GUID-string or nested-dict values -- and every feature/value GUID
+        must resolve in this project via ``_ResolveFsByGuid``. Violations
+        raise ``FP_ParameterError`` naming the offending path, before the
+        caller touches the allomorph.
+        """
+        for feat_guid, value in spec.items():
+            where = f"{_path}[{feat_guid!r}]"
+            if not isinstance(feat_guid, str):
+                raise FP_ParameterError(
+                    "SetRequiredFeatures: feature key at "
+                    f"{_path} must be a GUID string; got {feat_guid!r}"
+                )
+            if self._ResolveFsByGuid(feat_guid, kind="feature") is None:
+                raise FP_ParameterError(
+                    "SetRequiredFeatures: feature GUID "
+                    f"{feat_guid!r} does not exist in this project"
+                )
+            if isinstance(value, dict):
+                self.__ValidateRequiredFeaturesSpec(value, _path=where)
+            elif not isinstance(value, str):
+                raise FP_ParameterError(
+                    "SetRequiredFeatures: value at "
+                    f"{where} must be a GUID string or a nested dict; "
+                    f"got {value!r}"
+                )
+            elif self._ResolveFsByGuid(value, kind="value") is None:
+                raise FP_ParameterError(
+                    "SetRequiredFeatures: value GUID "
+                    f"{value!r} for feature {feat_guid!r} does not exist "
+                    "in this project"
+                )
 
     def __GetAllomorphPos(self, allomorph):
         """POS of the allomorph's owning entry, or None.
