@@ -3,7 +3,7 @@
   "specName": "SPEC -- Phonological rule readers: environment, rule features, POSes, disabled, iteration/sequence contexts",
   "branch": "fix/572-phonological-rule-readers",
   "currentStep": "implement",
-  "status": "implementing",
+  "status": "completed",
   "history": [
     {
       "step": "plan",
@@ -215,6 +215,53 @@
       "kind": "complete",
       "by": "ai",
       "at": "2026-09-28T18:53:07.226Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T023",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-28T18:56:04.232Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T024",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-28T19:26:49.752Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T025",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-28T19:27:14.879Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T026",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-28T19:27:37.392Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T027",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-28T19:30:38.409Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-28T19:30:38.475Z"
     }
   ],
   "coverage": {
@@ -268,23 +315,28 @@
     },
     "SC-001": {
       "title": "Print every rule fully with flexicon only",
-      "tasks": "T009,T027"
+      "tasks": "T009,T027",
+      "tests": "tests/operations/test_issue572_phonrule_readers_live.py::TestSc001RuleDescribesItself"
     },
     "SC-002": {
       "title": "Zero PhBoundaryContext strings outside allowlist",
-      "tasks": "T018,T019,T022"
+      "tasks": "T018,T019,T022",
+      "tests": "tests/test_issue572_boundary_context_ratchet.py"
     },
     "SC-003": {
       "title": "Existing rule readers unchanged",
-      "tasks": "T002,T009"
+      "tasks": "T002,T009",
+      "tests": "tests/operations/test_issue572_phonrule_readers_live.py::TestMorphboundaryRuleRegression::test_sc003_serialisation_matches_before_capture"
     },
     "SC-004": {
       "title": "context_name real text; is_boundary_context fires",
-      "tasks": "T003,T008"
+      "tasks": "T003,T008",
+      "tests": "tests/operations/test_issue572_context_readers_live.py::TestMorphboundaryContextReaders"
     },
     "SC-005": {
       "title": "DescribeRule non-empty for all rule shapes",
-      "tasks": "T009,T010"
+      "tasks": "T009,T010",
+      "tests": "tests/operations/test_issue572_phonrule_readers_live.py::TestMorphboundaryRuleRegression::test_describe_rule_nonempty_without_leaks,tests/operations/test_issue572_phonrule_construct_live.py::TestDescribeRuleTotality"
     },
     "SC-006": {
       "title": "Offline gate >= 2575 passed with arithmetic",
@@ -296,16 +348,20 @@
     },
     "SC-008": {
       "title": "Iteration and rule-feature readers proven on constructed data",
-      "tasks": "T003,T010"
+      "tasks": "T003,T010",
+      "tests": "tests/operations/test_issue572_context_readers_live.py::TestIterationContextWritePath,tests/operations/test_issue572_phonrule_construct_live.py::TestRuleFeaturePOSDisabledRoundTrip"
     }
   },
   "step_summaries": {
     "tasks": {
       "summary": "27 tasks: Setup(2), US1 contexts(6), US2 rule readers(9), US3 ratchet+sweep(5), Polish(5); no Foundational phase"
+    },
+    "implement": {
+      "summary": "Polish done: Category 8 corrections, inspect_rule_final decision recorded, surface checks clean, offline 2593 passed and live 19 passed (run_mode live)"
     }
   },
   "unattended": true,
-  "currentTask": "T022",
+  "currentTask": "T027",
   "task_summaries": {
     "T001": {
       "status": "DONE",
@@ -461,6 +517,97 @@
       "files": [
         "(no file owned)"
       ]
+    },
+    "T023": {
+      "status": "DONE",
+      "did": "Unreleased entry: eight rule readers, Disabled sync key, context repairs, internal boundary_type retirement",
+      "files": [
+        "CHANGELOG.md"
+      ]
+    },
+    "T024": {
+      "status": "DONE",
+      "did": "Category 8: three CORRECTED entries (IPhPhonRuleFeat has no FeatureStructureRA; PhBoundaryContext is PhSimpleContextBdry; IPhPhonContext.Name is IMultiString)",
+      "files": [
+        "docs/API_ISSUES_CATEGORIZED.md"
+      ]
+    },
+    "T025": {
+      "status": "DONE",
+      "did": "Recorded inspect_rule_final.py:43 as needs_human (delete vs fix); only non-code references found",
+      "files": [
+        "specs/572-phonological-rule-readers/evidence/decisions.md"
+      ]
+    },
+    "T026": {
+      "status": "DONE",
+      "did": "8 new methods carry @OperationsMethod, no duplicates; 403 surface/baseline/ratchet tests pass; __all__ unchanged; no baseline pins the method list, so nothing regenerated",
+      "files": [
+        "(none)"
+      ]
+    },
+    "T027": {
+      "status": "DONE",
+      "did": "Offline 2593 passed/1100 deselected (+18/+19, arithmetic closes); live 19 passed run_mode=live; SC-001..SC-008 PASS; ratchet allowlist gained the Category 8 record",
+      "files": [
+        "specs/572-phonological-rule-readers/evidence/live-final.md",
+        "tests/test_issue572_boundary_context_ratchet.py",
+        "docs/API_ISSUES_CATEGORIZED.md"
+      ]
     }
-  }
+  },
+  "verified": [
+    {
+      "what": "surface checks",
+      "command": "python -m pytest tests/test_issue339_public_import_surface.py tests/test_operations_baseline.py tests/test_syncable_properties_member_ratchet.py tests/test_issue572_boundary_context_ratchet.py -q -p no:cacheprovider",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 3.1,
+      "result": "    instance = ops_class(mock_flex_project) · -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html · 408 passed, 4 warnings in 1.56s"
+    },
+    {
+      "what": "offline gate (-m not requires_live_project)",
+      "command": "python C:\\Users\\thoua\\AppData\\Local\\Temp\\claude\\C--Github-flexicon-572\\12d3c6ac-8f3e-44b7-9461-63522e76f62c\\scratchpad\\offline_gate.py",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 20,
+      "result": "    instance = ops_class(mock_flex_project) · -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html · 2593 passed, 1100 deselected, 16 warnings in 13.96s"
+    },
+    {
+      "what": "live gate FLEXLIBS_REQUIRE_LIVE=1, 3 live files",
+      "command": "python C:\\Users\\thoua\\AppData\\Local\\Temp\\claude\\C--Github-flexicon-572\\12d3c6ac-8f3e-44b7-9461-63522e76f62c\\scratchpad\\live_gate.py",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 9.3,
+      "result": "...................                                                      [100%] · [OK] Wrote C:\\Github\\flexicon-572\\tests\\test_results.json (19 tests recorded) · 19 passed in 6.61s"
+    },
+    {
+      "what": "SC-003 output unchanged; SC-002 greps show only allowlisted hits; no FeatureStructureRA tied to IPhPhonRuleFeat",
+      "result": "judged from live test pass and rg output recorded in evidence/live-final.md"
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Allowlist docs/API_ISSUES_CATEGORIZED.md in the #572 ratchet as a third hole",
+      "why": "T024 requires the Category 8 record to name the retired class so a reader searching for it finds the real one; same kind of record as the allowlisted CHANGELOG entry",
+      "rejected": "Rewording Category 8 to avoid the name, which would defeat the search the entry exists for"
+    },
+    {
+      "decision": "No method-list baseline regenerated",
+      "why": "No file under tests/ pins PhonologicalRuleOperations' methods (R-2)",
+      "rejected": "Inventing a baseline edit"
+    }
+  ],
+  "concerns": [
+    {
+      "note": "inspect_rule_final.py:43 still prints an IMultiString type name; left as needs_human (delete vs fix), see evidence/decisions.md D-1",
+      "step": "implement"
+    },
+    {
+      "note": "Branch work is not yet committed for T023-T027 (CHANGELOG, Category 8 doc, ratchet allowlist, evidence files). tests/operations/test_issue572_phonrule_surface_live.py is untracked but allowlisted by the ratchet, so the backward guard fails if it is not committed",
+      "step": "implement"
+    }
+  ],
+  "last_action": "all 27 tasks done; offline 2593 passed, live 19 passed",
+  "telemetryInstanceId": "17a6b1ff-d6f3-4a99-9841-e9ba0d09ca12"
 }

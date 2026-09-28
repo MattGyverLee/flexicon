@@ -24,7 +24,7 @@ reintroduction fails here instead of shipping a dead discriminator again.
 NOTE: this file itself never spells the retired name contiguously. The
 needle is built by concatenation, and prose below refers to it only as
 "the retired name", so the scanner does not flag its own source and the
-``rg`` check in T022 sees only the two allowlisted hits.
+``rg`` check in T022 sees only the allowlisted hits.
 """
 
 import ast
@@ -42,7 +42,8 @@ _NEEDLE = "PhBoundary" + "Context"
 
 # Files allowed to keep the retired name. Every entry is a hole in the
 # ratchet, so each one carries the reason it may keep it. Keep this set
-# MINIMAL: exactly the two holes the task list names.
+# MINIMAL: the two holes the task list names, plus the Category 8 record
+# that T024 requires to name the retired class.
 _ALLOWED_PATHS = {
     # 4.x history entry at :3313; rewriting it would falsify the record.
     "CHANGELOG.md": "4.x history entry at :3313",
@@ -50,6 +51,9 @@ _ALLOWED_PATHS = {
     "tests/operations/test_issue572_phonrule_surface_live.py": (
         "probe that records the retired class as absent"
     ),
+    # Category 8 correction record (T024): it must name the invented class
+    # so a reader searching for it finds the real one.
+    "docs/API_ISSUES_CATEGORIZED.md": "Category 8 correction record for #572",
 }
 
 # Directories that are not part of the source tree we ratchet on. Copied
