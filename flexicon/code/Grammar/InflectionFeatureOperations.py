@@ -378,6 +378,85 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         with self._TransactionCM(f"Set inflection class name '{name}'"):
             ic.Name.set_String(wsHandle, mkstr)
 
+    @OperationsMethod
+    def InflectionClassGetAbbreviation(self, ic_or_hvo, wsHandle=None):
+        """
+        Get the abbreviation of an inflection class.
+
+        Args:
+            ic_or_hvo: The IMoInflClass object or HVO.
+            wsHandle: Optional writing system handle. Defaults to analysis WS.
+
+        Returns:
+            str: The inflection class abbreviation, or empty string if not
+            set. Never ``"***"``.
+
+        Raises:
+            FP_NullParameterError: If ic_or_hvo is None.
+
+        Example:
+            >>> inflOps = InflectionFeatureOperations(project)
+            >>> for ic in inflOps.InflectionClassGetAll():
+            ...     abbr = inflOps.InflectionClassGetAbbreviation(ic)
+            ...     print(f"Inflection Class: {abbr}")
+            Inflection Class: 1st Decl
+
+        See Also:
+            InflectionClassSetAbbreviation, InflectionClassGetName,
+            InflectionClassGetAll
+        """
+        self._ValidateParam(ic_or_hvo, "ic_or_hvo")
+
+        ic = self.__ResolveInflectionClass(ic_or_hvo)
+        wsHandle = self.__WSHandle(wsHandle)
+
+        abbr_ms = getattr(ic, "Abbreviation", None)
+        if abbr_ms is None:
+            return ""
+        abbr = ITsString(abbr_ms.get_String(wsHandle)).Text
+        return self._NormalizeMultiString(abbr) or ""
+
+    @OperationsMethod
+    def InflectionClassSetAbbreviation(self, ic_or_hvo, abbr, wsHandle=None):
+        """
+        Set the abbreviation of an inflection class.
+
+        Args:
+            ic_or_hvo: The IMoInflClass object or HVO.
+            abbr (str): The new abbreviation.
+            wsHandle: Optional writing system handle. Defaults to analysis WS.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write enabled.
+            FP_NullParameterError: If ic_or_hvo or abbr is None.
+            FP_ParameterError: If abbr is empty.
+
+        Example:
+            >>> inflOps = InflectionFeatureOperations(project)
+            >>> ic = inflOps.InflectionClassCreate("1st Decl")
+            >>> inflOps.InflectionClassSetAbbreviation(ic, "1D")
+            >>> print(inflOps.InflectionClassGetAbbreviation(ic))
+            1D
+
+        See Also:
+            InflectionClassGetAbbreviation, InflectionClassGetName
+        """
+        self._EnsureWriteEnabled()
+
+        self._ValidateParam(ic_or_hvo, "ic_or_hvo")
+        self._ValidateParam(abbr, "abbr")
+
+        if not abbr or not abbr.strip():
+            raise FP_ParameterError("Abbreviation cannot be empty")
+
+        ic = self.__ResolveInflectionClass(ic_or_hvo)
+        wsHandle = self.__WSHandle(wsHandle)
+
+        mkstr = TsStringUtils.MakeString(abbr, wsHandle)
+
+        with self._TransactionCM(f"Set inflection class abbreviation '{abbr}'"):
+            ic.Abbreviation.set_String(wsHandle, mkstr)
+
     # ========================================================================
     # FEATURE STRUCTURE OPERATIONS
     # ========================================================================
