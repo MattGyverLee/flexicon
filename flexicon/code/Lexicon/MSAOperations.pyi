@@ -4,7 +4,7 @@
 #   Type stubs for MSAOperations
 #
 
-from typing import Any
+from typing import Any, Optional
 from ..BaseOperations import BaseOperations
 from .msa_collection import MSACollection
 
@@ -28,6 +28,10 @@ class MSAOperations(BaseOperations[Any]):
     # Not @wrap_enumerable-decorated: MSACollection already supplies
     # __len__/__getitem__/__iter__, so the decorator would be a no-op.
     def GetAll(self, entry_or_hvo: Any = None) -> MSACollection: ...
+
+    # Owning entry navigation (issue #581): climbs the ownership chain
+    # to the nearest ILexEntry; None (never raises) when there is none.
+    def GetOwningEntry(self, msa_or_hvo: Any) -> Optional[Any]: ...
 
     # Create + attach a new MSA to a sense (returns the new LCM MSA object).
     def CreateStem(self, sense: Any, pos: Any) -> Any: ...
