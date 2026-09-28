@@ -1184,6 +1184,43 @@ class LexSenseOperations(BaseOperations):
         )
 
     @OperationsMethod
+    def GetGrammaticalInfoText(self, sense_or_hvo):
+        """
+        Get the grammatical-info display text for a sense's MSA (issue #575).
+
+        Convenience composition of ``GetMSA`` and
+        ``MSAOperations.GetLongName``: resolves the sense, reads its
+        ``MorphoSyntaxAnalysisRA``, and returns the MSA's ``LongName`` --
+        what FLEx shows as the grammatical info (e.g. ``"Verb  Pl.3"``).
+
+        Args:
+            sense_or_hvo: The ILexSense object or HVO.
+
+        Returns:
+            str: The MSA's long display name, ``""`` when the sense has no
+            MSA or the long name is unset (``"***"`` is normalized to
+            ``""``, matching ``MSAOperations.GetLongName``).
+
+        Raises:
+            FP_NullParameterError: If sense_or_hvo is None.
+
+        Example:
+            >>> senses = list(project.Senses.GetAll(entry))
+            >>> print(project.Senses.GetGrammaticalInfoText(senses[0]))
+            Verb  Pl.3
+
+        See Also:
+            GetMSA, GetPartOfSpeech
+        """
+        self._ValidateParam(sense_or_hvo, "sense_or_hvo")
+
+        sense = self.__GetSenseObject(sense_or_hvo)
+        msa = sense.MorphoSyntaxAnalysisRA
+        if msa is None:
+            return ""
+        return self.project.MSA.GetLongName(msa)
+
+    @OperationsMethod
     def GetPartOfSpeech(self, sense_or_hvo):
         """
         Get the part of speech abbreviation for a sense.
