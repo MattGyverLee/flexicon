@@ -31,7 +31,7 @@
 #   deliberately withholds it from the latter.
 #
 #   Confirmed red-then-green by reverting the fix locally and re-running
-#   this file -- see specs/250-writingsystem-activation/reviews/
+#   this file -- see specs/_archive/closed/250-writingsystem-activation/reviews/
 #   issue250-defects123-implementation.md for the before/after transcript.
 #
 #   Platform: Python.NET

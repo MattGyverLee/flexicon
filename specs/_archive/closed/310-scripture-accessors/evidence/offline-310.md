@@ -2,7 +2,7 @@
 
 ## Lex-lead ruling
 
-See `specs/310-scripture-accessors/rulings.md`.
+See `specs/_archive/closed/310-scripture-accessors/rulings.md`.
 
 ## Commands
 

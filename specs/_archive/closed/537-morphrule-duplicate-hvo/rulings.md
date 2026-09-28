@@ -27,4 +27,4 @@
 
 - Offline: `tests/operations/test_issue537_morphrule_duplicate_hvo_offline.py`
 - Live: `tests/operations/test_issue537_morphrule_duplicate_hvo_live.py`
-- Evidence: `specs/537-morphrule-duplicate-hvo/evidence/`
+- Evidence: `specs/_archive/closed/537-morphrule-duplicate-hvo/evidence/`

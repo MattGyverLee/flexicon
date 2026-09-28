@@ -38,4 +38,4 @@ gate per resolver matches cycle-17 `test_t8_hvo_path_gate.py` precedent.
 - Live (required when FieldWorks available):
   `tests/operations/test_issue268_resolver_hvo_gate_live.py` with
   `FLEXLIBS_REQUIRE_LIVE=1`
-- Evidence: `specs/268-shared-resolver-coverage/evidence/offline-268.md`
+- Evidence: `specs/_archive/closed/268-shared-resolver-coverage/evidence/offline-268.md`

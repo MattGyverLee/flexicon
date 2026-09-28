@@ -2,7 +2,7 @@
 #   test_unbracketed_mutations.py
 #
 #   Class: TestUnbracketedMutationRatchet
-#          B2g ratchet guard for decision D5 (specs/write-path-transactions/
+#          B2g ratchet guard for decision D5 (specs/_archive/closed/write-path-transactions/
 #          tasks.md): every unbracketed LCM mutator under flexicon/code/
 #          must be bracketed in a ``with self._TransactionCM(...)`` block,
 #          294 sites total per the cycle-1 sweep
@@ -203,7 +203,7 @@ class TestUnbracketedMutationRatchet:
                 f"{len(new_violations)} NEW unbracketed LCM mutation site(s) found "
                 "(not present in the frozen baseline). Every LCM mutator must run "
                 'inside `with self._TransactionCM("<label>"):` per decision D5 '
-                "(specs/write-path-transactions/tasks.md).\n" + "\n".join(lines)
+                "(specs/_archive/closed/write-path-transactions/tasks.md).\n" + "\n".join(lines)
             )
 
     def test_baseline_ratchets_down_as_sites_are_bracketed(self):

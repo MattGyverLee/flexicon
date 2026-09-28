@@ -3,8 +3,8 @@
 **Task:** T6 (lex-domain)
 **Date:** 2026-09-22
 **Worktree:** `C:/Github/flexicon-325` (branch `fix/325-syncable-properties`)
-**Authority:** `specs/325-syncable-properties/rulings.md` (R1-R8)
-**Evidence reviewed:** worktree Operations code + `specs/325-syncable-properties/evidence/live-T3-syncable-properties.md` (`run_mode`: live)
+**Authority:** `specs/_archive/closed/325-syncable-properties/rulings.md` (R1-R8)
+**Evidence reviewed:** worktree Operations code + `specs/_archive/closed/325-syncable-properties/evidence/live-T3-syncable-properties.md` (`run_mode`: live)
 
 **Scope notes (binding for this review):**
 
@@ -156,6 +156,6 @@
 
 ## References
 
-- Rulings: `specs/325-syncable-properties/rulings.md`
-- Live T3: `specs/325-syncable-properties/evidence/live-T3-syncable-properties.md`
-- Breaking scope R7 entry vs sense: `specs/325-syncable-properties/evidence/T1b-breaking-changes.md` section 3
+- Rulings: `specs/_archive/closed/325-syncable-properties/rulings.md`
+- Live T3: `specs/_archive/closed/325-syncable-properties/evidence/live-T3-syncable-properties.md`
+- Breaking scope R7 entry vs sense: `specs/_archive/closed/325-syncable-properties/evidence/T1b-breaking-changes.md` section 3

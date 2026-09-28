@@ -29,4 +29,4 @@
 
 - Offline: `tests/operations/test_issue519_paragraph_get_owning_text_offline.py`
 - Live: `tests/operations/test_issue519_paragraph_get_owning_text_live.py`
-- Evidence: `specs/519-paragraph-get-owning-text/evidence/`
+- Evidence: `specs/_archive/closed/519-paragraph-get-owning-text/evidence/`

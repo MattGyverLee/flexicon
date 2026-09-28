@@ -12,7 +12,7 @@
 #     `hasattr(attr_value, "Count") and hasattr(attr_value, "Add")`.
 #
 #     Live testing on a Sena 3 sandbox copy (see
-#     specs/318-321-nonexistent-member-mutations/evidence/
+#     specs/_archive/closed/318-321-nonexistent-member-mutations/evidence/
 #     live-321-derived-lists.md) proved that six DERIVED, rebuilt-per-access
 #     ILexEntry/ICmObject members -- AllSenses, MorphTypes, PublishIn,
 #     ShowMainEntryIn, MinimalLexReferences, ReferringObjects -- also

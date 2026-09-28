@@ -17,10 +17,10 @@ reads unrestricted; only writes are bounded.
 | D:\...\flexicon\tests\test_CustomFields.py | 44-46 | COMPATIBLE | "is not one of the two projects CLAUDE.md designates (Target, Sena 3)" | Docstring is `_openProject` "with **write** access"; the skip is environmental, not permission. Leave. |
 | D:\...\tests\flex_plugin.py | 1362-1369 | COMPATIBLE | "Division of labour: Target -- write-path verification. Sena 3 -- read-path coverage" | Convenience allocation + write-evidence rule. Leave. |
 | D:\...\scripts\restore_sena3.py | 8-9 | COMPATIBLE | "used for read-path coverage and for modifying pre-existing data" | Describes the fixture's purpose. Leave. |
-| D:\...\specs\277-nonexistent-property-reads\evidence\live-277-overlays.md | 122-125 | COMPATIBLE | "per CLAUDE.md, Sena 3 -- not Target -- is the populated project for read-path coverage" | Dated evidence; advice, not gate. Leave. |
+| D:\...\specs\_archive\closed\277-nonexistent-property-reads\evidence\live-277-overlays.md | 122-125 | COMPATIBLE | "per CLAUDE.md, Sena 3 -- not Target -- is the populated project for read-path coverage" | Dated evidence; advice, not gate. Leave. |
 | D:\...\flexicon\.claude\bugfix-loop.md | 144-149 | COMPATIBLE (model text) | "`Ejagham Full` ... is available as an additional read-path corpus when Sena 3 lacks the data ... do not use it as a Target substitute" | Already read-anywhere / write-bounded. Reuse this wording in the three fixes above. |
 | D:\...\tests\operations\test_parser_live.py | 30-32, 59-64 | COMPATIBLE | "INSTALLED PROJECTS ONLY, NEVER A .fwbackup SANDBOX" (IndonesianHC-Complete, Malay Parsing) | Technical (modal dialog), not permission -- and live proof reads already range past the two. Leave. |
-| D:\...\specs\write-path-transactions\reviews\cycle3-verification.md | 63 | COMPATIBLE | "you may NOT open any FLEx project **for writing**" | Write-scoped, historical incident record. Leave. |
+| D:\...\specs\_archive\closed\write-path-transactions\reviews\cycle3-verification.md | 63 | COMPATIBLE | "you may NOT open any FLEx project **for writing**" | Write-scoped, historical incident record. Leave. |
 | C:\Users\thoua\.claude\backups\perf-trim-20260918\project-CLAUDE.md | 233-238 | COMPATIBLE | duplicate "### The two live projects" table | Dated backup artifact, not live guidance. Do not edit. |
 
 ## Bottom line

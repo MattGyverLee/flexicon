@@ -3,7 +3,7 @@
 **Date:** 2026-09-23
 **Source:** main-session re-run of every live FLEx verification cited by the
 26 PRs merged 2026-09-22/23. Full per-PR results:
-`specs/issue-289-headless-progress/evidence/live-import-regression.md`.
+`specs/_archive/closed/issue-289-headless-progress/evidence/live-import-regression.md`.
 
 ## STATUS 2026-09-23 (second session, branch `fix/live-verification-followups`)
 
@@ -89,7 +89,7 @@ This is the #36/#39/#40 phantom-member class (CLAUDE.md, "Same-name fields").
   path matches `MediaURI`. This keeps the contract, but a path match can fail
   or be ambiguous, and the apply side would need the reverse resolution.
 
-**Done when:** the decision is recorded in `specs/issue-356-text-media-helpers/`,
+**Done when:** the decision is recorded in `specs/_archive/closed/issue-356-text-media-helpers/`,
 the phantom `MediaFileRA` write is gone either way, the test asserts the
 chosen contract, `docs/API_ISSUES_CATEGORIZED.md` Category 8 lists
 `ICmMediaURI.MediaFileRA` as nonexistent, and the live run passes.
@@ -188,7 +188,7 @@ green on `main`.
 
 ## 5. #355 -- evidence cites a test file that was never committed
 
-`specs/326-phonological-wrapper-members/evidence/live-T8.md` gives
+`specs/_archive/closed/326-phonological-wrapper-members/evidence/live-T8.md` gives
 `tests/operations/test_issue326_t8_verification_live.py` as its live command,
 but the file is not in the repo and never was. `reviews/T11-archivist.md:55`
 and `reviews/T8-verification.md:25,55` record it as "evidence-only T8

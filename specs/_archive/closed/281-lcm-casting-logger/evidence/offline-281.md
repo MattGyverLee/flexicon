@@ -2,7 +2,7 @@
 
 ## Lex-lead ruling
 
-See `specs/281-lcm-casting-logger/rulings.md`.
+See `specs/_archive/closed/281-lcm-casting-logger/rulings.md`.
 
 ## Commands
 

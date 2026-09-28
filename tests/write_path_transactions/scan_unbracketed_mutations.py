@@ -6,9 +6,9 @@
 #   a ``with self._TransactionCM(...)`` block.
 #
 #   This is the mechanical half of decision D5 / task B2g
-#   (specs/write-path-transactions/tasks.md): 294 sites were catalogued by
-#   hand in specs/write-path-transactions/reviews/cycle1-explore-b2sweep.md
-#   ("B2s"). B2 (specs/write-path-transactions/tasks.md) brackets them in
+#   (specs/_archive/closed/write-path-transactions/tasks.md): 294 sites were catalogued by
+#   hand in specs/_archive/closed/write-path-transactions/reviews/cycle1-explore-b2sweep.md
+#   ("B2s"). B2 (specs/_archive/closed/write-path-transactions/tasks.md) brackets them in
 #   with self._TransactionCM(...) blocks, batched by domain over several
 #   spurts, and B2g (this module + the paired baseline/test) is the ratchet
 #   that keeps that sweep honest: it must reproduce the cycle-1 total, its

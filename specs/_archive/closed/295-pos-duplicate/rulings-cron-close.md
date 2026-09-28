@@ -15,7 +15,7 @@
 
 Behaviour coverage landed on `main` via PR #428 (`test_pos_duplicate.py`).
 The `[Unreleased]` CHANGELOG bullet for #295 is already on `main`. Binding
-fix shape is recorded in `specs/295-pos-duplicate/rulings.md` (test-only
+fix shape is recorded in `specs/_archive/closed/295-pos-duplicate/rulings.md` (test-only
 slice; `Duplicate` uses correct OS `Insert`/`Add` semantics per #163).
 
 ## RULING (binding, close-out only)

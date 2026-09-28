@@ -2,7 +2,7 @@
 
 ## Lex-lead ruling
 
-See `specs/302-datanotebook-records/rulings.md`.
+See `specs/_archive/closed/302-datanotebook-records/rulings.md`.
 
 ## Commands
 

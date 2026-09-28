@@ -79,7 +79,7 @@ class EnvironmentOperations(BaseOperations):
         sequence. There is no ``EnvironmentsOA`` property on this type and
         no intervening possibility list to hop through via
         ``.PossibilitiesOS`` -- confirmed live by ``.NET`` reflection
-        (issue #277; see specs/277-nonexistent-property-reads/evidence/
+        (issue #277; see specs/_archive/closed/277-nonexistent-property-reads/evidence/
         live-277-environments.md). The wrong form here was a copy/paste
         of a pattern that IS correct for other sequence-owning types in
         this codebase (e.g. ``InflectionFeatureOperations._GetSequence``
@@ -477,7 +477,7 @@ class EnvironmentOperations(BaseOperations):
         Notes:
             - This is a READ-ONLY property (no setter)
             - Returns the LeftContextRA object if present (Reference
-              Atomic -- see specs/lcm-member-truth-sweep/spec.md C7;
+              Atomic -- see specs/_archive/closed/lcm-member-truth-sweep/spec.md C7;
               the historical ``LeftContextOA`` name never existed on
               ``IPhEnvironment``)
             - Left context specifies what must precede the target
@@ -533,7 +533,7 @@ class EnvironmentOperations(BaseOperations):
         Notes:
             - This is a READ-ONLY property (no setter)
             - Returns the RightContextRA object if present (Reference
-              Atomic -- see specs/lcm-member-truth-sweep/spec.md C7;
+              Atomic -- see specs/_archive/closed/lcm-member-truth-sweep/spec.md C7;
               the historical ``RightContextOA`` name never existed on
               ``IPhEnvironment``)
             - Right context specifies what must follow the target
@@ -567,7 +567,7 @@ class EnvironmentOperations(BaseOperations):
                         not owned, so there is nothing to "deep copy": the
                         duplicate always references the SAME context
                         objects as the source, regardless of this flag.
-                        See specs/lcm-member-truth-sweep/spec.md C7.
+                        See specs/_archive/closed/lcm-member-truth-sweep/spec.md C7.
 
         Returns:
             IPhEnvironment: The newly created duplicate environment with a new GUID.
@@ -597,7 +597,7 @@ class EnvironmentOperations(BaseOperations):
               unconditionally -- `deep` is INERT for this method. They are
               Reference Atomic (not owned), so the duplicate points at the
               SAME IPhPhonContext objects as the source; there is nothing
-              to clone. See specs/lcm-member-truth-sweep/spec.md C7.
+              to clone. See specs/_archive/closed/lcm-member-truth-sweep/spec.md C7.
 
         See Also:
             Create, Delete
@@ -647,7 +647,7 @@ class EnvironmentOperations(BaseOperations):
                 duplicate.StringRepresentation = mkstr
 
             # Reference assignment: LeftContextRA/RightContextRA are
-            # Reference Atomic (specs/lcm-member-truth-sweep/spec.md C7),
+            # Reference Atomic (specs/_archive/closed/lcm-member-truth-sweep/spec.md C7),
             # not owned -- there is nothing to clone. A duplicate
             # environment points at the SAME IPhPhonContext objects as
             # the source. This is UNCONDITIONAL, not gated behind `deep`
@@ -677,14 +677,14 @@ class EnvironmentOperations(BaseOperations):
         (``env.StringRepresentation...``), ``GetSyncableProperties``
         (``getattr(env, prop_name)``) -- raises ``AttributeError`` on the
         int-HVO entry path. (Historically -- before the #283 fix,
-        specs/lcm-member-truth-sweep/spec.md C7 -- ``GetLeftContextPattern``
+        specs/_archive/closed/lcm-member-truth-sweep/spec.md C7 -- ``GetLeftContextPattern``
         / ``GetRightContextPattern`` also returned ``None`` on a
         correctly-cast object, but for an unrelated reason: at the time
         they read ``LeftContextOA``/``RightContextOA``, property names
         that never existed on ``IPhEnvironment`` under any cast. The real,
         now-corrected names are ``LeftContextRA``/``RightContextRA``
         (Reference Atomic), confirmed live: P6, P6b, P7; see
-        specs/260-environment-resolver-cast/evidence/
+        specs/_archive/closed/260-environment-resolver-cast/evidence/
         live-T2-red-p6-p6b-p7.md for the RED-before-fix reproduction of
         the missing-cast defect this method fixes.)
 
@@ -755,7 +755,7 @@ class EnvironmentOperations(BaseOperations):
         Notes:
             - Returns all MultiString properties (all writing systems)
             - Does not include context references (LeftContextRA,
-              RightContextRA -- see specs/lcm-member-truth-sweep/spec.md C7)
+              RightContextRA -- see specs/_archive/closed/lcm-member-truth-sweep/spec.md C7)
             - Does not include GUID or HVO
         """
         env = self.__ResolveObject(item)

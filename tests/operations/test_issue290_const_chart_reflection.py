@@ -27,7 +27,7 @@ TEST_PREFIX = "TEST_290_"
 
 _EVIDENCE_DIR = (
     pathlib.Path(__file__).resolve().parent.parent.parent
-    / "specs" / "299-300-290-reorder-and-tsstring" / "evidence"
+    / "specs" / "_archive" / "closed" / "299-300-290-reorder-and-tsstring" / "evidence"
 )
 _EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 _EVIDENCE_JSON_PATH = _EVIDENCE_DIR / "live-290-reflection-raw.json"

@@ -20,11 +20,11 @@ python -m pytest tests/operations/test_325_reflection_live.py -m requires_live_p
 **Date:** 2026-09-22
 **Test file:** tests/operations/test_325_reflection_live.py (6 tests, all passed)
 **Raw JSON evidence:**
-- specs/325-syncable-properties/evidence/live-T0-media-raw.json
-- specs/325-syncable-properties/evidence/live-T0-etymology-raw.json
-- specs/325-syncable-properties/evidence/live-T0-lexref-raw.json
-- specs/325-syncable-properties/evidence/live-T0-lexsense-raw.json
-- specs/325-syncable-properties/evidence/live-T0-discourse-raw.json
+- specs/_archive/closed/325-syncable-properties/evidence/live-T0-media-raw.json
+- specs/_archive/closed/325-syncable-properties/evidence/live-T0-etymology-raw.json
+- specs/_archive/closed/325-syncable-properties/evidence/live-T0-lexref-raw.json
+- specs/_archive/closed/325-syncable-properties/evidence/live-T0-lexsense-raw.json
+- specs/_archive/closed/325-syncable-properties/evidence/live-T0-discourse-raw.json
 
 ---
 

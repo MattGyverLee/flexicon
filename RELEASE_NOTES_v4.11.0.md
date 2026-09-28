@@ -134,4 +134,4 @@ chart ownership premise, the unregistered `DsDiscourseData` owner, and
 gates that had never run live (a `genre`-shaped `Texts.Create` call, an
 iterator call on a collection, a blank-project entry assumption). All
 seven are fixed with live read-back evidence under
-`specs/release-4.11.0/evidence/live-release-gate.md`.
+`specs/_archive/closed/release-4.11.0/evidence/live-release-gate.md`.

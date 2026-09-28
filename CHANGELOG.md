@@ -224,7 +224,7 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 - **BREAKING (behavioural): `PhonemeOperations.__ApplyFeatures` now
   defaults to `on_unresolved="raise"`.** Task T9 of
-  `specs/feature-structure-sync-gap`, closes #253. A feature or value
+  `specs/_archive/closed/feature-structure-sync-gap`, closes #253. A feature or value
   GUID that does not resolve to an object in the target project now
   raises `FP_ParameterError` (naming the GUID) during
   `PhonemeOperations.ApplySyncableProperties`, instead of being silently
@@ -248,7 +248,7 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   or catch `FP_ParameterError`.
 
   Live-verified on the Target sandbox in
-  `specs/feature-structure-sync-gap/evidence/live-T9.md`.
+  `specs/_archive/closed/feature-structure-sync-gap/evidence/live-T9.md`.
 
 - **BREAKING (behavioural): `PhonologicalRule.metathesis_parts` now reads
   the real LCM model** (#326). The property previously read nonexistent
@@ -272,7 +272,7 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
   **Behaviour change, not a signature change;** ships as a minor bump per
   the 4.4.0+ precedent. Live-verified on Target sandbox and installed FLEx
-  projects; evidence in `specs/326-phonological-wrapper-members/evidence/`.
+  projects; evidence in `specs/_archive/closed/326-phonological-wrapper-members/evidence/`.
 
 ### Fixed
 
@@ -1462,7 +1462,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
   Verified live against a real `IActionHandler`: the host's uncommitted edit and
   its `CurrentDepth` are both untouched, the host stays writable, and the
   owned-project rollback path on the same cache still discards and still reopens
-  -- see `specs/flexicon-project-bridge/evidence/live-abort-session-guard.md`.
+  -- see `specs/_archive/closed/flexicon-project-bridge/evidence/live-abort-session-guard.md`.
 
   Verified live: a `Transaction()` write through an attached view reaches the
   `.fwdata` on the host's save, on both a scratch project and Sena 3, with no
@@ -1613,7 +1613,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
 
 ### Added
 - **`MSAOperations.GetSyncableProperties`/`ApplySyncableProperties`.**
-  Task T6 of `specs/feature-structure-sync-gap`, closes #251.
+  Task T6 of `specs/_archive/closed/feature-structure-sync-gap`, closes #251.
   `MSAOperations` previously had ZERO sync methods, so every MSA synced
   across projects with a correct `ClassName`/POS but a permanently null
   feature structure: `MoStemMsa.MsFeaturesOA`, `MoInflAffMsa.InflFeatsOA`,
@@ -1637,7 +1637,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
 
 - **`POSOperations.GetSyncableProperties`/`ApplySyncableProperties` now
   capture and apply `DefaultFeaturesOA`/`InherFeatValOA`.** Task T7 of
-  `specs/feature-structure-sync-gap`, closes #252. `PartOfSpeech` has two
+  `specs/_archive/closed/feature-structure-sync-gap`, closes #252. `PartOfSpeech` has two
   independent feature-struct slots in the frozen C1 table
   (`DefaultFeaturesOA`, `InherFeatValOA`), neither of which was ever
   captured or applied, so a synced POS carried a correct
@@ -1657,7 +1657,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
   already-typed object (as `GetAll()` yields). `__ResolveObject` now
   casts to `IPartOfSpeech` when `ClassName == "PartOfSpeech"` and returns
   any other input unchanged (never raises) -- live-measured before and
-  after the fix in `specs/feature-structure-sync-gap/evidence/live-T7.md`.
+  after the fix in `specs/_archive/closed/feature-structure-sync-gap/evidence/live-T7.md`.
   GUID-string support remains out of scope (folded into T12).
 
   **Disclosed behaviour change:** `POSOperations.CompareTo` is not
@@ -1672,7 +1672,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
 
 - **`AllomorphOperations.GetSyncableProperties`/`ApplySyncableProperties`
   now capture and apply `MsEnvFeaturesOA`.** Task T8 of
-  `specs/feature-structure-sync-gap` (`spec.md:655`) -- an UNFILED P0;
+  `specs/_archive/closed/feature-structure-sync-gap` (`spec.md:655`) -- an UNFILED P0;
   filing a GitHub issue is an outstanding user decision, so this entry
   references the task, not an issue number. `MoAffixAllomorph` has the
   single C1 table row (`MsEnvFeaturesOA`, no slot ambiguity); a
@@ -1692,7 +1692,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
   on a miss (unlike `Duplicate`, whose own raise on an unrecognized
   `ClassName` is local to that method and untouched) -- live-measured
   before and after the fix, plus a mutation-testing pass, in
-  `specs/feature-structure-sync-gap/evidence/live-T8.md`.
+  `specs/_archive/closed/feature-structure-sync-gap/evidence/live-T8.md`.
 
 - **`cast_to_concrete` is now a public, top-level export** (#271):
   `from flexicon import cast_to_concrete`. It was already the correct remedy
@@ -1744,7 +1744,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
   opt-in remedy but kept `FwLcmUI` as the default for backward compatibility;
   every headless caller that had not read the `OpenProject` docstring still
   got the unsafe default. Live measurement
-  (`specs/285-headless-ui-default/evidence/live-prefix-conflict.md`) found
+  (`specs/_archive/closed/285-headless-ui-default/evidence/live-prefix-conflict.md`) found
   this was not merely one of two possible bad outcomes but BOTH,
   unpredictably, depending on invocation context: a bare-script run produced
   a clean silent discard (confirmed by a fresh third-session re-read showing
@@ -1793,7 +1793,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
   classes now persist the caller's original, unstripped name, and their
   three sibling comparison methods now strip whitespace on BOTH sides of
   the comparison, not just the search argument** (Q-242A,
-  `specs/name-field-whitespace-identity`). Persist sites:
+  `specs/_archive/closed/name-field-whitespace-identity`). Persist sites:
   `TextOperations.Create`/`SetName`, `AnthropologyOperations.Create`/
   `CreateSubitem`, `DiscourseOperations.CreateChart`/`SetChartName`,
   `CheckOperations.CreateCheckType`/`SetName`. Comparison sites:
@@ -1850,13 +1850,13 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
   the chart-creation path (`Q-DISC1`). `SetChartName` and all seven other
   sites are fully live-verified (20/20 tests passing,
   `run_mode: live`, `target_sandbox`/`target_sandbox_path` fixtures only;
-  see `specs/name-field-whitespace-identity/evidence/`). This entry does
+  see `specs/_archive/closed/name-field-whitespace-identity/evidence/`). This entry does
   not claim 8/8 sites live-verified.
 
 - **BREAKING (behavioural): `CheckOperations.CreateCheckType`,
   `.FindCheckType`, and `.SetName` now raise instead of silently
   persisting or matching an empty name** (Q-242B,
-  `specs/name-field-whitespace-identity`). All three previously ran
+  `specs/_archive/closed/name-field-whitespace-identity`). All three previously ran
   `name = name.strip() if isinstance(name, str) else ""` ahead of a
   None-only `_ValidateParam` check, so a non-`str` payload OR an
   ordinary whitespace-only string (e.g. `"   "`) silently coerced to
@@ -1893,7 +1893,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
   `name` immediately beforehand.
 
   Live-verified: 20/20 tests passing, `run_mode: live`, all nine
-  predictions matched exactly (`specs/name-field-whitespace-identity/
+  predictions matched exactly (`specs/_archive/closed/name-field-whitespace-identity/
   evidence/live-t4b-check-q242b-fix.md`). Reaching `CreateCheckType`
   through the public API at all required a test-instance-only monkeypatch
   of the unrelated, pre-existing `_GetCheckList()` stub bug (recorded,
@@ -2089,7 +2089,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
   with the inner `InvalidOperationException` lost).
 - **Seven more name-keyed lookups now strip whitespace on BOTH sides of
   the comparison, not just the search argument** (#274, Q-242A bucket-A
-  sites, `specs/name-field-whitespace-identity`). This extends the
+  sites, `specs/_archive/closed/name-field-whitespace-identity`). This extends the
   comparison-symmetry fix already landed for `TextOperations.Exists`,
   `AnthropologyOperations.Find`, and `CheckOperations.FindCheckType` (the
   Q-242A `### Changed` entry above) to the remaining seven asymmetric
@@ -2125,7 +2125,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
   Live-verified for `LocationOperations.Find` and `AgentOperations.Find`
   (create a trailing-space name, find it with the unpadded needle,
   re-read the stored value byte-identical from the LCM): `run_mode: live`,
-  `target_sandbox` only, `specs/name-field-whitespace-identity/evidence/
+  `target_sandbox` only, `specs/_archive/closed/name-field-whitespace-identity/evidence/
   live-inline-fix.md`. The other five sites carry the byte-identical edit
   and are pinned whitespace-insensitive by
   `tests/test_normalize_match_key.py`.
@@ -2253,7 +2253,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
   verified against `target_sandbox`: 9/9 predicted rows matched measured
   output, including the four-row inertness proof on shapes reachable
   before #242
-  (`specs/242-paragraph-whitespace/evidence/live-t5-joinfix.md`).
+  (`specs/_archive/closed/242-paragraph-whitespace/evidence/live-t5-joinfix.md`).
 
 ## [4.5.2] - 2026-08-19
 
@@ -2467,7 +2467,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
 
 > **The write path is now transactional.** This release contains a public-API
 > default change; read the first entry under **Changed** before upgrading.
-> Completes `specs/write-path-transactions`.
+> Completes `specs/_archive/closed/write-path-transactions`.
 
 ### Added
 - **`FLExProject.AbortSession()`.** Task A3. Wraps `IActionHandler.Rollback(0)`
@@ -2522,7 +2522,7 @@ Pre-existing (present in 4.9.0 and earlier), not regressions:
 
 ### Changed
 - **BREAKING (behavioural): `OpenProject(..., undoable=...)` now defaults to
-  `True`.** Task DEF of `specs/write-path-transactions`, gated on decision D3.
+  `True`.** Task DEF of `specs/_archive/closed/write-path-transactions`, gated on decision D3.
   Previously every write-enabled session ran inside a single session-long
   `BeginNonUndoableTask()` envelope in which nothing rolled back: an exception
   raised mid-operation left every mutation applied before the failure sitting

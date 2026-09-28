@@ -8,7 +8,7 @@
 Live reflection and `liblcm_baseline.json` agree: **`ICmPerson` has no
 `LanguagesRC`**. Person language links are not stored on the person object in
 LCM (confirmed absent in issue #352 live person face and
-`specs/lcm-member-truth-sweep/evidence/live-T2.5-siblings.md`).
+`specs/_archive/closed/lcm-member-truth-sweep/evidence/live-T2.5-siblings.md`).
 
 **Correct behaviour (issue #362 scope):**
 

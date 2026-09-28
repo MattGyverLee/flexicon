@@ -25,4 +25,4 @@
 
 - Offline: `tests/operations/test_issue552_example_duplicate_hvo_offline.py`
 - Live: `tests/operations/test_issue552_example_duplicate_hvo_live.py`
-- Evidence: `specs/552-example-duplicate-hvo/evidence/`
+- Evidence: `specs/_archive/closed/552-example-duplicate-hvo/evidence/`

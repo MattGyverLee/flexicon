@@ -23,4 +23,4 @@ python3 -m pytest tests/operations/test_issue492_possibility_resolver_cast_live.
 ```
 
 **FAIL: unverified** on this runner (no FieldWorks). Prior record:
-`specs/492-possibility-resolver-cast/evidence/live-492.md`.
+`specs/_archive/closed/492-possibility-resolver-cast/evidence/live-492.md`.

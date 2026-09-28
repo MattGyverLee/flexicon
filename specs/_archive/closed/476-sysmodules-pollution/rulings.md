@@ -30,4 +30,4 @@
 - Regression spot-check (order-sensitive):
   `python3 -m pytest tests/operations/test_issue357_clause_marker_getwordgroup_offline.py tests/operations/test_lexentry_operations.py::TestLexEntryOperationsInheritance::test_inherits_from_base_operations -m "not requires_live_project" -q`
 - Live: **N/A** (test-only change)
-- Evidence: `specs/476-sysmodules-pollution/evidence/offline-476.md`
+- Evidence: `specs/_archive/closed/476-sysmodules-pollution/evidence/offline-476.md`

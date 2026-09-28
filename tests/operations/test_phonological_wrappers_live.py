@@ -38,6 +38,8 @@ _EVIDENCE_DIR = os.path.abspath(
         "..",
         "..",
         "specs",
+        "_archive",
+        "closed",
         "326-phonological-wrapper-members",
         "evidence",
     )

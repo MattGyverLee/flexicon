@@ -37,7 +37,7 @@
 #          already-typed object exercises the cast VACUOUSLY and is
 #          worthless.
 #
-#   Basis: specs/260-environment-resolver-cast/evidence/
+#   Basis: specs/_archive/closed/260-environment-resolver-cast/evidence/
 #          live-T1-reflection.md measured
 #          hasattr(bare_object, "StringRepresentation") -> False on a
 #          bare sandbox.Object(hvo) view of a real PhEnvironment (P3,

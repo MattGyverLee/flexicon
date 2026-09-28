@@ -13,7 +13,7 @@ ANTHRO_OPS = REPO_ROOT / "flexicon" / "code" / "Notebook" / "AnthropologyOperati
 
 
 def test_issue359_ruling_document_exists():
-    ruling = REPO_ROOT / "specs" / "359-anthropology-gsp" / "rulings.md"
+    ruling = REPO_ROOT / "specs" / "_archive" / "closed" / "359-anthropology-gsp" / "rulings.md"
     assert ruling.is_file()
     text = ruling.read_text(encoding="utf-8")
     assert "Abbreviation" in text

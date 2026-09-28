@@ -48,7 +48,7 @@ class TestIssue292SyncForeignChangesOffline:
         assert "BeginNonUndoableTask()" in text
 
     def test_ruling_document_exists(self):
-        ruling = REPO_ROOT / "specs" / "292-sync-foreign-changes" / "rulings.md"
+        ruling = REPO_ROOT / "specs" / "_archive" / "closed" / "292-sync-foreign-changes" / "rulings.md"
         assert ruling.is_file()
 
     def test_readonly_refused(self):

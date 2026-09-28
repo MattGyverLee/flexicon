@@ -6,14 +6,14 @@
 #          BaseOperations._apply_props_loop's normalized writing-system
 #          resolution fallback, exercised against a real LCM project.
 #
-#   Shape frozen in specs/250-writingsystem-activation/spec.md section 6.4.
+#   Shape frozen in specs/_archive/closed/250-writingsystem-activation/spec.md section 6.4.
 #   Project: target_sandbox ONLY (fresh tempdir copy of the Target
 #   .fwbackup) -- never the in-place Target, never Sena 3. Every created
 #   object is prefixed TEST_.
 #
 #   Predictions for both the unfixed-code run and the fixed-code run are
 #   committed in
-#   specs/250-writingsystem-activation/evidence/live-D4-T3.md BEFORE this
+#   specs/_archive/closed/250-writingsystem-activation/evidence/live-D4-T3.md BEFORE this
 #   file is executed against either state of BaseOperations.py.
 #
 #   Coverage boundary (acceptance criterion 8, spec 250): this test proves

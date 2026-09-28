@@ -8,13 +8,13 @@
 **Reviewer:** lex-qc
 
 **Inputs reviewed:**
-- `specs/325-syncable-properties/rulings.md`
-- `specs/325-syncable-properties/evidence/T1b-breaking-changes.md`
-- `specs/325-syncable-properties/evidence/T2a-implementation.md`
-- `specs/325-syncable-properties/evidence/pattern-audit.md` (unblock deliverable)
-- `specs/325-syncable-properties/evidence/live-T3-syncable-properties.md`
+- `specs/_archive/closed/325-syncable-properties/rulings.md`
+- `specs/_archive/closed/325-syncable-properties/evidence/T1b-breaking-changes.md`
+- `specs/_archive/closed/325-syncable-properties/evidence/T2a-implementation.md`
+- `specs/_archive/closed/325-syncable-properties/evidence/pattern-audit.md` (unblock deliverable)
+- `specs/_archive/closed/325-syncable-properties/evidence/live-T3-syncable-properties.md`
 - `tests/live_status.json` (post-T3)
-- Uncommitted diff: 7 Operations/test files + new live/ratchet tests + `specs/325-syncable-properties/`
+- Uncommitted diff: 7 Operations/test files + new live/ratchet tests + `specs/_archive/closed/325-syncable-properties/`
 
 **Prior T4 (BLOCK):** Missing `pattern-audit.md`. Re-evaluated after file landed (~60s poll).
 
@@ -32,7 +32,7 @@ Pattern-audit gate is satisfied. Style/guards and live T3 evidence remain accept
 
 | Gate | Result | Notes |
 |------|--------|-------|
-| Pattern audit in programmer deliverables | **PASS** | `specs/325-syncable-properties/evidence/pattern-audit.md` contains `## Pattern audit: dead hasattr / wrong-suffix LCM member in sync and copy paths`, original #325 sites table, **15** sibling line items for T9, explicit clears (WordGroupRA, StratumRA, ExampleOperations, TextOperations MediaURIsOC), VariantOperations `ShowComplexFormsIn` triage aligned with ratchet allowlist. |
+| Pattern audit in programmer deliverables | **PASS** | `specs/_archive/closed/325-syncable-properties/evidence/pattern-audit.md` contains `## Pattern audit: dead hasattr / wrong-suffix LCM member in sync and copy paths`, original #325 sites table, **15** sibling line items for T9, explicit clears (WordGroupRA, StratumRA, ExampleOperations, TextOperations MediaURIsOC), VariantOperations `ShowComplexFormsIn` triage aligned with ratchet allowlist. |
 | T2a verification vs T3 | **PASS** | `T2a-implementation.md` offline section points at `live-T3-syncable-properties.md` (`run_mode`: live). `## Verification status` is **PASS (via T3)** -- no standalone **FAIL: unverified** without T3 pointer. |
 | T3 `run_mode=live` | **PASS** | `live-T3-syncable-properties.md` + `tests/live_status.json` both `"run_mode": "live"`. |
 | T3 LCM read-back values | **PASS with documented gap** | (b) `owner_guid` + stable after Apply; (d) `Preposed` re-read; (e) payload keys; R8 Name keys `['en']`. **(a) `LanguageRS after Apply (re-read)` skipped** when Languages list empty (Target sandbox). Binding T3 marks (a) PASS; merge may optionally seed Languages for full R1 Apply re-read -- not a T4 block. |

@@ -2,7 +2,7 @@
 
 ## Lex-lead ruling
 
-See `specs/350-agent-gsp/rulings.md`.
+See `specs/_archive/closed/350-agent-gsp/rulings.md`.
 
 ## Commands
 

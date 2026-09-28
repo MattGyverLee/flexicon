@@ -17,7 +17,7 @@
 from `SynchronizeInvoke` / `get_SynchronizeInvoke` (`headless_ui.py`). Unit
 coverage is in `tests/test_headless_lcm_ui.py` (issue #441 assertions). The
 `[Unreleased]` CHANGELOG bullet is on `main`. Binding fix shape is recorded in
-`specs/441-headless-synchronize-invoke/rulings.md`.
+`specs/_archive/closed/441-headless-synchronize-invoke/rulings.md`.
 
 ## RULING (binding, close-out only)
 

@@ -4,8 +4,8 @@
 **Branch:** fix/325-syncable-properties
 **Working directory:** C:/Github/flexicon-325
 **Date:** 2026-09-22
-**Rulings applied:** R1, R2, R6 (from specs/325-syncable-properties/rulings.md)
-**Breaking-change review:** specs/325-syncable-properties/evidence/T1b-breaking-changes.md
+**Rulings applied:** R1, R2, R6 (from specs/_archive/closed/325-syncable-properties/rulings.md)
+**Breaking-change review:** specs/_archive/closed/325-syncable-properties/evidence/T1b-breaking-changes.md
 
 ---
 
@@ -33,7 +33,7 @@ No new failures introduced. 2031 passed (unchanged from baseline).
 **Live verification:** T2a-specific live run was not repeated after T2a landed;
 campaign **T3** live evidence supersedes the unverified note for the #325
 wave-1 write path. See
-`specs/325-syncable-properties/evidence/live-T3-syncable-properties.md`
+`specs/_archive/closed/325-syncable-properties/evidence/live-T3-syncable-properties.md`
 (`run_mode`: live, etymology language_rs / Duplicate / deprecated language
 APIs, lex reference owner_guid, media_uris, lex sense R7, and related checks).
 
@@ -102,6 +102,6 @@ APIs, lex reference owner_guid, media_uris, lex sense R7, and related checks).
 
 **PASS (via T3)** -- write-path behavior for T2a rulings (R1, R2, R6) is covered
 by `tests/operations/test_325_syncable_properties_live.py` and documented in
-`specs/325-syncable-properties/evidence/live-T3-syncable-properties.md`
+`specs/_archive/closed/325-syncable-properties/evidence/live-T3-syncable-properties.md`
 (`run_mode`: live). No separate T2a-only live artifact is required for T4 QC
 once `pattern-audit.md` is present.

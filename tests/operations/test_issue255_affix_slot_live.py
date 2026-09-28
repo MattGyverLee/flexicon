@@ -25,7 +25,7 @@ TEST_PREFIX = "TEST_"
 _EVIDENCE = (
     pathlib.Path(__file__).resolve().parents[2]
     / "specs"
-    / "255-affix-slot"
+    / "_archive" / "closed" / "255-affix-slot"
     / "evidence"
 )
 _MEASUREMENTS = _EVIDENCE / "_live_measurements.json"

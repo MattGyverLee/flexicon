@@ -5,7 +5,7 @@
 #   write path.
 #
 #   Covers: flexicon v4.3.0 (the pinned floor, `pyflexicon>=4.3.0,<5`) and the
-#   post-Track-B surface planned in `specs/write-path-transactions/`.
+#   post-Track-B surface planned in `specs/_archive/closed/write-path-transactions/`.
 #
 #   Copyright 2025-2026
 #
@@ -19,12 +19,12 @@ as against the post-Track-B surface once it lands.
 **Status of this document:** authoritative for the six questions below. Every
 behavioural claim cites its source (`liblcm` source file:line, or a specific
 flexicon file:line) and every planned-but-unshipped item is marked **PLANNED**
-with its task ID from `specs/write-path-transactions/tasks.md`. Nothing here
+with its task ID from `specs/_archive/closed/write-path-transactions/tasks.md`. Nothing here
 is aspirational: if flexicon 4.3.0 does not do a thing, this document says so
 plainly rather than describing the target state as current.
 
 **Source basis.** This contract is built from, and must not contradict:
-`specs/write-path-transactions/spec.md`, `tasks.md`, and the cycle-2 reviews
+`specs/_archive/closed/write-path-transactions/spec.md`, `tasks.md`, and the cycle-2 reviews
 (`reviews/cycle2-explore-liblcm-facts.md` — cited as **F1**-**F6** below,
 `reviews/cycle2-explore-dispatch-layer.md` — cited as **P1**-**P4**,
 `reviews/cycle2-domain.md` — cited as **Q1**-**Q4**, `reviews/cycle2-qc.md`,
@@ -472,7 +472,7 @@ Schema persistence rides the ordinary commit/save cadence via `BackendProvider`
 (`BackendProvider.cs:799`, `:929`), not a synchronous write inside
 `AddCustomField` itself.
 
-**Issue draft:** `specs/write-path-transactions/issues/createfield-always-raises.md`
+**Issue draft:** `specs/_archive/closed/write-path-transactions/issues/createfield-always-raises.md`
 (revised; not yet filed via `gh issue create` — command drafted, marked NOT
 RUN).
 

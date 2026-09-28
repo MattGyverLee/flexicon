@@ -2,7 +2,7 @@
 #   test_name_field_identity_probe.py
 #
 #   READ-ONLY-TO-PRODUCTION live probe for
-#   specs/name-field-whitespace-identity/ (cycle 1).
+#   specs/_archive/closed/name-field-whitespace-identity/ (cycle 1).
 #
 #   Measures (does NOT fix) whether the dedup paths for names in FLEx --
 #   Texts.Exists/Create, Anthropology.Find/Exists/Create, and
@@ -21,7 +21,7 @@
 #   fixtures, per the cycle-1 task brief).
 #
 #   PREDICTIONS were committed to
-#   specs/name-field-whitespace-identity/evidence/live-probe-cycle1.md
+#   specs/_archive/closed/name-field-whitespace-identity/evidence/live-probe-cycle1.md
 #   BEFORE this file was written and BEFORE any live run, per the C28
 #   forward rule.
 #

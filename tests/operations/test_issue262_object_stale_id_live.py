@@ -9,7 +9,7 @@
 #   preserving the original CLR exception as __cause__.
 #
 #   This file discharges the "Probes to discharge" list in
-#   specs/262-object-not-found/HANDOFF.md section 4. It is deliberately
+#   specs/_archive/closed/262-object-not-found/HANDOFF.md section 4. It is deliberately
 #   NOT merged into the existing offline test_issue262_object_stale_id.py
 #   -- that file is mock-only and must not be touched; this file proves
 #   the mocked shape (KeyNotFoundException on a stale id) actually
@@ -37,7 +37,7 @@ TEST_PREFIX = "TEST_262_"
 
 _EVIDENCE_DIR = (
     pathlib.Path(__file__).resolve().parent.parent.parent
-    / "specs" / "262-object-not-found" / "evidence"
+    / "specs" / "_archive" / "closed" / "262-object-not-found" / "evidence"
 )
 _EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 _EVIDENCE_JSON_PATH = _EVIDENCE_DIR / "live-262-probes-raw.json"

@@ -51,7 +51,7 @@ def _repo_root():
 
 
 def _write_evidence(data: dict):
-    ev_dir = _repo_root() / "specs" / "325-syncable-properties" / "evidence"
+    ev_dir = _repo_root() / "specs" / "_archive" / "closed" / "325-syncable-properties" / "evidence"
     ev_dir.mkdir(parents=True, exist_ok=True)
     out = ev_dir / "live-T3-syncable-properties.md"
     lines = ["# Live verification -- issue #325 T3 syncable-properties\n\n"]
@@ -930,7 +930,7 @@ class TestT3EvidenceRecord:
     def test_write_live_status_and_evidence(self, target_sandbox):
         """
         Confirm live mode and write tests/live_status.json +
-        specs/325-syncable-properties/evidence/live-T3-syncable-properties.md.
+        specs/_archive/closed/325-syncable-properties/evidence/live-T3-syncable-properties.md.
         """
         from datetime import datetime, timezone
 

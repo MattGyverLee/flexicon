@@ -20,7 +20,7 @@
 #          deleted, not kept as fallbacks. AddElement() additionally
 #          checks that the element is a member of the possibility list
 #          the overlay is bound to (overlay.PossListRA); cycle-2 live
-#          evidence (specs/318-321-nonexistent-member-mutations/evidence/
+#          evidence (specs/_archive/closed/318-321-nonexistent-member-mutations/evidence/
 #          live-cycle2-business-rules.md) showed the LCM layer is
 #          permissive about this (a foreign possibility was added without
 #          exception and persisted), so as of cycle 3 the guard warns and
@@ -189,7 +189,7 @@ class TestAddElement:
         Team-lead ruling (#320, cycle 3): AddElement() must NOT reject a
         possibility that does not belong to the list the overlay is bound
         to (overlay.PossListRA). Cycle-2 live evidence
-        (specs/318-321-nonexistent-member-mutations/evidence/
+        (specs/_archive/closed/318-321-nonexistent-member-mutations/evidence/
         live-cycle2-business-rules.md) showed the LCM layer is permissive
         here -- a foreign possibility was added without exception and
         persisted -- so the guard now warns and proceeds instead of

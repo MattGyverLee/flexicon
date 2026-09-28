@@ -37,4 +37,4 @@ claiming full closure of #268.
 - Live (when FieldWorks available):
   `tests/operations/test_issue268_resolver_hvo_gate_live.py` with
   `FLEXLIBS_REQUIRE_LIVE=1`
-- Evidence: `specs/268-shared-resolver-coverage/evidence/offline-268-slice2.md`
+- Evidence: `specs/_archive/closed/268-shared-resolver-coverage/evidence/offline-268-slice2.md`

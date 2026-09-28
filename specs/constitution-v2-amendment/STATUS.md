@@ -27,10 +27,10 @@ Package imports cleanly in this environment (pythonnet + FieldWorks live).
 - `docs/RELEASING.md` -- same two corrections against the release checklist.
 - Six closed-feature spec files carry dated superseding notes; every original
   line retained unedited as historical record:
-  `specs/write-path-transactions/{plan,spec}.md`,
-  `specs/lcm-member-truth-sweep/{STATUS,spec}.md`,
-  `specs/242-paragraph-whitespace/tasks.md`,
-  `specs/243-closeproject-save-guard/tasks.md`.
+  `specs/_archive/closed/write-path-transactions/{plan,spec}.md`,
+  `specs/_archive/closed/lcm-member-truth-sweep/{STATUS,spec}.md`,
+  `specs/_archive/closed/242-paragraph-whitespace/tasks.md`,
+  `specs/_archive/closed/243-closeproject-save-guard/tasks.md`.
 
 **T4 -- Read-scope sweep** (`reviews/cycle2-read-scope.md`)
 Three true read-confinement defects, all the same shape: a "The two live

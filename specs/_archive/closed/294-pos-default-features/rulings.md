@@ -8,7 +8,7 @@
 Issue #294 asks for a public read/write surface for the two
 `IPartOfSpeech` feature structures that sync already handles internally
 (`DefaultFeaturesOA`, `InherFeatValOA`). Q5 in
-`specs/276-gramcat-collection/evidence/domain-ruling.md` settles direction:
+`specs/_archive/closed/276-gramcat-collection/evidence/domain-ruling.md` settles direction:
 expose direct access to the owned properties; do not invent category
 expansion semantics.
 

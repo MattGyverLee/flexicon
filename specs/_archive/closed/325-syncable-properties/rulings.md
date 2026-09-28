@@ -4,7 +4,7 @@
 **Ruling authority:** lex-domain
 **Date:** 2026-09-22
 **Branch:** fix/325-syncable-properties
-**Evidence base:** specs/325-syncable-properties/evidence/live-T0-reflection.md
+**Evidence base:** specs/_archive/closed/325-syncable-properties/evidence/live-T0-reflection.md
   + live-T0-*-raw.json (run_mode=live, 6/6 passed)
 
 Implementers follow these rulings without re-litigating. Each ruling cites the

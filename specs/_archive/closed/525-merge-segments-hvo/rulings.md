@@ -25,4 +25,4 @@
 
 - Offline: `tests/operations/test_issue525_merge_segments_hvo_offline.py`
 - Live: `tests/operations/test_issue525_merge_segments_hvo_live.py`
-- Evidence: `specs/525-merge-segments-hvo/evidence/`
+- Evidence: `specs/_archive/closed/525-merge-segments-hvo/evidence/`

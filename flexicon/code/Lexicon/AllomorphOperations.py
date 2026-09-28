@@ -1714,7 +1714,7 @@ class AllomorphOperations(BaseOperations):
         -- pythonnet's static wrapper-type gate blocks that path on an
         uncast bare ``ICmObject``, which is a genuine behavioural defect
         there (fixed separately, same cycle). See
-        specs/260-environment-resolver-cast/reviews/cycle1-programmer.md
+        specs/_archive/closed/260-environment-resolver-cast/reviews/cycle1-programmer.md
         (P2 FALSIFIED) and cycle2-programmer.md for the live evidence
         behind both halves of this distinction.
 

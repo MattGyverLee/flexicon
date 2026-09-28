@@ -19,4 +19,4 @@ and the `[Unreleased]` CHANGELOG entry was never added.
 ## Verification
 
 - Offline: `python -m pytest tests/operations/test_issue327_compound_rule_contexts.py tests/test_compound_rule_wrappers.py -m "not requires_live_project" -q`
-- Live: unchanged from PR #389 evidence (`specs/327-compound-rule-contexts/evidence/live-327.md`).
+- Live: unchanged from PR #389 evidence (`specs/_archive/closed/327-compound-rule-contexts/evidence/live-327.md`).

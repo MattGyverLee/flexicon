@@ -23,7 +23,7 @@
 #   and in the WritingSystemManager's store (ServiceLocator.WritingSystems.
 #   AllWritingSystems) untouched -- confirmed live, by direct exploration,
 #   to reproduce exactly the store-vs-active divergence the issue
-#   describes (see specs/250-writingsystem-activation/evidence/
+#   describes (see specs/_archive/closed/250-writingsystem-activation/evidence/
 #   live-250-defects123.md for the transcript).
 #
 #   Invocation (never bare `pytest` -- it executes ~322 live tests in place):

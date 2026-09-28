@@ -26,4 +26,4 @@
 
 - Offline: `tests/operations/test_issue523_segment_exists_hvo_offline.py`
 - Live: `tests/operations/test_issue523_segment_exists_hvo_live.py`
-- Evidence: `specs/523-segment-exists-hvo/evidence/`
+- Evidence: `specs/_archive/closed/523-segment-exists-hvo/evidence/`

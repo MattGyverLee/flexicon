@@ -21,12 +21,12 @@ returned text. The file edits themselves were verified present in `git status`.
 
 ## Files given a superseding note (text preserved below, unedited)
 
-- `specs/write-path-transactions/plan.md`
-- `specs/write-path-transactions/spec.md`
-- `specs/lcm-member-truth-sweep/STATUS.md`
-- `specs/lcm-member-truth-sweep/spec.md`
-- `specs/242-paragraph-whitespace/tasks.md`
-- `specs/243-closeproject-save-guard/tasks.md`
+- `specs/_archive/closed/write-path-transactions/plan.md`
+- `specs/_archive/closed/write-path-transactions/spec.md`
+- `specs/_archive/closed/lcm-member-truth-sweep/STATUS.md`
+- `specs/_archive/closed/lcm-member-truth-sweep/spec.md`
+- `specs/_archive/closed/242-paragraph-whitespace/tasks.md`
+- `specs/_archive/closed/243-closeproject-save-guard/tasks.md`
 
 Each got a blockquote immediately above its title line, dated 2026-09-22, naming the
 constitution amendment, summarizing what the frozen text below it got wrong by today's
@@ -106,11 +106,11 @@ scope per explicit instruction (escalated / proposed-diff-only respectively).
 
 - docs\FLEXTOOLSMCP_WRITE_CONTRACT.md
 - docs\RELEASING.md
-- specs\write-path-transactions\plan.md
-- specs\write-path-transactions\spec.md
-- specs\lcm-member-truth-sweep\STATUS.md
-- specs\lcm-member-truth-sweep\spec.md
-- specs\242-paragraph-whitespace\tasks.md
-- specs\243-closeproject-save-guard\tasks.md
+- specs\_archive\closed\write-path-transactions\plan.md
+- specs\_archive\closed\write-path-transactions\spec.md
+- specs\_archive\closed\lcm-member-truth-sweep\STATUS.md
+- specs\_archive\closed\lcm-member-truth-sweep\spec.md
+- specs\_archive\closed\242-paragraph-whitespace\tasks.md
+- specs\_archive\closed\243-closeproject-save-guard\tasks.md
 
 No commit was made (per instruction).

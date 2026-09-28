@@ -6,7 +6,7 @@
 #          BaseOperations._apply_props_loop's normalized writing-system
 #          resolution fallback, plus a lexical ratchet pinning the closed
 #          three-site resolution enumeration from spec
-#          specs/250-writingsystem-activation/spec.md section 3 (errata).
+#          specs/_archive/closed/250-writingsystem-activation/spec.md section 3 (errata).
 #
 #   Scope reminder (spec 250, fence 1.2 / C-D4-2): the fix under test here
 #   is LOOKUP-ONLY, inside _apply_props_loop / the new module-level
@@ -25,7 +25,7 @@
 #   This file does not touch, import, or exercise sites 2/3 directly --
 #   their own coverage lives in test_issue266_phoneme_ws_resolution.py and
 #   test_issue267_translations_ws_resolution.py respectively. See
-#   specs/250-writingsystem-activation/evidence/live-D4-T3.md for the
+#   specs/_archive/closed/250-writingsystem-activation/evidence/live-D4-T3.md for the
 #   original coverage-boundary statement required by acceptance
 #   criterion 8, evidence/live-266-basicipasymbol.md for #266's live
 #   evidence, and evidence/live-267-translations.md for #267's.

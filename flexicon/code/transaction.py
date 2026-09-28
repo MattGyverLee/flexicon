@@ -61,7 +61,7 @@ class _NestingAwareTransaction:
           ``FLExProject.UndoableOperation()`` called directly, not just
           through this class), which the old Python-side counter could not
           see. See ``docs/EXCEPTION_HANDLING.md`` and
-          ``specs/write-path-transactions/spec.md`` section 5, B1.
+          ``specs/_archive/closed/write-path-transactions/spec.md`` section 5, B1.
 
     A second ``BeginUndoTask`` while one is already open does not merely
     raise in liblcm -- ``UndoStack.cs:209-216`` rolls back the *already-open*
@@ -152,7 +152,7 @@ class _NestingAwareTransaction:
                 # vanished on clean exit (CanUndo() False,
                 # UndoableActionCount 0), while the same writes under a raw
                 # BeginUndoTask/EndUndoTask pair persisted. See
-                # specs/write-path-transactions/evidence/live-a3-abort-session.md.
+                # specs/_archive/closed/write-path-transactions/evidence/live-a3-abort-session.md.
                 self._helper.set_RollBack(exc_type is not None)
                 self._helper.Dispose()
                 if exc_type is None:
@@ -199,7 +199,7 @@ class _FLExTransaction:
     point in the LCM undo stack and rolls back to it on exception. In the
     current build, ``FLExProject.Transaction()`` always constructs this
     class with ``(None, None)``: no such LCM rollback-to-mark API exists
-    (issue #236; see `specs/write-path-transactions/spec.md` section 2 for
+    (issue #236; see `specs/_archive/closed/write-path-transactions/spec.md` section 2 for
     the specific API confirmed absent by reflection). So in
     practice today this class provides labelling and safe nesting only --
     it does NOT roll anything back. See ``FLExProject.Transaction()``'s
@@ -251,7 +251,7 @@ class _FLExTransaction:
             always passes ``(None, None)`` here: no rollback-to-mark API
             exists anywhere in liblcm or FieldWorks (issue #236, confirmed by
             reflection over ``SIL.LCModel.dll`` -- see
-            ``specs/write-path-transactions/spec.md`` D1 for the specific API
+            ``specs/_archive/closed/write-path-transactions/spec.md`` D1 for the specific API
             name checked). This is not a
             build-specific gap that might resolve later; there is no such API
             to discover.             Failing fast here would make every write operation

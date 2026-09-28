@@ -12,7 +12,7 @@ accepted but never applied, so callers believe they selected
 `consultant_check` or `back_translation` while LCM kept the default draft
 type.
 
-Live evidence in `specs/352-copyalternatives-audit/evidence/live-scrdraft.md`
+Live evidence in `specs/_archive/closed/352-copyalternatives-audit/evidence/live-scrdraft.md`
 already fixed Description handling; the unused `type` param was documented as
 out of scope pending ScrDraftType exposure.
 

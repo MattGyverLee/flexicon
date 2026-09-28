@@ -15,7 +15,7 @@ ANNOTATION_PY = REPO_ROOT / "flexicon" / "code" / "Notebook" / "annotation.py"
 
 
 def test_issue323_ruling_document_exists():
-    ruling = REPO_ROOT / "specs" / "323-note-replies" / "rulings.md"
+    ruling = REPO_ROOT / "specs" / "_archive" / "closed" / "323-note-replies" / "rulings.md"
     assert ruling.is_file()
     text = ruling.read_text(encoding="utf-8")
     assert "ResponsesOS" in text

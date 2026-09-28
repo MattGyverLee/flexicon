@@ -2,7 +2,7 @@
 #   test_capabilities.py
 #
 #   Class: TestCapabilities
-#          Guard for task B4 (specs/write-path-transactions/tasks.md):
+#          Guard for task B4 (specs/_archive/closed/write-path-transactions/tasks.md):
 #          `flexicon.CAPABILITIES` is the frozenset FlexToolsMCP probes to
 #          decide which write-path surface it is talking to.
 #

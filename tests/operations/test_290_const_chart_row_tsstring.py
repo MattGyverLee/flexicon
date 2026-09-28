@@ -10,9 +10,9 @@
 #          fields (``.get_String(ws)`` / ``.set_String(ws, ts)``), but
 #          live reflection confirmed both are BARE ITsString values
 #          with no such methods -- see
-#          specs/299-300-290-reorder-and-tsstring/evidence/
+#          specs/_archive/closed/299-300-290-reorder-and-tsstring/evidence/
 #          live-290-reflection.md (Q1-Q3, all CONFIRMED live) and
-#          specs/299-300-290-reorder-and-tsstring/reviews/
+#          specs/_archive/closed/299-300-290-reorder-and-tsstring/reviews/
 #          cycle1-verification.md.
 #
 #          Six call sites (Create :132/:137, GetLabel :299, SetLabel

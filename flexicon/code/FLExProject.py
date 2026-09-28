@@ -151,7 +151,7 @@ def _IsAttachedView(obj):
     """
     Is `obj` a FLExProject attached to a cache someone else opened?
 
-    Invariant A (specs/flexicon-project-bridge/data-model.md section 1):
+    Invariant A (specs/_archive/closed/flexicon-project-bridge/data-model.md section 1):
     `_attached_donor` is present iff the instance is an attached view, and
     every lifecycle guard branches on THIS -- never on `writeEnabled` and
     never on `_undoable`. Those two cannot carry the distinction: a
@@ -306,7 +306,7 @@ class FLExProject(object):
             an operation rolls that operation's mutations back, and the
             operation appears in FLEx's Ctrl+Z menu under its own label.
             This is the mode the write path is designed for (decision D3 in
-            `specs/write-path-transactions/tasks.md`).
+            `specs/_archive/closed/write-path-transactions/tasks.md`).
 
             Only meaningful when writeEnabled=True; ignored otherwise.
 
@@ -418,13 +418,13 @@ class FLExProject(object):
         # and `_FLExUndoableOperation` now ask LCM's own
         # `ActionHandlerAccessor.CurrentDepth` at every __enter__ instead --
         # there is no local state left to leak. See
-        # specs/write-path-transactions/spec.md B1.
+        # specs/_archive/closed/write-path-transactions/spec.md B1.
 
         if self.writeEnabled and not self._undoable:
             # One-shot warning (issue #236 honesty pass): emitted once per
             # OpenProject() call rather than once per Transaction(), so it
             # cannot train callers to tune it out. See A2 in
-            # specs/write-path-transactions/spec.md and
+            # specs/_archive/closed/write-path-transactions/spec.md and
             # docs/EXCEPTION_HANDLING.md.
             #
             # Since 4.4.0 (task DEF) this is the OPT-OUT path, not the
@@ -1020,7 +1020,7 @@ class FLExProject(object):
           ``undoable=True`` since 4.4.0): **there is no rollback.**
           liblcm exposes no reachable "roll back to a mark" primitive in
           this mode (issue #236; confirmed by reflection over
-          `SIL.LCModel.dll` -- see `specs/write-path-transactions/spec.md`
+          `SIL.LCModel.dll` -- see `specs/_archive/closed/write-path-transactions/spec.md`
           section 2 and D1 for the specific API name checked and confirmed
           absent). ``Transaction()`` still opens and closes cleanly, and nested
           ``with`` blocks (including the per-method
@@ -1050,7 +1050,7 @@ class FLExProject(object):
           ``UndoableOperation()`` for the equivalent public, directly
           callable entry point in this mode.
 
-        The name is kept (see D4 in `specs/write-path-transactions/tasks.md`):
+        The name is kept (see D4 in `specs/_archive/closed/write-path-transactions/tasks.md`):
         an earlier draft of this spec preferred renaming this method to
         avoid over-promising, but once the ``undoable=True`` rewrite lands
         the name is accurate for the mode this project is migrating
@@ -1230,7 +1230,7 @@ class FLExProject(object):
         `ObjectRepository(IUndoStackManager)` accessor used by `SaveChanges()`
         and `CloseProject()`.
 
-        Rationale (issue A4, `specs/write-path-transactions/spec.md` D3):
+        Rationale (issue A4, `specs/_archive/closed/write-path-transactions/spec.md` D3):
         `UnitOfWorkService.cs:245` in liblcm refuses to auto-save while
         `m_pendingReconciliation` is non-null -- LCM's own comment is
         "don't auto-save until the user Refreshes." In FLEx a human clicks
@@ -1387,7 +1387,7 @@ class FLExProject(object):
         Discard every uncommitted change in the currently open unit of work.
 
         Wraps liblcm's one real revert primitive, ``IActionHandler.Rollback(0)``
-        (task A3, `specs/write-path-transactions/spec.md` section A3). It is
+        (task A3, `specs/_archive/closed/write-path-transactions/spec.md` section A3). It is
         coarse -- it reverts the *whole* open unit of work, not a selected
         subset -- but under ``undoable=False`` that unit is the entire session,
         which is exactly the granularity that mode's atomicity story needs and
@@ -1614,7 +1614,7 @@ class FLExProject(object):
             call instead joined an already-open UnitOfWork (nested inside
             another ``UndoableOperation()`` or a ``_TransactionCM`` block),
             rollback authority belongs to whichever call opened it. See
-            `specs/write-path-transactions/spec.md` B1.
+            `specs/_archive/closed/write-path-transactions/spec.md` B1.
         """
         from .undoable_operation import _FLExUndoableOperation
 
@@ -1635,7 +1635,7 @@ class FLExProject(object):
         rather than on an Operations class, so they have no ``BaseOperations``
         to inherit it from. Without this they would be the only LCM mutators in
         the tree unable to use the standard bracket (decision D5,
-        `specs/write-path-transactions/tasks.md` B2).
+        `specs/_archive/closed/write-path-transactions/tasks.md` B2).
 
         ``_NestingAwareTransaction`` needs only ``_undoable``,
         ``Transaction(label)`` and ``project.ActionHandlerAccessor`` from the
@@ -2178,7 +2178,7 @@ class FLExProject(object):
           missing ``abbreviation`` argument. That raising override is
           the migration signpost, which is why this property returns a
           ``GramCatOperations`` rather than ``self.POS`` (issue #276;
-          see ``specs/276-gramcat-collection/spec.md`` section 4).
+          see ``specs/_archive/closed/276-gramcat-collection/spec.md`` section 4).
 
         Removal is scheduled for the v5.0.0 boundary, alongside the
         other deprecated compatibility surfaces.

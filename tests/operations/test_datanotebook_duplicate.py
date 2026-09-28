@@ -17,7 +17,7 @@
 #          of.
 #
 #   DELETED AND REWRITTEN under ruling C4 (spec.md
-#   specs/lcm-member-truth-sweep/spec.md, section 3). The file this
+#   specs/_archive/closed/lcm-member-truth-sweep/spec.md, section 3). The file this
 #   replaces never imported DataNotebookOperations at all: it hand-
 #   re-typed the Duplicate() top-level/sub-record branching logic
 #   against a `_MockRepository` that DEFINED a `RecordsOC` attribute --
@@ -31,7 +31,7 @@
 #
 #   NEW LIVE FINDINGS SURFACED WHILE WRITING THIS FILE (all out of
 #   scope for T2.4/T2.5, reported separately in
-#   specs/lcm-member-truth-sweep/reviews/cycle2-programmer-T2.4-T2.5.md,
+#   specs/_archive/closed/lcm-member-truth-sweep/reviews/cycle2-programmer-T2.4-T2.5.md,
 #   NONE fixed here). Once T2.2's ownership-form fix let Create() get
 #   PAST the #302 RecordsOC crash for the first time ever, three more,
 #   independent, previously-masked defects became reachable:

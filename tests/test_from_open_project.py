@@ -5,8 +5,8 @@
 #          CP2 unit tests for FLExProject.FromOpenProject() -- the seam that
 #          attaches a flexicon facade to a project the HOST already opened.
 #
-#          Spec:     specs/flexicon-project-bridge/spec.md (FlexToolsMCP repo)
-#          Contract: specs/flexicon-project-bridge/contracts/from-open-project.md
+#          Spec:     specs/_archive/closed/flexicon-project-bridge/spec.md (FlexToolsMCP repo)
+#          Contract: specs/_archive/closed/flexicon-project-bridge/contracts/from-open-project.md
 #
 #   NO live project is opened anywhere in this file, and therefore NO
 #   `requires_live_project` marker: pyproject.toml:90-92 registers that marker

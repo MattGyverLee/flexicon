@@ -26,4 +26,4 @@
 
 - Offline: `tests/operations/test_issue535_naturalclass_duplicate_hvo_offline.py`
 - Live: `tests/operations/test_issue535_naturalclass_duplicate_hvo_live.py`
-- Evidence: `specs/535-naturalclass-duplicate-hvo/evidence/`
+- Evidence: `specs/_archive/closed/535-naturalclass-duplicate-hvo/evidence/`

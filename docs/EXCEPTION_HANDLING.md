@@ -723,7 +723,7 @@ no per-operation or per-`Transaction()` rollback boundary inside that
 envelope, because the LCM API a rollback would need --
 `RollbackToMark` -- **does not exist** anywhere in liblcm or FieldWorks
 (issue #236, confirmed by reflection over `SIL.LCModel.dll`; see
-`specs/write-path-transactions/spec.md` section 2 and decision D1).
+`specs/_archive/closed/write-path-transactions/spec.md` section 2 and decision D1).
 
 **Consequence:** the atomicity unit in this mode is the **session**, not the
 operation and not the `Transaction()`/`_TransactionCM` block. If any code
@@ -776,7 +776,7 @@ project.CloseProject()  # (1) and (2) are saved to disk, despite the exception.
   destination mode decision D3 designates. The Track B rewrite of
   `flexicon/code/transaction.py` onto liblcm's `UndoableUnitOfWorkHelper` has
   landed, so an exception inside a block genuinely rolls that block back. See
-  `specs/write-path-transactions/spec.md` D2/D3/B1. Note `AbortSession()`
+  `specs/_archive/closed/write-path-transactions/spec.md` D2/D3/B1. Note `AbortSession()`
   deliberately refuses in that mode (per-operation rollback is already
   automatic there); see tasks.md D8.
 
@@ -789,7 +789,7 @@ decision D3 designates, and **since 4.4.0 the default** -- it is what you get
 from a plain `OpenProject(..., writeEnabled=True)` (task DEF). Everything
 below is verified against a live LCM in
 `tests/operations/test_undoable_mode_live.py`; see
-`specs/write-path-transactions/evidence/live-def-undoable-coverage.md`.
+`specs/_archive/closed/write-path-transactions/evidence/live-def-undoable-coverage.md`.
 
 **The guarantee:** an exception inside a `with project.UndoableOperation(...)`
 block rolls that block's mutations back, for real, via liblcm's

@@ -16,7 +16,7 @@
 #   cannot be patched in place. What is patchable is the *name* `Sldr`
 #   bound in FLExInit's module globals, which is what the production code
 #   actually dereferences. Recorded in
-#   specs/feature-structure-sync-gap/spec.md:559-561.
+#   specs/_archive/closed/feature-structure-sync-gap/spec.md:559-561.
 #
 #   The fake System.InvalidOperationException follows the precedent in
 #   tests/write_path_transactions/test_a3_abort_session.py:61 -- a plain

@@ -484,7 +484,7 @@ Live reflection (T0, issue #325) confirms there is **no** `LanguageRA` on `ILexE
 
 Sync: `"language_rs"` replaces the removed `"LanguageRA"` key (atomic GUID or `None`). `"LanguageNotesRA"` never existed on the LCM and must not appear in payloads; free-text source language notes remain under the stable `"Source"` key backed by `LanguageNotes` (`IMultiString`).
 
-Evidence: `specs/325-syncable-properties/evidence/live-T0-etymology-raw.json`, `live-T3-syncable-properties.md` (section a).
+Evidence: `specs/_archive/closed/325-syncable-properties/evidence/live-T0-etymology-raw.json`, `live-T3-syncable-properties.md` (section a).
 
 ### CORRECTED 2026-09-22: `ILexReference` type identity via `Owner`, not `ReferenceTypeRA` (issue #325)
 
@@ -495,7 +495,7 @@ Evidence: `specs/325-syncable-properties/evidence/live-T0-etymology-raw.json`, `
 | Target list omitted | `TargetsRS` is the ordered sequence of related objects | Sync key `"targets_rs"` = ordered `list[str]` GUIDs; apply replaces the sequence (warn-and-skip unresolved GUIDs) |
 | Re-parenting | FLEx does not support changing structural owner by assignment | Different incoming `owner_guid` => delete old `ILexReference`, create new under target `ILexRefType` |
 
-Evidence: `specs/325-syncable-properties/evidence/live-T0-lexref-raw.json`, `live-T3-syncable-properties.md` (section b).
+Evidence: `specs/_archive/closed/325-syncable-properties/evidence/live-T0-lexref-raw.json`, `live-T3-syncable-properties.md` (section b).
 
 ### CORRECTED 2026-09-22: `IText` media path (`MediaFilesRC` vs owning atomic) (issue #325)
 
@@ -508,7 +508,7 @@ Evidence: `specs/325-syncable-properties/evidence/live-T0-lexref-raw.json`, `liv
 
 Sync shape: `"media_uris": [{"uri": str, "file_guid": str|null}, ...]`. Live read-back of populated media was **not** verified in T3 (no media-bearing project available).
 
-Evidence: `specs/325-syncable-properties/evidence/live-T0-media-raw.json`, `live-T3-syncable-properties.md` (section c, R4 FAIL: unverified).
+Evidence: `specs/_archive/closed/325-syncable-properties/evidence/live-T0-media-raw.json`, `live-T3-syncable-properties.md` (section c, R4 FAIL: unverified).
 
 ### CORRECTED 2026-09-22: `IConstChartMovedTextMarker` ownership (issue #325 / #290)
 
@@ -518,7 +518,7 @@ Evidence: `specs/325-syncable-properties/evidence/live-T0-media-raw.json`, `live
 | Raw factory + setters | `Preposed` setter raises `NullReferenceException` without ownership context | Factory create -> insert into `row.CellsOS` (`IConstChartRow` owning sequence) **before** property sets |
 | Setter order | Same pattern as `IConstChartWordGroup` (#290) | Set `WordGroupRA` and `ColumnRA`, then `Preposed` |
 
-Evidence: `specs/325-syncable-properties/evidence/live-T0-discourse-raw.json`, `live-T3-syncable-properties.md` (section d).
+Evidence: `specs/_archive/closed/325-syncable-properties/evidence/live-T0-discourse-raw.json`, `live-T3-syncable-properties.md` (section d).
 
 ### CORRECTED 2026-09-22: `DoNotShowMainEntryInRC` on `ILexSense` (issue #325)
 
@@ -530,7 +530,7 @@ Evidence: `specs/325-syncable-properties/evidence/live-T0-discourse-raw.json`, `
 
 Do not copy the sense-level removal to `LexEntryOperations` based on R7 alone.
 
-Evidence: `specs/325-syncable-properties/evidence/live-T0-lexsense-raw.json`, `live-T3-syncable-properties.md` (section e).
+Evidence: `specs/_archive/closed/325-syncable-properties/evidence/live-T0-lexsense-raw.json`, `live-T3-syncable-properties.md` (section e).
 
 ### The `BaselineText` field
 
@@ -616,7 +616,7 @@ To obtain a genuinely typeless `IMoForm` for testing, clear
 `MorphTypeRA = None` explicitly in a **follow-up transaction** after the
 `Add` has committed, then re-read to confirm.
 
-Evidence: `specs/254-getmorphtype-allomorph/evidence/live-cycle2-fix.md`
+Evidence: `specs/_archive/closed/254-getmorphtype-allomorph/evidence/live-cycle2-fix.md`
 (item 4, Sena 3, 2026-09-06).
 
 ### The `SegmentRA` and `NaturalClassRA` fields (issue #326, RESOLVED)
@@ -632,7 +632,7 @@ The actual fields are:
 
 **Fix**: `PhonologicalContext.segment` and `.natural_class` properties now read `FeatureStructureRA` and cast/return the concrete type (`IPhPhoneme` / `IPhNaturalClass`). The property names are kept (for API stability) even though the field name changed.
 
-Evidence: `specs/326-phonological-wrapper-members/evidence/live-programmer-context-links.json` (2026-09-22, live reflection and read-back).
+Evidence: `specs/_archive/closed/326-phonological-wrapper-members/evidence/live-programmer-context-links.json` (2026-09-22, live reflection and read-back).
 
 ### The metathesis part model (issue #326, RESOLVED)
 
@@ -648,7 +648,7 @@ The actual structure is:
 | `RightSwitchIndex` | `int` | Start offset of the right swapped part in `StrucDescOS` |
 | `RightSwitchLimit` | `int` | End offset of the right swapped part (exclusive) |
 
-**Fix**: `PhonologicalRule.has_metathesis_parts` and `.metathesis_parts` now read `StrucDescOS` and extract the two parts using the switch indices/limits. Returns `(left_parts, right_parts)` tuple of `ContextCollection` items. This is a **BREAKING behavioral fix** (no signature change; corrected return value per house convention for minor-version repairs). Evidence: `specs/326-phonological-wrapper-members/evidence/live-programmer-metathesis.json` (2026-09-22, live reflection and switch-index verification).
+**Fix**: `PhonologicalRule.has_metathesis_parts` and `.metathesis_parts` now read `StrucDescOS` and extract the two parts using the switch indices/limits. Returns `(left_parts, right_parts)` tuple of `ContextCollection` items. This is a **BREAKING behavioral fix** (no signature change; corrected return value per house convention for minor-version repairs). Evidence: `specs/_archive/closed/326-phonological-wrapper-members/evidence/live-programmer-metathesis.json` (2026-09-22, live reflection and switch-index verification).
 
 ### The `ICmAnnotationDefn` scalar flags (issue #361 follow-up, RESOLVED)
 

@@ -2,7 +2,7 @@
 #   test_abort_session_live.py
 #
 #   Live write-path verification for task A3
-#   (specs/write-path-transactions/tasks.md): `FLExProject.AbortSession()`
+#   (specs/_archive/closed/write-path-transactions/tasks.md): `FLExProject.AbortSession()`
 #   exposing `IActionHandler.Rollback(0)`.
 #
 #   Structure copied from tests/operations/test_target_live_smoke.py, the

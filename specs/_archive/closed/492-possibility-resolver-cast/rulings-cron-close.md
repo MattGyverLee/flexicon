@@ -16,7 +16,7 @@
 
 Behaviour fix landed on `main` via PR #496 (`bfd8c47`, merge `eb88719`).
 Offline ratchet and `target_sandbox` live gates were added with that PR.
-Binding fix shape is recorded in `specs/492-possibility-resolver-cast/rulings.md`.
+Binding fix shape is recorded in `specs/_archive/closed/492-possibility-resolver-cast/rulings.md`.
 
 ## RULING (binding, close-out only)
 

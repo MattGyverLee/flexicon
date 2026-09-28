@@ -3,7 +3,7 @@
 #
 #   Live cycle-2 verification for issue #254 (GetMorphType/SetMorphType
 #   repair on IWfiMorphBundle). Runs against Sena 3 via sena3_sandbox
-#   (disposable tempdir copy). See specs/254-getmorphtype-allomorph/
+#   (disposable tempdir copy). See specs/_archive/closed/254-getmorphtype-allomorph/
 #   evidence/live-cycle2-fix.md for the write-up of results.
 #
 #   Platform: Python.NET

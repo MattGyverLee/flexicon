@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-25  
 **Issue:** #494 (P3) -- contract-only uncast resolver docstring hygiene  
-**Parent triage:** #284 re-triage (`specs/284-uncast-resolver-retriage/RETRIAGE.md`)
+**Parent triage:** #284 re-triage (`specs/_archive/closed/284-uncast-resolver-retriage/RETRIAGE.md`)
 
 ## Triage (cron)
 
@@ -28,4 +28,4 @@
 - Offline:
   ``python -m pytest tests/operations/test_issue494_contract_resolvers_offline.py -m "not requires_live_project" -q``
 - Live: **N/A** (docstring-only)
-- Evidence: ``specs/494-contract-resolvers/evidence/offline-494.md``
+- Evidence: ``specs/_archive/closed/494-contract-resolvers/evidence/offline-494.md``

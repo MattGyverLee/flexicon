@@ -30,4 +30,4 @@
 
 - Offline: `tests/operations/test_issue521_segment_get_owning_paragraph_offline.py`
 - Live: `tests/operations/test_issue521_segment_get_owning_paragraph_live.py`
-- Evidence: `specs/521-segment-get-owning-paragraph/evidence/`
+- Evidence: `specs/_archive/closed/521-segment-get-owning-paragraph/evidence/`

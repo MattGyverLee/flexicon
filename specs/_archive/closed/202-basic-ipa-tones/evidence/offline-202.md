@@ -2,7 +2,7 @@
 
 ## Lex-lead ruling
 
-See `specs/202-basic-ipa-tones/rulings.md`.
+See `specs/_archive/closed/202-basic-ipa-tones/rulings.md`.
 
 ## Commands
 

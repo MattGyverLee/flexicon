@@ -5,7 +5,7 @@
 #          TestSegmentOperationsGetSequence /
 #          TestTextOperationsGetSequenceRemoved
 #          Regression coverage for issue #299: `_GetSequence` ownership
-#          ruling in specs/299-300-290-reorder-and-tsstring/reviews/
+#          ruling in specs/_archive/closed/299-300-290-reorder-and-tsstring/reviews/
 #          cycle1-domain.md.
 #
 #          - TextOperations._GetSequence is DELETED (no replacement).

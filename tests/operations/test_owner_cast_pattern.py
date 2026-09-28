@@ -62,7 +62,7 @@ def ngoreme_readonly():
     tests/operations/test_issue251_252_256_feature_struct_probe.py. Used
     by TestFeatureStructOwnerCastT1 below, which only reads (no writes),
     so the populated ground-truth data documented in
-    specs/feature-structure-sync-gap/evidence/live-cycle1-probe.md is
+    specs/_archive/closed/feature-structure-sync-gap/evidence/live-cycle1-probe.md is
     available without needing a sandbox copy.
     """
     if "SIL.LCModel" not in sys.modules:

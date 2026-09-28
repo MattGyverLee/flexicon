@@ -22,5 +22,5 @@ def test_semantic_domain_operations_does_not_access_occurrences_rs():
     source = SEMANTIC_DOMAIN_OPS.read_text(encoding="utf-8")
     assert "OccurrencesRS" not in source, (
         "SemanticDomainOperations must not reference OccurrencesRS on "
-        "ICmSemanticDomain (issue #230 gap 2; see specs/352-copyalternatives-audit)."
+        "ICmSemanticDomain (issue #230 gap 2; see specs/_archive/closed/352-copyalternatives-audit)."
     )

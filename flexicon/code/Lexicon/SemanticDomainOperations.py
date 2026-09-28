@@ -1283,7 +1283,7 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         # Note: SubPossibilitiesOS is an Owning Sequence (OS) - not included
         # Note: ICmSemanticDomain has no Occurrences reference sequence
         # (issue #230 gap 2 ruled out; live reflection in
-        # specs/352-copyalternatives-audit).
+        # specs/_archive/closed/352-copyalternatives-audit).
 
         return props
 

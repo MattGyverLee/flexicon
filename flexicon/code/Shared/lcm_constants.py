@@ -64,7 +64,7 @@ class CellarPropertyType:
 # ---------------------------------------------------------------------------
 # Feature-structure (IFsFeatStruc) owner-property resolver table.
 #
-# FROZEN per specs/feature-structure-sync-gap/spec.md section 4, C1. This
+# FROZEN per specs/_archive/closed/feature-structure-sync-gap/spec.md section 4, C1. This
 # is the SINGLE, canonical source of truth for "which LCM ClassName owns an
 # IFsFeatStruc under which atomic-owning ('OA') property, and under what
 # sync-wire props key". It lives here (a pure-data constants module with no

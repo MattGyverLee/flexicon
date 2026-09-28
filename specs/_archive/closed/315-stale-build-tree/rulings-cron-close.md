@@ -13,10 +13,10 @@ close-out and ratchet.
 ## RULING (binding, close-out)
 
 1. Add offline ratchet `tests/test_issue315_build_hygiene.py` per
-   `specs/315-stale-build-tree/rulings.md`.
+   `specs/_archive/closed/315-stale-build-tree/rulings.md`.
 2. Close #315 with this PR; no LCM or runtime behaviour change.
 
 ## Verification
 
 - Offline: `python -m pytest tests/test_issue315_build_hygiene.py -m "not requires_live_project" -q`
-- Evidence: `specs/315-stale-build-tree/evidence/offline-315.md`
+- Evidence: `specs/_archive/closed/315-stale-build-tree/evidence/offline-315.md`

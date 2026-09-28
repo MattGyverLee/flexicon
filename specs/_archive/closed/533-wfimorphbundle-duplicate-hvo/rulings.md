@@ -26,4 +26,4 @@
 
 - Offline: `tests/operations/test_issue533_wfimorphbundle_duplicate_hvo_offline.py`
 - Live: `tests/operations/test_issue533_wfimorphbundle_duplicate_hvo_live.py`
-- Evidence: `specs/533-wfimorphbundle-duplicate-hvo/evidence/`
+- Evidence: `specs/_archive/closed/533-wfimorphbundle-duplicate-hvo/evidence/`

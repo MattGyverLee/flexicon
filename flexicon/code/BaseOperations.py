@@ -3349,13 +3349,13 @@ class BaseOperations:
             - Phase 1 (``Transaction``) does NOT roll back on exception in the
               current build. liblcm exposes no reachable rollback-to-mark API
               in this mode (issue #236; see
-              ``specs/write-path-transactions/spec.md`` D1 and
+              ``specs/_archive/closed/write-path-transactions/spec.md`` D1 and
               ``FLExProject.Transaction()``'s docstring for the specific API
               name checked). ``_TransactionCM`` in Phase 1 is a labelling and
               nesting construct only; the atomicity unit is the whole
               session, not this block. See ``docs/EXCEPTION_HANDLING.md``.
             - Phase 2 (``UndoableOperation``) IS rollback-capable (see B1,
-              `specs/write-path-transactions/spec.md`): ``_TransactionCM``
+              `specs/_archive/closed/write-path-transactions/spec.md`): ``_TransactionCM``
               constructs liblcm's own ``UndoableUnitOfWorkHelper`` directly
               for the outermost block. An exception raised inside the block
               rolls back every mutation that block made, in addition to the

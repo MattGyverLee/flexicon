@@ -27,4 +27,4 @@
 
 - Offline: `tests/operations/test_issue550_lexsense_duplicate_hvo_offline.py`
 - Live: `tests/operations/test_issue550_lexsense_duplicate_hvo_live.py`
-- Evidence: `specs/550-lexsense-duplicate-hvo/evidence/`
+- Evidence: `specs/_archive/closed/550-lexsense-duplicate-hvo/evidence/`

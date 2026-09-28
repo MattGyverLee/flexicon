@@ -33,4 +33,4 @@
 - Offline: `tests/operations/test_issue449_wrapper_unwrap_offline.py`
 - Live: `tests/operations/test_issue449_getall_roundtrip_live.py` with
   `FLEXLIBS_REQUIRE_LIVE=1`
-- Evidence: `specs/449-getall-wrapper-roundtrip/evidence/offline-449.md`
+- Evidence: `specs/_archive/closed/449-getall-wrapper-roundtrip/evidence/offline-449.md`

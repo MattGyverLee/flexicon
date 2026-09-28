@@ -101,7 +101,7 @@ def SetText(self, para, content): ...   # always preserves the payload
 The test is whether a house convention already exists. If most of the
 library already does the right thing and a handful of sites do not, those
 sites are **outliers to be conformed**, and a flag merely licenses them to
-stay outliers. `specs/242-paragraph-whitespace/spec.md` C8 rejected a
+stay outliers. `specs/_archive/closed/242-paragraph-whitespace/spec.md` C8 rejected a
 `preserve_whitespace=` kwarg on exactly this ground: 82 sibling writer
 sites already persisted the caller's value unmodified while only 12 did
 not.

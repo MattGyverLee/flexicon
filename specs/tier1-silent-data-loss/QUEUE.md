@@ -6,7 +6,7 @@
 **CANCELLED as of spurt 5 (2026-09-07). Nothing resumes automatically.**
 The Stop hook is gone (`.claude/ralph-loop.local.md` deleted in the working
 tree), so this campaign is now human-driven until someone restarts it. See
-`specs/243-closeproject-save-guard/STATUS.md` -> **"How a human restarts
+`specs/_archive/closed/243-closeproject-save-guard/STATUS.md` -> **"How a human restarts
 this"**. The campaign promise is still `TIER1 COMPLETE`, never
 `FEATURE COMPLETE`.
 
@@ -33,7 +33,7 @@ promise, so it cannot exit the loop early.
 |---|--------|------|--------|----------|
 | 1 | **`done` (crew sign-off, spurt 9 / cycle 9 -- `feature_complete`, APPROVED by `/lex-lead`)**. All five closure gates green: T7 live-verified; the C24 CHANGELOG correction landed and independently re-verified; QC score 90/100 with **P0 count 0** and BOTH P1s disposed (fail-open remedied by T9a/T9b, P-11 ruled no-action with a forward rule -- C28); the C26/C27 staleness sweep done; P-11 parked as a user-approval ask with its 25/25 pin intact. Live at closure: probe 11/11, abort-session 12/12, `run_mode: live`; offline 1292 passed / 475 deselected. **GitHub #243 is deliberately still OPEN -- the crew does not close issues, and C10's `.fwdata` half is unmeasured by design.** THREE items sit under "Awaiting user approval" (C25 rollback-discard audit, its C29 counter-measurement, the TRANSACTION_GUIDE gap) plus ONE ungated cleanup (C30, below). | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
 | 2 | **`done`** (closed 2026-09-07; see the closure banner under "Per-item entry conditions" below). Q-242A/Q-242B, the two sibling-site asks this item's own cycle-2 sibling sweep surfaced, were spun out to sub-item **2a** rather than folded back in. | `242-paragraph-whitespace` | #242 | Cheap, self-contained, real corruption. Paragraph/Segment text writers silently strip leading/trailing whitespace. |
-| 2a | **`active`** -- **AUTHORISED BY THE OWNER 2026-09-07**, spun out of item 2's "Awaiting user approval" list into its own feature directory (spec+probe checkpoint DONE, cycle 1). | `name-field-whitespace-identity` | Q-242A, Q-242B (both under `specs/tier1-silent-data-loss/QUEUE.md` "Awaiting user approval", now authorised -- see the entries below) | Same bug shape as item 2 (strip -> validate -> persist the stripped copy) at 8 NAME-field sibling sites plus a more severe non-str/whitespace-only silent-empty-name defect at `CheckOperations`, deliberately triaged separately from item 2 because the identity/dedup question needed its own ruling. A **second, owner-confirmed crew** is concurrently active in the same working tree while this sub-item runs -- see `specs/name-field-whitespace-identity/CONCURRENCY.md`. |
+| 2a | **`active`** -- **AUTHORISED BY THE OWNER 2026-09-07**, spun out of item 2's "Awaiting user approval" list into its own feature directory (spec+probe checkpoint DONE, cycle 1). | `name-field-whitespace-identity` | Q-242A, Q-242B (both under `specs/tier1-silent-data-loss/QUEUE.md` "Awaiting user approval", now authorised -- see the entries below) | Same bug shape as item 2 (strip -> validate -> persist the stripped copy) at 8 NAME-field sibling sites plus a more severe non-str/whitespace-only silent-empty-name defect at `CheckOperations`, deliberately triaged separately from item 2 because the identity/dedup question needed its own ruling. A **second, owner-confirmed crew** is concurrently active in the same working tree while this sub-item runs -- see `specs/_archive/closed/name-field-whitespace-identity/CONCURRENCY.md`. |
 | 3 | `queued` | `feature-structure-sync-gap` | #251 #252 #253 #256 | **Already in flight** -- contract frozen (C1-C8), live ground truth captured, spurt 1 done. RESUME, do not re-plan. Biggest item (T1-T17). Ships data loss today: `Allomorph` and `POS` are live sync object types. |
 | 4 | `queued` | `250-writingsystem-activation` | #250 | Deliberately LAST: resolving it requires an **API-surface policy decision** (active-only `Exists` plus a separately-named whole-store predicate, vs. an `Ensure()` that activates a store-present WS). That is the item most likely to end `needs_human`, so everything landable unattended lands first. |
 
@@ -86,7 +86,7 @@ untouched items behind it.
 > `docs/TRANSACTION_GUIDE.md`, Q4, and a CHANGELOG factual correction
 > (C24) that the pre-T8b CHANGELOG text ("this does not fix the incident
 > #243 was filed about") is now FALSE and must not be cited.** See
-> `spec.md` C21-C27 and `specs/243-closeproject-save-guard/reviews/cycle8-doc.md`.
+> `spec.md` C21-C27 and `specs/_archive/closed/243-closeproject-save-guard/reviews/cycle8-doc.md`.
 
 
 **Spec+probe checkpoint DONE (spurt 1, 2026-09-07).** `spec.md` (contract
@@ -119,7 +119,7 @@ raise, which at `CustomFieldOperations.py:306` silently disables the issue-#21
 corruption guard. **Do NOT re-attempt T2**; adding `spec=` to the doubles is
 NOT deferred and NOT owed. Nothing in P0/P1/P2 depended on it.
 
-**Resume from `specs/243-closeproject-save-guard/.crew-handoff.json` -- its
+**Resume from `specs/_archive/closed/243-closeproject-save-guard/.crew-handoff.json` -- its
 `next_entry` is authoritative: CP-B / T3, the P0 guard around
 `CloseProject()`'s line-326 `EndNonUndoableTask()`, then T4's regression
 tests.** Live gate for T3/T4 was RE-DERIVED FROM MARKERS this spurt (a defect
@@ -198,7 +198,7 @@ three things the owner says still stand are the scope:
 > -- Q-242A, Q-242B, Q-242C -- routed to "Awaiting user approval" below
 > rather than folded back into this item. **Q-242A and Q-242B are now
 > AUTHORISED and spun out to sub-item 2a; Q-242C remains unauthorised.**
-> `specs/242-paragraph-whitespace/spec.md` and `tasks.md` carry the full
+> `specs/_archive/closed/242-paragraph-whitespace/spec.md` and `tasks.md` carry the full
 > record; this banner is the audit trail, read below it as history.
 
 No further work is scheduled inside `242-paragraph-whitespace` itself.
@@ -209,7 +209,7 @@ No further work is scheduled inside `242-paragraph-whitespace` itself.
 own "Awaiting user approval" list rather than folded back into
 `242-paragraph-whitespace`, because the identity/dedup ruling it needed
 was genuinely a separate decision. **Checkpoint 1 (spec + live probe) is
-DONE** -- `specs/name-field-whitespace-identity/spec.md` (contract C1-C8,
+DONE** -- `specs/_archive/closed/name-field-whitespace-identity/spec.md` (contract C1-C8,
 FROZEN), `tasks.md`, `STATUS.md`, `.crew-handoff.json`, two cycle-1
 reviews, and `tests/operations/test_name_field_identity_probe.py` (8/8
 live, `run_mode: live`). See that feature's own directory for the full
@@ -222,20 +222,20 @@ decide,"* placing the identity ruling (C3) under `/lex-domain`'s
 authority, and `/lex-domain` independently re-tested and ACCEPTED
 `/lex-lead`'s option (i) -- whitespace-insensitive comparison, symmetric
 at both sides, raw-byte persistence -- on independent FLEx-domain
-grounds. Full record: `specs/name-field-whitespace-identity/spec.md`
+grounds. Full record: `specs/_archive/closed/name-field-whitespace-identity/spec.md`
 section 0 and C3.
 
 **A second, owner-confirmed crew is concurrently active in the same
 working tree while this sub-item runs.** See
-`specs/name-field-whitespace-identity/CONCURRENCY.md`, binding on every
+`specs/_archive/closed/name-field-whitespace-identity/CONCURRENCY.md`, binding on every
 task in this sub-item: never stage, revert, or restore
 `flexicon/code/BaseOperations.py`,
 `flexicon/code/Grammar/NaturalClassOperations.py`,
 `flexicon/code/Grammar/PhonemeOperations.py`,
 `tests/operations/test_natural_class_feature_sync.py`,
-`specs/feature-structure-sync-gap/`, or `specs/250-writingsystem-activation/`.
+`specs/_archive/closed/feature-structure-sync-gap/`, or `specs/_archive/closed/250-writingsystem-activation/`.
 The offline suite's fixed baseline is VOID for this sub-item's duration --
-`specs/name-field-whitespace-identity/tasks.md` uses a before/after DELTA
+`specs/_archive/closed/name-field-whitespace-identity/tasks.md` uses a before/after DELTA
 measurement instead.
 
 **One unrelated, unplanned bug found in cycle 1, recorded not fixed:**
@@ -247,11 +247,11 @@ never worked against a live LCM. Worked around at the test-instance level
 only (zero `flexicon/` lines changed). This is a live-verification
 dependency for every future task in this sub-item that touches
 `CheckOperations.py`, not a design blocker. Not filed as a GitHub issue;
-see `specs/name-field-whitespace-identity/spec.md` section 3.
+see `specs/_archive/closed/name-field-whitespace-identity/spec.md` section 3.
 
 ### 3. `feature-structure-sync-gap` (#251 #252 #253 #256)
 
-RESUME from `specs/feature-structure-sync-gap/.crew-handoff.json`. Its
+RESUME from `specs/_archive/closed/feature-structure-sync-gap/.crew-handoff.json`. Its
 `next_entry` is authoritative: **T1 ALONE** first -- add the 13 feature-struct
 owner classes to `lcm_casting._interface_cache`, enumerate the behaviour delta for
 every `cast_to_concrete` / `_GetTypedOwner` caller, and get the full offline suite
@@ -498,7 +498,7 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   whether to approve an extra improvement, but **whether flexicon fixes
   #243's incident at all, or ships #243 documenting it as unfixed.** No
   GitHub issues filed; `SaveChanges()` untouched, unprototyped, unplanned.
-  Items 2, 3 and 4 untouched, and `specs/feature-structure-sync-gap/` was not
+  Items 2, 3 and 4 untouched, and `specs/_archive/closed/feature-structure-sync-gap/` was not
   opened.
 
 - **2026-09-07 -- item 1, spurt 6 (cycle 6): the user RULED, and T8a
@@ -571,7 +571,7 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   previously-unlisted edited sites surfaced, and a second widened
   source-slice window found); and **C27**, a standing rule that the doc
   agent landing a spurt's docs task owns that spurt's staleness sweep.
-  Full report: `specs/243-closeproject-save-guard/reviews/cycle8-doc.md`.
+  Full report: `specs/_archive/closed/243-closeproject-save-guard/reviews/cycle8-doc.md`.
 
 - **2026-09-07 -- item 1, spurt 9 (cycle 9) COMPLETE: CP-CLOSE REACHED.
   ITEM 1 IS CLOSED -- `/lex-lead` signed `243-closeproject-save-guard` off as
@@ -621,7 +621,7 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   file's own queue table and per-item banner were not updated to match
   until this pass. That gap is now closed (see the item-2 table row and
   banner above); the full technical record remains in
-  `specs/242-paragraph-whitespace/spec.md` (C1-C14) and `STATUS.md`,
+  `specs/_archive/closed/242-paragraph-whitespace/spec.md` (C1-C14) and `STATUS.md`,
   which this entry does not duplicate.
 
 - **2026-09-07 -- sub-item 2a (`name-field-whitespace-identity`) OPENED
@@ -632,7 +632,7 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   defect), and Q-242C (coercion-policy harmonisation, out of scope) --
   filed to "Awaiting user approval" rather than folded into item 2. The
   owner authorised Q-242A and Q-242B; they are spun out to their own
-  feature directory, `specs/name-field-whitespace-identity/`, as campaign
+  feature directory, `specs/_archive/closed/name-field-whitespace-identity/`, as campaign
   sub-item **2a**, rather than reopening item 2. Q-242C remains queued and
   unauthorised, untouched by this spurt. Crew: `lex-programmer` +
   `lex-domain` in parallel (the live probe and the identity ruling), then
@@ -666,9 +666,9 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   `flexicon/code/Grammar/NaturalClassOperations.py`,
   `flexicon/code/Grammar/PhonemeOperations.py`,
   `tests/operations/test_natural_class_feature_sync.py`,
-  `specs/feature-structure-sync-gap/`, and
-  `specs/250-writingsystem-activation/` are theirs). This is confirmed by
-  the owner as expected, not an anomaly. `specs/name-field-whitespace-identity/CONCURRENCY.md`
+  `specs/_archive/closed/feature-structure-sync-gap/`, and
+  `specs/_archive/closed/250-writingsystem-activation/` are theirs). This is confirmed by
+  the owner as expected, not an anomaly. `specs/_archive/closed/name-field-whitespace-identity/CONCURRENCY.md`
   records the binding protocol (explicit-path staging only, never revert
   or restore a path not authored by this sub-item, and a DELTA-based
   offline-suite measurement replacing the campaign's fixed baseline for
@@ -789,7 +789,7 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
 - **NEW (item 1, spurt 7, cycle 7, 2026-09-07) -- audit the broader class of
   schema/metadata-mutating and exclusivity-sensitive operations for
   depth-guard coverage.** `lex-domain`'s cycle-6 Q2 review (
-  `specs/243-closeproject-save-guard/reviews/cycle6-domain.md`) found that
+  `specs/_archive/closed/243-closeproject-save-guard/reviews/cycle6-domain.md`) found that
   `CustomFieldOperations.py:306`'s depth guard is **one instance of a
   broader class, not a unique case**: writing-system add/remove/change,
   model migration on version upgrade, project rename/relocation,
@@ -873,18 +873,18 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   resolved.
 - Open issue **#259** (`InflClassRA` does not exist on `IWfiMorphBundle`) is
   Tier 2, NOT in this campaign -- but its draft lives at
-  `specs/254-getmorphtype-allomorph/reviews/cycle3-archivist-inflclass-issue-draft.md`
+  `specs/_archive/closed/254-getmorphtype-allomorph/reviews/cycle3-archivist-inflclass-issue-draft.md`
   and touches the same file as the `IWfiAnalysis` item above. Keep them together
   when the user rules on filing.
 - **AUTHORISED BY THE OWNER 2026-09-07 and MOVED to sub-item 2a
-  (`specs/name-field-whitespace-identity/`) -- see that feature's `spec.md`
+  (`specs/_archive/closed/name-field-whitespace-identity/`) -- see that feature's `spec.md`
   C1-C8 and `specs/tier1-silent-data-loss/QUEUE.md` section "2a" above.
   NOT deleted; kept below as the audit trail for how this ask was raised
   and ruled.** Original text follows verbatim for the record:
 - **NEW (item 2, cycle 2, 2026-09-07) -- Q-242A: 8 sibling name-field
   whitespace sites, routed here by `/lex-lead`'s R3 ruling
-  (`specs/242-paragraph-whitespace/spec.md` C10).** Explore's full
-  AST-verified table (`specs/242-paragraph-whitespace/reviews/cycle1-explore.md`
+  (`specs/_archive/closed/242-paragraph-whitespace/spec.md` C10).** Explore's full
+  AST-verified table (`specs/_archive/closed/242-paragraph-whitespace/reviews/cycle1-explore.md`
   Bucket 1), file:line / method / transform line / persist line:
 
   | site | method | transform line | persist line |
@@ -914,7 +914,7 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   The dedup-identity question is RULED: whitespace is NOT identity-bearing
   for name fields (`"Genesis "` IS `"Genesis"`); case stays as each site
   has it. Store verbatim, compare on a normalized key. Full frozen ruling
-  at `specs/name-field-whitespace-identity/spec.md` NF1-NF11, with
+  at `specs/_archive/closed/name-field-whitespace-identity/spec.md` NF1-NF11, with
   `tasks.md` alongside it.
 
   The scope also GREW on investigation, and the question as filed above
@@ -936,11 +936,11 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   unstarted" does NOT: it was written on `origin/main` (PR #282), whose
   branch point predated this campaign's implementation commits, so it was
   true on that branch and is false on `main`. The bullet immediately below
-  is the accurate status. See `specs/name-field-whitespace-identity/spec.md`
+  is the accurate status. See `specs/_archive/closed/name-field-whitespace-identity/spec.md`
   Appendix A for the full reconciliation.
 
 - **AUTHORISED BY THE OWNER 2026-09-07 and MOVED to sub-item 2a
-  (`specs/name-field-whitespace-identity/`), landed TOGETHER with Q-242A
+  (`specs/_archive/closed/name-field-whitespace-identity/`), landed TOGETHER with Q-242A
   at the same expressions per that feature's `spec.md` C6 -- separate
   tasks, severity labels, CHANGELOG entries, and live evidence, but ONE
   commit at `CheckOperations.py:196`/`:341`/`:432` rather than two
@@ -956,7 +956,7 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   **DISTINCT from and MORE SEVERE than #242's whitespace loss** --
   #242's sites lose padding around real content; this site can lose the
   entire name. It is deliberately **NOT bundled with Q-242A** so it is
-  not triaged at whitespace severity (`specs/242-paragraph-whitespace/spec.md`
+  not triaged at whitespace severity (`specs/_archive/closed/242-paragraph-whitespace/spec.md`
   C10, C6 item 3). No work happens on this until the user approves it.
 - **APPENDED CORRECTION (name-field-whitespace-identity, cycle 3,
   `spec.md` C10(b)) -- Q-242B severity correction, does NOT alter the row
@@ -972,7 +972,7 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   [flexicon#273](https://github.com/MattGyverLee/flexicon/issues/273)**,
   separately from Q-242A and labelled `bug`, preserving the severity split.
   Still UNMEASURED: this is predictions PN5/PN6 in
-  `specs/name-field-whitespace-identity/evidence/live-probe-cycle1.md`, and
+  `specs/_archive/closed/name-field-whitespace-identity/evidence/live-probe-cycle1.md`, and
   the harness that would confirm them does not exist yet. The issue body
   says so explicitly, so nobody treats a code-read finding as a measured
   one.
@@ -982,14 +982,14 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   caveat does NOT: it was written on `origin/main` (PR #282) before this
   campaign's cycle-1 live probe was visible there. PN5/PN6 WERE measured
   live -- see the correction bullet immediately above and
-  `specs/name-field-whitespace-identity/evidence/live-probe-cycle1.md`.
+  `specs/_archive/closed/name-field-whitespace-identity/evidence/live-probe-cycle1.md`.
 
 - **NEW (item 2, cycle 2, 2026-09-07) -- Q-242C: coerce-vs-reject for
   non-`str` payloads.** `BaseOperations._ValidateParam`
   (`BaseOperations.py:2377`) is a `None`-check plus a stale-LCM guard
   ONLY, with no type check, so `str(obj)` can silently persist a value
   like `"<Foo object at 0x...>"` at 12+ sites sharing this shape across
-  the codebase. Per `specs/242-paragraph-whitespace/spec.md` C11, this
+  the codebase. Per `specs/_archive/closed/242-paragraph-whitespace/spec.md` C11, this
   needs a `_ValidateParam` / shared-code decision -- CLAUDE.md requires
   consultation before changing shared validation methods, so this is
   queued rather than implemented incidentally inside #242. No work

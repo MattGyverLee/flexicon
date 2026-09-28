@@ -18,7 +18,7 @@ def _source() -> str:
 
 
 def test_issue302_328_ruling_document_exists():
-    ruling = REPO_ROOT / "specs" / "302-datanotebook-records" / "rulings.md"
+    ruling = REPO_ROOT / "specs" / "_archive" / "closed" / "302-datanotebook-records" / "rulings.md"
     assert ruling.is_file()
     text = ruling.read_text(encoding="utf-8")
     assert "ResearchNotebookOA.RecordsOC" in text

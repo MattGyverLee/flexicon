@@ -1075,7 +1075,7 @@ def clone_properties(source_obj, dest_obj, project=None):
                     # Those expose Count/Add but are recomputed on every access, so
                     # `dest_collection.Clear()` silently no-ops against them (confirmed
                     # live on Sena 3, see
-                    # specs/318-321-nonexistent-member-mutations/evidence/live-321-derived-lists.md).
+                    # specs/_archive/closed/318-321-nonexistent-member-mutations/evidence/live-321-derived-lists.md).
                     #
                     # LCM's naming convention encodes real backing-store membership in
                     # the attribute name's suffix: OS/OC/OA = owned (sequence/collection/

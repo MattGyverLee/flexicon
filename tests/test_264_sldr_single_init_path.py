@@ -156,7 +156,7 @@ _LIVE_FIXTURE_NAMES = {"target_project", "target_sandbox", "sena3_sandbox"}
 
 # Files that reference OpenProject(/FLExInitialize(/a live fixture name but
 # are deliberately excluded, with the reason inline. Every entry here was
-# individually inspected in specs/264-conftest-sldr-order/reviews/
+# individually inspected in specs/_archive/closed/264-conftest-sldr-order/reviews/
 # cycle1-audit.md's "False positives eliminated by inspection" list.
 _ALLOWLISTED_LIVE_ACCESS_FILES = {
     # target_project / sena3_sandbox here are Mock() attribute names set via

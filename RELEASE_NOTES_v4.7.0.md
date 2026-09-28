@@ -206,7 +206,7 @@ The offline figure supersedes the 1732 / 695 recorded at the 4.6.0 cut;
 the increase is new coverage landing alongside these changes.
 
 Live-LCM evidence for the write-path changes was recorded per-task as each
-change landed -- see `specs/flexicon-project-bridge/evidence/` for the
+change landed -- see `specs/_archive/closed/flexicon-project-bridge/evidence/` for the
 attached-view guards, and `docs/RELEASING.md` section 3 for the standing
 policy.
 

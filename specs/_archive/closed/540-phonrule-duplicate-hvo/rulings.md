@@ -26,4 +26,4 @@
 
 - Offline: `tests/operations/test_issue540_phonrule_duplicate_hvo_offline.py`
 - Live: `tests/operations/test_issue540_phonrule_duplicate_hvo_live.py`
-- Evidence: `specs/540-phonrule-duplicate-hvo/evidence/`
+- Evidence: `specs/_archive/closed/540-phonrule-duplicate-hvo/evidence/`

@@ -6,7 +6,7 @@
 ## RULING (binding)
 
 Issue #309's suggested chart-scoped `Create(chart, name)` is **rejected**. Live
-reflection (issue #303, `specs/lcm-member-truth-sweep/reviews/cycle1-domain.md`)
+reflection (issue #303, `specs/_archive/closed/lcm-member-truth-sweep/reviews/cycle1-domain.md`)
 confirms overlays are **project-scoped** at `ILangProject.OverlaysOC`; `IDsConstChart`
 has no overlay members.
 

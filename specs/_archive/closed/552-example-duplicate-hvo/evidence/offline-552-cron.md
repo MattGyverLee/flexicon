@@ -2,7 +2,7 @@
 
 ## /lex-lead ruling
 
-`specs/552-example-duplicate-hvo/rulings.md`
+`specs/_archive/closed/552-example-duplicate-hvo/rulings.md`
 
 ## Command
 

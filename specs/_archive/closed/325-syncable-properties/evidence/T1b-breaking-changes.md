@@ -1,7 +1,7 @@
 # T1b -- Breaking-Change Review: Issue #325 Syncable Properties
 
 **Task:** T1b (lex-author breaking-change review)
-**Ruling source:** specs/325-syncable-properties/rulings.md (T1 complete)
+**Ruling source:** specs/_archive/closed/325-syncable-properties/rulings.md (T1 complete)
 **Evidence base:** live-T0-reflection.md + live-T0-*-raw.json (run_mode=live, 6/6 passed)
 **Rulings reviewed:** R1, R2, R3, R4, R5, R6, R7, R8
 **Date:** 2026-09-22

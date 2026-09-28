@@ -906,7 +906,7 @@ class WfiMorphBundleOperations(BaseOperations):
         # see CHANGELOG [4.5.1] -- made this worth checking): the bare
         # and `IMoForm(morph)`-cast paths returned an identical Hvo, so
         # no cast is required here. See
-        # specs/254-getmorphtype-allomorph/evidence/live-cycle2-fix.md.
+        # specs/_archive/closed/254-getmorphtype-allomorph/evidence/live-cycle2-fix.md.
         return morph.MorphTypeRA if morph.MorphTypeRA else None
 
     @OperationsMethod

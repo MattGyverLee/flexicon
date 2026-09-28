@@ -48,7 +48,7 @@ def test_agent_description_overrides_are_safe_noops():
 
 
 def test_issue350_lex_lead_ruling_on_disk():
-    ruling = REPO_ROOT / "specs" / "350-agent-gsp" / "rulings.md"
+    ruling = REPO_ROOT / "specs" / "_archive" / "closed" / "350-agent-gsp" / "rulings.md"
     assert ruling.is_file()
     text = ruling.read_text(encoding="utf-8")
     assert "GetSyncableProperties" in text

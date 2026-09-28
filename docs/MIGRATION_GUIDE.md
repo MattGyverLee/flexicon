@@ -449,7 +449,7 @@ You are affected if **either** is true:
 
 This guide does **not** claim how many strays exist in any particular
 project; no orphan scan was run (see
-`specs/276-gramcat-collection/evidence/domain-ruling.md`, Q4).
+`specs/_archive/closed/276-gramcat-collection/evidence/domain-ruling.md`, Q4).
 
 #### Where to look in FLEx
 

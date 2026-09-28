@@ -15,10 +15,10 @@ the issue.
 ## RULING (binding, close-out only)
 
 1. No further LCM behaviour change -- `MSAOperations.SetInflAffMsaSlots`
-   matches `specs/258-set-infl-aff-msa-slots/rulings.md`.
+   matches `specs/_archive/closed/258-set-infl-aff-msa-slots/rulings.md`.
 2. Close #258 with this PR.
 
 ## Verification
 
 - Offline: `python -m pytest tests/operations/test_issue258_set_infl_aff_msa_slots_offline.py -m "not requires_live_project" -q`
-- Live: unchanged from PR #388 plan (`specs/258-set-infl-aff-msa-slots/evidence/live-258.md`; **FAIL: unverified** on cloud agent).
+- Live: unchanged from PR #388 plan (`specs/_archive/closed/258-set-infl-aff-msa-slots/evidence/live-258.md`; **FAIL: unverified** on cloud agent).

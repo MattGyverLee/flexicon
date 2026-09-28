@@ -1,7 +1,7 @@
 #
 #   test_issue242_whitespace_probe.py
 #
-#   CHECKPOINT 1 probe for issue #242 (specs/242-paragraph-whitespace):
+#   CHECKPOINT 1 probe for issue #242 (specs/_archive/closed/242-paragraph-whitespace):
 #   measures whether whitespace written through the paragraph/segment text
 #   writers actually survives a write-read cycle.
 #
@@ -12,17 +12,17 @@
 #   FLIPPED from asserting/observing "stripped" (pre-fix) to asserting
 #   "preserved" (post-fix); the pre-fix behaviour is kept in comments for
 #   the historical record. test_p6 through test_p8 are NEW additions for
-#   Checkpoint 3 (see specs/242-paragraph-whitespace/evidence/
+#   Checkpoint 3 (see specs/_archive/closed/242-paragraph-whitespace/evidence/
 #   live-t1-t2-fix.md for the PREDICTIONS committed before this run).
 #
 #   CHECKPOINT 3, T5 UPDATE (2026-09-07): the join-boundary anomaly
 #   measured (not fixed) by cycle 2's test_p8 is now FIXED per ruling C12
-#   (specs/242-paragraph-whitespace/spec.md). test_p8 is renamed
+#   (specs/_archive/closed/242-paragraph-whitespace/spec.md). test_p8 is renamed
 #   test_p8_terminator_branch_join_boundary_fixed and converted from a
 #   measurement of the anomaly into an assertion of the fixed behaviour;
 #   test_p8b is a NEW addition covering the one prediction row
 #   unreachable through the public API (a whitespace-only paragraph,
-#   built via the layer-B bypass). See specs/242-paragraph-whitespace/
+#   built via the layer-B bypass). See specs/_archive/closed/242-paragraph-whitespace/
 #   evidence/live-t5-joinfix.md for the PREDICTIONS committed before this
 #   run.
 #

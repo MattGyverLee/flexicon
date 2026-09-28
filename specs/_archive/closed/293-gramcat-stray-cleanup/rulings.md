@@ -19,7 +19,7 @@ Cron selection after repository scan:
 Issue #293 is **documentation only**. No auto-migration script, no new
 Operations API, no LCM write path.
 
-Parent ruling Q4 in `specs/276-gramcat-collection/evidence/domain-ruling.md`
+Parent ruling Q4 in `specs/_archive/closed/276-gramcat-collection/evidence/domain-ruling.md`
 stands: strays in `LangProject.MsFeatureSystemOA.TypesOC` cannot be
 distinguished from legitimate `InflectionFeatures.TypeCreate` output and may
 be referenced via `TypeRA`. Humans decide in FLEx.
@@ -33,7 +33,7 @@ be referenced via `TypeRA`. Humans decide in FLEx.
 2. Offline content ratchet:
    `tests/test_issue293_gramcat_stray_docs_ratchet.py` pins required phrases
    so the recipe cannot silently shrink.
-3. Evidence file under `specs/293-gramcat-stray-cleanup/evidence/offline-293.md`.
+3. Evidence file under `specs/_archive/closed/293-gramcat-stray-cleanup/evidence/offline-293.md`.
 
 **Out of scope:** orphan scans, population counts, flexicon code changes.
 

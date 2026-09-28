@@ -33,4 +33,4 @@
 - Offline: `tests/operations/test_issue513_discourse_owner_cast_offline.py`
 - Live: `tests/operations/test_issue513_discourse_owner_cast_live.py`
   (`target_sandbox`; create `TEST_513_` chart/row, delete via HVO, assert counts)
-- Evidence: `specs/513-discourse-owner-cast/evidence/offline-513-cron.md`
+- Evidence: `specs/_archive/closed/513-discourse-owner-cast/evidence/offline-513-cron.md`

@@ -14,7 +14,7 @@ formal lex-lead ruling file and closes the issue.
 
 1. No further LCM behaviour change -- guard at `PhonFeatureOperations.py`
    `__ApplyValues` and `__CreateValueWithGuid` matches
-   `specs/336-empty-guid/rulings.md`.
+   `specs/_archive/closed/336-empty-guid/rulings.md`.
 2. Close #336 with this PR.
 
 ## Verification

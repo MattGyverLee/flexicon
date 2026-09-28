@@ -314,7 +314,7 @@ clean. `local-compat-check` green on `main`.
 ### 2026-08-18 - v4.4.0 release cut: the write path becomes transactional
 
 Merges `write-path-transactions-b1-b3` into main and cuts v4.4.0, completing
-`specs/write-path-transactions`. Closes MattGyverLee/flexicon#233, #234, #235,
+`specs/_archive/closed/write-path-transactions`. Closes MattGyverLee/flexicon#233, #234, #235,
 #236, #237.
 
 **What changed:**
@@ -391,7 +391,7 @@ See `CHANGELOG.md` `[4.3.0]` for the full user-facing entry.
 ### 2026-07-21 — `.pyi` stub reconciliation with the GetAll behavioral contract (#229)
 
 Closes MattGyverLee/flexlibs#229. Follow-up to T10 in
-`specs/getall-contract-flexicon/tasks.md`, which had deferred this work
+`specs/_archive/closed/getall-contract-flexicon/tasks.md`, which had deferred this work
 pending an assessment of whether the flagged prerequisite (pre-existing
 `*args`/`**kwargs` stub/runtime signature drift) was safely resolvable in
 one pass.

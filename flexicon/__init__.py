@@ -130,7 +130,7 @@ from .code.FLExProject import (
 # By the time this line runs, flexicon.code.FLExLCM (imported just above via
 # FLExProject -> FLExLCM) has already imported flexicon.code.headless_ui at
 # module level, so this import is a sys.modules cache hit, not a fresh CLR
-# type emission -- see specs/285-headless-ui-default/reviews/cycle1-programmer.md.
+# type emission -- see specs/_archive/closed/285-headless-ui-default/reviews/cycle1-programmer.md.
 from .code.headless_ui import HeadlessLcmUI, HeadlessThreadedProgress
 
 # Advanced Operations (v2.0+)

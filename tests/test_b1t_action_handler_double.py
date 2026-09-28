@@ -10,8 +10,8 @@
 #          tests/operations/test_transaction_rollback.py or tests/test_undo_redo.py
 #          (the programmer's own tests), and builds its own action-handler and
 #          UndoableUnitOfWorkHelper doubles from the liblcm source facts in
-#          specs/write-path-transactions/reviews/cycle2-explore-liblcm-facts.md
-#          and specs/write-path-transactions/issues/createfield-always-raises.md,
+#          specs/_archive/closed/write-path-transactions/reviews/cycle2-explore-liblcm-facts.md
+#          and specs/_archive/closed/write-path-transactions/issues/createfield-always-raises.md,
 #          not from the programmer's report.
 #
 #          No live FLEx project is opened and no live LCM write is executed
@@ -36,8 +36,8 @@ from unittest.mock import Mock, patch
 # ---------------------------------------------------------------------------
 #
 # Facts modeled, each traceable to a specific liblcm source line cited in
-# specs/write-path-transactions/reviews/cycle2-explore-liblcm-facts.md (F1, F2)
-# and specs/write-path-transactions/issues/createfield-always-raises.md:
+# specs/_archive/closed/write-path-transactions/reviews/cycle2-explore-liblcm-facts.md (F1, F2)
+# and specs/_archive/closed/write-path-transactions/issues/createfield-always-raises.md:
 #
 #   * CurrentDepth is 1 iff a data-changing task (undo or non-undoable) is
 #     open, 0 otherwise (UndoStack.cs:731-734 / createfield-always-raises.md

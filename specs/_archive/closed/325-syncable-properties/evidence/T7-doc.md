@@ -8,9 +8,9 @@
 
 ## Inputs consumed
 
-- `specs/325-syncable-properties/rulings.md` (R1-R8)
-- `specs/325-syncable-properties/evidence/T1b-breaking-changes.md`
-- `specs/325-syncable-properties/evidence/live-T3-syncable-properties.md`
+- `specs/_archive/closed/325-syncable-properties/rulings.md` (R1-R8)
+- `specs/_archive/closed/325-syncable-properties/evidence/T1b-breaking-changes.md`
+- `specs/_archive/closed/325-syncable-properties/evidence/live-T3-syncable-properties.md`
 
 ## Files touched
 

@@ -26,4 +26,4 @@ ParagraphOperations para_list.index.
 
 - Offline: `tests/operations/test_issue528_replace_analysis_hvo_offline.py`
 - Live: `tests/operations/test_issue528_replace_analysis_hvo_live.py`
-- Evidence: `specs/528-replace-analysis-hvo/evidence/`
+- Evidence: `specs/_archive/closed/528-replace-analysis-hvo/evidence/`

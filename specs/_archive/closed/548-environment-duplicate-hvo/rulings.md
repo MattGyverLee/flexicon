@@ -25,4 +25,4 @@
 
 - Offline: `tests/operations/test_issue548_environment_duplicate_hvo_offline.py`
 - Live: `tests/operations/test_issue548_environment_duplicate_hvo_live.py`
-- Evidence: `specs/548-environment-duplicate-hvo/evidence/`
+- Evidence: `specs/_archive/closed/548-environment-duplicate-hvo/evidence/`

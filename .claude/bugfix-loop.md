@@ -3,7 +3,7 @@
 > **RESTART TRIAGE 2026-09-21.** Pause lifted at user request. The cited
 > blocker (`SemanticDomainOperations.py:1125` raising before the fix) is
 > resolved and live-verified on main (`a9463d3`; evidence in
-> `specs/352-copyalternatives-audit/evidence/`).
+> `specs/_archive/closed/352-copyalternatives-audit/evidence/`).
 >
 > Section-0 state on restart (read-only triage 2026-09-21, no branches touched):
 > - `fix/348-ocmcodes-none`: PR #353 closed as superseded by `a9463d3` at

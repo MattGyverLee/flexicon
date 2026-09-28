@@ -29,9 +29,9 @@
 #   Sections A-C are entirely OFFLINE (no live FLEx project). Section D
 #   (bottom of file, `requires_live_project`) is the LIVE coverage
 #   against a `target_sandbox` (tempdir copy of Target). See
-#   specs/feature-structure-sync-gap/evidence/live-T8.md for the
+#   specs/_archive/closed/feature-structure-sync-gap/evidence/live-T8.md for the
 #   run_mode/pass-fail record and
-#   specs/feature-structure-sync-gap/evidence/live-T8-predictions.md for
+#   specs/_archive/closed/feature-structure-sync-gap/evidence/live-T8-predictions.md for
 #   the five pre-committed predictions this file (and that evidence
 #   file) adjudicate.
 #

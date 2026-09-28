@@ -30,7 +30,7 @@ class TestIssue305ComplexFormTypesOffline:
         assert "normalize_match_key" in block
 
     def test_issue305_ruling_document_exists(self):
-        ruling = _REPO_ROOT / "specs" / "305-complex-form-types" / "rulings.md"
+        ruling = _REPO_ROOT / "specs" / "_archive" / "closed" / "305-complex-form-types" / "rulings.md"
         assert ruling.is_file()
         text = ruling.read_text(encoding="utf-8")
         assert "GetAllComplexFormTypes" in text

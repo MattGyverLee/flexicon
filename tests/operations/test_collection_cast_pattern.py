@@ -523,7 +523,7 @@ class TestSubPossibilityRecursion:
         assert "GetSubcategories" not in GramCatOperations.__dict__, (
             "GramCatOperations has re-declared GetSubcategories. It must "
             "inherit POSOperations.GetSubcategories (issue #276); see "
-            "specs/276-gramcat-collection/evidence/domain-ruling.md."
+            "specs/_archive/closed/276-gramcat-collection/evidence/domain-ruling.md."
         )
         resolved = next(
             klass
@@ -933,7 +933,7 @@ class TestGramCatGetAllRecursionClaim:
     instead. Issue #276 closed that question.
 
     **The ruling.** Recorded in full in
-    `specs/276-gramcat-collection/evidence/domain-ruling.md`. Three FLEx
+    `specs/_archive/closed/276-gramcat-collection/evidence/domain-ruling.md`. Three FLEx
     concepts wear confusingly similar names; only the first is a
     category:
 
@@ -992,7 +992,7 @@ class TestGramCatGetAllRecursionClaim:
             "Issue #276 ruled that a list-level grammatical category IS a "
             "Part of Speech, so GramCat became a deprecated alias instead "
             "of a second CRUD surface over its own collection. See "
-            "specs/276-gramcat-collection/evidence/domain-ruling.md."
+            "specs/_archive/closed/276-gramcat-collection/evidence/domain-ruling.md."
         )
         assert "GetAll" not in GramCatOperations.__dict__, (
             "GramCatOperations has re-declared its own GetAll. It must "
@@ -1015,13 +1015,13 @@ class TestGramCatGetAllRecursionClaim:
             "wrong collection. That is the defect issue #276 fixed. The "
             "feature side belongs to project.InflectionFeatures "
             "(TypeFind / TypeCreate); see "
-            "specs/276-gramcat-collection/evidence/domain-ruling.md."
+            "specs/_archive/closed/276-gramcat-collection/evidence/domain-ruling.md."
         )
         assert "PartsOfSpeechOA" in src, (
             "GramCat.GetAll no longer walks LangProject.PartsOfSpeechOA. "
             "Issue #276 ruled that the category inventory IS the Part of "
             "Speech list; see "
-            "specs/276-gramcat-collection/evidence/domain-ruling.md."
+            "specs/_archive/closed/276-gramcat-collection/evidence/domain-ruling.md."
         )
 
 

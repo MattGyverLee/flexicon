@@ -26,4 +26,4 @@
 
 - Offline: `tests/operations/test_issue531_paragraph_duplicate_hvo_offline.py`
 - Live: `tests/operations/test_issue531_paragraph_duplicate_hvo_live.py`
-- Evidence: `specs/531-paragraph-duplicate-hvo/evidence/`
+- Evidence: `specs/_archive/closed/531-paragraph-duplicate-hvo/evidence/`

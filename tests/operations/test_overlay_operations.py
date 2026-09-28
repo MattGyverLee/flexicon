@@ -6,7 +6,7 @@
 #          GetPossItems() read `overlay.SubPossibilitiesOS`, a property
 #          that does not exist on ICmOverlay (whose complete own-declared
 #          surface is Name, PossItemsRC, PossListRA -- confirmed by live
-#          reflection, see specs/277-nonexistent-property-reads/evidence/
+#          reflection, see specs/_archive/closed/277-nonexistent-property-reads/evidence/
 #          live-277-overlays.md). The `hasattr` guard was always False,
 #          so the method returned [] unconditionally, for every overlay,
 #          regardless of its actual contents.

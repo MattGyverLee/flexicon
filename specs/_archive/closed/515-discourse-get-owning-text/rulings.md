@@ -27,4 +27,4 @@
 - Offline: `tests/operations/test_issue515_get_owning_text_offline.py`
 - Live: `tests/operations/test_issue515_get_owning_text_live.py`
   (read-only Sena 3 or Target; chart HVO + pass-through chart object)
-- Evidence: `specs/515-discourse-get-owning-text/evidence/`
+- Evidence: `specs/_archive/closed/515-discourse-get-owning-text/evidence/`

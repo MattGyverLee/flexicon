@@ -1,7 +1,7 @@
 #
 #   test_issue243_closeproject_probe.py
 #
-#   CHECKPOINT 1 probe for issue #243 (specs/243-closeproject-save-guard):
+#   CHECKPOINT 1 probe for issue #243 (specs/_archive/closed/243-closeproject-save-guard):
 #   `FLExProject.CloseProject()` (FLExProject.py:318-338) calls
 #   `MainCacheAccessor.EndNonUndoableTask()` (the "End mirror" for the
 #   session-long `BeginNonUndoableTask()` envelope opened at `OpenProject()`

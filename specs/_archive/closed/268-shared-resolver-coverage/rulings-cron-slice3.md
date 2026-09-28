@@ -31,4 +31,4 @@ of #268.
 - Offline: `tests/operations/test_issue268_resolver_hvo_gate_offline.py`
 - Live (FieldWorks): `tests/operations/test_issue268_resolver_hvo_gate_live.py`
   with `FLEXLIBS_REQUIRE_LIVE=1`
-- Evidence: `specs/268-shared-resolver-coverage/evidence/offline-268-slice3.md`
+- Evidence: `specs/_archive/closed/268-shared-resolver-coverage/evidence/offline-268-slice3.md`

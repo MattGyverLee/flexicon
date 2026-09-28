@@ -113,9 +113,9 @@ def _clr_type_name(obj):
 
 
 def _write_raw(data: dict, filename: str):
-    """Write JSON evidence to specs/325-syncable-properties/evidence/."""
+    """Write JSON evidence to specs/_archive/closed/325-syncable-properties/evidence/."""
     repo_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    evidence_dir = repo_root / "specs" / "325-syncable-properties" / "evidence"
+    evidence_dir = repo_root / "specs" / "_archive" / "closed" / "325-syncable-properties" / "evidence"
     evidence_dir.mkdir(parents=True, exist_ok=True)
     out_path = evidence_dir / filename
     with open(out_path, "w", encoding="utf-8") as fh:

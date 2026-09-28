@@ -2,7 +2,7 @@
 #   test_a3_abort_session.py
 #
 #   Class: TestA3AbortSession
-#          Offline guard for task A3 (specs/write-path-transactions/tasks.md):
+#          Offline guard for task A3 (specs/_archive/closed/write-path-transactions/tasks.md):
 #          `FLExProject.AbortSession()` exposes liblcm's one real revert
 #          primitive, `IActionHandler.Rollback(0)`.
 #
@@ -42,7 +42,7 @@ import pytest
 # ---------------------------------------------------------------------------
 #
 # Facts modeled, each traceable to a source line cited in
-# specs/write-path-transactions/reviews/cycle2-explore-liblcm-facts.md:
+# specs/_archive/closed/write-path-transactions/reviews/cycle2-explore-liblcm-facts.md:
 #
 #   * CurrentDepth == 1 iff CurrentProcessingState is ProcessingDataChanges,
 #     0 otherwise; never 2+ (F2 / UndoStack.cs:731-734). Exposed read-only,

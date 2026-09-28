@@ -199,7 +199,7 @@ class TestSyncablePropertiesMemberRatchet:
             pytest.skip(
                 f"{interface} is absent from the baseline snapshot "
                 f"(no live instances available during T0; cite: "
-                f"specs/325-syncable-properties/evidence/live-T0-reflection.md)"
+                f"specs/_archive/closed/325-syncable-properties/evidence/live-T0-reflection.md)"
             )
 
         props = baseline[interface]

@@ -516,7 +516,7 @@ class OverlayOperations(PossibilityItemOperations):
 
         # ICmOverlay's complete own-declared property surface is
         # Name, PossItemsRC, PossListRA (confirmed by live reflection,
-        # 2026-09-09; see specs/277-nonexistent-property-reads/
+        # 2026-09-09; see specs/_archive/closed/277-nonexistent-property-reads/
         # evidence/live-277-overlays.md, and re-confirmed for this issue:
         # whole-index grep for "InstancesOS"/"Elements" on ICmOverlay
         # returns zero hits). Neither InstancesOS nor Elements exists on
@@ -571,7 +571,7 @@ class OverlayOperations(PossibilityItemOperations):
         # involved): adding a possibility (HVO 34) that is NOT a member of
         # overlay.PossListRA's 859-item tree raised nothing and PERSISTED
         # on a fresh re-fetch (859 -> 860). See
-        # specs/318-321-nonexistent-member-mutations/evidence/
+        # specs/_archive/closed/318-321-nonexistent-member-mutations/evidence/
         # live-cycle2-business-rules.md. So the LCM data layer itself does
         # not enforce list-membership as an invariant on PossItemsRC.
         #
@@ -720,7 +720,7 @@ class OverlayOperations(PossibilityItemOperations):
 
         # ICmOverlay's complete own-declared property surface is
         # Name, PossItemsRC, PossListRA (confirmed by live reflection,
-        # 2026-09-09; see specs/277-nonexistent-property-reads/
+        # 2026-09-09; see specs/_archive/closed/277-nonexistent-property-reads/
         # evidence/live-277-overlays.md). There is no SubPossibilitiesOS
         # on ICmOverlay -- that hasattr was always False, so this method
         # returned [] unconditionally regardless of the overlay's actual

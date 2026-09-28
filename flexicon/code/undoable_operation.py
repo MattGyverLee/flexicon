@@ -52,7 +52,7 @@ class _FLExUndoableOperation:
         ``_NestingAwareTransaction`` uses in ``transaction.py`` and liblcm's
         own ``UndoableUnitOfWorkHelper.DoUsingNewOrCurrentUOW``
         (``UndoableUnitOfWorkHelper.cs:91-98``). See
-        `specs/write-path-transactions/spec.md` B1.
+        `specs/_archive/closed/write-path-transactions/spec.md` B1.
 
     Note:
         This class is internal. Obtain instances via FLExProject.UndoableOperation().
@@ -172,7 +172,7 @@ class _FLExUndoableOperation:
         block's creations, for real, via ``set_RollBack(True)`` +
         ``Dispose()``. The inside/outside distinction is the whole of the
         earlier surprise; see
-        ``specs/243-closeproject-save-guard/evidence/live-p11-remeasure.md``
+        ``specs/_archive/closed/243-closeproject-save-guard/evidence/live-p11-remeasure.md``
         and ``tests/operations/test_undoable_mode_live.py``
         (``TestExceptionRollsBackLive``, live-verified for creates,
         modifications and deletes).

@@ -3,7 +3,7 @@
 #
 #   Class: TestHeadlessLcmUISurface
 #          Unit coverage for flexicon.code.headless_ui.HeadlessLcmUI (issue
-#          #238 / Track A of specs/write-path-transactions).
+#          #238 / Track A of specs/_archive/closed/write-path-transactions).
 #
 #          Covers:
 #            - All 12 ILcmUI members (10 methods + LastActivityTime +
@@ -376,7 +376,7 @@ class TestNoRollbackToMarkReferenceSurvives:
     # different name (e.g. if a future liblcm version exposes rollback via a
     # differently-named method/property). If that happens, this test will
     # stay green while the docstrings' "no rollback API exists" claims go
-    # stale -- re-verify by reflection (see specs/write-path-transactions/
+    # stale -- re-verify by reflection (see specs/_archive/closed/write-path-transactions/
     # spec.md D1) rather than trusting this sweep alone.
     def test_no_rollbacktomark_string_anywhere_in_flexicon_code(self):
         offenders = []

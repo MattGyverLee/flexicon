@@ -40,4 +40,4 @@ feature-structure orphans, claiming full closure of #231.
   ``python -m pytest tests/operations/test_issue231_allomorph_remove_orphaned.py tests/operations/test_issue231_allomorph_remove_orphaned_offline.py -q``
 - Live (FieldWorks):
   ``FLEXLIBS_REQUIRE_LIVE=1 python -m pytest tests/operations/test_issue231_allomorph_remove_orphaned_live.py -m requires_live_project -q``
-- Evidence: ``specs/231-allomorph-orphans/evidence/offline-231-slice3.md``
+- Evidence: ``specs/_archive/closed/231-allomorph-orphans/evidence/offline-231-slice3.md``

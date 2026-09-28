@@ -1708,7 +1708,7 @@ class MSAOperations(BaseOperations):
         ``Grammar/NaturalClassOperations.py`` directly). That was a false
         "already fixed" marker; do not rely on it. Those two resolvers are
         part of the Class-A caller-usage re-triage tracked in
-        ``specs/260-environment-resolver-cast/STATUS.md`` and have not been
+        ``specs/_archive/closed/260-environment-resolver-cast/STATUS.md`` and have not been
         fixed as of this correction.
 
         Args:

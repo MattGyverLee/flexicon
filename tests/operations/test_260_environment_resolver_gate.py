@@ -43,7 +43,7 @@
 #          post-fix behaviour. Run against unmodified source, these
 #          tests FAIL via an uncaught AttributeError bubbling out of the
 #          resolver's callers. That failure output IS the RED evidence
-#          (specs/260-environment-resolver-cast/evidence/
+#          (specs/_archive/closed/260-environment-resolver-cast/evidence/
 #          live-T2-red-p6-p6b-p7.md). After the guarded cast lands in
 #          __ResolveObject, the same tests pass unmodified (P8) -- no
 #          test-body edits between RED and GREEN.
@@ -83,7 +83,7 @@
 #          new issue, not fixed here (see cycle2-programmer.md).
 #          TestP7DiscoveredWrongPropertyName below locked the DISCOVERY
 #          (the real property names). The fix itself has since landed
-#          under #283 (specs/lcm-member-truth-sweep/spec.md C7/C8):
+#          under #283 (specs/_archive/closed/lcm-member-truth-sweep/spec.md C7/C8):
 #          production now reads/writes LeftContextRA/RightContextRA, and
 #          the class below carries a seeded case proving the getter
 #          returns the real context -- see that class's docstring.
@@ -282,7 +282,7 @@ class TestP7DiscoveredWrongPropertyName:
     would have a live, reproducible anchor instead of having to re-derive
     it.
 
-    INVERTED under specs/lcm-member-truth-sweep/spec.md C8/C7 (#283): the
+    INVERTED under specs/_archive/closed/lcm-member-truth-sweep/spec.md C8/C7 (#283): the
     discovery led directly to the fix, which now reads/writes
     LeftContextRA/RightContextRA in Grammar/EnvironmentOperations.py. The
     no-context assertion below is KEPT (it is still true, for a different
@@ -316,7 +316,7 @@ class TestP7DiscoveredWrongPropertyName:
         )
 
         # NO-CONTEXT CASE (kept, not inverted -- see class docstring and
-        # specs/lcm-member-truth-sweep/spec.md C8). This still asserts
+        # specs/_archive/closed/lcm-member-truth-sweep/spec.md C8). This still asserts
         # None, but now for the genuine reason: a freshly-created
         # environment has no context assigned at all. Before the #283
         # fix it was ALSO None, but for the wrong reason (the property
@@ -341,7 +341,7 @@ class TestP7DiscoveredWrongPropertyName:
         self, sena3_sandbox
     ):
         """
-        Seeded inversion of the P7 discovery (specs/lcm-member-truth-sweep/
+        Seeded inversion of the P7 discovery (specs/_archive/closed/lcm-member-truth-sweep/
         spec.md C7/C8, #283): once a real IPhPhonContext is assigned to
         LeftContextRA, GetLeftContextPattern must return it -- proven by
         HVO equality against a fresh re-read from the LCM, not against the

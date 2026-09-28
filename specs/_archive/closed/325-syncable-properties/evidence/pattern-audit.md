@@ -7,7 +7,7 @@
 `GetSyncableProperties` bodies, `hasattr(..., *RA|*RC)` usage, sync payload
 keys, and `Duplicate` copy blocks; cross-check against
 `tests/contract/snapshots/liblcm_baseline.json` and campaign T0 JSON under
-`specs/325-syncable-properties/evidence/live-T0-*.json`; aligned with
+`specs/_archive/closed/325-syncable-properties/evidence/live-T0-*.json`; aligned with
 `tests/test_syncable_properties_member_ratchet.py` interface map (41 Operations
 files with `GetSyncableProperties`).
 
@@ -39,7 +39,7 @@ same defect class as issue #325 / R7 (`DoNotShowMainEntryInRC` on
 | `Lexicon/EtymologyOperations.py` -- `GetLanguage` / `SetLanguage` via `LanguageRA` | R6 | Deprecated wrappers; `GetLanguages` / `SetLanguages` |
 
 Live proof for the wave-1 write path:
-`specs/325-syncable-properties/evidence/live-T3-syncable-properties.md`
+`specs/_archive/closed/325-syncable-properties/evidence/live-T3-syncable-properties.md`
 (`run_mode`: live).
 
 **Siblings found (out of scope -- file for T9):**

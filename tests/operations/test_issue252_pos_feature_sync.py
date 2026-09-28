@@ -16,7 +16,7 @@
 #   Unlike #251 (MSAOperations), #252's __ResolveObject ALSO had an
 #   independent C2 hole on the HVO entry path that silently dropped the
 #   four PRE-EXISTING scalar/multistring properties too -- see
-#   specs/feature-structure-sync-gap/evidence/live-T7.md prediction P1.
+#   specs/_archive/closed/feature-structure-sync-gap/evidence/live-T7.md prediction P1.
 #   Patterns below are copied from test_issue251_msa_feature_sync.py AS
 #   AMENDED by T6b (falsy-but-present presence-gate tests, direct live
 #   cast test, real on_unresolved propagation assertion, hasattr
@@ -25,7 +25,7 @@
 #   Sections A-C are entirely OFFLINE (no live FLEx project). Section D
 #   (bottom of file, `requires_live_project`) is the LIVE coverage against
 #   a `target_sandbox` (tempdir copy of Target). See
-#   specs/feature-structure-sync-gap/evidence/live-T7.md for the
+#   specs/_archive/closed/feature-structure-sync-gap/evidence/live-T7.md for the
 #   run_mode/pass-fail record.
 #
 #   Platform: Python.NET

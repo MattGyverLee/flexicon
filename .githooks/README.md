@@ -25,7 +25,7 @@ intent, and a possessive or descriptive phrasing still fires:
 BAD:   test(243): pin the fail-open branch; close #243's crew review (T9)
        -> GitHub parsed "close #243" and CLOSED issue #243, against an
           explicit ruling that it stay open. This really happened
-          (commit b0e3d14); see specs/242-paragraph-whitespace/spec.md
+          (commit b0e3d14); see specs/_archive/closed/242-paragraph-whitespace/spec.md
           section 6 and evidence/n7-issue-state.md.
 BAD:   fix(x): Fixes #242's P8 anomaly
 GOOD:  test(243): pin the fail-open branch; close the crew review for #243

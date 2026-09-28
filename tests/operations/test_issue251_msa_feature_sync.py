@@ -29,7 +29,7 @@
 #   `target_sandbox` (tempdir copy of Target), the C2 HVO/GUID-path cast,
 #   the MoUnclassifiedAffixMsa no-raise guarantee against a REAL LCM
 #   object, and the C7 unresolved-GUID raise. See
-#   specs/feature-structure-sync-gap/evidence/live-T6.md for the
+#   specs/_archive/closed/feature-structure-sync-gap/evidence/live-T6.md for the
 #   run_mode/pass-fail record.
 #
 #   Platform: Python.NET
@@ -687,7 +687,7 @@ class TestMSASyncApplyPresenceGate:
     truthiness come apart on purpose: `{}` and `""` are both PRESENT
     but FALSY, so a truthiness-gated implementation would (wrongly)
     treat them as absent and skip `_ApplyFeatureStruc` -- offline-
-    mutation-verified, see specs/feature-structure-sync-gap/evidence/
+    mutation-verified, see specs/_archive/closed/feature-structure-sync-gap/evidence/
     live-T6b.md.
     """
 
@@ -1040,7 +1040,7 @@ class TestMSASyncLiveGetMsaObjectCast:
     returns. Without the cast, `.MsFeaturesOA` raises AttributeError;
     that is exactly the failure mode this class is designed to surface.
     Verified by mutation in a disposable git worktree (removing the
-    cast) -- see specs/feature-structure-sync-gap/evidence/live-T6b.md
+    cast) -- see specs/_archive/closed/feature-structure-sync-gap/evidence/live-T6b.md
     for the exact failure message.
     """
 

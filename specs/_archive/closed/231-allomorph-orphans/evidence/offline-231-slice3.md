@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-24  
 **Branch:** `fix/231-remove-orphaned-live-slice3`  
-**Ruling:** `specs/231-allomorph-orphans/rulings-cron-slice3.md`
+**Ruling:** `specs/_archive/closed/231-allomorph-orphans/rulings-cron-slice3.md`
 
 ## Commands
 

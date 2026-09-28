@@ -186,7 +186,7 @@ class TestNormalizeMatchKeyWhitespaceIdentity:
     An earlier draft of this class asserted the REJECTED NF5 central-strip
     locus: that `normalize_match_key(" x ")` should itself return `"x"`.
     That plan is DEAD. The frozen contract C4
-    (`specs/name-field-whitespace-identity/spec.md:250`) forbids adding
+    (`specs/_archive/closed/name-field-whitespace-identity/spec.md:250`) forbids adding
     `.strip()` to `normalize_match_key`, forbids a shared helper, and fences
     `Shared/string_utils.py` off entirely. The whitespace-insensitivity is
     achieved by an INLINE `.strip()` on BOTH sides at each comparison site

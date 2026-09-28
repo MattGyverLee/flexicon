@@ -2,7 +2,7 @@
 
 ## Ruling
 
-See `specs/265-makefeatstruc-name-operands/rulings.md`.
+See `specs/_archive/closed/265-makefeatstruc-name-operands/rulings.md`.
 
 ## Command
 

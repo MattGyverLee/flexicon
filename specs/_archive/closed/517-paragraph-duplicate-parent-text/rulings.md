@@ -26,4 +26,4 @@
 
 - Offline: `tests/operations/test_issue517_paragraph_duplicate_parent_offline.py`
 - Live: `tests/operations/test_issue517_paragraph_duplicate_parent_live.py`
-- Evidence: `specs/517-paragraph-duplicate-parent-text/evidence/`
+- Evidence: `specs/_archive/closed/517-paragraph-duplicate-parent-text/evidence/`

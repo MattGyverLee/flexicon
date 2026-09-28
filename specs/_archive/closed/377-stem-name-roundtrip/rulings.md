@@ -17,7 +17,7 @@
 Issue #352 fixed `Allomorph.stem_name` to read `StemNameRA.Name` instead of the
 nonexistent `StemName` multistring. Target has zero `IMoStemName` catalog rows,
 so a **set-valued** round-trip could not be live-proven there
-(`specs/352-copyalternatives-audit/evidence/live-allomorph.md`). Sena 3 carries
+(`specs/_archive/closed/352-copyalternatives-audit/evidence/live-allomorph.md`). Sena 3 carries
 real `StemNamesOC` data under part-of-speech objects.
 
 ## RULING (binding)
@@ -40,4 +40,4 @@ real `StemNamesOC` data under part-of-speech objects.
 - Live (required when LCM available):
   `tests/operations/test_issue377_stem_name_roundtrip_live.py` with
   `FLEXLIBS_REQUIRE_LIVE=1` and `sena3_sandbox`
-- Evidence: `specs/377-stem-name-roundtrip/evidence/offline-377-stem-name.md`
+- Evidence: `specs/_archive/closed/377-stem-name-roundtrip/evidence/offline-377-stem-name.md`

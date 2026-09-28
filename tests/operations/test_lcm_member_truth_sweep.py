@@ -207,7 +207,7 @@ class TestPart2EnvironmentContextGroundTruth:
         # NOT inverted under spec.md C7/C8's #283 fix (the LCM surface
         # itself never had LeftContextOA/RightContextOA; only production
         # code's property NAMES were wrong). See
-        # specs/lcm-member-truth-sweep/spec.md C8(c).
+        # specs/_archive/closed/lcm-member-truth-sweep/spec.md C8(c).
         pytest.importorskip("SIL.LCModel")
         import clr
         from SIL.LCModel import IPhEnvironment
@@ -264,7 +264,7 @@ class TestPart2EnvironmentContextGroundTruth:
         and compares LeftContextRA/RightContextRA identity (HVO) to
         determine reference vs. clone semantics.
 
-        INVERTED under specs/lcm-member-truth-sweep/spec.md C7/C8 (#283):
+        INVERTED under specs/_archive/closed/lcm-member-truth-sweep/spec.md C7/C8 (#283):
         this originally only PRINTED its observation, because production
         Duplicate() wrote the nonexistent LeftContextOA/RightContextOA
         names and therefore dropped both contexts unconditionally. Now
@@ -533,7 +533,7 @@ class TestPart5CatalogueSiblingAbsenceRatchets:
     """
     T2.5 -- ruling C13 carve-out (spec.md section 3). Live-reflection
     ABSENCE ratchets for Catalogue 2 sibling rows (see
-    specs/lcm-member-truth-sweep/catalogue2-siblings.md), upgrading them
+    specs/_archive/closed/lcm-member-truth-sweep/catalogue2-siblings.md), upgrading them
     from "snapshot-derived, medium confidence" to "live-confirmed"
     before they are proposed as issues. Also pins ruling C2.
 
@@ -934,7 +934,7 @@ class TestPart7MsaSharingQ2:
 
         print(
             "[Q2] CONCLUSION printed above under [Q2-1]..[Q2-6]; see "
-            "specs/lcm-member-truth-sweep/evidence/live-T4.4-msa-sharing.md "
+            "specs/_archive/closed/lcm-member-truth-sweep/evidence/live-T4.4-msa-sharing.md "
             "for the persisted numbers."
         )
 

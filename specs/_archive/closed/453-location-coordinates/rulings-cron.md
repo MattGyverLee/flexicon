@@ -39,4 +39,4 @@ field integration, live verification on this cloud host (no FieldWorks).
   `python3 -m pytest tests/operations/test_issue453_location_coordinates_offline.py -q`
 - Live (FieldWorks):
   `FLEXLIBS_REQUIRE_LIVE=1 python3 -m pytest tests/operations/test_issue453_location_coordinates_live.py -m requires_live_project -q`
-- Evidence: `specs/453-location-coordinates/evidence/offline-cron.md`
+- Evidence: `specs/_archive/closed/453-location-coordinates/evidence/offline-cron.md`

@@ -12,7 +12,7 @@ The `[Unreleased]` CHANGELOG entry for #341 is already on `main`.
 ## RULING (binding, close-out only)
 
 1. Close #341 with this PR; no further LCM behaviour change.
-2. Evidence remains under `specs/341-cm-possibility-create/evidence/` and the
+2. Evidence remains under `specs/_archive/closed/341-cm-possibility-create/evidence/` and the
    original ruling in `rulings.md`.
 3. Offline ratchet: `tests/test_issue341_possibility_create_pattern.py`
    (parameterless `factory.Create()` in possibility-creation helpers).

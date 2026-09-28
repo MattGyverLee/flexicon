@@ -17,7 +17,7 @@
 #   object is prefixed TEST_ and deleted in a `finally:` block.
 #
 #   Live inventory note (recorded in
-#   specs/250-writingsystem-activation/evidence/live-266-basicipasymbol.md):
+#   specs/_archive/closed/250-writingsystem-activation/evidence/live-266-basicipasymbol.md):
 #   target_sandbox's only two active writing systems are 'en' (analysis,
 #   handle 999000001) and 'etu' (vernacular, handle 999000002) -- neither
 #   contains '-' or '_', so separator divergence (D4-c shape) cannot be

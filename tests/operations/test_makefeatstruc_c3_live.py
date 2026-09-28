@@ -12,7 +12,7 @@
 #   the cycle-5 verification gate, but only via a disposable, uncommitted
 #   probe file in a worktree that has since been removed. This file closes
 #   that shipped-suite coverage gap. See
-#   specs/feature-structure-sync-gap/evidence/live-cycle5-verification-t5.md
+#   specs/_archive/closed/feature-structure-sync-gap/evidence/live-cycle5-verification-t5.md
 #   section 5 for the prose description this file was reconstructed from.
 #
 #   Uses target_sandbox (a fresh tempdir copy of the Target .fwbackup) for
