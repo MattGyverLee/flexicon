@@ -69,6 +69,7 @@ from ..FLExProject import (
 # reaching the caller as a ClassName test or a cast (Principle VI).
 from .morphosyntax_analysis import MorphosyntaxAnalysis
 from .msa_collection import MSACollection
+from ..Shared.feature_struc_utils import c4_to_feat_struc_spec
 
 
 # --- Structured result for RemoveOrphaned (issue #206) ----------------------
@@ -777,44 +778,22 @@ class MSAOperations(BaseOperations):
         Convert one ``_GetFeatureStruc`` (C4 wire-format) dict into the
         plain recursive dict ``_MakeFeatStruc`` accepts as ``specs``.
 
+        Delegates to ``Shared.feature_struc_utils.c4_to_feat_struc_spec``
+        -- the conversion is shared with
+        ``AllomorphOperations.GetRequiredFeatures`` (issue #581) rather
+        than duplicated. See that helper for the full contract
+        (``None`` passthrough, ``{}`` for present-but-empty,
+        ``TypeGuid`` and nested ``"Guid"`` keys dropped).
+
         Args:
             c4: A C4 dict (``{"TypeGuid": ..., "specs": {...}}``) as
                 returned by ``_GetFeatureStruc``, or ``None``.
 
         Returns:
-            dict or None: ``None`` when ``c4`` is ``None`` (mirrors
-            ``_GetFeatureStruc``'s own null passthrough -- a null owning
-            property stays ``None``, never ``{}``). Otherwise a dict keyed
-            by feature GUID string, where each value is either a value
-            GUID string (``IFsClosedValue``) or a nested dict of the same
-            shape (``IFsComplexValue``'s ``ValueOA``) -- exactly the
-            recursive shape ``_MakeFeatStruc`` resolves GUID-string
-            operands against. A present-but-empty struct (``c4 ==
-            {"TypeGuid": ..., "specs": {}}``) converts to ``{}``, not
-            ``None`` -- same presence-vs-emptiness distinction C4 itself
-            preserves.
-
-        Notes:
-            - ``TypeGuid`` at every level is dropped (see the module-level
-              note above this method): it is not part of the
-              ``_MakeFeatStruc`` input shape and ``_MakeFeatStruc`` never
-              writes it back, so keeping it here would be misleading.
-            - The nested ``"Guid"`` key C4 attaches to non-top-level
-              structs (identifying the already-attached
-              ``IFsComplexValue.ValueOA``) is likewise dropped -- a fresh
-              call to ``MakeFeatStruc`` always creates new nested structs
-              and cannot target an existing ``Guid``.
+            dict or None: ``None`` when ``c4`` is ``None``; otherwise the
+            ``MakeFeatStruc``-shaped spec.
         """
-        if c4 is None:
-            return None
-
-        result = {}
-        for feat_guid, value in c4.get("specs", {}).items():
-            if isinstance(value, dict):
-                result[feat_guid] = self.__C4ToFeatStrucSpec(value)
-            else:
-                result[feat_guid] = value
-        return result
+        return c4_to_feat_struc_spec(c4)
 
     def __ResolveMsaForFeatures(self, sense_or_msa):
         """
@@ -1083,6 +1062,72 @@ class MSAOperations(BaseOperations):
         # and any out-of-C1-table ClassName (e.g. MoDerivStepMsa): no
         # feature-struct property to read.
         return None
+
+    # ------------------------------------------------------------------
+    # Navigation
+    # ------------------------------------------------------------------
+
+    @OperationsMethod
+    def GetOwningEntry(self, msa_or_hvo):
+        """
+        Get the lexical entry that owns this MSA.
+
+        Same shape and semantics as
+        ``AllomorphOperations.GetOwningEntry`` (issue #581): climbs the
+        ownership chain via ``OwnerOfClass`` to the nearest ``ILexEntry``
+        ancestor, rather than taking a single ``.Owner`` hop.
+
+        Args:
+            msa_or_hvo: An MSA object (``IMoStemMsa``,
+                ``IMoInflAffMsa``, ``IMoDerivAffMsa`` or
+                ``IMoUnclassifiedAffixMsa``), HVO, or GUID string.
+
+        Returns:
+            ILexEntry: The owning entry, or None if the MSA has no
+            owning entry anywhere above it in the ownership chain.
+
+        Raises:
+            FP_NullParameterError: If msa_or_hvo is None.
+
+        Example:
+            >>> msa = project.MSA.GetAll(entry)[0]
+            >>> owner = project.MSA.GetOwningEntry(msa)
+            >>> print(project.LexEntry.GetHeadword(owner))
+            run
+
+            >>> # Accepts an HVO or GUID string as well
+            >>> owner = project.MSA.GetOwningEntry(msa_hvo)
+
+        Notes:
+            - Returns None rather than raising when no owning entry
+              exists. Callers must handle None; do not assume an entry
+              is always found.
+            - The null guard runs BEFORE the ILexEntry cast, because
+              casting a null result is the crash this guard exists to
+              prevent (same template as
+              ``AllomorphOperations.GetOwningEntry``; the one-hop
+              ``.Owner`` variants elsewhere are valid for their own
+              owner shapes and are deliberately NOT the template here).
+
+        See Also:
+            GetAll, AllomorphOperations.GetOwningEntry
+        """
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+
+        # Template: AllomorphOperations.GetOwningEntry -- OwnerOfClass
+        # walks Owner recursively and answers null when no ancestor of
+        # the class is found (liblcm src/SIL.LCModel/DomainImpl/
+        # CmObject.cs:3349).
+        _owner = msa.OwnerOfClass(LexEntryTags.kClassId)
+        if _owner is None:
+            return None
+
+        # Cast to the declared return type only after the null guard.
+        # Raw OwnerOfClass output is typed ICmObject; pythonnet surfaces
+        # ILexEntry members only after the explicit interface cast.
+        return ILexEntry(_owner)
 
     # ------------------------------------------------------------------
     # Affix MSA variant conversion
