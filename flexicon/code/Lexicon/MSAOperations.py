@@ -35,6 +35,7 @@ from ..BaseOperations import BaseOperations, OperationsMethod
 
 # Import FLEx LCM types
 from SIL.LCModel import (
+    ICmPossibility,
     IMoStemMsa,
     IMoStemMsaFactory,
     IMoDerivAffMsa,
@@ -744,6 +745,245 @@ class MSAOperations(BaseOperations):
             "MoDerivAffMsa": "derivational",
             "MoUnclassifiedAffixMsa": "unclassified",
         }.get(class_name, class_name)
+
+    # ------------------------------------------------------------------
+    # MSA exception features (issue #574)
+    # ------------------------------------------------------------------
+    #
+    # FLEx shows "Exception features" on a stem, inflectional-affix, or
+    # derivational-affix MSA (used by HermitCrab to block rules/affixes).
+    # In LCM this is the ProdRestrictRC reference collection of
+    # ICmPossibility items -- in practice, inflection classes drawn from
+    # the project's "Production Restrictions" list (see
+    # InflectionFeatureOperations.InflectionClassGetAll). MoUnclassifiedAffixMsa
+    # does not carry ProdRestrictRC.
+    #
+    # NOTE: this is a DIFFERENT field from
+    # LexEntryOperations.GetRestrictions / LexSenseOperations.GetRestrictions
+    # (the free-text Restrictions multistring), which is not a substitute.
+
+    #: MSA ClassNames that carry ProdRestrictRC ("Exception features").
+    _PROD_RESTRICT_MSA_CLASSES = frozenset(
+        ("MoStemMsa", "MoInflAffMsa", "MoDerivAffMsa")
+    )
+
+    def __ProdRestrictRC(self, msa):
+        """
+        Return the ``ProdRestrictRC`` collection on ``msa``, or ``None``
+        when the MSA's ``ClassName`` is not one of the three types that
+        carry it (``MoUnclassifiedAffixMsa`` has no such member).
+
+        Never raises on a wrong-type MSA -- mirrors
+        ``GetInflAffMsaSlots``'s graceful non-raise on a wrong-type MSA.
+        """
+        if (
+            getattr(msa, "ClassName", None)
+            not in self._PROD_RESTRICT_MSA_CLASSES
+        ):
+            return None
+        return getattr(msa, "ProdRestrictRC", None)
+
+    def __ResolveExceptionFeature(self, feature_or_hvo):
+        """
+        Resolve an exception-feature parameter to ``ICmPossibility``.
+
+        Accepts an ``ICmPossibility`` object (or a subclass instance such
+        as ``IMoInflClass``), an HVO (int), or a GUID (str).
+
+        Raises:
+            FP_ParameterError: If the resolved object is not a
+            ``CmPossibility``.
+        """
+        obj = self._UnwrapLcm(feature_or_hvo)
+        if isinstance(obj, (int, str)):
+            obj = self.project.Object(obj)
+        try:
+            return ICmPossibility(obj)
+        except Exception:
+            raise FP_ParameterError(
+                "feature must be an ICmPossibility (or its HVO/GUID); "
+                f"got {obj!r}"
+            )
+
+    @OperationsMethod
+    def GetExceptionFeatures(self, msa_or_hvo):
+        """
+        Get an MSA's exception features ("Exception features" in FLEx).
+
+        Reads the ``ProdRestrictRC`` reference collection on a stem,
+        inflectional-affix, or derivational-affix MSA. HermitCrab uses
+        these features to block rules/affixes. In practice the items are
+        inflection classes drawn from the project's "Production
+        Restrictions" list (see
+        ``InflectionFeatureOperations.InflectionClassGetAll``).
+
+        Args:
+            msa_or_hvo: An MSA object, HVO, or GUID (resolved via the
+                internal ``__GetMsaObject``).
+
+        Returns:
+            list[ICmPossibility]: The exception-feature possibility
+            objects, so callers can read names/abbreviations via the
+            existing possibility-list wrappers (e.g.
+            ``PossibilityListOperations.GetItemName``). ``[]`` when the
+            MSA type does not carry ``ProdRestrictRC``
+            (``MoUnclassifiedAffixMsa``) or when none are set -- never
+            raises on a wrong-type MSA.
+
+        Raises:
+            FP_NullParameterError: If ``msa_or_hvo`` is null.
+
+        Example:
+            >>> feats = project.MSA.GetExceptionFeatures(msa)
+            >>> for feat in feats:
+            ...     name = project.PossibilityLists.GetItemName(feat)
+            ...     print(f"blocked unless: {name}")
+
+            >>> # Unclassified-affix MSAs carry no exception features
+            >>> project.MSA.GetExceptionFeatures(unclassified_msa)
+            []
+
+        Notes:
+            - This is NOT the same field as
+              ``LexEntryOperations.GetRestrictions`` /
+              ``LexSenseOperations.GetRestrictions`` (the free-text
+              Restrictions multistring).
+
+        See Also:
+            AddExceptionFeature, RemoveExceptionFeature,
+            InflectionFeatureOperations.InflectionClassGetAll,
+            PossibilityListOperations.GetItemName
+        """
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        rc = self.__ProdRestrictRC(msa)
+        if rc is None:
+            return []
+        return [ICmPossibility(item) for item in rc]
+
+    @OperationsMethod
+    def AddExceptionFeature(self, msa_or_hvo, feature_or_hvo):
+        """
+        Add an exception feature to an MSA.
+
+        Appends one ``ICmPossibility`` (in practice, an inflection class
+        from the project's "Production Restrictions" list) to the MSA's
+        ``ProdRestrictRC`` ("Exception features" in FLEx).
+
+        Args:
+            msa_or_hvo: A stem, inflectional-affix, or
+                derivational-affix MSA object, HVO, or GUID (resolved via
+                the internal ``__GetMsaObject``).
+            feature_or_hvo: An ``ICmPossibility`` object (or subclass
+                instance such as ``IMoInflClass``), HVO, or GUID.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write
+                enabled.
+            FP_NullParameterError: If either parameter is null.
+            FP_ParameterError: If the MSA type does not carry
+                ``ProdRestrictRC`` (``MoUnclassifiedAffixMsa``), or the
+                feature is not an ``ICmPossibility``.
+
+        Example:
+            >>> classes = list(
+            ...     project.InflectionFeatures.InflectionClassGetAll()
+            ... )
+            >>> if classes:
+            ...     project.MSA.AddExceptionFeature(msa, classes[0])
+
+            >>> # ... or by HVO
+            >>> project.MSA.AddExceptionFeature(msa_hvo, class_hvo)
+
+        Notes:
+            - Adding a feature that is already present is a no-op (no
+              redundant undo entry): the membership test stays outside
+              the transaction, mirroring ``RemovePhoneEnv``'s D5 idiom.
+            - This is NOT the free-text Restrictions field -- see
+              ``LexEntryOperations.GetRestrictions`` for that.
+
+        See Also:
+            GetExceptionFeatures, RemoveExceptionFeature
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+        self._ValidateParam(feature_or_hvo, "feature_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        rc = self.__ProdRestrictRC(msa)
+        if rc is None:
+            raise FP_ParameterError(
+                f"MSA type '{getattr(msa, 'ClassName', None)}' does not "
+                "carry exception features (ProdRestrictRC); only "
+                "MoStemMsa, MoInflAffMsa and MoDerivAffMsa do."
+            )
+        poss = self.__ResolveExceptionFeature(feature_or_hvo)
+
+        # Membership test stays outside the transaction so a redundant add
+        # is a true no-op rather than an empty named undo entry (D5 --
+        # same rationale as AllomorphOperations.RemovePhoneEnv).
+        if poss not in rc:
+            with self._TransactionCM("Add exception feature"):
+                rc.Add(poss)
+
+    @OperationsMethod
+    def RemoveExceptionFeature(self, msa_or_hvo, feature_or_hvo):
+        """
+        Remove an exception feature from an MSA.
+
+        Removes one ``ICmPossibility`` from the MSA's ``ProdRestrictRC``
+        ("Exception features" in FLEx).
+
+        Args:
+            msa_or_hvo: A stem, inflectional-affix, or
+                derivational-affix MSA object, HVO, or GUID (resolved via
+                the internal ``__GetMsaObject``).
+            feature_or_hvo: An ``ICmPossibility`` object (or subclass
+                instance such as ``IMoInflClass``), HVO, or GUID.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write
+                enabled.
+            FP_NullParameterError: If either parameter is null.
+            FP_ParameterError: If the MSA type does not carry
+                ``ProdRestrictRC`` (``MoUnclassifiedAffixMsa``), or the
+                feature is not an ``ICmPossibility``.
+
+        Example:
+            >>> feats = project.MSA.GetExceptionFeatures(msa)
+            >>> if feats:
+            ...     project.MSA.RemoveExceptionFeature(msa, feats[0])
+
+        Notes:
+            - If the feature is not present, this is a no-op (no error):
+              the membership test stays outside the transaction so a
+              redundant remove never opens an empty named undo entry
+              (D5 -- same idiom as
+              ``AllomorphOperations.RemovePhoneEnv``).
+
+        See Also:
+            GetExceptionFeatures, AddExceptionFeature
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+        self._ValidateParam(feature_or_hvo, "feature_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        rc = self.__ProdRestrictRC(msa)
+        if rc is None:
+            raise FP_ParameterError(
+                f"MSA type '{getattr(msa, 'ClassName', None)}' does not "
+                "carry exception features (ProdRestrictRC); only "
+                "MoStemMsa, MoInflAffMsa and MoDerivAffMsa do."
+            )
+        poss = self.__ResolveExceptionFeature(feature_or_hvo)
+
+        # Membership test stays outside the bracket so a redundant remove
+        # is a true no-op rather than an empty named undo entry (D5).
+        if poss in rc:
+            with self._TransactionCM("Remove exception feature"):
+                rc.Remove(poss)
 
     # ------------------------------------------------------------------
     # MSA feature-structure getters (issue #544 -- reverse of MakeFeatStruc)
