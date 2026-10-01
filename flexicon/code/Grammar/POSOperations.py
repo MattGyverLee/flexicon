@@ -33,7 +33,7 @@ from ..FLExProject import (
 )
 
 # Import LCM casting utilities for pythonnet interface casting
-from ..lcm_casting import get_pos_from_msa
+from ..lcm_casting import cast_to_concrete, get_pos_from_msa
 
 # Import string utilities
 from ..Shared.string_utils import normalize_match_key, normalize_text
@@ -807,12 +807,16 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
 
     @wrap_enumerable
     @OperationsMethod
-    def GetInflectionClasses(self, pos_or_hvo):
+    def GetInflectionClasses(self, pos_or_hvo, recursive=False):
         """
         Get all inflection classes associated with a part of speech.
 
         Args:
             pos_or_hvo: The IPartOfSpeech object or HVO.
+            recursive (bool): If False (default), returns only the inflection
+                classes directly owned by the POS. If True, also walks each
+                class's ``IMoInflClass.SubclassesOC`` depth-first, so nested
+                subclass hierarchies are included. Cycle-guarded.
 
         Returns:
             list: List of inflection class objects (empty list if none).
@@ -830,21 +834,227 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             Irregular Verb
             Modal Verb
 
+            >>> # Include nested subclasses as well
+            >>> all_classes = posOps.GetInflectionClasses(verb, recursive=True)
+
         Notes:
             - Inflection classes define morphological paradigms
             - Each POS can have multiple inflection classes
             - Returns empty list if no inflection classes are defined
             - Used for morphological analysis and generation
+            - Use ``project.InflectionFeatures.InflectionClassGetName`` /
+              ``InflectionClassGetAbbreviation`` to read each class's
+              Name/Abbreviation multistrings
 
         See Also:
-            GetAffixSlots
+            GetAffixSlots, GetStemNames
         """
         self._ValidateParam(pos_or_hvo, "pos_or_hvo")
 
         pos = self.__ResolveObject(pos_or_hvo)
 
         # IPartOfSpeech has InflectionClassesOC
-        return list(pos.InflectionClassesOC)
+        top_level = list(pos.InflectionClassesOC)
+        if not recursive:
+            return top_level
+        return self.__CollectInflectionClassesRecursive(top_level)
+
+    def __CollectInflectionClassesRecursive(self, classes):
+        """Depth-first walk of ``IMoInflClass.SubclassesOC``.
+
+        Cycle-guarded on HVO so a pathological subclass loop cannot
+        recurse forever. Parent classes are yielded before their
+        subclasses (pre-order).
+        """
+        result = []
+        seen = set()
+
+        def _visit(ic):
+            hvo = getattr(ic, "Hvo", None)
+            if hvo is not None:
+                hvo = int(hvo)
+                if hvo in seen:
+                    return
+                seen.add(hvo)
+            result.append(ic)
+            subclasses = getattr(ic, "SubclassesOC", None) or []
+            for sub in subclasses:
+                _visit(sub)
+
+        for ic in classes:
+            _visit(ic)
+        return result
+
+    @wrap_enumerable
+    @OperationsMethod
+    def GetStemNames(self, pos_or_hvo):
+        """
+        Get all stem names owned by a part of speech.
+
+        Stem names (``IMoStemName``) are the catalog of named stem
+        variants a POS defines (e.g. "root", "stem 1", "stem 2"); stem
+        allomorphs point at one via ``IMoStemAllomorph.StemNameRA`` (see
+        ``AllomorphOperations.GetStemName`` / ``SetStemName``).
+
+        Args:
+            pos_or_hvo: The IPartOfSpeech object or HVO.
+
+        Returns:
+            list: List of IMoStemName objects (empty list if none).
+
+        Raises:
+            FP_NullParameterError: If pos_or_hvo is None.
+
+        Example:
+            >>> posOps = POSOperations(project)
+            >>> verb = posOps.Find("Verb")
+            >>> for stem_name in posOps.GetStemNames(verb):
+            ...     print(posOps.GetStemNameText(stem_name))
+            root
+            stem 1
+
+        Notes:
+            - Returns the raw IMoStemName objects, not text: use
+              GetStemNameText / GetStemNameAbbreviation to read their
+              multistrings, GetStemNameRegionCount for their regions
+            - Returns empty list if the POS defines no stem names
+
+        See Also:
+            GetInflectionClasses, GetStemNameText, GetStemNameRegionCount
+        """
+        self._ValidateParam(pos_or_hvo, "pos_or_hvo")
+
+        pos = self.__ResolveObject(pos_or_hvo)
+
+        # IPartOfSpeech has StemNamesOC
+        return list(pos.StemNamesOC)
+
+    @OperationsMethod
+    def GetStemNameText(self, stem_name_or_hvo, wsHandle=None):
+        """
+        Get the name text of a stem name (``IMoStemName.Name`` multistring).
+
+        Args:
+            stem_name_or_hvo: The IMoStemName object or HVO.
+            wsHandle: Optional writing system handle. Defaults to analysis WS.
+
+        Returns:
+            str: The stem name text, or empty string if not set. Never
+            ``"***"`` -- the FLEx empty-multistring placeholder is
+            normalized to ``""``.
+
+        Raises:
+            FP_NullParameterError: If stem_name_or_hvo is None.
+
+        Example:
+            >>> posOps = POSOperations(project)
+            >>> verb = posOps.Find("Verb")
+            >>> stem_names = posOps.GetStemNames(verb)
+            >>> if stem_names:
+            ...     print(posOps.GetStemNameText(stem_names[0]))
+            root
+
+        See Also:
+            GetStemNames, GetStemNameAbbreviation, GetStemNameRegionCount
+        """
+        self._ValidateParam(stem_name_or_hvo, "stem_name_or_hvo")
+
+        stem_name = self.__ResolveStemName(stem_name_or_hvo)
+        wsHandle = self.__WSHandle(wsHandle)
+
+        name_ms = getattr(stem_name, "Name", None)
+        if name_ms is None:
+            return ""
+        text = ITsString(name_ms.get_String(wsHandle)).Text
+        # _NormalizeMultiString turns "***" into "" but leaves None alone;
+        # this method promises a str, so coerce the None-on-unset case too.
+        return self._NormalizeMultiString(text) or ""
+
+    @OperationsMethod
+    def GetStemNameAbbreviation(self, stem_name_or_hvo, wsHandle=None):
+        """
+        Get the abbreviation of a stem name (``IMoStemName.Abbreviation``
+        multistring).
+
+        Args:
+            stem_name_or_hvo: The IMoStemName object or HVO.
+            wsHandle: Optional writing system handle. Defaults to analysis WS.
+
+        Returns:
+            str: The stem name abbreviation, or empty string if not set.
+            Never ``"***"``.
+
+        Raises:
+            FP_NullParameterError: If stem_name_or_hvo is None.
+
+        Example:
+            >>> posOps = POSOperations(project)
+            >>> verb = posOps.Find("Verb")
+            >>> stem_names = posOps.GetStemNames(verb)
+            >>> if stem_names:
+            ...     print(posOps.GetStemNameAbbreviation(stem_names[0]))
+
+        See Also:
+            GetStemNames, GetStemNameText, GetStemNameRegionCount
+        """
+        self._ValidateParam(stem_name_or_hvo, "stem_name_or_hvo")
+
+        stem_name = self.__ResolveStemName(stem_name_or_hvo)
+        wsHandle = self.__WSHandle(wsHandle)
+
+        abbr_ms = getattr(stem_name, "Abbreviation", None)
+        if abbr_ms is None:
+            return ""
+        text = ITsString(abbr_ms.get_String(wsHandle)).Text
+        return self._NormalizeMultiString(text) or ""
+
+    @OperationsMethod
+    def GetStemNameRegionCount(self, stem_name_or_hvo):
+        """
+        Get the number of regions on a stem name (``IMoStemName.RegionsOC``).
+
+        Args:
+            stem_name_or_hvo: The IMoStemName object or HVO.
+
+        Returns:
+            int: The region count, or 0 when the collection is absent.
+
+        Raises:
+            FP_NullParameterError: If stem_name_or_hvo is None.
+
+        Example:
+            >>> posOps = POSOperations(project)
+            >>> verb = posOps.Find("Verb")
+            >>> for stem_name in posOps.GetStemNames(verb):
+            ...     print(posOps.GetStemNameText(stem_name),
+            ...           posOps.GetStemNameRegionCount(stem_name))
+            root 0
+
+        See Also:
+            GetStemNames, GetStemNameText
+        """
+        self._ValidateParam(stem_name_or_hvo, "stem_name_or_hvo")
+
+        stem_name = self.__ResolveStemName(stem_name_or_hvo)
+
+        regions = getattr(stem_name, "RegionsOC", None)
+        return regions.Count if regions else 0
+
+    def __ResolveStemName(self, stem_name_or_hvo):
+        """Resolve HVO or object to an IMoStemName.
+
+        ``cast_to_concrete`` is total -- an unrecognized ``ClassName``
+        (or a non-LCM input) yields the original object unchanged, so
+        this resolver never raises on a miss, mirroring
+        ``__ResolveObject``'s shape. Read methods guard member access
+        with ``getattr`` instead.
+        """
+        if isinstance(stem_name_or_hvo, int):
+            obj = self.project.Object(stem_name_or_hvo)
+        else:
+            obj = self._UnwrapLcmObject(stem_name_or_hvo)
+
+        return cast_to_concrete(obj)
 
     @wrap_enumerable
     @OperationsMethod

@@ -21,7 +21,9 @@ operations across the multiple concrete types:
 - PhSimpleContextNC
 - PhComplexContextSeg
 - PhComplexContextNC
-- PhBoundaryContext
+- PhSimpleContextBdry
+- PhIterationContext
+- PhSequenceContext
 
 Problem:
     GetAll() or input_contexts returns objects with multiple concrete implementations.
@@ -48,7 +50,7 @@ Example::
     print(contexts)  # Shows type breakdown
     # ContextCollection (8 total)
     #   PhSimpleContextSeg: 4 (50%)
-    #   PhBoundaryContext: 3 (37%)
+    #   PhSimpleContextBdry: 3 (37%)
     #   PhSimpleContextNC: 1 (13%)
 
     # Filter by type
@@ -321,7 +323,7 @@ class ContextCollection(SmartCollection):
         """
         Get only the boundary contexts.
 
-        Convenience method for filtering to PhBoundaryContext objects only.
+        Convenience method for filtering to PhSimpleContextBdry objects only.
 
         Returns:
             ContextCollection: New collection with only boundary context objects.
@@ -330,14 +332,13 @@ class ContextCollection(SmartCollection):
 
             boundaries = contexts.boundary_contexts()
             for bctx in boundaries:
-                btype = bctx.boundary_type
-                print(f"Boundary type: {btype}")
+                print(f"Boundary: {bctx.boundary_name}")
 
         Notes:
             - Boundary contexts represent word/morpheme boundaries
-            - Equivalent to by_type('PhBoundaryContext')
+            - Equivalent to by_type('PhSimpleContextBdry')
         """
-        return self.by_type("PhBoundaryContext")
+        return self.by_type("PhSimpleContextBdry")
 
     def __repr__(self):
         """Technical representation."""

@@ -554,9 +554,20 @@ class VariantOperations(BaseOperations):
 
             # Determine insertion position
             if insert_after:
-                # Insert after source variant
-                source_index = parent.EntryRefsOS.IndexOf(source)
-                parent.EntryRefsOS.Insert(source_index + 1, duplicate)
+                # Index by HVO (issue #597). EntryRefsOS can yield bare interface
+                # views whose Python identity differs from source.
+                ref_list = list(parent.EntryRefsOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, ref in enumerate(ref_list):
+                    if ref.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(ref_list)
+                else:
+                    insert_index = source_index + 1
+                parent.EntryRefsOS.Insert(insert_index, duplicate)
             else:
                 # Insert at end
                 parent.EntryRefsOS.Add(duplicate)

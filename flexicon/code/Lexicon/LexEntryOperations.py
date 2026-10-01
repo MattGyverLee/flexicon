@@ -1471,14 +1471,14 @@ class LexEntryOperations(BaseOperations):
             >>> entry = project.LexEntry.Find("run")
             >>> morph_type = project.LexEntry.GetMorphType(entry)
             >>> if morph_type:
-            ...     print(ITsString(morph_type.Name.BestAnalysisAlternative).Text)
+            ...     print(project.LexEntry.GetMorphTypeName(morph_type))
             stem
 
             >>> # Check if entry is an affix
             >>> suffix = project.LexEntry.Find("-ing")
             >>> mt = project.LexEntry.GetMorphType(suffix)
             >>> if mt:
-            ...     name = ITsString(mt.Name.BestAnalysisAlternative).Text
+            ...     name = project.LexEntry.GetMorphTypeName(mt)
             ...     if name in ("prefix", "suffix", "infix"):
             ...         print("This is an affix")
 
@@ -1487,9 +1487,10 @@ class LexEntryOperations(BaseOperations):
             - Returns None if lexeme form has no morph type set
             - Common morph types: stem, root, prefix, suffix, infix, circumfix
             - Morph type affects parsing and morphological analysis
+            - Use GetMorphTypeName(morph_type) for the display name
 
         See Also:
-            SetMorphType, Create
+            GetMorphTypeName, SetMorphType, Create
         """
         self._ValidateParam(entry_or_hvo, "entry_or_hvo")
 
@@ -1520,7 +1521,7 @@ class LexEntryOperations(BaseOperations):
             >>> entry = project.LexEntry.Find("-ing")
             >>> project.LexEntry.SetMorphType(entry, "suffix")
             >>> mt = project.LexEntry.GetMorphType(entry)
-            >>> print(ITsString(mt.Name.BestAnalysisAlternative).Text)
+            >>> print(project.LexEntry.GetMorphTypeName(mt))
             suffix
 
             >>> # Set using morph type object
@@ -1536,7 +1537,8 @@ class LexEntryOperations(BaseOperations):
             - Project must have the morph type defined
 
         See Also:
-            GetMorphType, Create, GetAvailableMorphTypes, ValidateMorphType
+            GetMorphType, GetMorphTypeName, Create, GetAvailableMorphTypes,
+            ValidateMorphType
         """
         self._EnsureWriteEnabled()
 
@@ -1589,7 +1591,7 @@ class LexEntryOperations(BaseOperations):
             >>> top_level = project.LexEntry.GetAvailableMorphTypes(recursive=False)
 
         See Also:
-            ValidateMorphType, SetMorphType, Create
+            ValidateMorphType, SetMorphType, Create, GetMorphTypeName
         """
         self._RejectLegacyKwargs(kwargs, {
             "include_subcategories": (
@@ -1637,7 +1639,7 @@ class LexEntryOperations(BaseOperations):
         Example:
             >>> is_valid, mt, is_stem = project.LexEntry.ValidateMorphType("suffix")
             >>> if is_valid:
-            ...     print(f"Valid morph type: {mt.Name.BestAnalysisAlternative.Text}")
+            ...     print(f"Valid morph type: {project.LexEntry.GetMorphTypeName(mt)}")
             ...     print(f"Is stem type: {is_stem}")
             Valid morph type: suffix
             Is stem type: False
@@ -1663,6 +1665,77 @@ class LexEntryOperations(BaseOperations):
             return (True, morph_type, is_stem)
 
         return (False, None, None)
+
+    @OperationsMethod
+    def GetMorphTypeName(self, morph_type_or_None, wsHandle=None):
+        """
+        Get the display name of an already-resolved morph type object.
+
+        Takes the IMoMorphType returned by :meth:`GetMorphType` (on
+        either ``LexEntryOperations`` or ``AllomorphOperations`` -- the
+        objects are shared) and returns its name, so callers no longer
+        need the raw ``ITsString(mt.Name.BestAnalysisAlternative).Text``
+        access (issue #583).
+
+        Args:
+            morph_type_or_None: An IMoMorphType object, or None (as
+                returned by GetMorphType when no morph type is set)
+            wsHandle: Optional writing system handle. When None
+                (default), the best analysis alternative is used -- the
+                same source :meth:`GetAvailableMorphTypes` reads via
+                ``best_analysis_text``. Otherwise the name in the given
+                writing system.
+
+        Returns:
+            str: The morph type name (e.g. "stem", "suffix"). Returns
+            ``""`` -- never ``"***"`` or ``None`` -- when
+            ``morph_type_or_None`` is None or the name is unset, per the
+            multistring-normalization convention.
+
+        Raises:
+            FP_WritingSystemError: If wsHandle refers to a writing
+                system not configured in the project.
+
+        Example:
+            >>> entry = project.LexEntry.Find("run")
+            >>> mt = project.LexEntry.GetMorphType(entry)
+            >>> print(project.LexEntry.GetMorphTypeName(mt))
+            stem
+
+            >>> # Filter to stem entries (the senses-by-gloss.py recipe
+            >>> # pattern): compare the name, not the object
+            >>> if project.LexEntry.GetMorphTypeName(mt) == "stem":
+            ...     print("stem entry")
+            stem entry
+
+            >>> # None-safe: entries with no morph type set
+            >>> print(repr(project.LexEntry.GetMorphTypeName(None)))
+            ''
+
+            >>> # Works for allomorph morph types too (shared IMoMorphType
+            >>> # objects)
+            >>> allo_mt = project.Allomorphs.GetMorphType(allomorph)
+            >>> print(project.LexEntry.GetMorphTypeName(allo_mt))
+            suffix
+
+        Notes:
+            - Read-only; the IMoMorphType catalog itself is unchanged
+            - The default (wsHandle=None) path reuses the
+              ``best_analysis_text`` helper that
+              :meth:`GetAvailableMorphTypes` relies on
+
+        See Also:
+            GetMorphType, GetAvailableMorphTypes, ValidateMorphType,
+            SetMorphType
+        """
+        if morph_type_or_None is None:
+            return ""
+        if wsHandle is None:
+            return best_analysis_text(morph_type_or_None.Name)
+        ws = self.__WSHandleAnalysis(wsHandle)
+        return self._NormalizeMultiString(
+            ITsString(morph_type_or_None.Name.get_String(ws)).Text
+        )
 
     @OperationsMethod
     def GetAllByMorphType(self, name_or_list, match_allomorphs=False):

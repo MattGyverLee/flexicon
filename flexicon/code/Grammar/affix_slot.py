@@ -180,7 +180,9 @@ class AffixSlot(LCMObjectWrapper):
         Example::
 
             if slot.owner_pos:
-                print(f"Slot for POS: {slot.owner_pos.Name}")
+                from flexicon.code.Shared.string_utils import best_analysis_text
+
+                print(f"Slot for POS: {best_analysis_text(slot.owner_pos.Name)}")
         """
         if not hasattr(self._concrete, "OwnerOfClass"):
             return None

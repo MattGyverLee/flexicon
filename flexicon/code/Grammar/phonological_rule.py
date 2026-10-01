@@ -75,6 +75,7 @@ import warnings
 from ..Shared.wrapper_base import LCMObjectWrapper
 from ..System.phonological_context import PhonologicalContext
 from ..System.context_collection import ContextCollection
+from ..System.rule_feature import RuleFeature, RuleFeatureCollection
 
 logger = logging.getLogger(__name__)
 
@@ -278,6 +279,299 @@ class PhonologicalRule(LCMObjectWrapper):
             return list(self._concrete.RightHandSidesOS)
         except Exception:
             return []
+
+    # ========== Environment, rule-feature, POS and disabled readers (C1-C6, C8) ==========
+
+    def _rhs_at(self, rhs_index):
+        """
+        Return the RHS owning sequence element at rhs_index.
+
+        Returns None when the rule has no environments (a metathesis rule,
+        or a regular rule with no RHS). Raises IndexError for an
+        out-of-range index on a rule that has RHSs, so "no environment
+        here" (None) is never conflated with "bad index".
+
+        Args:
+            rhs_index: Zero-based index into RightHandSidesOS.
+
+        Returns:
+            The IPhSegRuleRHS at rhs_index, or None.
+
+        Raises:
+            IndexError: If the rule has RHSs and rhs_index is out of range.
+        """
+        if not self.has_environments:
+            return None
+        try:
+            rhs_list = list(self._concrete.RightHandSidesOS)
+        except Exception:
+            return None
+        if rhs_index < 0 or rhs_index >= len(rhs_list):
+            raise IndexError(
+                f"rhs_index {rhs_index!r} out of range: "
+                f"rule has {len(rhs_list)} right-hand side(s)"
+            )
+        return rhs_list[rhs_index]
+
+    @property
+    def has_environments(self) -> bool:
+        """
+        Check if this rule carries per-RHS environments.
+
+        Returns:
+            bool: True only for a concrete IPhRegularRule with at least
+                one RHS. A metathesis rule has no RightHandSidesOS and
+                therefore no environment at all.
+
+        Example::
+
+            if wrapped.has_environments:
+                print(wrapped.left_context(0).context_name)
+
+        Notes:
+            - The capability check replaces a ClassName test (API design
+              rule 4); callers ask this before asking for a context.
+            - Every read goes through self._concrete (C10): a raw
+              PhonRulesOS element reads RightHandSidesOS as absent until
+              cast, while the wrapper reports it.
+        """
+        try:
+            if self.class_type != "PhRegularRule":
+                return False
+            rhs = getattr(self._concrete, "RightHandSidesOS", None)
+            if rhs is None:
+                return False
+            return rhs.Count > 0
+        except Exception:
+            return False
+
+    def left_context(self, rhs_index=0):
+        """
+        Get the left environment of one right-hand side.
+
+        Args:
+            rhs_index: Zero-based index into RightHandSidesOS. Defaults
+                to 0 because WireRule only ever writes index 0 and a
+                single-RHS rule is the overwhelming norm.
+
+        Returns:
+            Optional[PhonologicalContext]: The LeftContextOA wrapped, or
+                None when the slot is unset or the rule is a metathesis
+                rule (which has no environment; see has_environments).
+
+        Raises:
+            IndexError: If rhs_index is out of range on a rule that has
+                RHSs.
+
+        Example::
+
+            ctx = wrapped.left_context()
+            if ctx is not None:
+                print(ctx.context_name)
+
+        Notes:
+            - A metathesis rule yields None silently: no warnings.warn is
+              emitted, since a caller iterating GetAll() would get one
+              per metathesis rule per call (C2, Q2 ruling).
+            - Returns a wrapper, not a raw IPhPhonContext: the raw
+              interface declares no content members, so handing one out
+              would defeat the wrapper (C1).
+        """
+        rhs = self._rhs_at(rhs_index)
+        if rhs is None:
+            return None
+        try:
+            ctx = getattr(rhs, "LeftContextOA", None)
+        except Exception:
+            return None
+        if ctx is None:
+            return None
+        return PhonologicalContext(ctx)
+
+    def right_context(self, rhs_index=0):
+        """
+        Get the right environment of one right-hand side.
+
+        Args:
+            rhs_index: Zero-based index into RightHandSidesOS. Defaults
+                to 0 because WireRule only ever writes index 0 and a
+                single-RHS rule is the overwhelming norm.
+
+        Returns:
+            Optional[PhonologicalContext]: The RightContextOA wrapped, or
+                None when the slot is unset or the rule is a metathesis
+                rule (which has no environment; see has_environments).
+
+        Raises:
+            IndexError: If rhs_index is out of range on a rule that has
+                RHSs.
+
+        Example::
+
+            ctx = wrapped.right_context()
+            if ctx is not None:
+                print(ctx.context_name)
+
+        Notes:
+            - A metathesis rule yields None silently: no warnings.warn is
+              emitted, since a caller iterating GetAll() would get one
+              per metathesis rule per call (C2, Q2 ruling).
+            - Returns a wrapper, not a raw IPhPhonContext: the raw
+              interface declares no content members, so handing one out
+              would defeat the wrapper (C1).
+        """
+        rhs = self._rhs_at(rhs_index)
+        if rhs is None:
+            return None
+        try:
+            ctx = getattr(rhs, "RightContextOA", None)
+        except Exception:
+            return None
+        if ctx is None:
+            return None
+        return PhonologicalContext(ctx)
+
+    def input_poses(self, rhs_index=0):
+        """
+        Get the parts of speech one right-hand side is limited to.
+
+        Args:
+            rhs_index: Zero-based index into RightHandSidesOS. Defaults
+                to 0.
+
+        Returns:
+            list: The IPartOfSpeech objects from InputPOSesRC, uncast
+                (the LCM collection is already typed, so a cast would
+                only cost the caller the object). Empty when unset or
+                when the rule has no environments.
+
+        Raises:
+            IndexError: If rhs_index is out of range on a rule that has
+                RHSs.
+
+        Example::
+
+            for pos in wrapped.input_poses():
+                print(best_analysis_text(pos.Name))
+        """
+        rhs = self._rhs_at(rhs_index)
+        if rhs is None:
+            return []
+        try:
+            poses = getattr(rhs, "InputPOSesRC", None)
+            if poses is None:
+                return []
+            return list(poses)
+        except Exception:
+            logger.debug("input_poses: failed to read InputPOSesRC", exc_info=True)
+            return []
+
+    def required_rule_features(self, rhs_index=0):
+        """
+        Get the rule features one right-hand side requires.
+
+        Args:
+            rhs_index: Zero-based index into RightHandSidesOS. Defaults
+                to 0.
+
+        Returns:
+            RuleFeatureCollection: The ReqRuleFeatsRC features wrapped.
+                Always a collection, empty never None, because "the rule
+                requires nothing" and "unreadable" are different and only
+                the first is true.
+
+        Raises:
+            IndexError: If rhs_index is out of range on a rule that has
+                RHSs.
+
+        Example::
+
+            print(wrapped.required_rule_features().names)
+        """
+        rhs = self._rhs_at(rhs_index)
+        if rhs is None:
+            return RuleFeatureCollection()
+        try:
+            feats = getattr(rhs, "ReqRuleFeatsRC", None)
+            if feats is None:
+                return RuleFeatureCollection()
+            return RuleFeatureCollection([RuleFeature(f) for f in feats])
+        except Exception:
+            logger.debug("required_rule_features: failed to read ReqRuleFeatsRC", exc_info=True)
+            return RuleFeatureCollection()
+
+    def excluded_rule_features(self, rhs_index=0):
+        """
+        Get the rule features one right-hand side excludes.
+
+        Args:
+            rhs_index: Zero-based index into RightHandSidesOS. Defaults
+                to 0.
+
+        Returns:
+            RuleFeatureCollection: The ExclRuleFeatsRC features wrapped.
+                Always a collection, empty never None.
+
+        Raises:
+            IndexError: If rhs_index is out of range on a rule that has
+                RHSs.
+
+        Example::
+
+            print(wrapped.excluded_rule_features().names)
+        """
+        rhs = self._rhs_at(rhs_index)
+        if rhs is None:
+            return RuleFeatureCollection()
+        try:
+            feats = getattr(rhs, "ExclRuleFeatsRC", None)
+            if feats is None:
+                return RuleFeatureCollection()
+            return RuleFeatureCollection([RuleFeature(f) for f in feats])
+        except Exception:
+            logger.debug("excluded_rule_features: failed to read ExclRuleFeatsRC", exc_info=True)
+            return RuleFeatureCollection()
+
+    @property
+    def is_disabled(self) -> bool:
+        """
+        Check if this rule is disabled.
+
+        Returns:
+            bool: The Disabled flag. Declared on the base IPhSegmentRule,
+                so every rule this wrapper handles has it and no guard is
+                needed (R-8).
+
+        Example::
+
+            state = "disabled" if wrapped.is_disabled else "active"
+        """
+        return bool(self._concrete.Disabled)
+
+    def set_disabled(self, disabled) -> None:
+        """
+        Set the disabled state of this rule.
+
+        This is the primitive: it performs the assignment itself, with no
+        project write check and no transaction. Callers going through
+        PhonologicalRuleOperations.SetDisabled get both (the check first,
+        inside the class's transaction bracket).
+
+        Args:
+            disabled: True to disable the rule, False to enable it.
+
+        Raises:
+            FP_NullParameterError: If disabled is None.
+
+        Example::
+
+            wrapped.set_disabled(True)
+        """
+        from ..FLExProject import FP_NullParameterError
+
+        if disabled is None:
+            raise FP_NullParameterError()
+        self._concrete.Disabled = bool(disabled)
 
     def _is_valid_index_range(self, start, end, count):
         """Return True when 0 <= start < end <= count and both are set."""

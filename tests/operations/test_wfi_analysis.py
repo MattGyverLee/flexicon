@@ -698,5 +698,253 @@ class TestWfiAnalysisDeleteWithMorphBundles:
                     pass
 
 
+class TestWfiAnalysisEvaluationRemoval:
+    """
+    Coverage for issue #582: WfiAnalysisOperations had no wrapper for
+    removing/clearing human evaluations beyond SetApprovalStatus, which
+    only ever addresses the default human agent. Recipes had to mutate
+    EvaluationsRC directly -- the anti-pattern fixed away in #26.
+
+    New wrappers under test:
+      - GetEvaluationsForAgent(analysis, agent_or_hvo)
+      - ClearEvaluation(analysis, agent_or_hvo)
+      - RemoveAllHumanEvaluations(analysis_or_hvo) -> int
+    """
+
+    @pytest.fixture
+    def analysis_with_three_evaluations(self, writable_project):
+        """
+        Build an analysis carrying evaluations from TWO distinct human
+        agents plus one parser agent -- the multi-annotator case from
+        issue #582. Yields (analysis, human1, human2, parser_agent) and
+        tears the analysis down on exit.
+
+        Skips when the project does not have at least two human agents
+        and one parser agent; this fixture does not synthesise agents.
+        """
+        from SIL.LCModel import Opinions
+
+        humans = []
+        parser_agent = None
+        for raw in writable_project.lp.AnalyzingAgentsOC:
+            if getattr(raw, "Human", False):
+                if len(humans) < 2:
+                    humans.append(raw)
+            elif not getattr(raw, "Human", True) and parser_agent is None:
+                parser_agent = raw
+            if len(humans) == 2 and parser_agent is not None:
+                break
+        if len(humans) < 2 or parser_agent is None:
+            pytest.skip(
+                "Project needs at least two human agents and one parser "
+                "agent in AnalyzingAgentsOC for the multi-annotator "
+                "evaluation tests (issue #582)."
+            )
+        human1, human2 = humans
+
+        candidate_wf = None
+        for wf in writable_project.Wordforms.GetAll():
+            candidate_wf = wf
+            break
+        if candidate_wf is None:
+            pytest.skip("Project has no wordforms")
+
+        analysis = writable_project.WfiAnalyses.Create(candidate_wf)
+
+        # Raw ICmAgent.SetEvaluation is an LCM write made directly by
+        # the test, so it needs its own unit of work (same pattern as
+        # TestWfiAnalysisAgentTypeDiscrimination's fixture).
+        with writable_project.UndoableOperation("test: seed three evaluations"):
+            human1.SetEvaluation(analysis, Opinions.approves)
+            human2.SetEvaluation(analysis, Opinions.disapproves)
+            parser_agent.SetEvaluation(analysis, Opinions.approves)
+
+        try:
+            yield analysis, human1, human2, parser_agent
+        finally:
+            try:
+                human1.SetEvaluation(analysis, Opinions.noopinion)
+            except Exception:
+                pass
+            try:
+                human2.SetEvaluation(analysis, Opinions.noopinion)
+            except Exception:
+                pass
+            try:
+                parser_agent.SetEvaluation(analysis, Opinions.noopinion)
+            except Exception:
+                pass
+            try:
+                writable_project.WfiAnalyses.Delete(analysis)
+            except Exception:
+                pass
+
+    def test_get_evaluations_for_agent_filters_by_agent(
+        self, writable_project, analysis_with_three_evaluations
+    ):
+        """
+        GetEvaluationsForAgent must return only the evaluations whose
+        Agent is the requested one -- not the first evaluation of a
+        matching kind (issue #582: several human agents may each have
+        recorded an evaluation on the same analysis).
+        """
+        analysis, human1, human2, parser_agent = (
+            analysis_with_three_evaluations
+        )
+        ops = writable_project.WfiAnalyses
+
+        for agent, expected_approves in (
+            (human1, True),
+            (human2, False),
+            (parser_agent, True),
+        ):
+            evals = ops.GetEvaluationsForAgent(analysis, agent)
+            assert len(evals) == 1, (
+                f"Expected exactly 1 evaluation for agent "
+                f"{agent.Hvo}, got {len(evals)}"
+            )
+            assert evals[0].Agent.Hvo == agent.Hvo
+            assert evals[0].Approves == expected_approves
+
+        # An agent with no evaluation here yields an empty list.
+        from flexicon.code.Lists.AgentOperations import AgentOperations
+
+        other_humans = [
+            a
+            for a in AgentOperations(writable_project).GetHumanAgents()
+            if a.Hvo not in (human1.Hvo, human2.Hvo)
+        ]
+        if other_humans:
+            assert ops.GetEvaluationsForAgent(analysis, other_humans[0]) == []
+
+    def test_clear_evaluation_removes_only_target_agent(
+        self, writable_project, analysis_with_three_evaluations
+    ):
+        """
+        ClearEvaluation must remove the target agent's evaluation while
+        leaving every other agent's evaluation (human or parser)
+        untouched (issue #582).
+        """
+        analysis, human1, human2, parser_agent = (
+            analysis_with_three_evaluations
+        )
+        ops = writable_project.WfiAnalyses
+
+        ops.ClearEvaluation(analysis, human2)
+
+        assert ops.GetEvaluationsForAgent(analysis, human2) == [], (
+            "ClearEvaluation did not remove the target agent's evaluation"
+        )
+        assert len(ops.GetEvaluationsForAgent(analysis, human1)) == 1, (
+            "ClearEvaluation removed a different human agent's evaluation"
+        )
+        assert len(ops.GetEvaluationsForAgent(analysis, parser_agent)) == 1, (
+            "ClearEvaluation removed the parser evaluation"
+        )
+        # human1's approval still stands.
+        assert ops.IsHumanApproved(analysis)
+
+    def test_clear_evaluation_accepts_agent_hvo(
+        self, writable_project, analysis_with_three_evaluations
+    ):
+        """
+        ClearEvaluation must accept an agent HVO as well as an agent
+        object (exercises the __GetAgentObject int path).
+        """
+        analysis, human1, _human2, _parser = analysis_with_three_evaluations
+        ops = writable_project.WfiAnalyses
+
+        ops.ClearEvaluation(analysis, human1.Hvo)
+
+        assert ops.GetEvaluationsForAgent(analysis, human1) == []
+
+    def test_remove_all_human_evaluations_clears_humans_keeps_parser(
+        self, writable_project, analysis_with_three_evaluations
+    ):
+        """
+        RemoveAllHumanEvaluations must clear every human evaluation
+        (both annotators), preserve the parser evaluation, and return
+        the number removed (issue #582).
+        """
+        analysis, human1, human2, parser_agent = (
+            analysis_with_three_evaluations
+        )
+        ops = writable_project.WfiAnalyses
+
+        removed = ops.RemoveAllHumanEvaluations(analysis)
+
+        assert removed == 2, f"Expected 2 removed, got {removed}"
+        assert ops.GetEvaluationsForAgent(analysis, human1) == []
+        assert ops.GetEvaluationsForAgent(analysis, human2) == []
+        assert len(ops.GetEvaluationsForAgent(analysis, parser_agent)) == 1, (
+            "RemoveAllHumanEvaluations removed the parser evaluation"
+        )
+        assert not ops.IsHumanApproved(analysis)
+        assert ops.IsComputerApproved(analysis)
+
+    def test_remove_all_human_evaluations_empty_returns_zero(
+        self, writable_project
+    ):
+        """
+        RemoveAllHumanEvaluations on an analysis with no evaluations
+        returns 0 instead of raising.
+        """
+        candidate_wf = None
+        for wf in writable_project.Wordforms.GetAll():
+            candidate_wf = wf
+            break
+        if candidate_wf is None:
+            pytest.skip("Project has no wordforms")
+
+        analysis = writable_project.WfiAnalyses.Create(candidate_wf)
+        try:
+            removed = writable_project.WfiAnalyses.RemoveAllHumanEvaluations(
+                analysis
+            )
+            assert removed == 0, f"Expected 0 removed, got {removed}"
+        finally:
+            try:
+                writable_project.WfiAnalyses.Delete(analysis)
+            except Exception:
+                pass
+
+    def test_evaluation_removal_error_paths(self, writable_project):
+        """
+        The new wrappers validate their parameters like the rest of the
+        class: None raises FP_NullParameterError, a bogus HVO raises
+        FP_ParameterError.
+        """
+        from flexicon.code.FLExProject import (
+            FP_NullParameterError,
+            FP_ParameterError,
+        )
+
+        ops = writable_project.WfiAnalyses
+
+        candidate_wf = None
+        for wf in writable_project.Wordforms.GetAll():
+            candidate_wf = wf
+            break
+        if candidate_wf is None:
+            pytest.skip("Project has no wordforms")
+
+        analysis = writable_project.WfiAnalyses.Create(candidate_wf)
+        try:
+            with pytest.raises(FP_NullParameterError):
+                ops.ClearEvaluation(None, 12345)
+            with pytest.raises(FP_NullParameterError):
+                ops.GetEvaluationsForAgent(analysis, None)
+            with pytest.raises(FP_NullParameterError):
+                ops.RemoveAllHumanEvaluations(None)
+            # 0xFFFFFFFF is not a plausible live HVO in a test project.
+            with pytest.raises(FP_ParameterError):
+                ops.ClearEvaluation(analysis, 0xFFFFFFFF)
+        finally:
+            try:
+                writable_project.WfiAnalyses.Delete(analysis)
+            except Exception:
+                pass
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

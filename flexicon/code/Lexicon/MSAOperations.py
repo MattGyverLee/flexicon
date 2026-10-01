@@ -35,6 +35,7 @@ from ..BaseOperations import BaseOperations, OperationsMethod
 
 # Import FLEx LCM types
 from SIL.LCModel import (
+    ICmPossibility,
     IMoStemMsa,
     IMoStemMsaFactory,
     IMoDerivAffMsa,
@@ -69,6 +70,12 @@ from ..FLExProject import (
 # reaching the caller as a ClassName test or a cast (Principle VI).
 from .morphosyntax_analysis import MorphosyntaxAnalysis
 from .msa_collection import MSACollection
+from ..Shared.feature_struc_utils import c4_to_feat_struc_spec
+
+# Concrete-interface cast for HVO/object resolution of inflection classes
+# (issue #573): project.Object(hvo) returns a bare ICmObject; InflectionClassRA
+# membership checks and the ClassName gate need the MoInflClass view.
+from ..lcm_casting import cast_to_concrete
 
 
 # --- Structured result for RemoveOrphaned (issue #206) ----------------------
@@ -477,7 +484,7 @@ class MSAOperations(BaseOperations):
         return IMoUnclassifiedAffixMsa(new_msa)
 
     @OperationsMethod
-    def SetStemMsaPos(self, sense, pos):
+    def SetStemMsaPos(self, sense, pos, keep_inflection_class=True):
         """
         Update the POS on an existing IMoStemMsa attached to a sense.
 
@@ -491,6 +498,14 @@ class MSAOperations(BaseOperations):
         Args:
             sense: An ILexSense whose MSA should be updated.
             pos: New IPartOfSpeech (or HVO) for the stem.
+            keep_inflection_class: When True (the default), the stem MSA's
+                existing ``InflectionClassRA`` is restored after the POS
+                change if it still belongs to the new POS or its parent
+                chain (issue #573). When the old class is not valid for
+                the new POS, a warning is logged and the class is left
+                cleared rather than attaching an incompatible class.
+                Pass False to always drop the inflection class with the
+                POS change.
         """
         self._EnsureWriteEnabled()
         self._ValidateParam(sense, "sense")
@@ -514,8 +529,28 @@ class MSAOperations(BaseOperations):
         # before a named undo entry is opened (D5).
         pos_obj = self.__Resolve(pos)
 
+        # Capture the old inflection class before the POS change drops it
+        # (issue #573). Validation against the NEW POS happens inside the
+        # bracket so the restore is atomic with the POS write.
+        old_infl_class = None
+        if keep_inflection_class:
+            old_infl_class = getattr(stem, "InflectionClassRA", None)
+
         with self._TransactionCM("Set stem MSA POS"):
             stem.PartOfSpeechRA = pos_obj
+            if old_infl_class is not None:
+                if int(old_infl_class.Hvo) in self.__PosChainInflectionClassHvos(
+                    pos_obj
+                ):
+                    stem.InflectionClassRA = old_infl_class
+                else:
+                    logger.warning(
+                        "SetStemMsaPos: inflection class %r is not valid "
+                        "for the new part of speech %r; leaving the "
+                        "inflection class cleared.",
+                        self.__PossibilityLabel(old_infl_class),
+                        self.__PossibilityLabel(pos_obj),
+                    )
 
     @OperationsMethod
     def SetDerivAffMsaPos(self, sense, from_pos=None, to_pos=None):
@@ -650,6 +685,527 @@ class MSAOperations(BaseOperations):
         return list(slots_rc)
 
     # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # MSA display-name + type discrimination (issue #575)
+    # ------------------------------------------------------------------
+    #
+    # Scripts frequently read ``msa.LongName`` on the raw object (what FLEx
+    # shows as the grammatical info, e.g. ``Verb  Pl.3``) and dispatch on
+    # ``msa.ClassName`` to tell a stem MSA from an inflectional-affix,
+    # derivational-affix or unclassified MSA. These two getters are the
+    # public wrappers for both idioms.
+
+    @OperationsMethod
+    def GetLongName(self, msa_or_hvo):
+        """
+        Get the MSA's display summary (what FLEx shows as grammatical info).
+
+        Reads the ``LongName`` LCM property on the resolved MSA -- e.g.
+        ``"Verb  Pl.3"`` for a stem MSA -- normalizing FLEx's empty-string
+        placeholder ``"***"`` to ``""`` (via
+        ``BaseOperations._NormalizeMultiString``) so callers never have to
+        compare against the raw placeholder.
+
+        Args:
+            msa_or_hvo: An MSA object, HVO, or GUID (resolved via the
+                internal ``__GetMsaObject``).
+
+        Returns:
+            str: The MSA's ``LongName``; ``""`` when it is unset
+            (``"***"``) or unreadable.
+
+        Raises:
+            FP_NullParameterError: If ``msa_or_hvo`` is null.
+
+        Example:
+            >>> msa = project.Senses.GetMSA(sense)
+            >>> print(project.MSA.GetLongName(msa))
+            Verb  Pl.3
+            >>> print(repr(project.MSA.GetLongName(unset_msa)))
+            ''
+
+        See Also:
+            GetMSAType, GetInflAffMsaSlots
+        """
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        long_name = getattr(msa, "LongName", None)
+        if not long_name:
+            return ""
+        return self._NormalizeMultiString(long_name)
+
+    @OperationsMethod
+    def GetMSAType(self, msa_or_hvo):
+        """
+        Classify an MSA as stem / inflectional / derivational / unclassified.
+
+        Discriminates on the MSA's ``ClassName`` so scripts stop comparing
+        ``ClassName`` strings directly (one of the most common raw-LCM
+        idioms). The recognized mapping is:
+
+        - ``MoStemMsa`` -> ``"stem"``
+        - ``MoInflAffMsa`` -> ``"inflectional"``
+        - ``MoDerivAffMsa`` -> ``"derivational"``
+        - ``MoUnclassifiedAffixMsa`` -> ``"unclassified"``
+
+        Args:
+            msa_or_hvo: An MSA object, HVO, or GUID (resolved via the
+                internal ``__GetMsaObject``).
+
+        Returns:
+            str: One of ``"stem"``, ``"inflectional"``, ``"derivational"``,
+            ``"unclassified"``. For an unrecognized MSA subtype, falls
+            back to the raw ``ClassName`` so no information is lost.
+
+        Raises:
+            FP_NullParameterError: If ``msa_or_hvo`` is null.
+
+        Example:
+            >>> msa = project.Senses.GetMSA(sense)
+            >>> if project.MSA.GetMSAType(msa) == "stem":
+            ...     print("stem MSA")
+            stem MSA
+
+        See Also:
+            GetLongName, GetFeatures
+        """
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        class_name = getattr(msa, "ClassName", None)
+        return {
+            "MoStemMsa": "stem",
+            "MoInflAffMsa": "inflectional",
+            "MoDerivAffMsa": "derivational",
+            "MoUnclassifiedAffixMsa": "unclassified",
+        }.get(class_name, class_name)
+
+    # Stem-MSA inflection-class accessors (issue #573)
+    # ------------------------------------------------------------------
+    #
+    # ``IMoStemMsa.InflectionClassRA`` had no public flexicon surface; the
+    # only way to restore it after ``SetStemMsaPos`` was
+    # ``IMoStemMsa(msa).InflectionClassRA = icl`` in raw LCM. These two
+    # methods are the read/write pair. The write side validates that the
+    # class belongs to the MSA's POS or its parent chain and raises
+    # ``FP_ParameterError`` rather than silently attaching an incompatible
+    # class. The POS parent-chain walk mirrors ``POSOperations.GetParent``'s
+    # owner discrimination (``Owner`` with ``ClassName == "PartOfSpeech"``)
+    # without round-tripping through the POS operations object.
+
+    @OperationsMethod
+    def GetInflectionClass(self, msa_or_hvo):
+        """
+        Read ``InflectionClassRA`` on a stem MSA.
+
+        Args:
+            msa_or_hvo: An MSA object, HVO, or GUID (resolved via the
+                internal ``__GetMsaObject``).
+
+        Returns:
+            IMoInflClass | None: The stem MSA's inflection class, or
+            ``None`` when it is unset or when the MSA is not a
+            ``MoStemMsa`` (never raises on a wrong ClassName, matching
+            this file's established never-raise idiom for type-gated
+            reads).
+
+        Raises:
+            FP_NullParameterError: If ``msa_or_hvo`` is null.
+
+        Example:
+            >>> msa = project.Senses.GetMSA(sense)
+            >>> icl = project.MSA.GetInflectionClass(msa)
+            >>> print(icl.Name.BestAnalysisAlternative.Text if icl else "none")
+            Regular Verb
+
+        See Also:
+            SetInflectionClass, SetStemMsaPos
+        """
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        if getattr(msa, "ClassName", None) != "MoStemMsa":
+            return None
+        return getattr(msa, "InflectionClassRA", None)
+
+    @OperationsMethod
+    def SetInflectionClass(self, msa_or_hvo, infl_class_or_hvo_or_None):
+        """
+        Set (or clear) ``InflectionClassRA`` on a stem MSA.
+
+        The class is validated before anything is mutated: it must belong
+        to the MSA's part of speech or to one of its ancestor categories
+        (walked upward via ``Owner``, mirroring
+        ``POSOperations.GetParent``). A class from an unrelated POS raises
+        ``FP_ParameterError`` with a clear message -- it is never silently
+        attached.
+
+        Args:
+            msa_or_hvo: An MSA object, HVO, or GUID (resolved via the
+                internal ``__GetMsaObject``).
+            infl_class_or_hvo_or_None: An ``IMoInflClass`` object or its
+                HVO, or ``None`` to clear the inflection class.
+
+        Raises:
+            FP_NullParameterError: If ``msa_or_hvo`` is null.
+            FP_ParameterError: If the MSA is not a ``MoStemMsa``, if the
+                inflection-class argument is not an ``IMoInflClass``, if
+                the stem MSA has no part of speech to validate against, or
+                if the class does not belong to the MSA's POS or its
+                parent chain.
+            FP_ReadOnlyError: If the project is not write-enabled.
+
+        Example:
+            >>> verb = project.POS.Find("Verb")
+            >>> regular = next(c for c in project.POS.GetInflectionClasses(verb)
+            ...                if "Regular" in c.Name.BestAnalysisAlternative.Text)
+            >>> project.MSA.SetInflectionClass(msa, regular)
+            >>> project.MSA.SetInflectionClass(msa, None)  # clear it
+
+        See Also:
+            GetInflectionClass, SetStemMsaPos
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        if getattr(msa, "ClassName", None) != "MoStemMsa":
+            raise FP_ParameterError(
+                "SetInflectionClass requires a stem MSA (MoStemMsa); "
+                f"got ClassName {getattr(msa, 'ClassName', None)!r}."
+            )
+
+        # Resolution stays outside the bracket so an unresolvable or
+        # invalid class raises before a named undo entry is opened (D5).
+        target = self.__ResolveInflectionClass(infl_class_or_hvo_or_None)
+        if target is not None:
+            self.__ValidateInflectionClassForMsa(target, msa)
+
+        with self._TransactionCM("Set stem MSA inflection class"):
+            msa.InflectionClassRA = target
+
+    def __ResolveInflectionClass(self, infl_class_or_hvo_or_None):
+        """Resolve an inflection-class argument to an IMoInflClass or None.
+
+        Accepts an object, HVO (int), or GUID (str). Casts to the concrete
+        interface via ``cast_to_concrete`` because
+        ``project.Object(hvo)`` returns a bare ``ICmObject``. Raises
+        ``FP_ParameterError`` when the argument resolves to a non-MoInflClass
+        object rather than silently accepting it.
+        """
+        if infl_class_or_hvo_or_None is None:
+            return None
+        if isinstance(infl_class_or_hvo_or_None, (int, str)):
+            obj = self.project.Object(infl_class_or_hvo_or_None)
+        else:
+            obj = self._UnwrapLcm(infl_class_or_hvo_or_None)
+        obj = cast_to_concrete(obj)
+        if getattr(obj, "ClassName", None) != "MoInflClass":
+            raise FP_ParameterError(
+                "infl_class must be an IMoInflClass (or its HVO); "
+                f"got ClassName {getattr(obj, 'ClassName', None)!r}."
+            )
+        return obj
+
+    def __ValidateInflectionClassForMsa(self, infl_class, msa):
+        """Raise FP_ParameterError unless the class fits the MSA's POS chain.
+
+        A class "fits" when it appears in the ``InflectionClassesOC`` of
+        the stem MSA's ``PartOfSpeechRA`` or of any ancestor category.
+        """
+        pos = getattr(msa, "PartOfSpeechRA", None)
+        if pos is None:
+            raise FP_ParameterError(
+                "Cannot set an inflection class: the stem MSA has no part "
+                "of speech, so the class cannot be validated against any "
+                "POS. Set the POS first (e.g. via SetStemMsaPos)."
+            )
+        valid_hvos = self.__PosChainInflectionClassHvos(pos)
+        if int(infl_class.Hvo) not in valid_hvos:
+            pos_name = self.__PossibilityLabel(pos)
+            class_name = self.__PossibilityLabel(infl_class)
+            raise FP_ParameterError(
+                f"Inflection class {class_name!r} does not belong to the "
+                f"MSA's part of speech {pos_name!r} or any of its ancestor "
+                "categories; refusing to attach an incompatible class."
+            )
+
+    def __PosChainInflectionClassHvos(self, pos):
+        """HVOs of every inflection class on a POS and its ancestors.
+
+        Walks upward via ``Owner`` discriminated by
+        ``ClassName == "PartOfSpeech"`` (the same shape as
+        ``POSOperations.GetParent``), collecting each category's
+        ``InflectionClassesOC``. Guards against owner cycles.
+        """
+        hvos = set()
+        seen = set()
+        current = pos
+        while current is not None and id(current) not in seen:
+            seen.add(id(current))
+            for ic in getattr(current, "InflectionClassesOC", None) or ():
+                hvos.add(int(ic.Hvo))
+            owner = getattr(current, "Owner", None)
+            current = (
+                owner
+                if getattr(owner, "ClassName", None) == "PartOfSpeech"
+                else None
+            )
+        return hvos
+
+    @staticmethod
+    def __PossibilityLabel(obj):
+        """Best-effort display label for an error message (never raises)."""
+        try:
+            return obj.Name.BestAnalysisAlternative.Text
+        except Exception:
+            pass
+        try:
+            return f"hvo={int(obj.Hvo)}"
+        except Exception:
+            return repr(obj)
+
+    # ------------------------------------------------------------------
+    # MSA exception features (issue #574)
+    # ------------------------------------------------------------------
+    #
+    # FLEx shows "Exception features" on a stem, inflectional-affix, or
+    # derivational-affix MSA (used by HermitCrab to block rules/affixes).
+    # In LCM this is the ProdRestrictRC reference collection of
+    # ICmPossibility items -- in practice, inflection classes drawn from
+    # the project's "Production Restrictions" list (see
+    # InflectionFeatureOperations.InflectionClassGetAll). MoUnclassifiedAffixMsa
+    # does not carry ProdRestrictRC.
+    #
+    # NOTE: this is a DIFFERENT field from
+    # LexEntryOperations.GetRestrictions / LexSenseOperations.GetRestrictions
+    # (the free-text Restrictions multistring), which is not a substitute.
+
+    #: MSA ClassNames that carry ProdRestrictRC ("Exception features").
+    _PROD_RESTRICT_MSA_CLASSES = frozenset(
+        ("MoStemMsa", "MoInflAffMsa", "MoDerivAffMsa")
+    )
+
+    def __ProdRestrictRC(self, msa):
+        """
+        Return the ``ProdRestrictRC`` collection on ``msa``, or ``None``
+        when the MSA's ``ClassName`` is not one of the three types that
+        carry it (``MoUnclassifiedAffixMsa`` has no such member).
+
+        Never raises on a wrong-type MSA -- mirrors
+        ``GetInflAffMsaSlots``'s graceful non-raise on a wrong-type MSA.
+        """
+        if (
+            getattr(msa, "ClassName", None)
+            not in self._PROD_RESTRICT_MSA_CLASSES
+        ):
+            return None
+        return getattr(msa, "ProdRestrictRC", None)
+
+    def __ResolveExceptionFeature(self, feature_or_hvo):
+        """
+        Resolve an exception-feature parameter to ``ICmPossibility``.
+
+        Accepts an ``ICmPossibility`` object (or a subclass instance such
+        as ``IMoInflClass``), an HVO (int), or a GUID (str).
+
+        Raises:
+            FP_ParameterError: If the resolved object is not a
+            ``CmPossibility``.
+        """
+        obj = self._UnwrapLcm(feature_or_hvo)
+        if isinstance(obj, (int, str)):
+            obj = self.project.Object(obj)
+        try:
+            return ICmPossibility(obj)
+        except Exception:
+            raise FP_ParameterError(
+                "feature must be an ICmPossibility (or its HVO/GUID); "
+                f"got {obj!r}"
+            )
+
+    @OperationsMethod
+    def GetExceptionFeatures(self, msa_or_hvo):
+        """
+        Get an MSA's exception features ("Exception features" in FLEx).
+
+        Reads the ``ProdRestrictRC`` reference collection on a stem,
+        inflectional-affix, or derivational-affix MSA. HermitCrab uses
+        these features to block rules/affixes. In practice the items are
+        inflection classes drawn from the project's "Production
+        Restrictions" list (see
+        ``InflectionFeatureOperations.InflectionClassGetAll``).
+
+        Args:
+            msa_or_hvo: An MSA object, HVO, or GUID (resolved via the
+                internal ``__GetMsaObject``).
+
+        Returns:
+            list[ICmPossibility]: The exception-feature possibility
+            objects, so callers can read names/abbreviations via the
+            existing possibility-list wrappers (e.g.
+            ``PossibilityListOperations.GetItemName``). ``[]`` when the
+            MSA type does not carry ``ProdRestrictRC``
+            (``MoUnclassifiedAffixMsa``) or when none are set -- never
+            raises on a wrong-type MSA.
+
+        Raises:
+            FP_NullParameterError: If ``msa_or_hvo`` is null.
+
+        Example:
+            >>> feats = project.MSA.GetExceptionFeatures(msa)
+            >>> for feat in feats:
+            ...     name = project.PossibilityLists.GetItemName(feat)
+            ...     print(f"blocked unless: {name}")
+
+            >>> # Unclassified-affix MSAs carry no exception features
+            >>> project.MSA.GetExceptionFeatures(unclassified_msa)
+            []
+
+        Notes:
+            - This is NOT the same field as
+              ``LexEntryOperations.GetRestrictions`` /
+              ``LexSenseOperations.GetRestrictions`` (the free-text
+              Restrictions multistring).
+
+        See Also:
+            AddExceptionFeature, RemoveExceptionFeature,
+            InflectionFeatureOperations.InflectionClassGetAll,
+            PossibilityListOperations.GetItemName
+        """
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        rc = self.__ProdRestrictRC(msa)
+        if rc is None:
+            return []
+        return [ICmPossibility(item) for item in rc]
+
+    @OperationsMethod
+    def AddExceptionFeature(self, msa_or_hvo, feature_or_hvo):
+        """
+        Add an exception feature to an MSA.
+
+        Appends one ``ICmPossibility`` (in practice, an inflection class
+        from the project's "Production Restrictions" list) to the MSA's
+        ``ProdRestrictRC`` ("Exception features" in FLEx).
+
+        Args:
+            msa_or_hvo: A stem, inflectional-affix, or
+                derivational-affix MSA object, HVO, or GUID (resolved via
+                the internal ``__GetMsaObject``).
+            feature_or_hvo: An ``ICmPossibility`` object (or subclass
+                instance such as ``IMoInflClass``), HVO, or GUID.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write
+                enabled.
+            FP_NullParameterError: If either parameter is null.
+            FP_ParameterError: If the MSA type does not carry
+                ``ProdRestrictRC`` (``MoUnclassifiedAffixMsa``), or the
+                feature is not an ``ICmPossibility``.
+
+        Example:
+            >>> classes = list(
+            ...     project.InflectionFeatures.InflectionClassGetAll()
+            ... )
+            >>> if classes:
+            ...     project.MSA.AddExceptionFeature(msa, classes[0])
+
+            >>> # ... or by HVO
+            >>> project.MSA.AddExceptionFeature(msa_hvo, class_hvo)
+
+        Notes:
+            - Adding a feature that is already present is a no-op (no
+              redundant undo entry): the membership test stays outside
+              the transaction, mirroring ``RemovePhoneEnv``'s D5 idiom.
+            - This is NOT the free-text Restrictions field -- see
+              ``LexEntryOperations.GetRestrictions`` for that.
+
+        See Also:
+            GetExceptionFeatures, RemoveExceptionFeature
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+        self._ValidateParam(feature_or_hvo, "feature_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        rc = self.__ProdRestrictRC(msa)
+        if rc is None:
+            raise FP_ParameterError(
+                f"MSA type '{getattr(msa, 'ClassName', None)}' does not "
+                "carry exception features (ProdRestrictRC); only "
+                "MoStemMsa, MoInflAffMsa and MoDerivAffMsa do."
+            )
+        poss = self.__ResolveExceptionFeature(feature_or_hvo)
+
+        # Membership test stays outside the transaction so a redundant add
+        # is a true no-op rather than an empty named undo entry (D5 --
+        # same rationale as AllomorphOperations.RemovePhoneEnv).
+        if poss not in rc:
+            with self._TransactionCM("Add exception feature"):
+                rc.Add(poss)
+
+    @OperationsMethod
+    def RemoveExceptionFeature(self, msa_or_hvo, feature_or_hvo):
+        """
+        Remove an exception feature from an MSA.
+
+        Removes one ``ICmPossibility`` from the MSA's ``ProdRestrictRC``
+        ("Exception features" in FLEx).
+
+        Args:
+            msa_or_hvo: A stem, inflectional-affix, or
+                derivational-affix MSA object, HVO, or GUID (resolved via
+                the internal ``__GetMsaObject``).
+            feature_or_hvo: An ``ICmPossibility`` object (or subclass
+                instance such as ``IMoInflClass``), HVO, or GUID.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write
+                enabled.
+            FP_NullParameterError: If either parameter is null.
+            FP_ParameterError: If the MSA type does not carry
+                ``ProdRestrictRC`` (``MoUnclassifiedAffixMsa``), or the
+                feature is not an ``ICmPossibility``.
+
+        Example:
+            >>> feats = project.MSA.GetExceptionFeatures(msa)
+            >>> if feats:
+            ...     project.MSA.RemoveExceptionFeature(msa, feats[0])
+
+        Notes:
+            - If the feature is not present, this is a no-op (no error):
+              the membership test stays outside the transaction so a
+              redundant remove never opens an empty named undo entry
+              (D5 -- same idiom as
+              ``AllomorphOperations.RemovePhoneEnv``).
+
+        See Also:
+            GetExceptionFeatures, AddExceptionFeature
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+        self._ValidateParam(feature_or_hvo, "feature_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+        rc = self.__ProdRestrictRC(msa)
+        if rc is None:
+            raise FP_ParameterError(
+                f"MSA type '{getattr(msa, 'ClassName', None)}' does not "
+                "carry exception features (ProdRestrictRC); only "
+                "MoStemMsa, MoInflAffMsa and MoDerivAffMsa do."
+            )
+        poss = self.__ResolveExceptionFeature(feature_or_hvo)
+
+        # Membership test stays outside the bracket so a redundant remove
+        # is a true no-op rather than an empty named undo entry (D5).
+        if poss in rc:
+            with self._TransactionCM("Remove exception feature"):
+                rc.Remove(poss)
+
+    # ------------------------------------------------------------------
     # MSA feature-structure getters (issue #544 -- reverse of MakeFeatStruc)
     # ------------------------------------------------------------------
     #
@@ -681,44 +1237,22 @@ class MSAOperations(BaseOperations):
         Convert one ``_GetFeatureStruc`` (C4 wire-format) dict into the
         plain recursive dict ``_MakeFeatStruc`` accepts as ``specs``.
 
+        Delegates to ``Shared.feature_struc_utils.c4_to_feat_struc_spec``
+        -- the conversion is shared with
+        ``AllomorphOperations.GetRequiredFeatures`` (issue #581) rather
+        than duplicated. See that helper for the full contract
+        (``None`` passthrough, ``{}`` for present-but-empty,
+        ``TypeGuid`` and nested ``"Guid"`` keys dropped).
+
         Args:
             c4: A C4 dict (``{"TypeGuid": ..., "specs": {...}}``) as
                 returned by ``_GetFeatureStruc``, or ``None``.
 
         Returns:
-            dict or None: ``None`` when ``c4`` is ``None`` (mirrors
-            ``_GetFeatureStruc``'s own null passthrough -- a null owning
-            property stays ``None``, never ``{}``). Otherwise a dict keyed
-            by feature GUID string, where each value is either a value
-            GUID string (``IFsClosedValue``) or a nested dict of the same
-            shape (``IFsComplexValue``'s ``ValueOA``) -- exactly the
-            recursive shape ``_MakeFeatStruc`` resolves GUID-string
-            operands against. A present-but-empty struct (``c4 ==
-            {"TypeGuid": ..., "specs": {}}``) converts to ``{}``, not
-            ``None`` -- same presence-vs-emptiness distinction C4 itself
-            preserves.
-
-        Notes:
-            - ``TypeGuid`` at every level is dropped (see the module-level
-              note above this method): it is not part of the
-              ``_MakeFeatStruc`` input shape and ``_MakeFeatStruc`` never
-              writes it back, so keeping it here would be misleading.
-            - The nested ``"Guid"`` key C4 attaches to non-top-level
-              structs (identifying the already-attached
-              ``IFsComplexValue.ValueOA``) is likewise dropped -- a fresh
-              call to ``MakeFeatStruc`` always creates new nested structs
-              and cannot target an existing ``Guid``.
+            dict or None: ``None`` when ``c4`` is ``None``; otherwise the
+            ``MakeFeatStruc``-shaped spec.
         """
-        if c4 is None:
-            return None
-
-        result = {}
-        for feat_guid, value in c4.get("specs", {}).items():
-            if isinstance(value, dict):
-                result[feat_guid] = self.__C4ToFeatStrucSpec(value)
-            else:
-                result[feat_guid] = value
-        return result
+        return c4_to_feat_struc_spec(c4)
 
     def __ResolveMsaForFeatures(self, sense_or_msa):
         """
@@ -987,6 +1521,72 @@ class MSAOperations(BaseOperations):
         # and any out-of-C1-table ClassName (e.g. MoDerivStepMsa): no
         # feature-struct property to read.
         return None
+
+    # ------------------------------------------------------------------
+    # Navigation
+    # ------------------------------------------------------------------
+
+    @OperationsMethod
+    def GetOwningEntry(self, msa_or_hvo):
+        """
+        Get the lexical entry that owns this MSA.
+
+        Same shape and semantics as
+        ``AllomorphOperations.GetOwningEntry`` (issue #581): climbs the
+        ownership chain via ``OwnerOfClass`` to the nearest ``ILexEntry``
+        ancestor, rather than taking a single ``.Owner`` hop.
+
+        Args:
+            msa_or_hvo: An MSA object (``IMoStemMsa``,
+                ``IMoInflAffMsa``, ``IMoDerivAffMsa`` or
+                ``IMoUnclassifiedAffixMsa``), HVO, or GUID string.
+
+        Returns:
+            ILexEntry: The owning entry, or None if the MSA has no
+            owning entry anywhere above it in the ownership chain.
+
+        Raises:
+            FP_NullParameterError: If msa_or_hvo is None.
+
+        Example:
+            >>> msa = project.MSA.GetAll(entry)[0]
+            >>> owner = project.MSA.GetOwningEntry(msa)
+            >>> print(project.LexEntry.GetHeadword(owner))
+            run
+
+            >>> # Accepts an HVO or GUID string as well
+            >>> owner = project.MSA.GetOwningEntry(msa_hvo)
+
+        Notes:
+            - Returns None rather than raising when no owning entry
+              exists. Callers must handle None; do not assume an entry
+              is always found.
+            - The null guard runs BEFORE the ILexEntry cast, because
+              casting a null result is the crash this guard exists to
+              prevent (same template as
+              ``AllomorphOperations.GetOwningEntry``; the one-hop
+              ``.Owner`` variants elsewhere are valid for their own
+              owner shapes and are deliberately NOT the template here).
+
+        See Also:
+            GetAll, AllomorphOperations.GetOwningEntry
+        """
+        self._ValidateParam(msa_or_hvo, "msa_or_hvo")
+
+        msa = self.__GetMsaObject(msa_or_hvo)
+
+        # Template: AllomorphOperations.GetOwningEntry -- OwnerOfClass
+        # walks Owner recursively and answers null when no ancestor of
+        # the class is found (liblcm src/SIL.LCModel/DomainImpl/
+        # CmObject.cs:3349).
+        _owner = msa.OwnerOfClass(LexEntryTags.kClassId)
+        if _owner is None:
+            return None
+
+        # Cast to the declared return type only after the null guard.
+        # Raw OwnerOfClass output is typed ICmObject; pythonnet surfaces
+        # ILexEntry members only after the explicit interface cast.
+        return ILexEntry(_owner)
 
     # ------------------------------------------------------------------
     # Affix MSA variant conversion

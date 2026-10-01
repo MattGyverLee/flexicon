@@ -60,6 +60,9 @@ Supported Types:
     - MSA types: MoStemMsa, MoDerivAffMsa, MoInflAffMsa, MoUnclassifiedAffixMsa
     - Allomorph types: MoStemAllomorph, MoAffixAllomorph
     - Phonological rule types: PhRegularRule, PhMetathesisRule
+    - Phonological context types: PhSimpleContextSeg, PhSimpleContextNC,
+      PhSimpleContextBdry, PhSequenceContext, PhIterationContext,
+      PhSegRuleRHS
     - Compound rule types: MoEndoCompound, MoExoCompound
     - Morphosyntactic prohibition types: MoAdhocProhibGr, MoAdhocProhibMorph, MoAdhocProhibAllomorph
     - Owner / container types (used by .Owner casting paths in Lexicon,
@@ -140,6 +143,24 @@ def _ensure_interfaces() -> None:
     except ImportError:
         IPhRegularRule = IPhMetathesisRule = None
         IPhSimpleContextSeg = IPhSimpleContextNC = IPhSegRuleRHS = None
+
+    # Phonological context interfaces (issue #572, US1). Without these,
+    # cast_to_concrete() returns PhSimpleContextBdry / PhSequenceContext /
+    # PhIterationContext objects unchanged (still narrowed to IPhPhonContext
+    # or IPhContextOrVar), so every concrete-only member reads as absent --
+    # the exact C10 narrowing trap. All three verified present by live
+    # reflection (specs/572-phonological-rule-readers/evidence/
+    # live-surface-probe.json). There are no IPhComplexContextSeg /
+    # IPhComplexContextNC interfaces in this LCM, so complex contexts keep
+    # the base view.
+    try:
+        from SIL.LCModel import (
+            IPhSimpleContextBdry,
+            IPhSequenceContext,
+            IPhIterationContext,
+        )
+    except ImportError:
+        IPhSimpleContextBdry = IPhSequenceContext = IPhIterationContext = None
 
     # Compound rule interfaces - try to import, but don't fail if unavailable
     # These are the two main compound rule types:
@@ -331,6 +352,12 @@ def _ensure_interfaces() -> None:
         _interface_cache["PhSimpleContextSeg"] = IPhSimpleContextSeg
     if IPhSimpleContextNC is not None:
         _interface_cache["PhSimpleContextNC"] = IPhSimpleContextNC
+    if IPhSimpleContextBdry is not None:
+        _interface_cache["PhSimpleContextBdry"] = IPhSimpleContextBdry
+    if IPhSequenceContext is not None:
+        _interface_cache["PhSequenceContext"] = IPhSequenceContext
+    if IPhIterationContext is not None:
+        _interface_cache["PhIterationContext"] = IPhIterationContext
     if IPhSegRuleRHS is not None:
         _interface_cache["PhSegRuleRHS"] = IPhSegRuleRHS
 

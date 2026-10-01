@@ -27,8 +27,58 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   shared mode itself, so the caller turns it on (FlexToolsMCP does so from
   its access probe). It covers the wrappers only, not raw LCM. Live-verified
   on Sena 3 held open by FieldWorks (`evidence/peer_schema_guard_live.py`).
+- **`PhonologicalRuleOperations.GetLeftContext` / `GetRightContext` /
+  `GetInputPOSes` / `GetRequiredRuleFeatures` / `GetExcludedRuleFeatures` /
+  `IsDisabled` / `SetDisabled` / `DescribeRule`** (#572). A rule describes
+  itself with `flexicon` only: the environment readers return
+  `PhonologicalContext` wrappers (or `None` where the rule has no
+  environment on that side), `GetInputPOSes` returns the `IPartOfSpeech`
+  objects from `InputPOSesRC` (`[]` when unset), and the rule-feature
+  readers return a `RuleFeatureCollection` (always a collection, empty
+  never `None`). A metathesis rule yields `None` from `GetLeftContext` /
+  `GetRightContext` silently -- it has no `RightHandSidesOS`, hence no
+  environment; `has_environments` is the documented way to ask first.
+  An out-of-range `rhs_index` raises `IndexError`, not `None`, so a bad
+  index is diagnosable. `DescribeRule` is total: it renders
+  `input -> output / left _ right` for any rule shape (including a rule
+  with no RHS, a metathesis rule rendered from `metathesis_parts`, and
+  iteration contexts rendered `(member){min,max}` with `*` for
+  unbounded) and never raises, returning a non-empty string even for
+  `None`. Live-verified read-only against `morphboundary` and on Target
+  with constructed rules, POSes and rule features re-queried by GUID.
+- **`"Disabled"` key in
+  `PhonologicalRuleOperations.GetSyncableProperties`** (#572), a scalar
+  bool beside `Name` / `Description` / `Direction` / `StratumGuid`,
+  applied by the existing bool/int path with no base change. Without it
+  `IsDisabled` would report `True` in the source project while the
+  synced copy parses with the rule still enabled.
 
 ### Fixed
+
+- **`PhonologicalContext` now describes itself** (#572). `context_name`
+  returns the real name text instead of a .NET type name,
+  `description` returns the description text instead of `""` always,
+  and `is_boundary_context` / `as_boundary_context()` recognise the
+  real boundary-context class. New members: `boundary_marker` (the
+  `IPhBdryMarker` behind `FeatureStructureRA`, or `None`) and
+  `boundary_name`; iteration members `is_iteration_context` /
+  `min_count` / `max_count` (`None` for the LCM's unbounded `-1`) /
+  `member`; and sequence members `is_sequence_context` / `members`
+  (references into the project's context pool). `ContextCollection`
+  `boundary_contexts()` filters the real class, and the copied
+  docstring examples that printed `seg.Name` / `nc.Name` /
+  `wrapped.stratum.Name` / `slot.owner_pos.Name` raw now read through
+  `best_analysis_text`. `docs/USAGE_CONTEXTS.md` is updated to the
+  same names in the same change.
+
+### Changed
+
+- **Internal `PhonologicalContext.boundary_type` retired** (#572),
+  replaced by `boundary_marker` / `boundary_name`. The name was the
+  defect: it promised a discriminator the LCM type does not have. The
+  retirement is silent (no `DeprecationWarning`): the class is
+  internal-only (absent from `flexicon.__all__`), so no public caller
+  can name it.
 
 ---
 
