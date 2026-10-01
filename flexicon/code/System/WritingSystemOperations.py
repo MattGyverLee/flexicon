@@ -264,6 +264,8 @@ class WritingSystemOperations(BaseOperations):
         if self.Exists(language_tag):
             raise FP_ParameterError(f"Writing system '{language_tag}' already exists")
 
+        self._EnsureSchemaWriteAllowed(f"WritingSystems.Create({language_tag!r})")
+
         ws_manager = self.project.project.ServiceLocator.WritingSystemManager
 
         with self._TransactionCM(f"Create writing system '{language_tag}'"):
@@ -392,6 +394,10 @@ class WritingSystemOperations(BaseOperations):
             )
             return existing_ws, False
 
+        # Past the no-op: this call WILL write. Under the peer schema guard
+        # that is refused here, before anything changes.
+        self._EnsureSchemaWriteAllowed(f"WritingSystems.Ensure({language_tag!r})")
+
         ws_manager = self.project.project.ServiceLocator.WritingSystemManager
 
         with self._TransactionCM(f"Ensure writing system '{language_tag}'"):
@@ -483,6 +489,8 @@ class WritingSystemOperations(BaseOperations):
             raise FP_ParameterError("Cannot delete the default vernacular writing system")
         if ws.Handle == default_anal.Handle:
             raise FP_ParameterError("Cannot delete the default analysis writing system")
+
+        self._EnsureSchemaWriteAllowed(f"WritingSystems.Delete({language_tag!r})")
 
         with self._TransactionCM(f"Delete writing system '{language_tag}'"):
             # Removal contract from IWritingSystemContainer: "first remove from
@@ -583,6 +591,8 @@ class WritingSystemOperations(BaseOperations):
         if not ws_obj:
             raise FP_WritingSystemError(str(ws))
 
+        self._EnsureSchemaWriteAllowed(f"WritingSystems.SetFontName({ws_obj.Id!r})")
+
         # Set default font name. The hasattr dispatch stays OUTSIDE the
         # brackets so the "neither property exists" fall-through remains a
         # true no-op that opens no unit of work.
@@ -670,6 +680,8 @@ class WritingSystemOperations(BaseOperations):
         ws_obj = self._ResolveWS(ws)
         if not ws_obj:
             raise FP_WritingSystemError(str(ws))
+
+        self._EnsureSchemaWriteAllowed(f"WritingSystems.SetFontSize({ws_obj.Id!r})")
 
         # Set default font size. hasattr guard outside the bracket -- a WS
         # without the property is a true no-op.
@@ -761,6 +773,8 @@ class WritingSystemOperations(BaseOperations):
         if not ws_obj:
             raise FP_WritingSystemError(str(ws))
 
+        self._EnsureSchemaWriteAllowed(f"WritingSystems.SetRightToLeft({ws_obj.Id!r})")
+
         # Set RTL setting. The hasattr dispatch stays OUTSIDE the brackets so
         # the "neither property exists" fall-through remains a true no-op.
         if hasattr(ws_obj, "RightToLeftScript"):
@@ -813,6 +827,8 @@ class WritingSystemOperations(BaseOperations):
         if ws_obj.Id not in vern_tags:
             raise FP_ParameterError(f"Writing system '{ws_obj.Id}' is not a vernacular writing system")
 
+        self._EnsureSchemaWriteAllowed(f"WritingSystems.SetDefaultVernacular({ws_obj.Id!r})")
+
         # Set as default
         self.project.lp.DefaultVernacularWritingSystem = ws_obj
 
@@ -856,6 +872,8 @@ class WritingSystemOperations(BaseOperations):
         anal_tags = self._GetAllAnalysisWSTags()
         if ws_obj.Id not in anal_tags:
             raise FP_ParameterError(f"Writing system '{ws_obj.Id}' is not an analysis writing system")
+
+        self._EnsureSchemaWriteAllowed(f"WritingSystems.SetDefaultAnalysis({ws_obj.Id!r})")
 
         # Set as default
         self.project.lp.DefaultAnalysisWritingSystem = ws_obj

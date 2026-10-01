@@ -79,12 +79,20 @@ version = "4.11.0"
 #:
 #: Treating the token as "a parser is available" is the one misreading that
 #: turns a degrade-with-a-reason into a crash.
+#:
+#: ``"peer-schema-guard"`` is off until the caller turns it on.
+#: ``FLExProject.SetPeerSchemaGuard(True)`` makes the writing-system
+#: mutators raise ``FP_ExclusiveAccessRequiredError`` before writing, while an
+#: ``Ensure()`` that turns out to be a no-op still succeeds. The caller
+#: decides when it applies (FieldWorks holding the project in shared mode);
+#: flexicon cannot detect that itself.
 CAPABILITIES = frozenset({
     "ui-injection",
     "refresh-from-disk",
     "per-operation-uow",
     "transaction-rollback",
     "parser",
+    "peer-schema-guard",
 })
 
 # Define exported classes, etc. at the top level of the package
@@ -108,6 +116,7 @@ from .code.FLExProject import (
     OpenProjectInFW,
     FLExProject,
     FP_ConflictingSaveError,
+    FP_ExclusiveAccessRequiredError,
     FP_FileLockedError,
     FP_FileNotFoundError,
     FP_MigrationRequired,
@@ -462,6 +471,7 @@ __all__ = [
     "FLExInitialize",
     "FLExProject",
     "FP_ConflictingSaveError",
+    "FP_ExclusiveAccessRequiredError",
     "FP_FileLockedError",
     "FP_FileNotFoundError",
     "FP_MigrationRequired",

@@ -34,6 +34,7 @@ from .exceptions import (
     FP_TransactionError,
     FP_DeduplicationError,
     FP_ConflictingSaveError,
+    FP_ExclusiveAccessRequiredError,
 )
 from .lcm_casting import cast_to_concrete
 
@@ -407,6 +408,9 @@ class FLExProject(object):
 
         self.writeEnabled = writeEnabled
         self._undoable = undoable and writeEnabled  # Only meaningful if write-enabled
+        # Off by default; see SetPeerSchemaGuard(). Reset on every open so a
+        # reused FLExProject never inherits the previous project's setting.
+        self._peer_schema_guard = False
         self._strict_transactions = bool(
             strict_transactions and writeEnabled
         )
@@ -602,6 +606,48 @@ class FLExProject(object):
                 module=type(donor).__module__,
             )
         )
+
+    def SetPeerSchemaGuard(self, enabled=True):
+        """
+        Refuse writing-system and custom-field schema changes for this session.
+
+        Call this right after ``OpenProject()`` when the project is held open
+        by FieldWorks in shared mode, so this session is a non-master peer.
+        From a peer, writing-system changes crash the FieldWorks that holds
+        the project, and custom-field definitions are never persisted. With
+        the guard on, those wrapper calls raise
+        ``FP_ExclusiveAccessRequiredError`` BEFORE writing anything.
+
+        Idempotent calls that turn out to need no write still succeed:
+        ``WritingSystems.Ensure()`` on a tag that is already active in the
+        requested category is a no-op and does not raise. That is what lets
+        a caller keep an ``Ensure()`` pre-pass in a script that must also run
+        while FieldWorks is open.
+
+        flexicon cannot tell on its own that FieldWorks holds the project;
+        the caller decides (FlexToolsMCP sets it from its access probe).
+        Advertised as the ``"peer-schema-guard"`` capability.
+
+        Covers the flexicon wrappers only. Raw LCM calls are the caller's
+        responsibility.
+
+        Args:
+            enabled (bool): True to refuse schema changes, False to allow.
+
+        Example:
+            >>> project.OpenProject("Sena 3", writeEnabled=True)
+            >>> project.SetPeerSchemaGuard(True)
+            >>> project.WritingSystems.Ensure("en", "English", is_vernacular=False)
+            (<ws>, False)        # already active: fine
+            >>> project.WritingSystems.Ensure("qaa-x-new", "New")
+            FP_ExclusiveAccessRequiredError: ...
+        """
+        self._peer_schema_guard = bool(enabled)
+
+    @property
+    def PeerSchemaGuard(self):
+        """True when ``SetPeerSchemaGuard(True)`` is in effect."""
+        return getattr(self, "_peer_schema_guard", False) is True
 
     def CloseProject(self):
         """

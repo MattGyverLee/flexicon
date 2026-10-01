@@ -20,6 +20,7 @@ from .exceptions import (
     FP_ReadOnlyError,
     FP_NullParameterError,
     FP_ParameterError,
+    FP_ExclusiveAccessRequiredError,
 )
 from .Shared.lcm_constants import OWNING_SEQUENCE_SUFFIX, FEATURE_STRUC_OWNER_TABLE
 from .Shared.wrapper_base import LCMObjectWrapper
@@ -3301,6 +3302,23 @@ class BaseOperations:
         """
         if not self.project.writeEnabled:
             raise FP_ReadOnlyError()
+
+    def _EnsureSchemaWriteAllowed(self, operation: str) -> None:
+        """
+        Refuse a writing-system / custom-field schema write under the peer
+        schema guard (``FLExProject.SetPeerSchemaGuard``).
+
+        Call it after any read-only early return (so a no-op never raises) and
+        before the first LCM write. ``operation`` names the call for the
+        error, e.g. ``"WritingSystems.Ensure('qaa')"``.
+
+        Raises:
+            FP_ExclusiveAccessRequiredError: when the guard is on.
+        """
+        # `is True`: a Mock project in the offline tests answers any attribute
+        # with a truthy Mock, which must not read as "guard on".
+        if getattr(self.project, "_peer_schema_guard", False) is True:
+            raise FP_ExclusiveAccessRequiredError(operation)
 
     def _TransactionCM(self, label):
         """

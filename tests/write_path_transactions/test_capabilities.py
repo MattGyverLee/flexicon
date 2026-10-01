@@ -37,12 +37,16 @@ import flexicon
 #:
 #: "parser" was added LAST in CP2a, after tiers A1, A2 and A3 all passed --
 #: the capability behind it is landed and live-verified, not planned.
+#: "peer-schema-guard" was added with its live check on Sena 3 held open by
+#: FieldWorks in shared mode (evidence/peer_schema_guard_live.py: a no-op
+#: Ensure passed, an absent-tag Ensure raised, writing systems unchanged).
 EXPECTED_TOKENS = {
     "ui-injection",
     "refresh-from-disk",
     "per-operation-uow",
     "transaction-rollback",
     "parser",
+    "peer-schema-guard",
 }
 
 
