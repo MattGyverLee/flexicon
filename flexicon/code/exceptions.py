@@ -101,6 +101,35 @@ class FP_DeduplicationError(FP_RuntimeError):
         super().__init__(message)
 
 
+class FP_ExclusiveAccessRequiredError(FP_RuntimeError):
+    """
+    Raised when a writing-system or custom-field schema change would run while
+    this session is attached to a project that FieldWorks has open in shared
+    mode, and the peer schema guard is on (``FLExProject.SetPeerSchemaGuard``).
+
+    From a shared-mode peer, writing-system changes crash the FieldWorks that
+    holds the project, and custom-field definitions are never persisted (the
+    commit log carries only object changes). The guard raises BEFORE anything
+    is written, so nothing needs undoing. Idempotent calls that turn out to be
+    no-ops (``WritingSystems.Ensure`` on an already-active tag) do not raise.
+
+    Attributes:
+        - operation -- the wrapper call that was refused, e.g.
+          ``"WritingSystems.Ensure('qaa-x-new')"``
+        - message -- explanation, including the recovery steps
+    """
+
+    def __init__(self, operation):
+        self.operation = operation
+        message = (
+            f"{operation} needs to change the project's writing systems or "
+            "custom fields, which is not safe while FieldWorks has the project "
+            "open. Nothing was written by this call. Close FieldWorks, re-run, "
+            "then reopen FieldWorks."
+        )
+        super().__init__(message)
+
+
 class FP_ConflictingSaveError(FP_RuntimeError):
     """
     Raised when LCM reports that another client saved changes which cannot be

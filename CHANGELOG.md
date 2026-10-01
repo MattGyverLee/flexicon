@@ -13,6 +13,20 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Added
 
+- **Peer schema guard: `FLExProject.SetPeerSchemaGuard()` /
+  `PeerSchemaGuard`, `FP_ExclusiveAccessRequiredError`, capability
+  `"peer-schema-guard"`.** When FieldWorks holds a project open in shared
+  mode, writing-system changes made by another process crash that FieldWorks
+  session. With the guard on, the writing-system mutators (`Create`, `Ensure`,
+  `Delete`, `SetFontName`, `SetFontSize`, `SetRightToLeft`,
+  `SetDefaultVernacular`, `SetDefaultAnalysis`) raise
+  `FP_ExclusiveAccessRequiredError` before writing anything. `Ensure()` checks
+  first: on a tag already active in the requested category it is still a
+  no-op and does not raise, so an `Ensure()` pre-pass keeps working while
+  FieldWorks is open. The guard is off by default, and flexicon cannot detect
+  shared mode itself, so the caller turns it on (FlexToolsMCP does so from
+  its access probe). It covers the wrappers only, not raw LCM. Live-verified
+  on Sena 3 held open by FieldWorks (`evidence/peer_schema_guard_live.py`).
 - **`PhonologicalRuleOperations.GetLeftContext` / `GetRightContext` /
   `GetInputPOSes` / `GetRequiredRuleFeatures` / `GetExcludedRuleFeatures` /
   `IsDisabled` / `SetDisabled` / `DescribeRule`** (#572). A rule describes
