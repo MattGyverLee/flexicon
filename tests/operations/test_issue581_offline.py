@@ -216,7 +216,7 @@ def _install_stubs():
         "IMoDerivAffMsaFactory", "IMoInflAffMsa", "IMoInflAffMsaFactory",
         "IMoUnclassifiedAffixMsa", "IMoUnclassifiedAffixMsaFactory",
         "ILexSense", "IWfiMorphBundleRepository", "MsaType",
-        "SandboxGenericMSA",
+        "SandboxGenericMSA", "ICmPossibility",
     ):
         setattr(lcm, attr, _identity)
     lcm.LexEntryTags = SimpleNamespace(kClassId=1001)

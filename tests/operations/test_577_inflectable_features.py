@@ -57,9 +57,13 @@ class _FakePOS:
 
 
 def _make_project(pos):
-    """Build a minimal mock FLExProject that resolves the POS by HVO."""
+    """Build a minimal mock FLExProject that resolves the POS and its
+    features by HVO."""
+    by_hvo = {pos.Hvo: pos}
+    for feat in pos.InflectableFeatsRC:
+        by_hvo[feat.Hvo] = feat
     project = Mock()
-    project.Object = Mock(side_effect=lambda hvo: pos if hvo == pos.Hvo else Mock())
+    project.Object = Mock(side_effect=lambda hvo: by_hvo.get(hvo, Mock()))
     return project
 
 

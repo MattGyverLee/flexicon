@@ -1619,7 +1619,8 @@ class AllomorphOperations(BaseOperations):
         Example:
             >>> entry = project.LexEntry.Find("run")
             >>> allomorphs = project.Allomorphs.GetAll(entry)
-            >>> strong = project.InflectionFeatures.InflectionClassFind("Strong Verbs")
+            >>> verb = project.POS.Find("Verb")
+            >>> strong = project.POS.GetInflectionClasses(verb)[0]
             >>> project.Allomorphs.AddInflectionClass(allomorphs[0], strong)
 
         Notes:
