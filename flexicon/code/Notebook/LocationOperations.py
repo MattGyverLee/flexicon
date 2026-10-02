@@ -129,8 +129,12 @@ class LocationOperations(BaseOperations):
         if not location_list:
             return []
 
+        if not recursive:
+            # Top-level only; flat=False would interleave nested lists (#603).
+            return [ICmLocation(item) for item in location_list.PossibilitiesOS]
+
         return list(self.project.UnpackNestedPossibilityList(
-            location_list.PossibilitiesOS, ICmLocation, recursive))
+            location_list.PossibilitiesOS, ICmLocation, True))
 
     @OperationsMethod
     def Create(self, name, wsHandle=None, alias=None, parent=None):

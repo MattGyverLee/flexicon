@@ -131,8 +131,14 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         if not domain_list:
             return []
 
+        if not recursive:
+            # Top-level only. UnpackNestedPossibilityList(flat=False) yields
+            # nested Python lists interleaved with items, so it must not be
+            # used here (issue #603).
+            return [ICmSemanticDomain(item) for item in domain_list.PossibilitiesOS]
+
         return list(self.project.UnpackNestedPossibilityList(
-            domain_list.PossibilitiesOS, ICmSemanticDomain, recursive))
+            domain_list.PossibilitiesOS, ICmSemanticDomain, True))
 
     @OperationsMethod
     def Find(self, number):
