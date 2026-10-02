@@ -55,6 +55,12 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`FLExProject.FromOpenProject` attributes writing-system change-log
+  entries to flexicon (#626).** Follow-up to #608: projects a host such as
+  FlexTools hands over already open were still logged as `Producer="???"
+  ProducerVersion="unknown"`. A write-enabled donor now gets the same
+  best-effort stamp as `OpenProject`. A change-log mapper the host installed
+  itself is left alone, and a failure to stamp never breaks the attach.
 - **`SemanticDomainOperations` name paths no longer resolve through the default analysis WS** (#604, follow-up to #183). `GetName`, `GetDescription`, `GetAbbreviation` and `GetQuestions` now return the best analysis alternative when no `wsHandle` is given, and `FindByName` matches the best analysis alternative plus every current analysis writing system (new optional `wsHandle` restricts it to one WS). Previously a project whose default analysis WS held no semantic-domain text (e.g. Sena 3: default `pt`, catalog text only in `en`) got empty names / missed lookups. An explicit `wsHandle` is still honoured exactly. `SetName`, `SetDescription` and `Create` signatures are unchanged: they write one explicit alternative, the default analysis WS when `wsHandle` is omitted (documented).
 - **`WritingSystems.Delete` now removes the writing system from the store
   (#607).** It used to only drop the writing system from the vernacular and
