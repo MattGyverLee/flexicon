@@ -55,7 +55,6 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
-- **`SemanticDomainOperations` name paths no longer resolve through the default analysis WS** (#604, follow-up to #183). `GetName`, `GetDescription`, `GetAbbreviation` and `GetQuestions` now return the best analysis alternative when no `wsHandle` is given, and `FindByName` matches the best analysis alternative plus every current analysis writing system (new optional `wsHandle` restricts it to one WS). Previously a project whose default analysis WS held no semantic-domain text (e.g. Sena 3: default `pt`, catalog text only in `en`) got empty names / missed lookups. An explicit `wsHandle` is still honoured exactly. `SetName`, `SetDescription` and `Create` signatures are unchanged: they write one explicit alternative, the default analysis WS when `wsHandle` is omitted (documented).
 - **`FLExProject.LexiconSetListFieldSingle` accepts every `CmPossibility`
   subclass (follow-up to #448).** It compared `ClassName` to `"CmPossibility"`,
   but `ClassName` is the concrete class, so passing a `PartOfSpeech`,
@@ -79,6 +78,7 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `wrapped.stratum.Name` / `slot.owner_pos.Name` raw now read through
   `best_analysis_text`. `docs/USAGE_CONTEXTS.md` is updated to the
   same names in the same change.
+- **`SemanticDomainOperations` name paths no longer resolve through the default analysis WS** (#604, follow-up to #183). `GetName`, `GetDescription`, `GetAbbreviation` and `GetQuestions` now return the best analysis alternative when no `wsHandle` is given, and `FindByName` matches the best analysis alternative plus every current analysis writing system (new optional `wsHandle` restricts it to one WS). Previously a project whose default analysis WS held no semantic-domain text (e.g. Sena 3: default `pt`, catalog text only in `en`) got empty names / missed lookups. An explicit `wsHandle` is still honoured exactly. `SetName`, `SetDescription` and `Create` signatures are unchanged: they write one explicit alternative, the default analysis WS when `wsHandle` is omitted (documented).
 
 ### Changed
 
