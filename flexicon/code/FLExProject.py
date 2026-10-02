@@ -415,11 +415,8 @@ class FLExProject(object):
             # (idchangelog.xml) to flexicon instead of Producer="???".
             # Read-only sessions never write the log, so they are left alone.
             # Best effort: install_producer_stamp() never raises.
-            from .Shared.ws_change_log import install_producer_stamp
-            import flexicon as _flexicon_pkg
-            install_producer_stamp(
-                self.project, "flexicon",
-                getattr(_flexicon_pkg, "version", "unknown"))
+            from .Shared.ws_change_log import install_flexicon_producer_stamp
+            install_flexicon_producer_stamp(self.project)
         # Off by default; see SetPeerSchemaGuard(). Reset on every open so a
         # reused FLExProject never inherits the previous project's setting.
         self._peer_schema_guard = False
@@ -557,6 +554,17 @@ class FLExProject(object):
 
         # The mode discriminator every lifecycle guard branches on.
         view._attached_donor = donor
+
+        # Issue #626: same producer attribution as OpenProject (#608) for a
+        # write-enabled host. Best effort, never raises, and leaves a
+        # host-installed change-log mapper alone.
+        if view.writeEnabled:
+            try:
+                from .Shared.ws_change_log import install_flexicon_producer_stamp
+                install_flexicon_producer_stamp(view.project, quiet=True)
+            except Exception as exc:  # noqa: BLE001
+                logging.getLogger(__name__).debug(
+                    "FromOpenProject: producer stamp skipped: %s", exc)
 
         logging.getLogger(__name__).debug(
             "FromOpenProject: attached a view to a cache owned by %s "

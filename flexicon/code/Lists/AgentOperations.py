@@ -28,6 +28,7 @@ from ..FLExProject import FP_ParameterError, FP_NullParameterError
 from ..BaseOperations import OperationsMethod
 from .possibility_item_base import PossibilityItemOperations
 from ..Shared.string_utils import normalize_match_key
+from ..Shared.ws_text import read_text, name_matches
 
 
 class AgentOperations(PossibilityItemOperations):
@@ -123,7 +124,7 @@ class AgentOperations(PossibilityItemOperations):
 
         Args:
             name (str): The name for the new agent.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
             guid (optional): GUID to assign to the new agent, as a
                 ``System.Guid`` or string. Use this when REPRODUCING an
                 agent from another project so it keeps its original
@@ -254,7 +255,7 @@ class AgentOperations(PossibilityItemOperations):
             return duplicate
 
     @OperationsMethod
-    def Find(self, name):
+    def Find(self, name, wsHandle=None):
         """
         Find an agent by name (case-insensitive).
 
@@ -278,11 +279,10 @@ class AgentOperations(PossibilityItemOperations):
             return None
 
         target = normalize_match_key(name, casefold=True).strip()
-        wsHandle = self.project.project.DefaultAnalWs
+        explicit_ws = None if wsHandle is None else self._PossibilityItemOperations__WSHandle(wsHandle)
 
         for agent in self.GetAll():
-            agent_name = ITsString(agent.Name.get_String(wsHandle)).Text
-            if normalize_match_key(agent_name, casefold=True).strip() == target:
+            if name_matches(agent.Name, target, self.project.lp, explicit_ws):
                 return agent
 
         return None

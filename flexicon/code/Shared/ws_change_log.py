@@ -92,7 +92,10 @@ def _build_mapper_class():
     return _mapper_class
 
 
-def install_producer_stamp(lcm_cache, producer, producer_version):
+_OWN_MAPPER_NAME = "Flexicon.Interop.ProducerStampingMapper"
+
+
+def install_producer_stamp(lcm_cache, producer, producer_version, quiet=False):
     """
     Make writing-system change-log entries written through ``lcm_cache``
     carry the given producer name and version.
@@ -105,6 +108,12 @@ def install_producer_stamp(lcm_cache, producer, producer_version):
         lcm_cache: the open ``LcmCache``.
         producer (str): name to record (e.g. ``"flexicon"``).
         producer_version (str): version to record (e.g. ``"4.11.0"``).
+        quiet (bool): log failures at debug instead of warning (used when
+            attaching to a host-owned project, where it is not our call).
+
+    A change-log mapper that is neither libpalaso's stock one nor ours was
+    installed by the host (e.g. FlexTools stamping its own producer); it is
+    left alone and False is returned.
 
     Returns:
         bool: True if the stamp is installed, False if it could not be.
@@ -136,12 +145,37 @@ def install_producer_stamp(lcm_cache, producer, producer_version):
             return False
 
         cls = _build_mapper_class()
-        if current.GetType().FullName == "Flexicon.Interop.ProducerStampingMapper":
+        current_name = current.GetType().FullName or ""
+        if current_name == _OWN_MAPPER_NAME:
             return True  # already installed
+        if not current_name.startswith("SIL.WritingSystems."):
+            logger.debug(
+                "Change-log mapper %s was installed by the host; leaving "
+                "its producer attribution alone.", current_name)
+            return False
         mapper_field.SetValue(change_log, cls(current, producer, producer_version))
         return True
     except Exception as exc:  # noqa: BLE001 - best effort, see docstring
-        logger.warning(
-            "Could not set writing-system change-log producer to %r: %s",
+        log = logger.debug if quiet else logger.warning
+        log("Could not set writing-system change-log producer to %r: %s",
             producer, exc)
+        return False
+
+
+def install_flexicon_producer_stamp(lcm_cache, quiet=False):
+    """
+    Stamp change-log entries as ``Producer="flexicon"`` at the running
+    flexicon version. Shared by ``FLExProject.OpenProject`` (#608) and
+    ``FLExProject.FromOpenProject`` (#626). Never raises.
+
+    Returns:
+        bool: True if the stamp is installed, False otherwise.
+    """
+    try:
+        import flexicon as _flexicon_pkg
+        return install_producer_stamp(
+            lcm_cache, "flexicon",
+            getattr(_flexicon_pkg, "version", "unknown"), quiet=quiet)
+    except Exception as exc:  # noqa: BLE001 - best effort
+        logger.debug("Could not install flexicon producer stamp: %s", exc)
         return False

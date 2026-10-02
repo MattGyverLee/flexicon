@@ -42,6 +42,7 @@ from ..FLExProject import (
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key
+from ..Shared.ws_text import read_text, name_matches
 
 
 class LocationOperations(BaseOperations):
@@ -148,7 +149,7 @@ class LocationOperations(BaseOperations):
 
         Args:
             name (str): The name of the new location.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
             alias (str): Optional alias/abbreviation for the location.
             parent: Optional parent ICmLocation object or HVO. If None
                 (default), creates a top-level location; if given, creates
@@ -299,7 +300,7 @@ class LocationOperations(BaseOperations):
                     location_list.PossibilitiesOS.Remove(location)
 
     @OperationsMethod
-    def Find(self, name):
+    def Find(self, name, wsHandle=None):
         """
         Find a location by its name.
 
@@ -332,7 +333,8 @@ class LocationOperations(BaseOperations):
 
         Notes:
             - Search is case-insensitive
-            - Searches in default analysis writing system
+            - With no wsHandle, matches the best analysis alternative and every
+              current analysis writing system (issue #624)
             - Returns first match only
             - Returns None if not found (doesn't raise exception)
             - For multilingual searches, iterate GetAll() manually
@@ -347,12 +349,11 @@ class LocationOperations(BaseOperations):
             return None
 
         target = normalize_match_key(name, casefold=True).strip()
-        wsHandle = self.project.project.DefaultAnalWs
+        explicit_ws = None if wsHandle is None else self.__WSHandle(wsHandle)
 
         # Search through all locations
         for location in self.GetAll():
-            location_name = ITsString(location.Name.get_String(wsHandle)).Text
-            if normalize_match_key(location_name, casefold=True).strip() == target:
+            if name_matches(location.Name, target, self.project.lp, explicit_ws):
                 return location
 
         return None
@@ -399,7 +400,7 @@ class LocationOperations(BaseOperations):
 
         Args:
             location_or_hvo: Either an ICmLocation object or its HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: The location name, or empty string if not set.
@@ -423,7 +424,7 @@ class LocationOperations(BaseOperations):
         Notes:
             - Returns empty string if name not set in specified writing system
             - Names can be set in multiple writing systems
-            - Default writing system is the default analysis WS
+            - With no wsHandle the best analysis alternative is returned
 
         See Also:
             SetName, GetAlias
@@ -431,10 +432,7 @@ class LocationOperations(BaseOperations):
         self._ValidateParam(location_or_hvo, "location_or_hvo")
 
         location = self.__ResolveObject(location_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
-        name = ITsString(location.Name.get_String(wsHandle)).Text
-        return name or ""
+        return read_text(location.Name, wsHandle)
 
     @OperationsMethod
     def SetName(self, location_or_hvo, name, wsHandle=None):
@@ -444,7 +442,7 @@ class LocationOperations(BaseOperations):
         Args:
             location_or_hvo: Either an ICmLocation object or its HVO.
             name (str): The new name.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -492,7 +490,7 @@ class LocationOperations(BaseOperations):
 
         Args:
             location_or_hvo: Either an ICmLocation object or its HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: The location alias, or empty string if not set.
@@ -526,10 +524,7 @@ class LocationOperations(BaseOperations):
         self._ValidateParam(location_or_hvo, "location_or_hvo")
 
         location = self.__ResolveObject(location_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
-        alias = ITsString(location.Abbreviation.get_String(wsHandle)).Text
-        return alias or ""
+        return read_text(location.Abbreviation, wsHandle)
 
     @OperationsMethod
     def SetAlias(self, location_or_hvo, alias, wsHandle=None):
@@ -539,7 +534,7 @@ class LocationOperations(BaseOperations):
         Args:
             location_or_hvo: Either an ICmLocation object or its HVO.
             alias (str): The new alias.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -789,7 +784,7 @@ class LocationOperations(BaseOperations):
 
         Args:
             location_or_hvo: Either an ICmLocation object or its HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: The location description, or empty string if not set.
@@ -817,11 +812,8 @@ class LocationOperations(BaseOperations):
         self._ValidateParam(location_or_hvo, "location_or_hvo")
 
         location = self.__ResolveObject(location_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
         if hasattr(location, "Description"):
-            desc = ITsString(location.Description.get_String(wsHandle)).Text
-            return desc or ""
+            return read_text(location.Description, wsHandle)
 
         return ""
 
@@ -833,7 +825,7 @@ class LocationOperations(BaseOperations):
         Args:
             location_or_hvo: Either an ICmLocation object or its HVO.
             description (str): The new description text.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -1072,7 +1064,7 @@ class LocationOperations(BaseOperations):
         Args:
             parent_location_or_hvo: The parent ICmLocation object or HVO.
             name (str): The name of the new sublocation.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
             alias (str): Optional alias/abbreviation.
 
         Returns:
@@ -1260,13 +1252,12 @@ class LocationOperations(BaseOperations):
         self._ValidateParam(item, "item")
 
         location = self.__ResolveObject(item)
-        wsHandle = self.project.project.DefaultAnalWs
 
         props = {}
-        props["Name"] = ITsString(location.Name.get_String(wsHandle)).Text or ""
-        props["Abbreviation"] = ITsString(location.Abbreviation.get_String(wsHandle)).Text or ""
+        props["Name"] = read_text(location.Name)
+        props["Abbreviation"] = read_text(location.Abbreviation)
         if hasattr(location, "Description"):
-            props["Description"] = ITsString(location.Description.get_String(wsHandle)).Text or ""
+            props["Description"] = read_text(location.Description)
 
         coords = self.GetCoordinates(location)
         props["Coordinates"] = coords if coords else None
