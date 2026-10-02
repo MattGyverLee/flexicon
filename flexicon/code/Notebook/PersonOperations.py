@@ -31,6 +31,7 @@ from ..FLExProject import (
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key
+from ..Shared.ws_text import read_text, name_matches
 from ..Shared.gendate_utils import gendate_from_input
 
 
@@ -120,7 +121,7 @@ class PersonOperations(BaseOperations):
 
         Args:
             name (str): The full name of the person
-            wsHandle: Optional writing system handle. Defaults to vernacular WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default vernacular WS when omitted.
 
         Returns:
             ICmPerson: The newly created person object
@@ -230,7 +231,7 @@ class PersonOperations(BaseOperations):
 
         Args:
             name (str): The name to search for
-            wsHandle: Optional writing system handle. Defaults to vernacular WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default vernacular WS when omitted.
 
         Returns:
             bool: True if a person exists with this name, False otherwise
@@ -248,7 +249,9 @@ class PersonOperations(BaseOperations):
 
         Notes:
             - Search is case-sensitive
-            - Search is writing-system specific
+            - With no wsHandle, matches the best vernacular/analysis
+              alternative and every current vernacular/analysis WS (issue #624);
+              an explicit wsHandle compares only that alternative
             - Returns False for empty or whitespace-only names
             - Use Find() to get the actual person object
 
@@ -269,7 +272,7 @@ class PersonOperations(BaseOperations):
 
         Args:
             name (str): The name to search for
-            wsHandle: Optional writing system handle. Defaults to vernacular WS.
+            wsHandle: Optional writing system handle. When omitted, the best vernacular alternative (falling back to analysis) is returned (issue #624).
 
         Returns:
             ICmPerson or None: The person object if found, None otherwise
@@ -290,7 +293,9 @@ class PersonOperations(BaseOperations):
         Notes:
             - Returns first match only
             - Search is case-sensitive
-            - Search is writing-system specific
+            - With no wsHandle, matches the best vernacular/analysis
+              alternative and every current vernacular/analysis WS (issue #624);
+              an explicit wsHandle compares only that alternative
             - Returns None if not found (doesn't raise exception)
             - For partial name search, iterate GetAll() and filter
 
@@ -302,13 +307,15 @@ class PersonOperations(BaseOperations):
         if not name or not name.strip():
             return None
 
-        wsHandle = self.__WSHandle(wsHandle)
+        explicit_ws = None if wsHandle is None else self.__WSHandle(wsHandle)
 
-        # Search through all people
-        target = normalize_match_key(name, casefold=False)
+        # With no wsHandle: best vernacular alternative (the Person default),
+        # best analysis alternative, and every current vernacular/analysis WS
+        # (issue #624).
+        target = normalize_match_key(name, casefold=False).strip()
         for person in self.GetAll():
-            person_name = ITsString(person.Name.get_String(wsHandle)).Text
-            if normalize_match_key(person_name, casefold=False) == target:
+            if name_matches(person.Name, target, self.project.lp, explicit_ws,
+                            casefold=False, prefer="vernacular"):
                 return person
 
         return None
@@ -322,7 +329,7 @@ class PersonOperations(BaseOperations):
 
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
-            wsHandle: Optional writing system handle. Defaults to vernacular WS.
+            wsHandle: Optional writing system handle. When omitted, the best vernacular alternative (falling back to analysis) is returned (issue #624).
 
         Returns:
             str: The person's name (empty string if not set)
@@ -350,10 +357,7 @@ class PersonOperations(BaseOperations):
         self._ValidateParam(person_or_hvo, "person_or_hvo")
 
         person = self.__ResolveObject(person_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
-        name = ITsString(person.Name.get_String(wsHandle)).Text
-        return name or ""
+        return read_text(person.Name, wsHandle, prefer="vernacular")
 
     @OperationsMethod
     def SetName(self, person_or_hvo, name, wsHandle=None):
@@ -363,7 +367,7 @@ class PersonOperations(BaseOperations):
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
             name (str): The new name
-            wsHandle: Optional writing system handle. Defaults to vernacular WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default vernacular WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
@@ -578,7 +582,7 @@ class PersonOperations(BaseOperations):
 
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: Email address (empty string if not set)
@@ -614,7 +618,7 @@ class PersonOperations(BaseOperations):
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
             email (str): Email address to set
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
@@ -652,7 +656,7 @@ class PersonOperations(BaseOperations):
 
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: Phone number (empty string if not set)
@@ -690,7 +694,7 @@ class PersonOperations(BaseOperations):
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
             phone (str): Phone number to set
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
@@ -730,7 +734,7 @@ class PersonOperations(BaseOperations):
 
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: Address (empty string if not set)
@@ -755,11 +759,8 @@ class PersonOperations(BaseOperations):
         self._ValidateParam(person_or_hvo, "person_or_hvo")
 
         person = self.__ResolveObject(person_or_hvo)
-        wsHandle = self.__WSHandleAnalysis(wsHandle)
-
         # Use Abbreviation field for address storage
-        address = ITsString(person.Abbreviation.get_String(wsHandle)).Text
-        return address or ""
+        return read_text(person.Abbreviation, wsHandle)
 
     @OperationsMethod
     def SetAddress(self, person_or_hvo, address, wsHandle=None):
@@ -769,7 +770,7 @@ class PersonOperations(BaseOperations):
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
             address (str): Address to set
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
@@ -812,7 +813,7 @@ class PersonOperations(BaseOperations):
 
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: Education information (empty string if not set)
@@ -837,10 +838,7 @@ class PersonOperations(BaseOperations):
         self._ValidateParam(person_or_hvo, "person_or_hvo")
 
         person = self.__ResolveObject(person_or_hvo)
-        wsHandle = self.__WSHandleAnalysis(wsHandle)
-
-        education = ITsString(person.Description.get_String(wsHandle)).Text
-        return education or ""
+        return read_text(person.Description, wsHandle)
 
     @OperationsMethod
     def SetEducation(self, person_or_hvo, education, wsHandle=None):
@@ -850,7 +848,7 @@ class PersonOperations(BaseOperations):
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
             education (str): Education information to set
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
@@ -1088,16 +1086,16 @@ class PersonOperations(BaseOperations):
         self._ValidateParam(item, "item")
 
         person = self.__ResolveObject(item)
-        wsHandle = self.project.project.DefaultAnalWs
 
         props = {}
 
-        # MultiString properties. Gender is Int32 (issue #352); Email,
-        # phone and Comment have no backing field and are not synced.
-        props["Name"] = ITsString(person.Name.get_String(wsHandle)).Text or ""
+        # MultiString properties (best analysis alternative, issue #624).
+        # Gender is Int32 (issue #352); Email, phone and Comment have no
+        # backing field and are not synced.
+        props["Name"] = read_text(person.Name)
         props["Gender"] = person.Gender if person.Gender is not None else 0
-        props["Abbreviation"] = ITsString(person.Abbreviation.get_String(wsHandle)).Text or ""  # Address
-        props["Description"] = ITsString(person.Description.get_String(wsHandle)).Text or ""  # Education
+        props["Abbreviation"] = read_text(person.Abbreviation)  # Address
+        props["Description"] = read_text(person.Description)  # Education
         if person.PlaceOfBirthRA is not None:
             props["PlaceOfBirthRA"] = str(person.PlaceOfBirthRA.Guid)
         else:
@@ -1455,7 +1453,7 @@ class PersonOperations(BaseOperations):
 
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: Notes text (empty string if not set)
@@ -1494,7 +1492,7 @@ class PersonOperations(BaseOperations):
         Args:
             person_or_hvo: Either an ICmPerson object or its HVO
             note (str): Note text to add
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled

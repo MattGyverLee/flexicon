@@ -28,6 +28,7 @@ from ..FLExProject import (
 )
 from ..BaseOperations import OperationsMethod, wrap_enumerable
 from .possibility_item_base import PossibilityItemOperations
+from ..Shared.ws_text import read_text
 
 
 class PublicationOperations(PossibilityItemOperations):
@@ -182,7 +183,7 @@ class PublicationOperations(PossibilityItemOperations):
 
         Args:
             publication_or_hvo: Either an ICmPossibility publication object or its HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: Page layout description, or empty string if not set.
@@ -208,12 +209,9 @@ class PublicationOperations(PossibilityItemOperations):
         self._ValidateParam(publication_or_hvo, "publication_or_hvo")
 
         publication = self._PossibilityItemOperations__ResolveObject(publication_or_hvo)
-        wsHandle = self._PossibilityItemOperations__WSHandle(wsHandle)
-
-        # Use Abbreviation field for page layout description
+        # No wsHandle: best analysis alternative (issue #624)
         if hasattr(publication, "Abbreviation"):
-            layout = ITsString(publication.Abbreviation.get_String(wsHandle)).Text
-            return layout or ""
+            return read_text(publication.Abbreviation, wsHandle)
 
         return ""
 
@@ -225,7 +223,7 @@ class PublicationOperations(PossibilityItemOperations):
         Args:
             publication_or_hvo: Either an ICmPossibility publication object or its HVO.
             layout (str): Page layout description.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -637,7 +635,7 @@ class PublicationOperations(PossibilityItemOperations):
         Args:
             publication_or_hvo: Either an ICmPossibility publication object or its HVO.
             division_name (str): Name of the division (e.g., "Main Entries").
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Returns:
             ICmPossibility: The newly created division object.
@@ -704,7 +702,7 @@ class PublicationOperations(PossibilityItemOperations):
 
         Args:
             publication_or_hvo: Either an ICmPossibility publication object or its HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: Header/footer configuration text, or empty string if not set.
@@ -731,12 +729,9 @@ class PublicationOperations(PossibilityItemOperations):
         self._ValidateParam(publication_or_hvo, "publication_or_hvo")
 
         publication = self._PossibilityItemOperations__ResolveObject(publication_or_hvo)
-        wsHandle = self._PossibilityItemOperations__WSHandle(wsHandle)
-
-        # Use Comment field for header/footer information
+        # No wsHandle: best analysis alternative (issue #624)
         if hasattr(publication, "Comment"):
-            header = ITsString(publication.Comment.get_String(wsHandle)).Text
-            return header or ""
+            return read_text(publication.Comment, wsHandle)
 
         return ""
 
