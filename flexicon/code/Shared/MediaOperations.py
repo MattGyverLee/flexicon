@@ -30,6 +30,7 @@ from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 
 # Import flexlibs exceptions
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import (
     FP_ParameterError,
 )
@@ -308,7 +309,7 @@ class MediaOperations(BaseOperations):
             elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
-            media = media_or_hvo
+            media = require_lcm_object(media_or_hvo, "ICmFile")
             if getattr(media, "ClassName", None) == "CmFile":
                 try:
                     media = ICmFile(media)
@@ -396,7 +397,7 @@ class MediaOperations(BaseOperations):
             elif not isinstance(source_media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
-            source_media = item_or_hvo
+            source_media = require_lcm_object(item_or_hvo, "ICmFile")
             if getattr(source_media, "ClassName", None) == "CmFile":
                 try:
                     source_media = ICmFile(source_media)
@@ -682,7 +683,7 @@ class MediaOperations(BaseOperations):
             elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
-            media = media_or_hvo
+            media = require_lcm_object(media_or_hvo, "ICmFile")
             if getattr(media, "ClassName", None) == "CmFile":
                 try:
                     media = ICmFile(media)
@@ -743,7 +744,7 @@ class MediaOperations(BaseOperations):
             elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
-            media = media_or_hvo
+            media = require_lcm_object(media_or_hvo, "ICmFile")
             if getattr(media, "ClassName", None) == "CmFile":
                 try:
                     media = ICmFile(media)
@@ -815,7 +816,7 @@ class MediaOperations(BaseOperations):
             elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
-            media = media_or_hvo
+            media = require_lcm_object(media_or_hvo, "ICmFile")
             if getattr(media, "ClassName", None) == "CmFile":
                 try:
                     media = ICmFile(media)
@@ -914,7 +915,7 @@ class MediaOperations(BaseOperations):
             elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
-            media = media_or_hvo
+            media = require_lcm_object(media_or_hvo, "ICmFile")
             if getattr(media, "ClassName", None) == "CmFile":
                 try:
                     media = ICmFile(media)
@@ -1026,7 +1027,7 @@ class MediaOperations(BaseOperations):
             elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
-            media = media_or_hvo
+            media = require_lcm_object(media_or_hvo, "ICmFile")
             if getattr(media, "ClassName", None) == "CmFile":
                 try:
                     media = ICmFile(media)
@@ -1090,7 +1091,7 @@ class MediaOperations(BaseOperations):
             elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
-            media = media_or_hvo
+            media = require_lcm_object(media_or_hvo, "ICmFile")
             if getattr(media, "ClassName", None) == "CmFile":
                 try:
                     media = ICmFile(media)
@@ -1161,7 +1162,7 @@ class MediaOperations(BaseOperations):
             elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
-            media = media_or_hvo
+            media = require_lcm_object(media_or_hvo, "ICmFile")
             if getattr(media, "ClassName", None) == "CmFile":
                 try:
                     media = ICmFile(media)
@@ -1348,7 +1349,7 @@ class MediaOperations(BaseOperations):
             elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
-            media = media_or_hvo
+            media = require_lcm_object(media_or_hvo, "ICmFile")
             if getattr(media, "ClassName", None) == "CmFile":
                 try:
                     media = ICmFile(media)
@@ -1611,7 +1612,7 @@ class MediaOperations(BaseOperations):
             elif not isinstance(media, ICmFile):
                 raise FP_ParameterError("HVO does not refer to a media file")
         else:
-            media = media_or_hvo
+            media = require_lcm_object(media_or_hvo, "ICmFile")
             if getattr(media, "ClassName", None) == "CmFile":
                 try:
                     media = ICmFile(media)

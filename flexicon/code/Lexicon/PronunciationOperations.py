@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 import System
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -765,7 +766,7 @@ class PronunciationOperations(BaseOperations):
         if isinstance(media_or_hvo, int):
             media = self.project.Object(media_or_hvo)
         else:
-            media = media_or_hvo
+            media = require_lcm_object(media_or_hvo, "ICmFile")
 
         # Remove from collection
         if hasattr(pronunciation, "MediaFilesOS"):
@@ -1029,6 +1030,7 @@ class PronunciationOperations(BaseOperations):
         """
         if isinstance(entry_or_hvo, int):
             return cast_to_concrete(self.project.Object(entry_or_hvo))
+        require_lcm_object(entry_or_hvo, "ILexEntry")
         return cast_to_concrete(entry_or_hvo)
 
     def __GetPronunciationObject(self, pronunciation_or_hvo):
@@ -1043,6 +1045,7 @@ class PronunciationOperations(BaseOperations):
         """
         if isinstance(pronunciation_or_hvo, int):
             return cast_to_concrete(self.project.Object(pronunciation_or_hvo))
+        require_lcm_object(pronunciation_or_hvo, "ILexPronunciation")
         return cast_to_concrete(pronunciation_or_hvo)
 
     def __WSHandle(self, wsHandle):

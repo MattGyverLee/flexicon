@@ -36,6 +36,7 @@ from SIL.LCModel.Core.Text import TsStringUtils
 from System import DateTime
 
 # Import flexlibs exceptions
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import (
     FP_ParameterError,
 )
@@ -1612,6 +1613,7 @@ class LocationOperations(BaseOperations):
                 return ICmLocation(location_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(location_or_hvo, "ICmLocation")
         return location_or_hvo
 
     def __WSHandle(self, wsHandle):

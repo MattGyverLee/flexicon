@@ -18,6 +18,7 @@ import System
 logger = logging.getLogger(__name__)
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -4164,6 +4165,7 @@ class LexSenseOperations(BaseOperations):
         """
         if isinstance(entry_or_hvo, int):
             return cast_to_concrete(self.project.Object(entry_or_hvo))
+        require_lcm_object(entry_or_hvo, "ILexEntry")
         return cast_to_concrete(entry_or_hvo)
 
     def __GetSenseObject(self, sense_or_hvo):
@@ -4178,6 +4180,7 @@ class LexSenseOperations(BaseOperations):
         """
         if isinstance(sense_or_hvo, int):
             return cast_to_concrete(self.project.Object(sense_or_hvo))
+        require_lcm_object(sense_or_hvo, "ILexSense")
         return cast_to_concrete(sense_or_hvo)
 
     def __GetSenseOwnerObject(self, parent_or_hvo):
@@ -4215,7 +4218,9 @@ class LexSenseOperations(BaseOperations):
                 "Create() parent must be a lexical entry or a sense "
                 f"(HVO resolves to ClassName {class_name!r})"
             )
-        owner = cast_to_concrete(parent_or_hvo)
+        owner = cast_to_concrete(
+            require_lcm_object(parent_or_hvo, "ILexEntry or ILexSense")
+        )
         return owner, getattr(owner, "ClassName", None) == "LexSense"
 
     def __IsSenseParent(self, parent_or_hvo):
@@ -4247,6 +4252,7 @@ class LexSenseOperations(BaseOperations):
         """
         if isinstance(domain_or_hvo, int):
             return cast_to_concrete(self.project.Object(domain_or_hvo))
+        require_lcm_object(domain_or_hvo, "ICmSemanticDomain")
         return cast_to_concrete(domain_or_hvo)
 
     def __WSHandleAnalysis(self, wsHandle):

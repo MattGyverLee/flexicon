@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..lcm_casting import cast_to_concrete
 
@@ -120,6 +121,7 @@ class NaturalClassOperations(BaseOperations):
         # type-mismatch guards and their error messages can read them.
         if isinstance(nc_or_hvo, int):
             nc_or_hvo = self.project.Object(nc_or_hvo)
+        require_lcm_object(nc_or_hvo, "IPhNaturalClass")
         return cast_to_concrete(nc_or_hvo)
 
     def __GetPhonemeObject(self, phoneme_or_hvo):
@@ -134,6 +136,7 @@ class NaturalClassOperations(BaseOperations):
         """
         if isinstance(phoneme_or_hvo, int):
             return cast_to_concrete(self.project.Object(phoneme_or_hvo))
+        require_lcm_object(phoneme_or_hvo, "IPhPhoneme")
         return cast_to_concrete(phoneme_or_hvo)
 
     def __SetNameAndAbbreviation(self, nc, name, abbreviation):

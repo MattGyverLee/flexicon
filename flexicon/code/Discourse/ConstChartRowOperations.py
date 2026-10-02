@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -622,6 +623,7 @@ class ConstChartRowOperations(BaseOperations):
                 return IConstChartRow(row_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(row_or_hvo, "IConstChartRow")
         return row_or_hvo
 
     def __ResolveChart(self, chart_or_hvo):
@@ -652,6 +654,7 @@ class ConstChartRowOperations(BaseOperations):
                 return IDsConstChart(chart_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(chart_or_hvo, "IDsConstChart")
         return chart_or_hvo
 
     def __WSHandle(self, ws):

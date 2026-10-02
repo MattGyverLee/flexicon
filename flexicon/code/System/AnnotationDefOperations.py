@@ -24,6 +24,7 @@ from SIL.LCModel.Core.Text import TsStringUtils
 from System import Guid, DateTime
 
 # Import flexlibs exceptions
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import (
     FP_ParameterError,
 )
@@ -1249,7 +1250,7 @@ class AnnotationDefOperations(BaseOperations):
         """
         if isinstance(anno_def_or_hvo, int):
             anno_def_or_hvo = self.project.Object(anno_def_or_hvo)
-        return ICmAnnotationDefn(anno_def_or_hvo)
+        return ICmAnnotationDefn(require_lcm_object(anno_def_or_hvo, "ICmAnnotationDefn"))
 
     def __WSHandle(self, wsHandle):
         """

@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key
 
@@ -620,6 +621,7 @@ class ReversalIndexEntryOperations(BaseOperations):
                 return IReversalIndexEntry(entry_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(entry_or_hvo, "IReversalIndexEntry")
         return entry_or_hvo
 
     def __GetIndexObject(self, index_or_hvo):
@@ -650,6 +652,7 @@ class ReversalIndexEntryOperations(BaseOperations):
                 return IReversalIndex(index_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(index_or_hvo, "IReversalIndex")
         return index_or_hvo
 
     def __GetEntryWS(self, entry):

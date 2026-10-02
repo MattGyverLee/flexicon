@@ -26,6 +26,7 @@ from SIL.LCModel import (
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import (
     FP_ParameterError,
 )
@@ -109,6 +110,7 @@ class TextOperations(BaseOperations):
                 return IText(text_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(text_or_hvo, "IText")
         return text_or_hvo
 
     # --- Core CRUD Operations ---

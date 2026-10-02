@@ -24,6 +24,7 @@ from SIL.LCModel.Core.Text import TsStringUtils
 import System
 
 # Import flexlibs exceptions
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import (
     FP_ParameterError,
 )
@@ -1538,6 +1539,7 @@ class PossibilityListOperations(BaseOperations):
             ):
                 raise FP_ParameterError("HVO does not refer to a possibility list")
             return obj
+        require_lcm_object(list_or_hvo, "ICmPossibilityList")
         return cast_to_concrete(list_or_hvo)
 
     def __ResolveItem(self, item_or_hvo):
@@ -1561,6 +1563,7 @@ class PossibilityListOperations(BaseOperations):
             ):
                 raise FP_ParameterError("HVO does not refer to a possibility item")
             return obj
+        require_lcm_object(item_or_hvo, "ICmPossibility")
         return cast_to_concrete(item_or_hvo)
 
     def __WSHandle(self, wsHandle):

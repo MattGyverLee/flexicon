@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -517,6 +518,7 @@ class ConstChartWordGroupOperations(BaseOperations):
                 return IConstChartWordGroup(group_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(group_or_hvo, "IConstChartWordGroup")
         return group_or_hvo
 
     def __ResolveRow(self, row_or_hvo):
@@ -547,6 +549,7 @@ class ConstChartWordGroupOperations(BaseOperations):
                 return IConstChartRow(row_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(row_or_hvo, "IConstChartRow")
         return row_or_hvo
 
     # --- Reordering Support ---

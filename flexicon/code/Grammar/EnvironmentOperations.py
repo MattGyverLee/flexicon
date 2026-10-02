@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -724,7 +725,7 @@ class EnvironmentOperations(BaseOperations):
         if isinstance(env_or_hvo, int):
             obj = self.project.Object(env_or_hvo)
         else:
-            obj = env_or_hvo
+            obj = require_lcm_object(env_or_hvo, "IPhEnvironment")
 
         class_name = getattr(obj, "ClassName", None)
         if class_name == "PhEnvironment":

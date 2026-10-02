@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -517,6 +518,7 @@ class ScrBookOperations(BaseOperations):
                 return IScrBook(book_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(book_or_hvo, "IScrBook")
         return book_or_hvo
 
     def __WSHandle(self, wsHandle):

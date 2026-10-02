@@ -32,6 +32,7 @@ from SIL.LCModel import (
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import (
     FP_ParameterError,
 )
@@ -192,6 +193,7 @@ class WfiAnalysisOperations(BaseOperations):
                 return IWfiWordform(wordform_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(wordform_or_hvo, "IWfiWordform")
         return wordform_or_hvo
 
     def __GetAnalysisObject(self, analysis_or_hvo):
@@ -226,6 +228,7 @@ class WfiAnalysisOperations(BaseOperations):
                 return IWfiAnalysis(analysis_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(analysis_or_hvo, "IWfiAnalysis")
         return analysis_or_hvo
 
     def __GetAgentObject(self, agent_or_hvo):
@@ -260,6 +263,7 @@ class WfiAnalysisOperations(BaseOperations):
                 return ICmAgent(agent_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(agent_or_hvo, "ICmAgent")
         return agent_or_hvo
 
     def __ResolveOwningAnalysis(self, analysis_or_hvo):
@@ -286,7 +290,7 @@ class WfiAnalysisOperations(BaseOperations):
         if isinstance(analysis_or_hvo, int):
             obj = self.project.Object(analysis_or_hvo)
         else:
-            obj = analysis_or_hvo
+            obj = require_lcm_object(analysis_or_hvo, "IAnalysis")
 
         # Dispatch on ClassName: pythonnet isinstance() against the concrete
         # IWfiGloss/IWfiAnalysis interfaces is False for the base IAnalysis-typed

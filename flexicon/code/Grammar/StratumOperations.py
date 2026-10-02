@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -99,7 +100,7 @@ class StratumOperations(BaseOperations):
         if isinstance(stratum_or_hvo, int):
             obj = self.project.Object(stratum_or_hvo)
         else:
-            obj = stratum_or_hvo
+            obj = require_lcm_object(stratum_or_hvo, "IMoStratum")
         if getattr(obj, "ClassName", None) == "MoStratum":
             try:
                 return IMoStratum(obj)
