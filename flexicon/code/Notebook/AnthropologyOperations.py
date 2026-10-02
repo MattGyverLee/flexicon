@@ -203,8 +203,12 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         if anthro_list is None:
             return []
 
+        if not recursive:
+            # Top-level only; flat=False would interleave nested lists (#603).
+            return [ICmAnthroItem(item) for item in anthro_list.PossibilitiesOS]
+
         return list(self.project.UnpackNestedPossibilityList(
-            anthro_list.PossibilitiesOS, ICmAnthroItem, recursive))
+            anthro_list.PossibilitiesOS, ICmAnthroItem, True))
 
     @OperationsMethod
     def Create(self, name, abbreviation=None, anthro_code=None, parent=None):
