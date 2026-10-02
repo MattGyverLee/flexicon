@@ -114,7 +114,9 @@ class ReversalIndexOperations(BaseOperations):
 
         Args:
             name (str): Name for the reversal index (e.g., "English", "French")
-            writing_system: Writing system handle (must be analysis WS)
+            writing_system: Writing system handle (int) or language tag
+                (str). Must be one of the project's analysis writing
+                systems.
             guid (optional): GUID to assign to the new index, as a
                 ``System.Guid`` or string. Use this when REPRODUCING an
                 index from another project so it keeps its original
@@ -129,8 +131,9 @@ class ReversalIndexOperations(BaseOperations):
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
             FP_NullParameterError: If name or writing_system is None
-            FP_ParameterError: If name is empty, an index already exists
-                for the writing system, or guid was supplied but is not a
+            FP_ParameterError: If name is empty, writing_system is not an
+                analysis writing system of the project, an index already
+                exists for the writing system, or guid was supplied but is not a
                 valid GUID.
 
         Example:
@@ -169,6 +172,15 @@ class ReversalIndexOperations(BaseOperations):
 
         if not name or not name.strip():
             raise FP_ParameterError("Reversal index name cannot be empty")
+
+        # Reversal indexes are keyed to analysis writing systems only.
+        # Validated before any mutation.
+        if not self.__IsAnalysisWS(writing_system):
+            raise FP_ParameterError(
+                f"Writing system {writing_system} is not an analysis writing "
+                "system of this project; a reversal index requires an "
+                "analysis writing system"
+            )
 
         # Check if index already exists for this writing system. This
         # business-rule validation happens BEFORE any mutation (and
@@ -508,6 +520,24 @@ class ReversalIndexOperations(BaseOperations):
         raise FP_ParameterError("ExportToLIFT not yet implemented. " "Use FLEx's built-in LIFT export functionality.")
 
     # --- Private Helper Methods ---
+
+    def __IsAnalysisWS(self, writing_system):
+        """Return True if writing_system (int handle or tag str) is one of
+        the project's analysis writing systems."""
+        wsops = self.project.WritingSystems
+        for ws in wsops.GetAnalysis():
+            if isinstance(writing_system, str):
+                if self.project.WSHandle(writing_system) == ws.Handle:
+                    return True
+                if wsops.GetLanguageTag(ws) == writing_system:
+                    return True
+            else:
+                try:
+                    if int(writing_system) == int(ws.Handle):
+                        return True
+                except (TypeError, ValueError):
+                    return False
+        return False
 
     def __ResolveObject(self, index_or_hvo):
         """
