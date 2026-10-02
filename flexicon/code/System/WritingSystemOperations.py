@@ -232,6 +232,9 @@ class WritingSystemOperations(BaseOperations):
             - Use "qaa-x-" prefix for undocumented languages
             - The writing system is automatically added to vernacular or
               analysis list based on is_vernacular parameter
+            - The writing-system store is saved immediately (the ``.ldml``
+              and the ``idchangelog.xml`` ``<Add>`` entry reach disk before
+              this returns), the same as ``Delete``
             - Default font settings may be inherited from system defaults
             - **Store-present-but-inactive tags (issue #250 Defect 2):** the
               guard above only refuses an already-ACTIVE tag (what
@@ -308,7 +311,8 @@ class WritingSystemOperations(BaseOperations):
             else:
                 self.project.lp.AddToCurrentAnalysisWritingSystems(ws)
 
-            return ws
+        self._SaveWritingSystemStore(f"Create({language_tag!r})")
+        return ws
 
     @OperationsMethod
     def Ensure(self, language_tag, name, is_vernacular=True):
@@ -371,6 +375,9 @@ class WritingSystemOperations(BaseOperations):
               log, or can call ``Exists()`` before ``Ensure()`` if it needs
               to know synchronously which case applied.
             - Never removes or deactivates a writing system; only adds.
+            - When it changes anything, the writing-system store is saved
+              immediately (``.ldml`` and ``idchangelog.xml`` reach disk). The
+              already-active no-op does not save.
 
         See Also:
             Exists, ExistsInStore, Create
@@ -430,7 +437,8 @@ class WritingSystemOperations(BaseOperations):
             else:
                 self.project.lp.AddToCurrentAnalysisWritingSystems(ws)
 
-            return ws, created
+        self._SaveWritingSystemStore(f"Ensure({language_tag!r})")
+        return ws, created
 
     @OperationsMethod
     def Delete(self, ws_handle_or_tag):
@@ -520,7 +528,7 @@ class WritingSystemOperations(BaseOperations):
         # MarkedForDeletion is only acted on when the store is saved: that is
         # when the .ldml moves to trash/ and the <Delete> entry is logged
         # (issue #607). Done after the unit of work closes, as FieldWorks does.
-        self.project.project.ServiceLocator.WritingSystemManager.Save()
+        self._SaveWritingSystemStore(f"Delete({language_tag!r})")
         logger.info("WritingSystems.Delete(%r): removed from store.", language_tag)
 
     # --- Configuration Methods ---
@@ -1161,6 +1169,17 @@ class WritingSystemOperations(BaseOperations):
         return "" if s == "***" else s
 
     # --- Private Helper Methods ---
+
+    def _SaveWritingSystemStore(self, what):
+        """Flush the writing-system store to disk (issue #625).
+
+        Writes ``WritingSystemStore/<tag>.ldml`` and the ``idchangelog.xml``
+        entry now rather than at the next store save / CloseProject, so a
+        crash or a second reader sees the change. Called after the unit of
+        work closes, as FieldWorks does.
+        """
+        self.project.project.ServiceLocator.WritingSystemManager.Save()
+        logger.debug("WritingSystems.%s: writing-system store saved.", what)
 
     def _GetAllVernacularWSTags(self):
         """

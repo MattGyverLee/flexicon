@@ -55,6 +55,14 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`WritingSystems.Create` / `Ensure` now save the writing-system store
+  immediately (#625).** They used to add the writing system to the LCM but
+  leave `WritingSystemStore/<tag>.ldml` and the `idchangelog.xml` `<Add>`
+  entry unwritten until the next store save or `CloseProject`, so a crash
+  lost the `.ldml` and other readers (a second process, FieldWorks,
+  Send/Receive tooling) could not see it. They now save the store after the
+  unit of work closes, as `Delete` does. `Ensure` on a tag already active in
+  the requested category is still a no-op and does not save.
 - **`SemanticDomainOperations` name paths no longer resolve through the default analysis WS** (#604, follow-up to #183). `GetName`, `GetDescription`, `GetAbbreviation` and `GetQuestions` now return the best analysis alternative when no `wsHandle` is given, and `FindByName` matches the best analysis alternative plus every current analysis writing system (new optional `wsHandle` restricts it to one WS). Previously a project whose default analysis WS held no semantic-domain text (e.g. Sena 3: default `pt`, catalog text only in `en`) got empty names / missed lookups. An explicit `wsHandle` is still honoured exactly. `SetName`, `SetDescription` and `Create` signatures are unchanged: they write one explicit alternative, the default analysis WS when `wsHandle` is omitted (documented).
 - **`WritingSystems.Delete` now removes the writing system from the store
   (#607).** It used to only drop the writing system from the vernacular and
