@@ -11,7 +11,36 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+---
+
+## [4.12.0] - 2026-10-02
+
 ### Added
+
+- **Allomorph, MSA and POS wrappers for morphology scripts** (#573, #574,
+  #575, #580, #581, #583). `MSAOperations.GetInflectionClass` /
+  `SetInflectionClass` (class validated against the MSA's POS or an ancestor
+  before any write) and an optional `keep_inflection_class` on
+  `SetStemMsaPos`; `MSAOperations.GetExceptionFeatures` /
+  `AddExceptionFeature` / `RemoveExceptionFeature` over `ProdRestrictRC`;
+  `MSAOperations.GetLongName` / `GetMSAType` / `GetOwningEntry` and
+  `LexSenseOperations.GetGrammaticalInfoText`;
+  `AllomorphOperations.GetInflectionClasses` / `AddInflectionClass` /
+  `RemoveInflectionClass`, `GetRequiredFeatures` / `SetRequiredFeatures`, and
+  `GetStemName` / `SetStemName`; `POSOperations.GetStemNames` /
+  `GetStemNameText` / `GetStemNameAbbreviation` / `GetStemNameRegionCount`,
+  inflection-class abbreviation accessors, and
+  `GetInflectionClasses(recursive=True)` to walk subclasses; an
+  affix-template reorder wrapper; `LexEntryOperations.GetMorphTypeName`.
+- **`InflectionFeatureOperations.GetInflectableFeatures` / `GetFeatureType`**
+  (#577), **`PhonFeatureOperations.DescribeFeatStruc` / `GetFeatureSpecs`**
+  and **`PhonemeOperations.GetCodeRepresentation`** (#578).
+- **`WordformOperations.GetParserCount` / `GetUserCount` / `IsParsed`**
+  (#576). `IsParsed` means "has parser evaluations", not "has
+  computer-approved analyses".
+- **`WfiAnalysisOperations.GetEvaluationsForAgent` / `ClearEvaluation` /
+  `RemoveAllHumanEvaluations`** (#582): remove human evaluations through the
+  ownership-safe `SetEvaluation` path; parser evaluations are preserved.
 
 - **Peer schema guard: `FLExProject.SetPeerSchemaGuard()` /
   `PeerSchemaGuard`, `FP_ExclusiveAccessRequiredError`, capability
@@ -54,6 +83,28 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   synced copy parses with the rule still enabled.
 
 ### Fixed
+
+- **`Duplicate(insert_after=True)` on variants indexes by HVO** (#597): a raw
+  `project.Object(hvo)` source now inserts after itself on `EntryRefsOS`
+  instead of failing the `IndexOf` lookup.
+- **`SemanticDomainOperations.GetAll(recursive=False)`,
+  `AnthropologyOperations.GetAll` and `LocationOperations.GetAll` return only
+  the top-level items** (#603). The non-recursive path used to return nested
+  Python lists interleaved with items.
+- **`ReversalIndexOperations.Create` stores the language tag in
+  `IReversalIndex.WritingSystem` (#619)** instead of a stringified handle that
+  matched no writing system; `FindByWritingSystem` accepts a handle or a
+  (case/underscore-variant) tag. Indexes created by earlier versions with a
+  junk tag are still locatable and deletable.
+- **Wrong-type arguments raise `FP_ParameterError` instead of a raw
+  `AttributeError`** (#600, #618). `WordformOperations` (a `str` wordform)
+  and every Operations resolver that used to pass any non-int argument
+  through now raise `FP_ParameterError` ("Expected <type> object or an int
+  HVO, got <type>"). Wrappers, raw pythonnet objects and HVOs are unaffected.
+- **Docs corrected** (#602, #606, #579): `CreateField`'s refusal inside a unit
+  of work, what reversal `SetName` / `GetName` / `Create` actually write, and
+  the rollback caveat for `UndoableOperation`. #599 (affix allomorph cast)
+  needed no source change; the cases are now locked by tests.
 
 - **`WritingSystems.Create` / `Ensure` now save the writing-system store
   immediately (#625).** They used to add the writing system to the LCM but
@@ -108,6 +159,12 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   same names in the same change.
 
 ### Changed
+
+- **`ReversalIndexOperations.Create` rejects non-analysis writing systems**
+  (#605). It documented the requirement but never checked, so a vernacular
+  writing system was accepted; it now raises `FP_ParameterError` before any
+  mutation. It also accepts a language tag as well as an int handle. Not
+  breaking: a reversal index on a vernacular WS is not a valid FLEx state.
 
 - **Internal `PhonologicalContext.boundary_type` retired** (#572),
   replaced by `boundary_marker` / `boundary_name`. The name was the

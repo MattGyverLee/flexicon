@@ -10,6 +10,37 @@ None
 
 ## History
 
+### 2026-10-02 - v4.12.0: the writing-system store, and a name path that stops guessing
+
+Cuts v4.12.0 from `main`. Nothing breaking. The release is mostly a
+writing-system and name-resolution cleanup, plus a run of morphology
+wrappers that let recipe ports stop reaching for raw LCM.
+
+**Writing-system changes now reach the store.** `WritingSystems.Delete`
+used to drop a writing system from the vernacular/analysis lists and leave
+its `.ldml` on disk; `Create`/`Ensure` did the opposite and left the `.ldml`
+unwritten until the next store save. Both now save the store (#607, #625),
+change-log entries read `Producer="flexicon"` instead of `"???"` (#608,
+#626), and an opt-in peer schema guard refuses writing-system writes from a
+shared-mode peer, which would otherwise crash the FieldWorks holding the
+project.
+
+**Name paths stopped trusting the default analysis WS.** Semantic domains
+and every possibility-list family (#604, #624) resolved names through
+`DefaultAnalWs`, so a project like Sena 3 (default `pt`, list text only in
+`en`) got empty names and missed lookups. They now use the best analysis
+alternative, with an explicit `wsHandle` still honoured exactly. The ~30
+non-list Operations classes with the same private default are not yet
+covered.
+
+**The last stretch was test hygiene.** The final commit before the cut,
+`77aa8aa`, repaired three test-side defects that were red only live: a
+reversal fixture that created a second index per writing system, a
+monkeypatch that permanently replaced an `OperationsMethod` descriptor and
+broke every later `GetHumanAgents` call in the session, and two legacy sync
+modules that raced LCM's asynchronous backend commit at teardown. No library
+code changed in it.
+
 ### 2026-09-27 - v4.11.0: the chart path rebuilt, and the changelog caught up
 
 Cuts v4.11.0 from `main`. New readers (affix slots, MSA feature
