@@ -38,6 +38,7 @@ from ..FLExProject import (
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key
+from ..Shared.ws_text import read_text, name_matches
 from ..Shared.catalog_backed import _LCMNativeCatalogImportMixin
 
 
@@ -558,7 +559,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         return self.Find(name) is not None
 
     @OperationsMethod
-    def Find(self, name):
+    def Find(self, name, wsHandle=None):
         """
         Find an anthropology item by its name.
 
@@ -571,6 +572,9 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                 BOTH the search value and each item's stored name
                 (Q-242A) -- a name differing only by whitespace still
                 counts as a match.
+            wsHandle: Optional writing system handle. When given, only the name
+                in that alternative is compared; when omitted the best analysis
+                alternative and every current analysis WS are matched (issue #624).
 
         Returns:
             ICmAnthroItem or None: The item object if found, None otherwise.
@@ -594,7 +598,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Notes:
             - Search is case-sensitive
-            - Searches in default analysis writing system
+            - With no wsHandle, matches the best analysis alternative and every
+              current analysis writing system (issue #624)
             - Returns first match only
             - Returns None if not found (doesn't raise exception)
             - For OCM code search, use FindByCode()
@@ -607,7 +612,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         if not name or not name.strip():
             return None
 
-        wsHandle = self.project.project.DefaultAnalWs
+        explicit_ws = None if wsHandle is None else self.__WSHandle(wsHandle)
 
         # Search through all items. Strip inline on BOTH sides of the
         # comparison (C4) -- needle and haystack -- so whitespace-padded
@@ -615,8 +620,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         # casefold=False preserved unchanged.
         target = normalize_match_key(name, casefold=False).strip()
         for item in self.GetAll():
-            item_name = ITsString(item.Name.get_String(wsHandle)).Text
-            if normalize_match_key(item_name, casefold=False).strip() == target:
+            if name_matches(item.Name, target, self.project.lp, explicit_ws, casefold=False):
                 return item
 
         return None
@@ -746,7 +750,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Args:
             item_or_hvo: The ICmAnthroItem object or HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: The item name, or empty string if not set.
@@ -770,16 +774,13 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         Notes:
             - Returns empty string if name not set in specified writing system
             - Names are typically set in multiple writing systems
-            - Default writing system is the default analysis WS
+            - With no wsHandle the best analysis alternative is returned
 
         See Also:
             SetName, GetAbbreviation, GetDescription
         """
         item = self.__GetItemObject(item_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
-        name = ITsString(item.Name.get_String(wsHandle)).Text
-        return name or ""
+        return read_text(item.Name, wsHandle)
 
     @OperationsMethod
     def SetName(self, item_or_hvo, name, wsHandle=None):
@@ -789,7 +790,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         Args:
             item_or_hvo: The ICmAnthroItem object or HVO.
             name (str): The new name.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -833,7 +834,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Args:
             item_or_hvo: The ICmAnthroItem object or HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: The abbreviation, or empty string if not set.
@@ -869,10 +870,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             SetAbbreviation, GetName, GetAnthroCode
         """
         item = self.__GetItemObject(item_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
-        abbr = ITsString(item.Abbreviation.get_String(wsHandle)).Text
-        return abbr or ""
+        return read_text(item.Abbreviation, wsHandle)
 
     @OperationsMethod
     def SetAbbreviation(self, item_or_hvo, abbreviation, wsHandle=None):
@@ -882,7 +880,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         Args:
             item_or_hvo: The ICmAnthroItem object or HVO.
             abbreviation (str): The new abbreviation.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -924,7 +922,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Args:
             item_or_hvo: The ICmAnthroItem object or HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: The description, or empty string if not set.
@@ -956,10 +954,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             SetDescription, GetName, GetAnthroCode
         """
         item = self.__GetItemObject(item_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
-        desc = ITsString(item.Description.get_String(wsHandle)).Text
-        return desc or ""
+        return read_text(item.Description, wsHandle)
 
     @OperationsMethod
     def SetDescription(self, item_or_hvo, description, wsHandle=None):
@@ -969,7 +964,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         Args:
             item_or_hvo: The ICmAnthroItem object or HVO.
             description (str): The new description.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -1989,12 +1984,11 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         self._ValidateParam(item, "item")
 
         anthro_item = self.__GetItemObject(item)
-        wsHandle = self.project.project.DefaultAnalWs
 
         props = {}
-        props["Name"] = ITsString(anthro_item.Name.get_String(wsHandle)).Text or ""
-        props["Abbreviation"] = ITsString(anthro_item.Abbreviation.get_String(wsHandle)).Text or ""
-        props["Description"] = ITsString(anthro_item.Description.get_String(wsHandle)).Text or ""
+        props["Name"] = read_text(anthro_item.Name)
+        props["Abbreviation"] = read_text(anthro_item.Abbreviation)
+        props["Description"] = read_text(anthro_item.Description)
 
         # OCM code: ICmAnthroItem has no AnthroCode member; data lives in
         # Abbreviation (issue #359).

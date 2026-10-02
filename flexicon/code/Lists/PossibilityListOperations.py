@@ -30,7 +30,8 @@ from ..FLExProject import (
 )
 from ..BaseOperations import BaseOperations, OperationsMethod
 from ..lcm_casting import cast_to_concrete
-from ..Shared.string_utils import normalize_match_key
+from ..Shared.string_utils import normalize_match_key, best_analysis_text
+from ..Shared.ws_text import read_text, name_matches
 
 
 class PossibilityListOperations(BaseOperations):
@@ -202,7 +203,7 @@ class PossibilityListOperations(BaseOperations):
 
         Args:
             name (str): The name of the new list.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Returns:
             ICmPossibilityList: The newly created list object.
@@ -301,12 +302,15 @@ class PossibilityListOperations(BaseOperations):
         )
 
     @OperationsMethod
-    def FindList(self, name):
+    def FindList(self, name, wsHandle=None):
         """
         Find a possibility list by its name.
 
         Args:
             name (str): The list name to search for (case-insensitive).
+            wsHandle: Optional writing system handle. When given, only the name
+                in that alternative is compared; when omitted the best analysis
+                alternative and every current analysis WS are matched (issue #624).
 
         Returns:
             ICmPossibilityList or None: The list object if found, None otherwise.
@@ -341,12 +345,11 @@ class PossibilityListOperations(BaseOperations):
             return None
 
         target = normalize_match_key(name, casefold=True).strip()
-        wsHandle = self.project.project.DefaultAnalWs
+        explicit_ws = None if wsHandle is None else self.__WSHandle(wsHandle)
 
         # Search through all lists
         for poss_list in self.GetAllLists():
-            list_name = ITsString(poss_list.Name.get_String(wsHandle)).Text
-            if list_name and normalize_match_key(list_name, casefold=True).strip() == target:
+            if name_matches(poss_list.Name, target, self.project.lp, explicit_ws):
                 return poss_list
 
         return None
@@ -363,7 +366,7 @@ class PossibilityListOperations(BaseOperations):
         Args:
             list_name (str): The possibility list name (case-insensitive).
             item_name (str): The name of the new item.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
             parent: Optional parent item or HVO for a subitem.
 
         Returns:
@@ -396,7 +399,7 @@ class PossibilityListOperations(BaseOperations):
 
         Args:
             list_or_hvo: The ICmPossibilityList object or HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: The list name, or empty string if not set.
@@ -420,10 +423,7 @@ class PossibilityListOperations(BaseOperations):
         self._ValidateParam(list_or_hvo, "list_or_hvo")
 
         poss_list = self.__ResolveList(list_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
-        name = ITsString(poss_list.Name.get_String(wsHandle)).Text
-        return name or ""
+        return read_text(poss_list.Name, wsHandle)
 
     @OperationsMethod
     def SetListName(self, list_or_hvo, name, wsHandle=None):
@@ -433,7 +433,7 @@ class PossibilityListOperations(BaseOperations):
         Args:
             list_or_hvo: The ICmPossibilityList object or HVO.
             name (str): The new name.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -521,7 +521,7 @@ class PossibilityListOperations(BaseOperations):
         Args:
             list_or_hvo: The ICmPossibilityList object or HVO.
             name (str): The name of the new item.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
             parent: Optional parent ICmPossibility object or HVO. If None,
                 creates a top-level item. If provided, creates a subitem.
 
@@ -784,16 +784,15 @@ class PossibilityListOperations(BaseOperations):
         self._ValidateParam(item, "item")
 
         poss_item = self.__ResolveItem(item)
-        wsHandle = self.project.project.DefaultAnalWs
 
         props = {}
 
-        # MultiString properties
-        props["Name"] = ITsString(poss_item.Name.get_String(wsHandle)).Text or ""
-        props["Abbreviation"] = ITsString(poss_item.Abbreviation.get_String(wsHandle)).Text or ""
+        # MultiString properties (best analysis alternative, issue #624)
+        props["Name"] = best_analysis_text(poss_item.Name)
+        props["Abbreviation"] = best_analysis_text(poss_item.Abbreviation)
 
         if hasattr(poss_item, "Description"):
-            props["Description"] = ITsString(poss_item.Description.get_String(wsHandle)).Text or ""
+            props["Description"] = best_analysis_text(poss_item.Description)
 
         return props
 
@@ -868,13 +867,16 @@ class PossibilityListOperations(BaseOperations):
                     self.__DuplicateSubitemsRecursive(sub_item, sub_dup)
 
     @OperationsMethod
-    def FindItem(self, list_or_hvo, name):
+    def FindItem(self, list_or_hvo, name, wsHandle=None):
         """
         Find an item in a possibility list by name.
 
         Args:
             list_or_hvo: The ICmPossibilityList object or HVO to search in.
             name (str): The item name to search for (case-insensitive).
+            wsHandle: Optional writing system handle. When given, only the name
+                in that alternative is compared; when omitted the best analysis
+                alternative and every current analysis WS are matched (issue #624).
 
         Returns:
             ICmPossibility or None: The item object if found, None otherwise.
@@ -912,12 +914,11 @@ class PossibilityListOperations(BaseOperations):
             return None
 
         target = normalize_match_key(name, casefold=True).strip()
-        wsHandle = self.project.project.DefaultAnalWs
+        explicit_ws = None if wsHandle is None else self.__WSHandle(wsHandle)
 
         # Search through all items (recursive default)
         for item in self.GetItems(list_or_hvo):
-            item_name = ITsString(item.Name.get_String(wsHandle)).Text
-            if item_name and normalize_match_key(item_name, casefold=True).strip() == target:
+            if name_matches(item.Name, target, self.project.lp, explicit_ws):
                 return item
 
         return None
@@ -929,7 +930,7 @@ class PossibilityListOperations(BaseOperations):
 
         Args:
             item_or_hvo: The ICmPossibility object or HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: The item name, or empty string if not set.
@@ -957,10 +958,7 @@ class PossibilityListOperations(BaseOperations):
         self._ValidateParam(item_or_hvo, "item_or_hvo")
 
         item = self.__ResolveItem(item_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
-        name = ITsString(item.Name.get_String(wsHandle)).Text
-        return name or ""
+        return read_text(item.Name, wsHandle)
 
     @OperationsMethod
     def SetItemName(self, item_or_hvo, name, wsHandle=None):
@@ -970,7 +968,7 @@ class PossibilityListOperations(BaseOperations):
         Args:
             item_or_hvo: The ICmPossibility object or HVO.
             name (str): The new name.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -1008,7 +1006,7 @@ class PossibilityListOperations(BaseOperations):
 
         Args:
             item_or_hvo: The ICmPossibility object or HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: The item abbreviation, or empty string if not set.
@@ -1029,10 +1027,7 @@ class PossibilityListOperations(BaseOperations):
         self._ValidateParam(item_or_hvo, "item_or_hvo")
 
         item = self.__ResolveItem(item_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
-        abbr = ITsString(item.Abbreviation.get_String(wsHandle)).Text
-        return abbr or ""
+        return read_text(item.Abbreviation, wsHandle)
 
     @OperationsMethod
     def SetItemAbbreviation(self, item_or_hvo, abbr, wsHandle=None):
@@ -1042,7 +1037,7 @@ class PossibilityListOperations(BaseOperations):
         Args:
             item_or_hvo: The ICmPossibility object or HVO.
             abbr (str): The new abbreviation.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -1080,7 +1075,7 @@ class PossibilityListOperations(BaseOperations):
 
         Args:
             item_or_hvo: The ICmPossibility object or HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: The item description, or empty string if not set.
@@ -1101,11 +1096,8 @@ class PossibilityListOperations(BaseOperations):
         self._ValidateParam(item_or_hvo, "item_or_hvo")
 
         item = self.__ResolveItem(item_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
-
         # Description is a MultiString
-        desc = ITsString(item.Description.get_String(wsHandle)).Text
-        return desc or ""
+        return read_text(item.Description, wsHandle)
 
     @OperationsMethod
     def SetItemDescription(self, item_or_hvo, description, wsHandle=None):
@@ -1115,7 +1107,7 @@ class PossibilityListOperations(BaseOperations):
         Args:
             item_or_hvo: The ICmPossibility object or HVO.
             description (str): The new description text.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.

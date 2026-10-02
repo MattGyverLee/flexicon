@@ -23,6 +23,7 @@ import System
 from ..FLExProject import FP_ParameterError
 from ..BaseOperations import OperationsMethod, wrap_enumerable
 from .possibility_item_base import PossibilityItemOperations
+from ..Shared.ws_text import read_text
 
 
 class TranslationTypeOperations(PossibilityItemOperations):
@@ -83,7 +84,7 @@ class TranslationTypeOperations(PossibilityItemOperations):
 
         Args:
             type_or_hvo: The ICmPossibility object or HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis alternative is returned (issue #624).
 
         Returns:
             str: The translation type abbreviation, or empty string if not set.
@@ -108,10 +109,8 @@ class TranslationTypeOperations(PossibilityItemOperations):
         self._ValidateParam(type_or_hvo, "type_or_hvo")
 
         trans_type = self._PossibilityItemOperations__ResolveObject(type_or_hvo)
-        wsHandle = self._PossibilityItemOperations__WSHandle(wsHandle)
-
-        abbr = ITsString(trans_type.Abbreviation.get_String(wsHandle)).Text
-        return abbr or ""
+        # No wsHandle: best analysis alternative (issue #624)
+        return read_text(trans_type.Abbreviation, wsHandle)
 
     @OperationsMethod
     def SetAbbreviation(self, type_or_hvo, abbreviation, wsHandle=None):
@@ -121,7 +120,7 @@ class TranslationTypeOperations(PossibilityItemOperations):
         Args:
             type_or_hvo: The ICmPossibility object or HVO.
             abbreviation (str): The new abbreviation.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit alternative: the default analysis WS when omitted.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.

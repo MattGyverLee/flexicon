@@ -72,6 +72,10 @@ def _load_possibility_list_ops():
     base_ops = types.ModuleType("flexicon.code.BaseOperations")
     string_utils = types.ModuleType("flexicon.code.Shared.string_utils")
     string_utils.normalize_match_key = lambda s: s
+    string_utils.best_analysis_text = lambda m: ""
+    ws_text = types.ModuleType("flexicon.code.Shared.ws_text")
+    ws_text.read_text = lambda m, ws=None, prefer="analysis": ""
+    ws_text.name_matches = lambda *a, **k: False
 
     class _BaseOperations:
         def __init__(self, project):
@@ -125,6 +129,7 @@ def _load_possibility_list_ops():
     sys.modules["flexicon.code.FLExProject"] = flexicon_flex
     sys.modules["flexicon.code.BaseOperations"] = base_ops
     sys.modules["flexicon.code.Shared.string_utils"] = string_utils
+    sys.modules["flexicon.code.Shared.ws_text"] = ws_text
     sys.modules["SIL"] = types.ModuleType("SIL")
     sys.modules["SIL.LCModel"] = sil_lcm
     sys.modules["SIL.LCModel.Core.KernelInterfaces"] = sil_kernel
