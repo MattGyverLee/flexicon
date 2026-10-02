@@ -731,6 +731,37 @@ Evidence: `specs/572-phonological-rule-readers/evidence/live-US1-contexts.md`
 (SC-004, every pooled and rule-referenced context in `morphboundary`,
 2026-09-28).
 
+### `IReversalIndex.WritingSystem` holds a language TAG, not a handle (issue #619)
+
+`IReversalIndex.WritingSystem` is a `string` language tag (e.g. `"en"`).
+Elsewhere in LCM a "writing system" is an `int` handle. `ReversalIndexOperations.Create`
+documented `writing_system` as a handle and stored `str(writing_system)`,
+writing a stringified integer (e.g. `"999000001"`) into the tag field.
+The index then matched no real writing system, `FindByWritingSystem(handle)`
+never found it (it compared a tag against `str(handle)`), and
+`ReversalIndexEntryOperations.Create`'s `WSHandle(index.WritingSystem)`
+fallback could not resolve it.
+
+**Fix**: `Create` accepts a handle or a tag, validates it as an analysis
+writing system, and always stores the writing system's canonical tag.
+`FindByWritingSystem` resolves a handle or a (case/underscore-variant) tag
+to the canonical tag before comparing; a value matching no known writing
+system falls back to a plain string compare so a stale index can still be
+located and deleted.
+
+**Behaviour change**: because the lookup now really matches, a project that
+already has an index for an analysis WS reports that WS as taken (a
+duplicate `Create` raises `FP_ParameterError`, as documented). Previously the
+mismatch let duplicate junk-tagged indexes be created. Existing projects may
+contain indexes with a numeric `WritingSystem`; locate one with
+`FindByWritingSystem(<that handle>)` and `Delete` it.
+
+**Sibling sweep**: the only other `*.WritingSystem` / `WsSelector` / tag-field
+assignment under `flexicon/code` was this one (`grep -rnE
+"\.(WritingSystem|WritingSystemRA|WsSelector|Ws|Id)\s*="`). Readers
+(`ReversalIndexEntryOperations` lines ~202/306/672, `LexSenseOperations`
+~2361) pass the tag through `WSHandle()`/string ops and are correct.
+
 ### Recommended pattern
 
 Before touching a field whose type you have not verified for *this specific LCM type*, check this table. If the type is not listed here, verify via the LCM source in `liblcm/src/SIL.LCModel/InterfaceAdditions.cs` or by reading another Operations class that already handles the same type correctly.

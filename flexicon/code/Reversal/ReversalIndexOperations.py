@@ -116,7 +116,9 @@ class ReversalIndexOperations(BaseOperations):
             name (str): Name for the reversal index (e.g., "English", "French")
             writing_system: Writing system handle (int) or language tag
                 (str). Must be one of the project's analysis writing
-                systems.
+                systems. Either form is accepted; the index always
+                stores the language tag (e.g. ``"en"``), never the
+                handle.
             guid (optional): GUID to assign to the new index, as a
                 ``System.Guid`` or string. Use this when REPRODUCING an
                 index from another project so it keeps its original
@@ -154,6 +156,9 @@ class ReversalIndexOperations(BaseOperations):
               ``name`` argument is not what the FLEx UI shows.
             - One reversal index per writing system
             - Writing system must be an analysis writing system
+            - ``IReversalIndex.WritingSystem`` is always set to the
+              canonical language tag (e.g. ``"en"``), even when a handle
+              is passed (issue #619)
             - Index is automatically added to project's reversal indexes
             - New index starts with zero entries
             - Supplying guid does NOT bypass the one-index-per-writing-
@@ -178,7 +183,8 @@ class ReversalIndexOperations(BaseOperations):
 
         # Reversal indexes are keyed to analysis writing systems only.
         # Validated before any mutation.
-        if not self.__IsAnalysisWS(writing_system):
+        ws_tag = self.__AnalysisWSTag(writing_system)
+        if ws_tag is None:
             raise FP_ParameterError(
                 f"Writing system {writing_system} is not an analysis writing "
                 "system of this project; a reversal index requires an "
@@ -190,7 +196,7 @@ class ReversalIndexOperations(BaseOperations):
         # BEFORE _CreateWithGuid), so it still raises even when a guid is
         # supplied -- guid identity is purely additive on top of the
         # WS-uniqueness guard, not a replacement for it.
-        existing = self.FindByWritingSystem(writing_system)
+        existing = self.FindByWritingSystem(ws_tag)
         if existing:
             raise FP_ParameterError(f"Reversal index already exists for writing system {writing_system}")
 
@@ -202,8 +208,10 @@ class ReversalIndexOperations(BaseOperations):
             # Add to language project's reversal indexes
             self.project.lp.LexDbOA.ReversalIndexesOC.Add(new_index)
 
-            # Set the writing system
-            new_index.WritingSystem = str(writing_system)
+            # IReversalIndex.WritingSystem holds a language TAG (e.g. "en"),
+            # never a handle -- store the canonical tag whichever form the
+            # caller passed (issue #619).
+            new_index.WritingSystem = ws_tag
 
             # Set the name
             wsHandle = self.project.project.DefaultAnalWs
@@ -333,12 +341,19 @@ class ReversalIndexOperations(BaseOperations):
         """
         self._ValidateParam(ws, "ws")
 
-        # Convert to string if handle provided
-        ws_str = str(ws)
+        # IReversalIndex.WritingSystem stores a language tag, so resolve a
+        # handle (or a differently-cased/underscored tag) to the canonical
+        # tag before comparing. A value that matches no known writing
+        # system falls back to its plain string form, so an index holding
+        # a stale/unknown value can still be located (e.g. to delete it).
+        ws_tag = self.__WSTag(ws)
+        if ws_tag is None:
+            ws_tag = str(ws)
+        target = self.__NormaliseTag(ws_tag)
 
         # Search through all reversal indexes
         for idx in self.GetAll():
-            if idx.WritingSystem == ws_str:
+            if self.__NormaliseTag(idx.WritingSystem) == target:
                 return idx
 
         return None
@@ -541,23 +556,50 @@ class ReversalIndexOperations(BaseOperations):
 
     # --- Private Helper Methods ---
 
-    def __IsAnalysisWS(self, writing_system):
-        """Return True if writing_system (int handle or tag str) is one of
-        the project's analysis writing systems."""
+    @staticmethod
+    def __NormaliseTag(tag):
+        """Normalise a language tag for comparison (case, '_' vs '-')."""
+        return (tag or "").replace("_", "-").lower()
+
+    def __MatchWS(self, writing_system, candidates):
+        """Return the language tag of the writing system in ``candidates``
+        that ``writing_system`` (int handle or tag str) names, else None.
+
+        The tag returned is the writing system's own canonical ``Id``, not
+        the caller's spelling of it.
+        """
         wsops = self.project.WritingSystems
-        for ws in wsops.GetAnalysis():
-            if isinstance(writing_system, str):
-                if self.project.WSHandle(writing_system) == ws.Handle:
-                    return True
-                if wsops.GetLanguageTag(ws) == writing_system:
-                    return True
-            else:
-                try:
-                    if int(writing_system) == int(ws.Handle):
-                        return True
-                except (TypeError, ValueError):
-                    return False
-        return False
+        if isinstance(writing_system, bool):
+            return None
+        if isinstance(writing_system, str):
+            wanted = self.__NormaliseTag(writing_system)
+            for ws in candidates:
+                tag = wsops.GetLanguageTag(ws)
+                if self.__NormaliseTag(tag) == wanted:
+                    return tag
+            return None
+        try:
+            handle = int(writing_system)
+        except (TypeError, ValueError):
+            return None
+        for ws in candidates:
+            if int(ws.Handle) == handle:
+                return wsops.GetLanguageTag(ws)
+        return None
+
+    def __AnalysisWSTag(self, writing_system):
+        """Return the language tag of the project analysis writing system
+        named by ``writing_system`` (int handle or tag str), or None if it
+        is not one of the project's analysis writing systems."""
+        return self.__MatchWS(writing_system, list(self.project.WritingSystems.GetAnalysis()))
+
+    def __WSTag(self, writing_system):
+        """Return the canonical language tag for any project writing
+        system (analysis or vernacular) named by ``writing_system``, or
+        None if it matches none."""
+        wsops = self.project.WritingSystems
+        candidates = list(wsops.GetAnalysis()) + list(wsops.GetVernacular())
+        return self.__MatchWS(writing_system, candidates)
 
     def __ResolveObject(self, index_or_hvo):
         """

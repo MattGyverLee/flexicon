@@ -49,11 +49,17 @@ def _reread_by_guid(project, guid_str):
 
 def _find_free_analysis_ws_handles(project, count=1):
     """
-    Return up to `count` analysis writing-system handles that currently
-    have NO reversal index in this project. Returns fewer than `count`
-    (possibly zero) if not enough are free -- callers must check the
-    length and skip/report explicitly rather than deleting an existing
-    index to make room.
+    Return up to `count` analysis writing-system handles that have NO
+    reversal index in this project, freeing them up if necessary.
+
+    Since #619, ReversalIndexOperations.Create stores the language TAG, so
+    FindByWritingSystem(handle) genuinely sees the index the Target backup
+    already carries for each analysis WS. (Before #619 the lookup compared
+    a tag against a stringified handle, never matched, and so reported
+    every WS as "free" -- and Create happily made duplicate indexes.)
+    These tests run only on ``target_sandbox`` (a tempdir copy), so an
+    existing index is deleted to make room. Returns fewer than `count`
+    (possibly zero) only when the project lacks that many analysis WSs.
     """
     rev_ops = project.ReversalIndexes
     free = []
@@ -61,8 +67,10 @@ def _find_free_analysis_ws_handles(project, count=1):
         handle = project.WSHandle(ws.Id)
         if handle is None:
             continue
-        if rev_ops.FindByWritingSystem(handle) is None:
-            free.append(handle)
+        existing = rev_ops.FindByWritingSystem(handle)
+        if existing is not None:
+            rev_ops.Delete(existing)
+        free.append(handle)
         if len(free) >= count:
             break
     return free
@@ -274,20 +282,16 @@ class TestGuidCreateReversalIndexEntry:
         Create a scratch reversal index on a free analysis WS, or skip.
         Returns (index, ws_handle).
 
-        Note: ReversalIndexOperations.Create() stores
+        Note: ReversalIndexOperations.Create() used to store
         ``str(writing_system)`` verbatim into ``IReversalIndex
-        .WritingSystem`` -- when the caller passes an int handle (the
-        pattern shown in that method's own docstring), this stores the
-        stringified INT, not an ICU locale tag. That is a pre-existing
-        bug independent of #236 (unrelated to the guid= addition; not
-        touched here per this task's scope), but it means
-        ReversalIndexEntryOperations.Create()'s own
-        ``wsHandle = self.project.WSHandle(index.WritingSystem)``
-        fallback fails to resolve a handle and raises
-        ArgumentNullException deep in TsStringUtils.MakeString. Every
-        entry-creation call below sidesteps it by passing ``wsHandle=``
-        explicitly (a legitimate, already-supported parameter), rather
-        than relying on the index to resolve its own WS.
+        .WritingSystem``, so an int handle was stored as a stringified
+        INT and ReversalIndexEntryOperations.Create()'s
+        ``WSHandle(index.WritingSystem)`` fallback could not resolve it
+        (issue #619, now fixed: Create always stores the language tag).
+        Entry-creation calls below still pass ``wsHandle=`` explicitly,
+        which is a legitimate parameter and keeps these GUID tests
+        independent of that fallback; the fallback itself is covered by
+        test_issue619_reversal_ws_tag_live.py.
         """
         free = _find_free_analysis_ws_handles(project, count=1)
         if not free:
