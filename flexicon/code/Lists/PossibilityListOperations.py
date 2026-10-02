@@ -330,7 +330,9 @@ class PossibilityListOperations(BaseOperations):
 
         Notes:
             - Search is case-insensitive
-            - Searches in default analysis writing system
+            - With no wsHandle, matches the best analysis alternative and every current
+              analysis writing system (issue #624); an explicit wsHandle compares only
+              that alternative
             - Returns first match only
             - Returns None if not found (doesn't raise exception)
             - Common list names: "Semantic Domains", "Parts of Speech",
@@ -900,7 +902,9 @@ class PossibilityListOperations(BaseOperations):
         Notes:
             - Search is case-insensitive
             - Searches recursively through all items including nested ones
-            - Searches in default analysis writing system
+            - With no wsHandle, matches the best analysis alternative and every current
+              analysis writing system (issue #624); an explicit wsHandle compares only
+              that alternative
             - Returns first match only
             - Returns None if not found (doesn't raise exception)
 

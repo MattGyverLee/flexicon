@@ -39,7 +39,7 @@ def read_text(multi_obj, wsHandle=None, prefer="analysis"):
     """
     if wsHandle is None:
         return _best(multi_obj, prefer)
-    return ITsString(multi_obj.get_String(wsHandle)).Text or ""
+    return normalize_text(ITsString(multi_obj.get_String(wsHandle)).Text)
 
 
 def candidate_texts(multi_obj, lp, prefer="analysis"):

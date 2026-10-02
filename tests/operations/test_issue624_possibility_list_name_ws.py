@@ -134,6 +134,9 @@ class TestWsTextHelpers:
         assert ws_text.read_text(m, PT) == ""
         assert ws_text.read_text(m, EN) == "Free translation"
 
+    def test_read_text_explicit_ws_normalizes_null_marker(self):
+        assert ws_text.read_text(FakeMulti({PT: "***"}), PT) == ""
+
     def test_read_text_unset_is_empty(self):
         assert ws_text.read_text(FakeMulti()) == ""
 
