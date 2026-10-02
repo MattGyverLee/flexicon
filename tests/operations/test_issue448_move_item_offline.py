@@ -297,3 +297,63 @@ class TestIssue448MoveItemRatchet:
                     assert 'ClassName == "CmPossibility"' not in body_src
                     return
         raise AssertionError("GetParentItem not found")
+
+
+class TestIssue448MoveItemInPlaceAndGuards:
+    """Follow-up to #448: already-in-place moves, cycle guard, deep owners."""
+
+    def _ops(self, monkeypatch, pos_list, resolve, descendant=False):
+        mod = _load_possibility_list_ops()
+        ops = mod.PossibilityListOperations(Mock(writeEnabled=True))
+        monkeypatch.setattr(ops, "_PossibilityListOperations__ResolveItem", resolve)
+        monkeypatch.setattr(
+            ops, "_PossibilityListOperations__GetListOwner", lambda _i: pos_list
+        )
+        monkeypatch.setattr(
+            ops, "_PossibilityListOperations__IsDescendant", lambda _a, _b: descendant
+        )
+        return mod, ops
+
+    def test_already_top_level_move_to_none_does_not_remove(self, monkeypatch):
+        pos_list = _FakePossibilityList()
+        top = _FakePossibility("PartOfSpeech", b"top", owner=pos_list)
+        pos_list.PossibilitiesOS.Add(top)
+        _, ops = self._ops(monkeypatch, pos_list, lambda _x: top)
+        ops.MoveItem(top, None)
+        assert pos_list.PossibilitiesOS.remove_calls == []
+        assert pos_list.PossibilitiesOS._items == [top]
+
+    def test_already_under_parent_move_to_same_parent_does_not_remove(self, monkeypatch):
+        pos_list = _FakePossibilityList()
+        parent = _FakePossibility("CmSemanticDomain", b"p", owner=pos_list)
+        child = _FakePossibility("CmSemanticDomain", b"c", owner=parent)
+        parent.SubPossibilitiesOS.Add(child)
+        _, ops = self._ops(
+            monkeypatch, pos_list, lambda x: parent if x is parent else child
+        )
+        ops.MoveItem(child, parent)
+        assert parent.SubPossibilitiesOS.remove_calls == []
+        assert parent.SubPossibilitiesOS._items == [child]
+
+    def test_cycle_guard_still_raises(self, monkeypatch):
+        pos_list = _FakePossibilityList()
+        parent = _FakePossibility("PartOfSpeech", b"p", owner=pos_list)
+        child = _FakePossibility("PartOfSpeech", b"c", owner=parent)
+        mod, ops = self._ops(
+            monkeypatch, pos_list, lambda x: parent if x is parent else child,
+            descendant=True,
+        )
+        with pytest.raises(mod.FP_ParameterError):
+            ops.MoveItem(parent, child)
+        assert child.SubPossibilitiesOS.add_calls == []
+
+    def test_walk_through_subclass_owners_reaches_the_list(self):
+        mod = _load_possibility_list_ops()
+        # No CLR offline: treat the fake as already concrete.
+        mod.cast_to_concrete = lambda o: o
+        ops = mod.PossibilityListOperations(Mock(writeEnabled=True))
+        pos_list = _FakePossibilityList()
+        a = _FakePossibility("CmSemanticDomain", b"a", owner=pos_list)
+        b = _FakePossibility("CmSemanticDomain", b"b", owner=a)
+        c = _FakePossibility("CmSemanticDomain", b"c", owner=b)
+        assert ops._PossibilityListOperations__GetListOwner(c) is pos_list
