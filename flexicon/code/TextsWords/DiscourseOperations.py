@@ -35,6 +35,7 @@ from SIL.LCModel import (
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import (
     FP_ParameterError,
 )
@@ -156,6 +157,7 @@ class DiscourseOperations(BaseOperations):
                 return IText(text_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(text_or_hvo, "IText")
         return text_or_hvo
 
     def __CastChartView(self, obj):
@@ -228,6 +230,7 @@ class DiscourseOperations(BaseOperations):
         class_name = getattr(chart_or_hvo, "ClassName", None)
         if class_name in ("DsConstChart", "DsChart"):
             return self.__CastChartView(chart_or_hvo)
+        require_lcm_object(chart_or_hvo, "IDsConstChart or IDsChart")
         return chart_or_hvo
 
     def __GetRowObject(self, row_or_hvo):
@@ -263,6 +266,7 @@ class DiscourseOperations(BaseOperations):
                 return IConstChartRow(row_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(row_or_hvo, "IConstChartRow")
         return row_or_hvo
 
     # --- Chart Management Operations ---

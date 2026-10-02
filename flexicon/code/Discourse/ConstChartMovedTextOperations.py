@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -442,6 +443,7 @@ class ConstChartMovedTextOperations(BaseOperations):
                 return IConstChartMovedTextMarker(marker_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(marker_or_hvo, "IConstChartMovedTextMarker")
         return marker_or_hvo
 
     def __ResolveWordGroup(self, word_group_or_hvo):
@@ -472,6 +474,7 @@ class ConstChartMovedTextOperations(BaseOperations):
                 return IConstChartWordGroup(word_group_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(word_group_or_hvo, "IConstChartWordGroup")
         return word_group_or_hvo
 
     def __ResolveChart(self, chart_or_hvo):
@@ -502,6 +505,7 @@ class ConstChartMovedTextOperations(BaseOperations):
                 return IDsConstChart(chart_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(chart_or_hvo, "IDsConstChart")
         return chart_or_hvo
 
     # --- Reordering Support ---

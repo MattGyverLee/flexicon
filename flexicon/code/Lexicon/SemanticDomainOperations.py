@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key, best_analysis_text
 from ..Shared.catalog_backed import _LCMNativeCatalogImportMixin
@@ -1406,6 +1407,7 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                 return ICmSemanticDomain(domain_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(domain_or_hvo, "ICmSemanticDomain")
         return domain_or_hvo
 
     def __NameCandidates(self, domain):

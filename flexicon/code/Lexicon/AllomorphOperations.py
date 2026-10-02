@@ -45,6 +45,7 @@ Structured result for AllomorphOperations.RemoveOrphaned.
 """
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -2119,6 +2120,7 @@ class AllomorphOperations(BaseOperations):
         """
         if isinstance(entry_or_hvo, int):
             entry_or_hvo = self.project.Object(entry_or_hvo)
+        require_lcm_object(entry_or_hvo, "ILexEntry")
         return cast_to_concrete(entry_or_hvo)
 
     def __GetAllomorphObject(self, allomorph_or_hvo):
@@ -2165,6 +2167,7 @@ class AllomorphOperations(BaseOperations):
         if isinstance(allomorph_or_hvo, int):
             obj = self.project.Object(allomorph_or_hvo)
         else:
+            require_lcm_object(allomorph_or_hvo, "IMoForm")
             obj = self._UnwrapLcmObject(allomorph_or_hvo)
 
         class_name = getattr(obj, "ClassName", None)
@@ -2187,6 +2190,7 @@ class AllomorphOperations(BaseOperations):
         if isinstance(stem_name_or_hvo, int):
             obj = self.project.Object(stem_name_or_hvo)
         else:
+            require_lcm_object(stem_name_or_hvo, "IMoStemName")
             obj = self._UnwrapLcmObject(stem_name_or_hvo)
 
         return cast_to_concrete(obj)
@@ -2205,6 +2209,7 @@ class AllomorphOperations(BaseOperations):
         if isinstance(infl_class_or_hvo, int):
             obj = self.project.Object(infl_class_or_hvo)
         else:
+            require_lcm_object(infl_class_or_hvo, "IMoInflClass")
             obj = self._UnwrapLcmObject(infl_class_or_hvo)
 
         return cast_to_concrete(obj)
@@ -2366,7 +2371,7 @@ class AllomorphOperations(BaseOperations):
         if isinstance(env_or_hvo, int):
             obj = self.project.Object(env_or_hvo)
         else:
-            obj = env_or_hvo
+            obj = require_lcm_object(env_or_hvo, "IPhEnvironment")
 
         class_name = getattr(obj, "ClassName", None)
         if class_name == "PhEnvironment":

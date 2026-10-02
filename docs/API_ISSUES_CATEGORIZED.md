@@ -731,6 +731,37 @@ Evidence: `specs/572-phonological-rule-readers/evidence/live-US1-contexts.md`
 (SC-004, every pooled and rule-referenced context in `morphboundary`,
 2026-09-28).
 
+### `IReversalIndex.WritingSystem` holds a language TAG, not a handle (issue #619)
+
+`IReversalIndex.WritingSystem` is a `string` language tag (e.g. `"en"`).
+Elsewhere in LCM a "writing system" is an `int` handle. `ReversalIndexOperations.Create`
+documented `writing_system` as a handle and stored `str(writing_system)`,
+writing a stringified integer (e.g. `"999000001"`) into the tag field.
+The index then matched no real writing system, `FindByWritingSystem(handle)`
+never found it (it compared a tag against `str(handle)`), and
+`ReversalIndexEntryOperations.Create`'s `WSHandle(index.WritingSystem)`
+fallback could not resolve it.
+
+**Fix**: `Create` accepts a handle or a tag, validates it as an analysis
+writing system, and always stores the writing system's canonical tag.
+`FindByWritingSystem` resolves a handle or a (case/underscore-variant) tag
+to the canonical tag before comparing; a value matching no known writing
+system falls back to a plain string compare so a stale index can still be
+located and deleted.
+
+**Behaviour change**: because the lookup now really matches, a project that
+already has an index for an analysis WS reports that WS as taken (a
+duplicate `Create` raises `FP_ParameterError`, as documented). Previously the
+mismatch let duplicate junk-tagged indexes be created. Existing projects may
+contain indexes with a numeric `WritingSystem`; locate one with
+`FindByWritingSystem(<that handle>)` and `Delete` it.
+
+**Sibling sweep**: the only other `*.WritingSystem` / `WsSelector` / tag-field
+assignment under `flexicon/code` was this one (`grep -rnE
+"\.(WritingSystem|WritingSystemRA|WsSelector|Ws|Id)\s*="`). Readers
+(`ReversalIndexEntryOperations` lines ~202/306/672, `LexSenseOperations`
+~2361) pass the tag through `WSHandle()`/string ops and are correct.
+
 ### Recommended pattern
 
 Before touching a field whose type you have not verified for *this specific LCM type*, check this table. If the type is not listed here, verify via the LCM source in `liblcm/src/SIL.LCModel/InterfaceAdditions.cs` or by reading another Operations class that already handles the same type correctly.
@@ -1249,6 +1280,73 @@ so keep the GUID spec for round-trips.
 spec = project.MSA.GetFeatures(sense)
 print(project.InflectionFeatures.DescribeFeatStruc(spec))  # [nc: 1/2; num: sg]
 ```
+
+## Category 16: Writing-system store left behind / unattributed change log (issues #607, #608)
+
+### [DONE] RESOLVED - `WritingSystems.Delete` reaches the store; change log attributed to flexicon
+
+**#607 -- behaviour change.** `WritingSystemOperations.Delete` used to only
+remove the writing system from the vernacular/analysis lists: the
+`WritingSystemStore/<tag>.ldml` stayed (so `ExistsInStore(tag)` was still
+True) and no `<Delete>` change-log entry was written, contradicting its
+docstring. It now calls LCM's `WritingSystemServices.DeleteWritingSystem`
+and saves the writing-system store, as FieldWorks does: the `.ldml` moves to
+`WritingSystemStore/trash/`, `idchangelog.xml` gains a `<Delete>` entry (the
+earlier `<Add>` stays; the log is append-only), and `ExistsInStore(tag)` is
+False. **Callers must know:** LCM's routine also purges every string
+alternative/run in that writing system from the project data, exactly as the
+FLEx UI does; there is no in-use check.
+
+**#608.** libpalaso stamps change-log entries from
+`Assembly.GetEntryAssembly()`, which is null under Python, giving
+`Producer="???" ProducerVersion="unknown"`. `FLExProject.OpenProject` (write
+enabled only) now installs a pass-through change-log data mapper
+(`flexicon/code/Shared/ws_change_log.py`) that stamps unattributed entries
+`Producer="flexicon" ProducerVersion="<flexicon.version>"`. FieldWorks'
+own entries are untouched. Best effort: failure is logged and never blocks
+opening a project.
+
+Live evidence: `specs/607-608-ws-store/evidence/live-607.md`.
+
+---
+
+## Category 16: Wrong-type resolver arguments (issue #618)
+### [DONE] RESOLVED - typed `FP_ParameterError` instead of raw `AttributeError`
+
+**Issue**: Operations resolvers (`BaseOperations._GetObject` and the per-class
+private `__Resolve*` / `__Get*Object` helpers) handled an int HVO, then
+returned any other argument unchanged. A `str`, `list`, `float` or `None`
+passed where an object or HVO belongs therefore failed deep inside the
+calling method with a raw `AttributeError` (for example
+`'str' object has no attribute 'Name'`), which an MCP/agent caller sees as an
+internal error with nothing to act on (issue #600 showed 14 consecutive
+retries from this shape).
+
+**Behaviour now**: every resolver raises
+`FP_ParameterError("Expected <type> object or an int HVO, got <actual type>.")`
+for `None` or a builtin scalar/container (`str`, `bytes`, `float`, `bool`,
+`list`, `tuple`, `dict`, `set`). The check lives in
+`flexicon/code/Shared/arg_checks.py` (`require_lcm_object`,
+`is_non_lcm_value`). Resolvers that already ran `_ValidateParam` keep their
+`FP_NullParameterError` for `None`.
+
+Deliberately a blacklist, not a `hasattr(value, "Hvo")` test: wrappers
+(unwrapped by `_UnwrapLcm` first), raw pythonnet objects and duck-typed test
+doubles pass through unchanged, preserving object identity.
+
+**Behaviour change to be aware of**: a GUID `str` passed to
+`AllomorphOperations.__GetAllomorphObject` or `POSOperations.__ResolveObject`
+used to be returned unresolved (and then fail later); it now raises
+`FP_ParameterError`. GUID-string support remains out of scope there.
+
+**Not changed (accept a GUID `str` by design)**:
+`MSAOperations.__ResolveInflectionClass`, `__ResolveExceptionFeature` and
+`__GetMsaObject` resolve a GUID string through `project.Object(str)`; they are
+unchanged.
+
+**Tests**: `tests/operations/test_issue618_resolver_type_check.py` (offline,
+every resolver x wrong-type argument) and
+`tests/operations/test_issue618_resolver_type_check_live.py` (sandbox).
 
 ---
 

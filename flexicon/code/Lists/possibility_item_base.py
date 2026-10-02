@@ -17,6 +17,7 @@ from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 
 # Import flexlibs exceptions
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import FP_ParameterError, FP_NullParameterError
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key
@@ -141,6 +142,7 @@ class PossibilityItemOperations(BaseOperations):
             # list instead of the item's children (issue #270).
             from ..lcm_casting import cast_to_concrete
             return cast_to_concrete(obj)
+        require_lcm_object(obj_or_hvo, "ICmPossibility")
         return obj_or_hvo
 
     # ========== CORE CRUD OPERATIONS ==========

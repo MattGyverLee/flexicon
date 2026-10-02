@@ -16,6 +16,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import (
     BaseOperations,
     OperationsMethod,
@@ -1354,7 +1355,7 @@ class ExampleOperations(BaseOperations):
         if isinstance(media_or_hvo, int):
             media = self.project.Object(media_or_hvo)
         else:
-            media = media_or_hvo
+            media = require_lcm_object(media_or_hvo, "ICmFile")
 
         # Remove from collection
         if hasattr(example, "MediaFilesOS"):
@@ -1710,6 +1711,7 @@ class ExampleOperations(BaseOperations):
         """
         if isinstance(sense_or_hvo, int):
             return cast_to_concrete(self.project.Object(sense_or_hvo))
+        require_lcm_object(sense_or_hvo, "ILexSense")
         return cast_to_concrete(sense_or_hvo)
 
     def __GetExampleObject(self, example_or_hvo):
@@ -1724,6 +1726,7 @@ class ExampleOperations(BaseOperations):
         """
         if isinstance(example_or_hvo, int):
             return cast_to_concrete(self.project.Object(example_or_hvo))
+        require_lcm_object(example_or_hvo, "ILexExampleSentence")
         return cast_to_concrete(example_or_hvo)
 
     def __WSHandle(self, wsHandle):

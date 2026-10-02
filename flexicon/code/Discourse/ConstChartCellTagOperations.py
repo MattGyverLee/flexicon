@@ -12,6 +12,7 @@
 #   Copyright 2026
 #
 
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 from SIL.LCModel import (
@@ -216,6 +217,7 @@ class ConstChartCellTagOperations(BaseOperations):
                 return IConstChartRow(row_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(row_or_hvo, "IConstChartRow")
         return row_or_hvo
 
     def __ResolveTag(self, tag_or_hvo):
@@ -237,4 +239,5 @@ class ConstChartCellTagOperations(BaseOperations):
                 return IConstChartTag(tag_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(tag_or_hvo, "IConstChartTag")
         return tag_or_hvo

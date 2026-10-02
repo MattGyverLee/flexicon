@@ -25,6 +25,7 @@ from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 
 # Import flexlibs exceptions
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import (
     FP_ParameterError,
 )
@@ -1556,6 +1557,7 @@ class PersonOperations(BaseOperations):
                 return ICmPerson(person_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(person_or_hvo, "ICmPerson")
         return person_or_hvo
 
     def __WSHandle(self, wsHandle):

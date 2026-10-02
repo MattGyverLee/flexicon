@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -502,6 +503,7 @@ class ScrSectionOperations(BaseOperations):
                 return IScrSection(section_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(section_or_hvo, "IScrSection")
         return section_or_hvo
 
     def __ResolveBook(self, book_or_hvo):
@@ -525,6 +527,7 @@ class ScrSectionOperations(BaseOperations):
             ):
                 raise FP_ParameterError("HVO does not refer to a Scripture book")
             return obj
+        require_lcm_object(book_or_hvo, "IScrBook")
         return cast_to_concrete(book_or_hvo)
 
     def __WSHandle(self, wsHandle):

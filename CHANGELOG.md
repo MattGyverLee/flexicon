@@ -56,6 +56,18 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 ### Fixed
 
 - **`SemanticDomainOperations` name paths no longer resolve through the default analysis WS** (#604, follow-up to #183). `GetName`, `GetDescription`, `GetAbbreviation` and `GetQuestions` now return the best analysis alternative when no `wsHandle` is given, and `FindByName` matches the best analysis alternative plus every current analysis writing system (new optional `wsHandle` restricts it to one WS). Previously a project whose default analysis WS held no semantic-domain text (e.g. Sena 3: default `pt`, catalog text only in `en`) got empty names / missed lookups. An explicit `wsHandle` is still honoured exactly. `SetName`, `SetDescription` and `Create` signatures are unchanged: they write one explicit alternative, the default analysis WS when `wsHandle` is omitted (documented).
+- **`WritingSystems.Delete` now removes the writing system from the store
+  (#607).** It used to only drop the writing system from the vernacular and
+  analysis lists, leaving `WritingSystemStore/<tag>.ldml` on disk
+  (`ExistsInStore()` stayed True) and no `<Delete>` change-log entry. It now
+  uses LCM's `WritingSystemServices.DeleteWritingSystem` and saves the store,
+  as FieldWorks does: the `.ldml` moves to `trash/` and `idchangelog.xml`
+  records the delete. **Behaviour note:** like FieldWorks, this also purges
+  data stored in that writing system.
+- **Writing-system change-log entries are attributed to flexicon (#608).**
+  Entries written through flexicon read `Producer="flexicon"
+  ProducerVersion="<version>"` instead of `Producer="???"
+  ProducerVersion="unknown"`. Applied when a project is opened write-enabled.
 - **`FLExProject.LexiconSetListFieldSingle` accepts every `CmPossibility`
   subclass (follow-up to #448).** It compared `ClassName` to `"CmPossibility"`,
   but `ClassName` is the concrete class, so passing a `PartOfSpeech`,

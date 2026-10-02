@@ -24,6 +24,7 @@ from .exceptions import (
 )
 from .Shared.lcm_constants import OWNING_SEQUENCE_SUFFIX, FEATURE_STRUC_OWNER_TABLE
 from .Shared.wrapper_base import LCMObjectWrapper
+from .Shared.arg_checks import require_lcm_object
 from .PythonicWrapper import PythonicWrapper, unwrap as _unwrap_pythonic
 
 # --- Constants ---------------------------------------------------------------
@@ -1815,12 +1816,20 @@ class BaseOperations:
             - If obj_or_hvo is a raw object, returns it unchanged
             - Uses FLExProject.Object() for HVO resolution
 
+        Raises:
+            FP_ParameterError: If obj_or_hvo is neither an int HVO nor an
+                LCM object (None or a builtin scalar/container such as
+                str, list, float) -- issue #618.
+
         See Also:
             All methods that accept parent_or_hvo use this.
         """
         obj_or_hvo = self._UnwrapLcm(obj_or_hvo)
         if isinstance(obj_or_hvo, int):
             return self.project.Object(obj_or_hvo)
+        # Issue #618: a str/None/list/etc. used to pass straight through and
+        # fail later with a raw AttributeError.
+        require_lcm_object(obj_or_hvo, "an LCM")
         return obj_or_hvo
 
     def _GetTypedOwner(self, obj):

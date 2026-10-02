@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_text, normalize_match_key
 
@@ -1561,6 +1562,7 @@ class LexReferenceOperations(BaseOperations):
             if not isinstance(obj, ILexRefType):
                 raise FP_ParameterError("HVO does not refer to a LexRefType")
             return obj
+        require_lcm_object(ref_type_or_hvo, "ILexRefType")
         return cast_to_concrete(ref_type_or_hvo)
 
     def __ResolveLexRef(self, lex_ref_or_hvo):
@@ -1581,6 +1583,7 @@ class LexReferenceOperations(BaseOperations):
             if not isinstance(obj, ILexReference):
                 raise FP_ParameterError("HVO does not refer to a LexReference")
             return obj
+        require_lcm_object(lex_ref_or_hvo, "ILexReference")
         return cast_to_concrete(lex_ref_or_hvo)
 
     def __ResolveSenseOrEntry(self, sense_or_entry):
@@ -1604,6 +1607,7 @@ class LexReferenceOperations(BaseOperations):
                     f"Object is {class_name}, not LexSense or LexEntry"
                 )
             return obj
+        require_lcm_object(sense_or_entry, "ILexSense or ILexEntry")
         return cast_to_concrete(sense_or_entry)
 
     def __ResolveEntry(self, entry_or_hvo):
@@ -1624,6 +1628,7 @@ class LexReferenceOperations(BaseOperations):
             if getattr(obj, "ClassName", None) != "LexEntry":
                 raise FP_ParameterError("Object is not a LexEntry")
             return obj
+        require_lcm_object(entry_or_hvo, "ILexEntry")
         return cast_to_concrete(entry_or_hvo)
 
     def __WSHandleAnalysis(self, wsHandle):

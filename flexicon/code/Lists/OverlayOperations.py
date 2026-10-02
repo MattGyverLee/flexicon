@@ -36,6 +36,7 @@ except ImportError:
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import (
     FP_ParameterError,
     FP_NullParameterError,
@@ -158,6 +159,7 @@ class OverlayOperations(PossibilityItemOperations):
                     f"HVO {overlay_or_hvo} is a {obj.ClassName}, not an Overlay"
                 )
             return ICmOverlay(obj)
+        require_lcm_object(overlay_or_hvo, "ICmOverlay")
         return overlay_or_hvo
 
     def __ResolvePossList(self, poss_list_or_hvo):
@@ -176,6 +178,7 @@ class OverlayOperations(PossibilityItemOperations):
             from ..lcm_casting import cast_to_concrete
 
             return cast_to_concrete(obj)
+        require_lcm_object(poss_list_or_hvo, "ICmPossibilityList")
         return poss_list_or_hvo
 
     # --- CRUD (ICmOverlay-specific; issue #309) ---

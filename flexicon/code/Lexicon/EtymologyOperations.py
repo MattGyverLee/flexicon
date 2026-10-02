@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -1395,6 +1396,7 @@ class EtymologyOperations(BaseOperations):
                 return ILexEntry(entry_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(entry_or_hvo, "ILexEntry")
         return entry_or_hvo
 
     def __GetEtymologyObject(self, etymology_or_hvo):
@@ -1433,6 +1435,7 @@ class EtymologyOperations(BaseOperations):
                 return ILexEtymology(etymology_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(etymology_or_hvo, "ILexEtymology")
         return etymology_or_hvo
 
     def __WSHandleAnalysis(self, ws):

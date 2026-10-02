@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -1146,6 +1147,7 @@ class VariantOperations(BaseOperations):
                 return ILexEntry(entry_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(entry_or_hvo, "ILexEntry")
         return entry_or_hvo
 
     def __GetVariantObject(self, variant_or_hvo):
@@ -1184,6 +1186,7 @@ class VariantOperations(BaseOperations):
                 return ILexEntryRef(variant_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(variant_or_hvo, "ILexEntryRef")
         return variant_or_hvo
 
     def __WSHandle(self, wsHandle):
