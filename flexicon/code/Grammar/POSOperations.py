@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class and decorators
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -1052,6 +1053,7 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         if isinstance(stem_name_or_hvo, int):
             obj = self.project.Object(stem_name_or_hvo)
         else:
+            require_lcm_object(stem_name_or_hvo, "IMoStemName")
             obj = self._UnwrapLcmObject(stem_name_or_hvo)
 
         return cast_to_concrete(obj)
@@ -1708,6 +1710,7 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         if isinstance(pos_or_hvo, int):
             obj = self.project.Object(pos_or_hvo)
         else:
+            require_lcm_object(pos_or_hvo, "IPartOfSpeech")
             obj = self._UnwrapLcmObject(pos_or_hvo)
 
         if getattr(obj, "ClassName", None) == "PartOfSpeech":

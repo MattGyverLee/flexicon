@@ -1283,6 +1283,46 @@ print(project.InflectionFeatures.DescribeFeatStruc(spec))  # [nc: 1/2; num: sg]
 
 ---
 
+## Category 16: Wrong-type resolver arguments (issue #618)
+### [DONE] RESOLVED - typed `FP_ParameterError` instead of raw `AttributeError`
+
+**Issue**: Operations resolvers (`BaseOperations._GetObject` and the per-class
+private `__Resolve*` / `__Get*Object` helpers) handled an int HVO, then
+returned any other argument unchanged. A `str`, `list`, `float` or `None`
+passed where an object or HVO belongs therefore failed deep inside the
+calling method with a raw `AttributeError` (for example
+`'str' object has no attribute 'Name'`), which an MCP/agent caller sees as an
+internal error with nothing to act on (issue #600 showed 14 consecutive
+retries from this shape).
+
+**Behaviour now**: every resolver raises
+`FP_ParameterError("Expected <type> object or an int HVO, got <actual type>.")`
+for `None` or a builtin scalar/container (`str`, `bytes`, `float`, `bool`,
+`list`, `tuple`, `dict`, `set`). The check lives in
+`flexicon/code/Shared/arg_checks.py` (`require_lcm_object`,
+`is_non_lcm_value`). Resolvers that already ran `_ValidateParam` keep their
+`FP_NullParameterError` for `None`.
+
+Deliberately a blacklist, not a `hasattr(value, "Hvo")` test: wrappers
+(unwrapped by `_UnwrapLcm` first), raw pythonnet objects and duck-typed test
+doubles pass through unchanged, preserving object identity.
+
+**Behaviour change to be aware of**: a GUID `str` passed to
+`AllomorphOperations.__GetAllomorphObject` or `POSOperations.__ResolveObject`
+used to be returned unresolved (and then fail later); it now raises
+`FP_ParameterError`. GUID-string support remains out of scope there.
+
+**Not changed (accept a GUID `str` by design)**:
+`MSAOperations.__ResolveInflectionClass`, `__ResolveExceptionFeature` and
+`__GetMsaObject` resolve a GUID string through `project.Object(str)`; they are
+unchanged.
+
+**Tests**: `tests/operations/test_issue618_resolver_type_check.py` (offline,
+every resolver x wrong-type argument) and
+`tests/operations/test_issue618_resolver_type_check_live.py` (sandbox).
+
+---
+
 ## Summary Statistics
 
 ### By Status (Updated):

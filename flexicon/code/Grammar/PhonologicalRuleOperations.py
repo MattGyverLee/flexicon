@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key
 
@@ -1829,6 +1830,7 @@ class PhonologicalRuleOperations(BaseOperations):
             return feature_or_hvo._obj
         if hasattr(feature_or_hvo, "_obj") and not hasattr(feature_or_hvo, "Hvo"):
             return feature_or_hvo._obj
+        require_lcm_object(feature_or_hvo, "an LCM feature")
         return feature_or_hvo
 
     def __ResolveLcmObject(self, obj_or_hvo):
@@ -1851,6 +1853,7 @@ class PhonologicalRuleOperations(BaseOperations):
             return obj_or_hvo._obj
         if hasattr(obj_or_hvo, "_obj") and not hasattr(obj_or_hvo, "Hvo"):
             return obj_or_hvo._obj
+        require_lcm_object(obj_or_hvo, "an LCM")
         return obj_or_hvo
 
     @OperationsMethod
@@ -1996,6 +1999,7 @@ class PhonologicalRuleOperations(BaseOperations):
         rule_or_hvo = self._UnwrapLcm(rule_or_hvo)
         if isinstance(rule_or_hvo, int):
             rule_or_hvo = self.project.Object(rule_or_hvo)
+        require_lcm_object(rule_or_hvo, "IPhSegmentRule")
         return cast_to_concrete(rule_or_hvo)
 
     # ========== SYNC INTEGRATION METHODS ==========

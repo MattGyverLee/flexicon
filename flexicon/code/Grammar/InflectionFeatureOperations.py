@@ -20,6 +20,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import is_non_lcm_value, require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod
 
 # Import FLEx LCM types
@@ -1164,6 +1165,14 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         if isinstance(fs_or_spec, dict):
             spec = fs_or_spec
         else:
+            # Pre-check wrong-type scalars here so the method-specific
+            # message wins over _GetObject's generic one (issue #618).
+            if is_non_lcm_value(fs_or_spec):
+                raise FP_ParameterError(
+                    f"DescribeFeatStruc: expected a spec dict, an "
+                    f"IFsFeatStruc or a feature-structure owner; got "
+                    f"{type(fs_or_spec).__name__}."
+                )
             obj = self._GetObject(fs_or_spec)
             if not hasattr(obj, "ClassName"):
                 raise FP_ParameterError(
@@ -1474,7 +1483,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         if isinstance(feature_system_or_hvo, int):
             feature_system = self.project.Object(feature_system_or_hvo)
         else:
-            feature_system = feature_system_or_hvo
+            feature_system = require_lcm_object(feature_system_or_hvo, "IFsFeatureSystem")
 
         # Return features collection if it exists
         if hasattr(feature_system, "FeaturesOC"):
@@ -1523,7 +1532,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         if isinstance(feature_system_or_hvo, int):
             feature_system = self.project.Object(feature_system_or_hvo)
         else:
-            feature_system = feature_system_or_hvo
+            feature_system = require_lcm_object(feature_system_or_hvo, "IFsFeatureSystem")
 
         # Return feature constraints collection if it exists
         if hasattr(feature_system, "FeatureConstraintsOC"):
@@ -1932,6 +1941,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         """
         if isinstance(ic_or_hvo, int):
             return cast_to_concrete(self.project.Object(ic_or_hvo))
+        require_lcm_object(ic_or_hvo, "IMoInflClass")
         return cast_to_concrete(ic_or_hvo)
 
     def __ResolveFeatureStructure(self, fs_or_hvo):
@@ -1946,6 +1956,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         """
         if isinstance(fs_or_hvo, int):
             return cast_to_concrete(self.project.Object(fs_or_hvo))
+        require_lcm_object(fs_or_hvo, "IFsFeatStruc")
         return cast_to_concrete(fs_or_hvo)
 
     def __ResolveFeature(self, feature_or_hvo):
@@ -1960,6 +1971,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         """
         if isinstance(feature_or_hvo, int):
             return cast_to_concrete(self.project.Object(feature_or_hvo))
+        require_lcm_object(feature_or_hvo, "IFsFeatureDefn")
         return cast_to_concrete(feature_or_hvo)
 
     def __ResolveFeatureSystem(self, fs_or_hvo):
@@ -1974,6 +1986,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         """
         if isinstance(fs_or_hvo, int):
             return cast_to_concrete(self.project.Object(fs_or_hvo))
+        require_lcm_object(fs_or_hvo, "IFsFeatureSystem")
         return cast_to_concrete(fs_or_hvo)
 
     def __ResolvePOS(self, pos_or_hvo):
@@ -1988,7 +2001,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         """
         if isinstance(pos_or_hvo, int):
             return cast_to_concrete(self.project.Object(pos_or_hvo))
-        return cast_to_concrete(self._UnwrapLcmObject(pos_or_hvo))
+        return cast_to_concrete(require_lcm_object(self._UnwrapLcmObject(pos_or_hvo), "IPartOfSpeech"))
 
     def __CastFeatureDefn(self, raw):
         """

@@ -16,6 +16,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -2576,6 +2577,7 @@ class LexEntryOperations(BaseOperations):
                     or getattr(obj, "ClassName", None) == "LexEntry"):
                 raise FP_ParameterError("HVO does not refer to a lexical entry")
             return obj
+        require_lcm_object(entry_or_hvo, "ILexEntry")
         return cast_to_concrete(entry_or_hvo)
 
     def __WSHandle(self, wsHandle):

@@ -12,6 +12,7 @@
 #   Copyright 2026
 #
 
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key
 
@@ -279,6 +280,7 @@ class ConstChartMarkerOperations(BaseOperations):
                 return ICmPossibility(marker_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(marker_or_hvo, "ICmPossibility")
         return marker_or_hvo
 
     def __WSHandle(self, ws):

@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from ..Shared.string_utils import normalize_match_key
 
@@ -521,6 +522,7 @@ class ConstChartOperations(BaseOperations):
                 return IDsConstChart(chart_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(chart_or_hvo, "IDsConstChart")
         return chart_or_hvo
 
     def __WSHandleAnalysis(self):

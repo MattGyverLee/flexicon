@@ -288,13 +288,15 @@ class TestPOSSyncStatic:
 class TestPOSSyncResolveObjectGuidStringOutOfScope:
     """
     Lead ruling 2 (T12 rider): GUID-string support is explicitly OUT of
-    scope for __ResolveObject -- a str falls through unresolved and is
-    returned unchanged. This pins CURRENT behaviour so a future T12 fix
-    is a deliberate, reviewed change, not an accidental regression this
-    file would otherwise miss.
+    scope for __ResolveObject. Issue #618 changed what happens to a str:
+    it used to fall through unresolved and die later with a raw
+    AttributeError; it now raises a typed FP_ParameterError. A future T12
+    that adds GUID resolution is a deliberate, reviewed change that
+    supersedes this test.
     """
 
-    def test_guid_string_falls_through_unchanged(self):
+    def test_guid_string_raises_parameter_error(self):
+        from flexicon.code.FLExProject import FP_ParameterError
         from flexicon.code.Grammar.POSOperations import POSOperations
 
         class _FakeProject:
@@ -302,8 +304,8 @@ class TestPOSSyncResolveObjectGuidStringOutOfScope:
 
         pos_ops = POSOperations(_FakeProject())
         guid_str = "11111111-1111-1111-1111-111111111111"
-        result = pos_ops._POSOperations__ResolveObject(guid_str)
-        assert result == guid_str
+        with pytest.raises(FP_ParameterError):
+            pos_ops._POSOperations__ResolveObject(guid_str)
 
 
 # ============================================================================

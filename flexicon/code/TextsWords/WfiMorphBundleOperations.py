@@ -27,6 +27,7 @@ from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 
 # Import flexlibs exceptions
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import (
     FP_ParameterError,
 )
@@ -1529,6 +1530,7 @@ class WfiMorphBundleOperations(BaseOperations):
         """
         if isinstance(bundle_or_hvo, int):
             return cast_to_concrete(self.project.Object(bundle_or_hvo))
+        require_lcm_object(bundle_or_hvo, "IWfiMorphBundle")
         return cast_to_concrete(bundle_or_hvo)
 
     def __GetAnalysisObject(self, analysis_or_hvo):
@@ -1543,6 +1545,7 @@ class WfiMorphBundleOperations(BaseOperations):
         """
         if isinstance(analysis_or_hvo, int):
             return cast_to_concrete(self.project.Object(analysis_or_hvo))
+        require_lcm_object(analysis_or_hvo, "IWfiAnalysis")
         return cast_to_concrete(analysis_or_hvo)
 
     def __GetSenseObject(self, sense_or_hvo):
@@ -1557,6 +1560,7 @@ class WfiMorphBundleOperations(BaseOperations):
         """
         if isinstance(sense_or_hvo, int):
             return cast_to_concrete(self.project.Object(sense_or_hvo))
+        require_lcm_object(sense_or_hvo, "ILexSense")
         return cast_to_concrete(sense_or_hvo)
 
     def __GetMorphObject(self, morph_or_hvo):
@@ -1582,6 +1586,7 @@ class WfiMorphBundleOperations(BaseOperations):
         morph_or_hvo = self._UnwrapLcm(morph_or_hvo)
         if isinstance(morph_or_hvo, int):
             return cast_to_concrete(self.project.Object(morph_or_hvo))
+        require_lcm_object(morph_or_hvo, "IMoForm")
         return cast_to_concrete(morph_or_hvo)
 
     def __GetMSAObject(self, msa_or_hvo):
@@ -1599,6 +1604,7 @@ class WfiMorphBundleOperations(BaseOperations):
         msa_or_hvo = self._UnwrapLcm(msa_or_hvo)
         if isinstance(msa_or_hvo, int):
             return cast_to_concrete(self.project.Object(msa_or_hvo))
+        require_lcm_object(msa_or_hvo, "IMoMorphSynAnalysis")
         return cast_to_concrete(msa_or_hvo)
 
     def __GetInflectionClassObject(self, infl_class_or_hvo):
@@ -1613,6 +1619,7 @@ class WfiMorphBundleOperations(BaseOperations):
         """
         if isinstance(infl_class_or_hvo, int):
             return cast_to_concrete(self.project.Object(infl_class_or_hvo))
+        require_lcm_object(infl_class_or_hvo, "IMoInflClass")
         return cast_to_concrete(infl_class_or_hvo)
 
     def __WSHandleVern(self, wsHandle):

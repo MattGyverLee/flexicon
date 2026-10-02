@@ -289,14 +289,15 @@ class TestAllomorphSyncStatic:
 
 class TestAllomorphSyncResolveObjectStringOutOfScope:
     """
-    __GetAllomorphObject only special-cases `int` (HVO); a GUID string
-    (or any other non-LCM input) falls through the `isinstance(...,
-    int)` check, has no `.ClassName`, and is returned unchanged. Pins
-    CURRENT behaviour so any future GUID-string support is a deliberate,
-    reviewed change.
+    __GetAllomorphObject only special-cases `int` (HVO); GUID-string
+    support is out of scope. Before issue #618 a GUID string fell through
+    unchanged and died later with a raw AttributeError; it now raises a
+    typed FP_ParameterError. Any future GUID-string support remains a
+    deliberate, reviewed change.
     """
 
-    def test_string_input_falls_through_unchanged(self):
+    def test_string_input_raises_parameter_error(self):
+        from flexicon.code.FLExProject import FP_ParameterError
         from flexicon.code.Lexicon.AllomorphOperations import AllomorphOperations
 
         class _FakeProj:
@@ -304,8 +305,8 @@ class TestAllomorphSyncResolveObjectStringOutOfScope:
 
         allo_ops = AllomorphOperations(_FakeProj())
         guid_str = "11111111-1111-1111-1111-111111111111"
-        result = allo_ops._AllomorphOperations__GetAllomorphObject(guid_str)
-        assert result == guid_str
+        with pytest.raises(FP_ParameterError):
+            allo_ops._AllomorphOperations__GetAllomorphObject(guid_str)
 
 
 class TestGetSyncablePropertiesRealResolverGuard:

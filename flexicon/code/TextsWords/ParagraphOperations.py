@@ -22,6 +22,7 @@ from SIL.LCModel import (
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import (
     FP_ParameterError,
 )
@@ -118,6 +119,7 @@ class ParagraphOperations(BaseOperations):
                 return IText(text_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(text_or_hvo, "IText")
         return text_or_hvo
 
     def __GetParagraphObject(self, para_or_hvo):
@@ -151,7 +153,7 @@ class ParagraphOperations(BaseOperations):
         # "'IStPara' object has no attribute 'Contents'". Cast here too so
         # both branches return the same concrete type (matches the cast
         # GetAll() already applies at `yield IStTxtPara(para)`).
-        return IStTxtPara(para_or_hvo)
+        return IStTxtPara(require_lcm_object(para_or_hvo, "IStTxtPara"))
 
     # --- Core CRUD Operations ---
 

@@ -31,6 +31,7 @@ from collections import namedtuple
 logger = logging.getLogger(__name__)
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod
 
 # Import FLEx LCM types
@@ -2409,6 +2410,7 @@ class MSAOperations(BaseOperations):
         # operations they pass through to.
         if hasattr(sense_or_hvo, "_obj"):
             return sense_or_hvo._obj
+        require_lcm_object(sense_or_hvo, "ILexSense")
         return sense_or_hvo
 
     def __Resolve(self, obj_or_hvo):
@@ -2417,6 +2419,7 @@ class MSAOperations(BaseOperations):
             return self.project.Object(obj_or_hvo)
         if hasattr(obj_or_hvo, "_obj"):
             return obj_or_hvo._obj
+        require_lcm_object(obj_or_hvo, "an LCM")
         return obj_or_hvo
 
     def __ResolveEntry(self, entry_or_hvo):

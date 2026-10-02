@@ -21,6 +21,7 @@
 #
 
 # Import BaseOperations parent class and decorators
+from ..Shared.arg_checks import is_non_lcm_value, require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
@@ -669,6 +670,14 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         if isinstance(fs_or_owner, dict):
             spec = fs_or_owner
         else:
+            # Pre-check wrong-type scalars so this method-specific message
+            # wins over the resolver's generic one (issue #618).
+            if is_non_lcm_value(fs_or_owner):
+                raise FP_ParameterError(
+                    f"DescribeFeatStruc: expected a spec dict, an "
+                    f"IFsFeatStruc or a feature-structure owner; got "
+                    f"{type(fs_or_owner).__name__}."
+                )
             obj = self.__ResolveObject(fs_or_owner)
             if not hasattr(obj, "ClassName"):
                 raise FP_ParameterError(
@@ -752,6 +761,13 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
                 "struct with MakeFeatStruc first."
             )
 
+        if is_non_lcm_value(fs_or_owner):
+            # Method-specific message wins over the resolver's (issue #618).
+            raise FP_ParameterError(
+                f"GetFeatureSpecs: expected an IFsFeatStruc or a "
+                f"feature-structure owner; got "
+                f"{type(fs_or_owner).__name__}."
+            )
         obj = self.__ResolveObject(fs_or_owner)
         if not hasattr(obj, "ClassName"):
             raise FP_ParameterError(
@@ -1374,6 +1390,7 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         """
         if isinstance(obj_or_hvo, int):
             return cast_to_concrete(self.project.Object(obj_or_hvo))
+        require_lcm_object(obj_or_hvo, "an LCM")
         return cast_to_concrete(obj_or_hvo)
 
     def __Unwrap(self, obj):

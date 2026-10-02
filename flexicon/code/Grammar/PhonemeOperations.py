@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import (
     BaseOperations,
     OperationsMethod,
@@ -1385,6 +1386,7 @@ class PhonemeOperations(BaseOperations):
         """
         if isinstance(phoneme_or_hvo, int):
             return IPhPhoneme(self.project.Object(phoneme_or_hvo))
+        require_lcm_object(phoneme_or_hvo, "IPhPhoneme")
         return phoneme_or_hvo
 
     def __GetCodeObject(self, code_or_hvo):
@@ -1399,6 +1401,7 @@ class PhonemeOperations(BaseOperations):
         """
         if isinstance(code_or_hvo, int):
             return cast_to_concrete(self.project.Object(code_or_hvo))
+        require_lcm_object(code_or_hvo, "IPhCode")
         return cast_to_concrete(code_or_hvo)
 
     # ========== SYNC INTEGRATION METHODS ==========

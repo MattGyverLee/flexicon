@@ -12,6 +12,7 @@
 #
 
 # Import BaseOperations parent class
+from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod
 
 # Import FLEx LCM types
@@ -277,6 +278,7 @@ class ScrAnnotationsOperations(BaseOperations):
                 return IScrBookAnnotations(annotations_or_hvo)
             except Exception:
                 pass
+        require_lcm_object(annotations_or_hvo, "IScrBookAnnotations")
         return annotations_or_hvo
 
     def __ResolveBook(self, book_or_hvo):
@@ -300,4 +302,5 @@ class ScrAnnotationsOperations(BaseOperations):
             ):
                 raise FP_ParameterError("HVO does not refer to a Scripture book")
             return obj
+        require_lcm_object(book_or_hvo, "IScrBook")
         return cast_to_concrete(book_or_hvo)

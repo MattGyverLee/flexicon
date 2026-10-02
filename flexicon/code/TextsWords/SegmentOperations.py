@@ -25,6 +25,7 @@ from SIL.LCModel import (
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 
+from ..Shared.arg_checks import require_lcm_object
 from ..FLExProject import (
     FP_NullParameterError,
     FP_ParameterError,
@@ -158,6 +159,7 @@ class SegmentOperations(BaseOperations):
         """
         if isinstance(para_or_hvo, int):
             return cast_to_concrete(self.project.Object(para_or_hvo))
+        require_lcm_object(para_or_hvo, "IStTxtPara")
         return cast_to_concrete(para_or_hvo)
 
     def __GetSegmentObject(self, segment_or_hvo):
@@ -172,6 +174,7 @@ class SegmentOperations(BaseOperations):
         """
         if isinstance(segment_or_hvo, int):
             return cast_to_concrete(self.project.Object(segment_or_hvo))
+        require_lcm_object(segment_or_hvo, "ISegment")
         return cast_to_concrete(segment_or_hvo)
 
     def __GetSegmentFactory(self):
@@ -196,6 +199,7 @@ class SegmentOperations(BaseOperations):
         """
         if isinstance(analysis_or_hvo, int):
             return self.project.Object(analysis_or_hvo)
+        require_lcm_object(analysis_or_hvo, "IAnalysis")
         return analysis_or_hvo
 
     # ========== READ METHODS ==========
@@ -307,7 +311,7 @@ class SegmentOperations(BaseOperations):
         if isinstance(analysis_or_hvo, int):
             token = self.project.Object(analysis_or_hvo)
         else:
-            token = analysis_or_hvo
+            token = require_lcm_object(analysis_or_hvo, "IAnalysis")
 
         # Only IWfiGloss carries a chosen word gloss. Dispatch on ClassName --
         # pythonnet isinstance() against IWfiGloss is False for the base
