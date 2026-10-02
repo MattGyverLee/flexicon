@@ -11,14 +11,17 @@ silently corrupt the project on the next FLEx UI open.
 ## Why scripted creation is currently refused
 
 `CustomFieldOperations.CreateField` raises `FP_TransactionError` when called
-inside an open UnitOfWork. This is the LCM contract, not a wrapper limitation:
+inside an open UnitOfWork. This is a deliberate flexicon policy, not an LCM
+prohibition:
 
 - A custom field is a **schema mutation**, not a data mutation. It registers a
   new field-id (flid) in the `MetaDataCacheAccessor` and emits a
   `CustomFieldAdded` PropChanged.
-- LCM enforces that schema mutations cannot run inside an active data UoW.
-  Attempting it raises `InvalidOperationException` at
-  `UndoStack.CheckNotProcessingDataChanges` ("Nested tasks are not supported").
+- LCM does not reject this inside an open task: `LcmMetaDataCache.AddCustomField`
+  never consults the undo stack, and FieldWorks' own Custom Fields dialog runs
+  `FieldDescription.UpdateCustomField` inside a non-undoable unit of work.
+  What flexicon lacks is an implementation of that safe, persisted path, so
+  `CreateField` refuses instead of risking the ghost-field corruption below.
 - In **Phase 1 transaction mode** (the default and currently only mode),
   `FLExProject.OpenProject` calls `MainCacheAccessor.BeginNonUndoableTask()`
   immediately and that envelope stays open until `CloseProject()`. There is no
@@ -77,10 +80,12 @@ mode this is always true, so the call always raises:
 
 ```python
 FP_TransactionError: CreateField cannot run inside an open UnitOfWork.
-Custom field creation is a schema mutation that LCM forbids inside an active
-task (raises InvalidOperationException at UndoStack.CheckNotProcessingDataChanges).
-In Phase 1 transaction mode this UoW is opened at OpenProject() and stays open
-until CloseProject(), so schema mutations are not possible via the wrapper.
+This is a flexicon policy, not an LCM prohibition: flexicon does not yet
+implement a safe, persisted schema-change path (FieldDescription.UpdateCustomField
+in its own non-undoable unit of work) and refuses rather than risk a
+half-applied schema change. In Phase 1 transaction mode this UoW is opened at
+OpenProject() and stays open until CloseProject(), so CreateField cannot run
+via the wrapper.
 Fix: create custom fields through the FLEx UI (Tools > Configure > Custom Fields)
 before running bootstrap scripts that populate values.
 Do NOT bypass this guard with raw IFwMetaDataCacheManaged.AddCustomField:
