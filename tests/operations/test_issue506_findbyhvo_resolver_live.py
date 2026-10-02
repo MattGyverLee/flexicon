@@ -14,6 +14,19 @@ pytestmark = pytest.mark.requires_live_project
 TEST_PREFIX = "TEST_506_"
 
 
+def _get_or_create_index(project, name, ws):
+    """Return the reversal index for *ws*, creating it only if missing.
+
+    The Target sandbox already ships an ``en`` reversal index, and
+    ReversalIndexes.Create enforces one-index-per-writing-system, so an
+    unconditional Create fails when one already exists.
+    """
+    existing = project.ReversalIndexes.FindByWritingSystem(ws)
+    if existing is not None:
+        return existing
+    return project.ReversalIndexes.Create(name, ws)
+
+
 @pytest.mark.requires_live_project
 class TestIssue506FindByHvoHvoGate:
     """FindByHvo must resolve genuine HVO ints via __ResolveObject."""
@@ -29,7 +42,7 @@ class TestIssue506FindByHvoHvoGate:
     @pytest.mark.live_phase("ReversalIndexEntryOperations", "add")
     def test_reversal_entry_findbyhvo_returns_entry_for_hvo(self, target_sandbox):
         en_ws = target_sandbox.WSHandle("en")
-        index = target_sandbox.ReversalIndexes.Create(f"{TEST_PREFIX}Idx", en_ws)
+        index = _get_or_create_index(target_sandbox, f"{TEST_PREFIX}Idx", en_ws)
         entry = target_sandbox.ReversalEntries.Create(
             index.Hvo, f"{TEST_PREFIX}form", wsHandle=en_ws
         )
@@ -43,5 +56,5 @@ class TestIssue506FindByHvoHvoGate:
     @pytest.mark.live_phase("ReversalIndexEntryOperations", "read")
     def test_findbyhvo_returns_none_for_wrong_type_hvo(self, target_sandbox):
         en_ws = target_sandbox.WSHandle("en")
-        index = target_sandbox.ReversalIndexes.Create(f"{TEST_PREFIX}Idx2", en_ws)
+        index = _get_or_create_index(target_sandbox, f"{TEST_PREFIX}Idx2", en_ws)
         assert target_sandbox.ReversalEntries.FindByHvo(index.Hvo) is None

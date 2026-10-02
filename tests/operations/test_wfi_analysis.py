@@ -585,8 +585,20 @@ class TestWfiAnalysisSetApprovalStatusErrorPaths:
         analysis = writable_project.WfiAnalyses.Create(candidate_wf)
         # Patch GetHumanAgents to return an empty iterator for the
         # duration of this test so we can exercise the no-agent branch
-        # without mutating the project's agent list.
-        original_get_human_agents = agent_mod.AgentOperations.GetHumanAgents
+        # without mutating the project's agent list. Save/restore via
+        # the class __dict__ on purpose: reading
+        # AgentOperations.GetHumanAgents through normal attribute access
+        # triggers OperationsMethod.__get__(None, ...) which returns the
+        # class-level class_method(project, ...) closure, NOT the
+        # descriptor. Restoring that closure would permanently replace
+        # the descriptor, after which every instance call
+        # agent_ops.GetHumanAgents() treats the instance as the project
+        # argument (AgentOperations(agent_ops)) and dies with
+        # AttributeError: 'AgentOperations' object has no attribute
+        # 'lp' in every later test in the session.
+        original_get_human_agents = agent_mod.AgentOperations.__dict__[
+            "GetHumanAgents"
+        ]
 
         def _empty_human_agents(self_inner):
             return iter([])

@@ -25,7 +25,7 @@ _test_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.join(_test_dir, "..", "..", "..")
 sys.path.insert(0, _project_root)
 
-from flexicon.code.FLExProject import FLExProject
+from flexicon.code.FLExProject import FLExProject, FP_ConflictingSaveError
 from flexicon.code.FLExInit import FLExInitialize, FLExCleanup
 
 # This module opens a REAL FLEx project ("Sena 3") in setUpModule() below
@@ -60,7 +60,23 @@ def tearDownModule():
     """Clean up FLEx connection after all tests complete."""
     global _test_project, _flex_initialized
     if _test_project:
-        _test_project.CloseProject()
+        try:
+            _test_project.CloseProject()
+        except FP_ConflictingSaveError:
+            # Back-to-back in-process write sessions on the same project
+            # race LCM's async backend commit: the previous session's
+            # commit lands on disk after this session opened, so this
+            # save cannot merge. Every test in this module deletes what
+            # it duplicates (net-zero), so there is nothing worth
+            # keeping -- and CloseProject already disposed the handle in
+            # its finally, so swallowing here leaks nothing. This
+            # restores the pre-#285 suite behavior, where FwLcmUI
+            # silently discarded these same racing writes.
+            print(
+                "[WARN] tearDownModule: conflicting save (prior "
+                "session's async commit landed mid-session); "
+                "session changes discarded, handle already disposed."
+            )
         FLExCleanup()
         _flex_initialized = False
 

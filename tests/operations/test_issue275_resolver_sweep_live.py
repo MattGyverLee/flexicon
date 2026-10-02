@@ -48,6 +48,19 @@ pytestmark = pytest.mark.requires_live_project
 TEST_PREFIX = "TEST_275_"
 
 
+def _get_or_create_index(project, name, ws):
+    """Return the reversal index for *ws*, creating it only if missing.
+
+    The Target sandbox already ships an ``en`` reversal index, and
+    ReversalIndexes.Create enforces one-index-per-writing-system, so an
+    unconditional Create fails on a project that already has one.
+    """
+    existing = project.ReversalIndexes.FindByWritingSystem(ws)
+    if existing is not None:
+        return existing
+    return project.ReversalIndexes.Create(name, ws)
+
+
 class TestEtymologyOperationsResolvers:
     """__GetEntryObject / __GetEtymologyObject (Lexicon/EtymologyOperations.py)."""
 
@@ -180,7 +193,10 @@ class TestReversalIndexOperationsResolvers:
     @pytest.mark.live_phase("ReversalIndexOperations", "add")
     def test_index_hvo_and_raw_object_resolve(self, target_sandbox):
         en_ws = target_sandbox.WSHandle("en")
-        index = target_sandbox.ReversalIndexes.Create(f"{TEST_PREFIX}Idx", en_ws)
+        index = _get_or_create_index(target_sandbox, f"{TEST_PREFIX}Idx", en_ws)
+        # Normalise the name so the assertion holds whether the index was
+        # freshly created or reused from the sandbox project.
+        target_sandbox.ReversalIndexes.SetName(index, f"{TEST_PREFIX}Idx")
 
         name_by_hvo = target_sandbox.ReversalIndexes.GetName(index.Hvo)
         raw = target_sandbox.Object(index.Hvo)
@@ -191,7 +207,7 @@ class TestReversalIndexOperationsResolvers:
     @pytest.mark.live_phase("ReversalIndexEntryOperations", "add")
     def test_entry_and_index_hvo_paths(self, target_sandbox):
         en_ws = target_sandbox.WSHandle("en")
-        index = target_sandbox.ReversalIndexes.Create(f"{TEST_PREFIX}Idx2", en_ws)
+        index = _get_or_create_index(target_sandbox, f"{TEST_PREFIX}Idx2", en_ws)
 
         # Defect 2 on __GetIndexObject: index HVO accepted by Create.
         # wsHandle is passed explicitly here (rather than left to
@@ -224,7 +240,7 @@ class TestReversalIndexOperationsResolvers:
     def test_index_hvo_still_rejected_by_entry_resolver(self, target_sandbox):
         """Legitimate rejection: an index's HVO is not an entry."""
         en_ws = target_sandbox.WSHandle("en")
-        index = target_sandbox.ReversalIndexes.Create(f"{TEST_PREFIX}Idx3", en_ws)
+        index = _get_or_create_index(target_sandbox, f"{TEST_PREFIX}Idx3", en_ws)
         with pytest.raises(FP_ParameterError):
             target_sandbox.ReversalEntries.GetForm(index.Hvo)
 
