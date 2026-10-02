@@ -63,3 +63,33 @@ def test_move_pos_subcategory_to_top_and_back(target_sandbox):
                 pl.DeleteItem(item)
             except Exception:
                 pass
+
+
+@pytest.mark.live_phase("PossibilityListOperations", "write")
+def test_move_nested_semantic_domain_round_trip(sena3_sandbox):
+    """Nested CmSemanticDomain (second subclass owner) moves without deletion."""
+    pl = sena3_sandbox.PossibilityLists
+    # List names are localized in Sena 3; reach the list structurally.
+    sd_list = sena3_sandbox.lp.SemanticDomainListOA
+    assert sd_list is not None
+
+    parent = pl.CreateItem(sd_list, f"{TEST_PREFIX}SDParent", "en")
+    child = pl.CreateItem(sd_list, f"{TEST_PREFIX}SDChild", "en", parent=parent)
+    child_guid = pl.GetItemGuid(child)
+    try:
+        assert pl.GetParentItem(child) is not None
+        pl.MoveItem(child, None)
+        assert pl.GetParentItem(child) is None
+        assert pl.GetItemGuid(child) == child_guid
+        pl.MoveItem(child, parent)
+        assert pl.GetParentItem(child) is not None
+        assert pl.GetItemGuid(child) == child_guid
+        # Already in place: must neither crash nor delete.
+        pl.MoveItem(child, parent)
+        assert pl.GetItemGuid(child) == child_guid
+    finally:
+        for item in (child, parent):
+            try:
+                pl.DeleteItem(item)
+            except Exception:
+                pass

@@ -55,6 +55,14 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`FLExProject.LexiconSetListFieldSingle` accepts every `CmPossibility`
+  subclass (follow-up to #448).** It compared `ClassName` to `"CmPossibility"`,
+  but `ClassName` is the concrete class, so passing a `PartOfSpeech`,
+  `CmSemanticDomain`, `CmAnthroItem`, `CmLocation`, `CmPerson` or
+  `CmCustomItem` object raised `FP_ParameterError`. It now casts via
+  `ICmPossibility`; non-possibility objects are still rejected. Live-verified
+  (`specs/448-setlistfield-subclass/evidence/live-448-followup.md`).
+
 - **`PhonologicalContext` now describes itself** (#572). `context_name`
   returns the real name text instead of a .NET type name,
   `description` returns the description text instead of `""` always,

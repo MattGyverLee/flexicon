@@ -69,6 +69,7 @@ from SIL.LCModel import (
     MoFormTags,
     ILexRefTypeRepository,
     ICmPossibilityRepository,
+    ICmPossibility,
     ICmPossibilityList,
     ICmSemanticDomain,
     TextTags,
@@ -5122,12 +5123,12 @@ class FLExProject(object):
             if not possibility:
                 raise FP_ParameterError(f"'{possibilityOrString}' not found in the Possibility list")
         else:
+            # ClassName is the concrete subclass (PartOfSpeech,
+            # CmSemanticDomain, ...), so never compare it to
+            # "CmPossibility"; cast instead (follow-up to #448).
             try:
-                if possibilityOrString.ClassName == "CmPossibility":
-                    possibility = possibilityOrString
-                else:
-                    raise AttributeError
-            except AttributeError:
+                possibility = ICmPossibility(possibilityOrString)
+            except (TypeError, AttributeError):
                 raise FP_ParameterError("possibilityOrString must be a string or CmPossibility")
 
         # Resolution/validation above stays outside the bracket (D5/P3).
