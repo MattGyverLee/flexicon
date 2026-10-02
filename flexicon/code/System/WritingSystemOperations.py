@@ -234,7 +234,11 @@ class WritingSystemOperations(BaseOperations):
               analysis list based on is_vernacular parameter
             - The writing-system store is saved immediately (the ``.ldml``
               and the ``idchangelog.xml`` ``<Add>`` entry reach disk before
-              this returns), the same as ``Delete``
+              this returns), the same as ``Delete``. Inside a caller's outer
+              unit of work the save still runs (verified safe live); it is
+              not undone if that outer unit of work rolls back. A failing
+              save raises ``FP_WritingSystemError`` (the in-memory change
+              stays and is written by the next store save/close)
             - Default font settings may be inherited from system defaults
             - **Store-present-but-inactive tags (issue #250 Defect 2):** the
               guard above only refuses an already-ACTIVE tag (what
@@ -1171,14 +1175,46 @@ class WritingSystemOperations(BaseOperations):
     # --- Private Helper Methods ---
 
     def _SaveWritingSystemStore(self, what):
-        """Flush the writing-system store to disk (issue #625).
+        """Flush the writing-system store to disk (issues #607, #625).
 
         Writes ``WritingSystemStore/<tag>.ldml`` and the ``idchangelog.xml``
         entry now rather than at the next store save / CloseProject, so a
-        crash or a second reader sees the change. Called after the unit of
-        work closes, as FieldWorks does.
+        crash or a second reader sees the change.
+
+        Callers MUST already have passed ``_EnsureWriteEnabled()`` (and the
+        peer schema guard): this helper does not re-check and must only run
+        after a mutation was made.
+
+        Unit-of-work context: called after the operation's own unit of work
+        closes. When the caller has an outer unit of work open (a
+        ``project.Transaction`` / ``UndoableOperation`` block, a sync pass,
+        the legacy session-long envelope, or a ``FromOpenProject`` attached
+        view whose host owns the envelope) the save runs inside that outer
+        unit of work. This was verified safe live in all of those contexts
+        (tests/operations/test_issue625_ws_create_save_store_live.py): the
+        store save is independent of the LCM unit of work. The store write is
+        not undone if the outer unit of work later rolls back.
+
+        Raises:
+            FP_WritingSystemError: If the store cannot be saved. The LCM
+                change has already been made at that point and will still be
+                written by the next successful store save / CloseProject.
         """
-        self.project.project.ServiceLocator.WritingSystemManager.Save()
+        try:
+            self.project.project.ServiceLocator.WritingSystemManager.Save()
+        except Exception as e:
+            logger.warning(
+                "WritingSystems.%s: the writing-system store could not be "
+                "saved (%s: %s); the change is applied in memory and will be "
+                "written by the next store save or CloseProject.",
+                what, type(e).__name__, e,
+            )
+            raise FP_WritingSystemError(
+                f"WritingSystems.{what} succeeded in the project, but saving "
+                f"the writing-system store failed: {e}. The change is held in "
+                f"memory and will be written by the next store save or "
+                f"CloseProject."
+            ) from e
         logger.debug("WritingSystems.%s: writing-system store saved.", what)
 
     def _GetAllVernacularWSTags(self):

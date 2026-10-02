@@ -19,7 +19,7 @@ from unittest.mock import Mock
 import pytest
 
 from flexicon.code.System.WritingSystemOperations import WritingSystemOperations
-from flexicon.code.FLExProject import FP_ParameterError
+from flexicon.code.FLExProject import FP_ParameterError, FP_WritingSystemError
 
 
 class _FakeWS:
@@ -112,3 +112,12 @@ class TestCreateEnsureSaveStore:
         with pytest.raises(RuntimeError, match="guard"):
             getattr(ops, call)("qaa-x-new", "New")
         assert events == []
+
+    def test_store_save_failure_raises_clear_error_after_lcm_change(self):
+        events = []
+        ops, project = _make_ops(events)
+        project.project.ServiceLocator.WritingSystemManager.Save.side_effect = (
+            OSError("disk full"))
+        with pytest.raises(FP_WritingSystemError, match="disk full"):
+            ops.Ensure("qaa-x-new", "New")
+        assert "activate" in events  # LCM change was already made
