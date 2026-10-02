@@ -184,7 +184,6 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             return None
 
         number = number.strip()
-        wsHandle = self.project.project.DefaultAnalWs
 
         # Search through all domains (flat)
         for domain in self.GetAll():
@@ -195,12 +194,17 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         return None
 
     @OperationsMethod
-    def FindByName(self, name):
+    def FindByName(self, name, wsHandle=None):
         """
         Find a semantic domain by its name.
 
         Args:
             name (str): The domain name to search for (case-insensitive).
+            wsHandle: Optional writing system (handle or language tag). When
+                given, only the name stored in that writing system is
+                compared. When omitted, the name is matched against the
+                best analysis alternative first and then against every
+                current analysis writing system (see Notes).
 
         Returns:
             ICmSemanticDomain or None: The domain object if found, None otherwise.
@@ -223,10 +227,15 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Notes:
             - Search is case-insensitive
-            - Searches in default analysis writing system
+            - With no ``wsHandle``, a domain matches if its name in the
+              best analysis alternative OR in any current analysis writing
+              system equals the search text. Canonical-catalog names are
+              often populated only in English, so matching on the default
+              analysis WS alone misses them when that WS is, say,
+              Portuguese (issue #604; same treatment #183 gave Find).
             - Returns first match only
             - Returns None if not found (doesn't raise exception)
-            - For multilingual searches, iterate GetAll() manually
+            - For vernacular or other-language searches pass ``wsHandle``
 
         See Also:
             Find, Exists, GetName
@@ -237,13 +246,22 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             return None
 
         target = normalize_match_key(name, casefold=True).strip()
-        wsHandle = self.project.project.DefaultAnalWs
+
+        explicit_ws = None
+        if wsHandle is not None:
+            explicit_ws = self.__WSHandle(wsHandle)
 
         # Search through all domains
         for domain in self.GetAll():
-            domain_name = ITsString(domain.Name.get_String(wsHandle)).Text
-            if normalize_match_key(domain_name, casefold=True).strip() == target:
-                return domain
+            if explicit_ws is not None:
+                candidates = [ITsString(domain.Name.get_String(explicit_ws)).Text]
+            else:
+                candidates = self.__NameCandidates(domain)
+            for candidate in candidates:
+                if not candidate:
+                    continue
+                if normalize_match_key(candidate, casefold=True).strip() == target:
+                    return domain
 
         return None
 
@@ -291,7 +309,8 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Args:
             domain_or_hvo: The ICmSemanticDomain object or HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the
+                best analysis alternative is returned (see Notes).
 
         Returns:
             str: The domain name, or empty string if not set.
@@ -312,9 +331,13 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             Marcher
 
         Notes:
-            - Returns empty string if name not set in specified writing system
+            - With an explicit ``wsHandle`` returns exactly that writing
+              system's text (empty string if not set there)
+            - With no ``wsHandle`` resolves via BestAnalysisAlternative, so
+              names populated only in a non-default analysis WS (e.g. the
+              English-only canonical catalog on a Portuguese-analysis
+              project) are still returned (issue #604)
             - Names are typically set in multiple writing systems
-            - Default writing system is the default analysis WS
 
         See Also:
             SetName, GetDescription, GetAbbreviation
@@ -322,8 +345,10 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         self._ValidateParam(domain_or_hvo, "domain_or_hvo")
 
         domain = self.__ResolveObject(domain_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
+        if wsHandle is None:
+            return best_analysis_text(domain.Name)
 
+        wsHandle = self.__WSHandle(wsHandle)
         name = ITsString(domain.Name.get_String(wsHandle)).Text
         return name or ""
 
@@ -335,11 +360,19 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         Args:
             domain_or_hvo: The ICmSemanticDomain object or HVO.
             name (str): The new name.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes always target
+                one explicit alternative: when omitted this is the
+                project's default analysis WS. Pass ``wsHandle`` to write
+                a different alternative (e.g. the English catalog name).
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If domain_or_hvo or name is None.
+
+        Notes:
+            - GetName() without a ``wsHandle`` reads the best analysis
+              alternative, which prefers the default analysis WS, so a
+              default-WS write is read back by the default GetName().
 
         Example:
             >>> domain = project.SemanticDomains.Find("900.1")  # custom domain
@@ -374,7 +407,8 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Args:
             domain_or_hvo: The ICmSemanticDomain object or HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis
+                alternative is returned (issue #604).
 
         Returns:
             str: The domain description, or empty string if not set.
@@ -400,8 +434,12 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         self._ValidateParam(domain_or_hvo, "domain_or_hvo")
 
         domain = self.__ResolveObject(domain_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
 
+        # No explicit WS: best analysis alternative (issue #604).
+        if wsHandle is None:
+            return best_analysis_text(domain.Description)
+
+        wsHandle = self.__WSHandle(wsHandle)
         # Description is a MultiString
         desc = ITsString(domain.Description.get_String(wsHandle)).Text
         return desc or ""
@@ -414,7 +452,8 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         Args:
             domain_or_hvo: The ICmSemanticDomain object or HVO.
             description (str): The new description text.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Writes target one explicit
+                alternative; when omitted, the default analysis WS.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -448,7 +487,8 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Args:
             domain_or_hvo: The ICmSemanticDomain object or HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis
+                alternative is returned (issue #604).
 
         Returns:
             str: The domain abbreviation, or empty string if not set.
@@ -473,8 +513,12 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         self._ValidateParam(domain_or_hvo, "domain_or_hvo")
 
         domain = self.__ResolveObject(domain_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
 
+        # No explicit WS: best analysis alternative (issue #604).
+        if wsHandle is None:
+            return best_analysis_text(domain.Abbreviation)
+
+        wsHandle = self.__WSHandle(wsHandle)
         abbr = ITsString(domain.Abbreviation.get_String(wsHandle)).Text
         return abbr or ""
 
@@ -534,7 +578,8 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Args:
             domain_or_hvo: The ICmSemanticDomain object or HVO.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. When omitted, the best analysis
+                alternative is returned (issue #604).
 
         Returns:
             str: The elicitation questions, or empty string if not set.
@@ -564,15 +609,20 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         self._ValidateParam(domain_or_hvo, "domain_or_hvo")
 
         domain = self.__ResolveObject(domain_or_hvo)
-        wsHandle = self.__WSHandle(wsHandle)
+        if wsHandle is not None:
+            wsHandle = self.__WSHandle(wsHandle)
 
         # Questions is an owning sequence of CmDomainQ objects (QuestionsOS)
         # Each CmDomainQ has a Question property (MultiUnicode)
+        # No explicit WS: best analysis alternative per question (issue #604).
         questions_list = []
         if hasattr(domain, "QuestionsOS"):
             for domain_q in domain.QuestionsOS:
                 if hasattr(domain_q, "Question"):
-                    q_text = ITsString(domain_q.Question.get_String(wsHandle)).Text
+                    if wsHandle is None:
+                        q_text = best_analysis_text(domain_q.Question)
+                    else:
+                        q_text = ITsString(domain_q.Question.get_String(wsHandle)).Text
                     if q_text:
                         questions_list.append(q_text)
         return "\n".join(questions_list)
@@ -916,7 +966,9 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             number (str): The domain number (e.g., "900.1").
             parent: Optional parent ICmSemanticDomain object or HVO. If None,
                 creates a top-level domain.
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Optional writing system handle. Name and number are written to
+                this one alternative; when omitted, the default analysis WS.
+                Reads without a wsHandle use the best analysis alternative.
 
         Returns:
             ICmSemanticDomain: The newly created domain object.
@@ -1357,6 +1409,19 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                 pass
         require_lcm_object(domain_or_hvo, "ICmSemanticDomain")
         return domain_or_hvo
+
+    def __NameCandidates(self, domain):
+        """
+        Return the domain's name texts to match against when no explicit
+        writing system was requested: the best analysis alternative first,
+        then each current analysis writing system's alternative (issue #604).
+        """
+        candidates = [best_analysis_text(domain.Name)]
+        for ws in self.project.lp.CurrentAnalysisWritingSystems:
+            text = ITsString(domain.Name.get_String(ws.Handle)).Text
+            if text and text not in candidates:
+                candidates.append(text)
+        return candidates
 
     def __WSHandle(self, wsHandle):
         """
