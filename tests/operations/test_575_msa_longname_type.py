@@ -23,7 +23,7 @@ Author: Muse (issue #575)
 
 import os
 import sys
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -42,6 +42,20 @@ def _make_msa(long_name="Verb  Pl.3", class_name="MoStemMsa"):
     msa.LongName = long_name
     msa.ClassName = class_name
     return msa
+
+
+@pytest.fixture(autouse=True)
+def _identity_msa_casts():
+    """Let plain mocks flow through the ClassName-gated MSA cast."""
+    base = "flexicon.code.Lexicon.MSAOperations."
+    names = ("IMoStemMsa", "IMoInflAffMsa", "IMoDerivAffMsa",
+             "IMoUnclassifiedAffixMsa")
+    patches = [patch(base + n, side_effect=lambda x: x) for n in names]
+    for p in patches:
+        p.start()
+    yield
+    for p in patches:
+        p.stop()
 
 
 @pytest.fixture
