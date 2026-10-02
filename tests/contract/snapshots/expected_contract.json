@@ -284,7 +284,8 @@
       "TsStringUtils"
     ],
     "SIL.LCModel.DomainServices": [
-      "SandboxGenericMSA"
+      "SandboxGenericMSA",
+      "WritingSystemServices"
     ],
     "SIL.LCModel.Infrastructure": [
       "IFwMetaDataCacheManaged",
@@ -298,6 +299,7 @@
       "WorkerThreadException"
     ],
     "SIL.WritingSystems": [
+      "IWritingSystemChangeLogDataMapper",
       "Sldr",
       "WritingSystemDefinition"
     ]
@@ -569,6 +571,14 @@
       ],
       "methods": []
     },
+    "WritingSystemServices": {
+      "properties": [
+        "DeleteWritingSystem"
+      ],
+      "methods": [
+        "DeleteWritingSystem"
+      ]
+    },
     "XmlTranslatedLists": {
       "properties": [
         "ImportTranslatedListsForWs"
@@ -813,7 +823,8 @@
     "IWfiAnalysis",
     "IWfiGloss",
     "IWfiMorphBundle",
-    "IWfiWordform"
+    "IWfiWordform",
+    "IWritingSystemChangeLogDataMapper"
   ],
   "classes": [
     "CellarPropertyType",
@@ -869,6 +880,7 @@
     "WfiWordformTags",
     "WorkerThreadException",
     "WritingSystemDefinition",
+    "WritingSystemServices",
     "XmlList",
     "XmlTranslatedLists",
     "YesNoCancel"
@@ -1144,6 +1156,7 @@
       "imports": {
         "SIL.LCModel": [
           "ICmObjectRepository",
+          "ICmPossibility",
           "ICmPossibilityList",
           "ICmPossibilityRepository",
           "ICmSemanticDomain",
@@ -1504,6 +1517,7 @@
           "IFsClosedFeatureFactory",
           "IFsClosedValue",
           "IFsClosedValueFactory",
+          "IFsFeatDefn",
           "IFsFeatStruc",
           "IFsFeatStrucFactory",
           "IFsSymFeatVal",
@@ -1767,8 +1781,10 @@
           "IMoStemAllomorph",
           "IMoStemAllomorphFactory",
           "IMoStemAllomorphFactory",
+          "IPartOfSpeech",
           "IPhEnvironment",
-          "LexEntryTags"
+          "LexEntryTags",
+          "PartOfSpeechTags"
         ],
         "SIL.LCModel.Core.KernelInterfaces": [
           "ITsString"
@@ -1787,6 +1803,12 @@
           ]
         },
         "LexEntryTags": {
+          "properties": [
+            "kClassId"
+          ],
+          "methods": []
+        },
+        "PartOfSpeechTags": {
           "properties": [
             "kClassId"
           ],
@@ -1979,6 +2001,7 @@
     "code/Lexicon/MSAOperations.py": {
       "imports": {
         "SIL.LCModel": [
+          "ICmPossibility",
           "ILexEntry",
           "ILexEntryRepository",
           "ILexSense",
@@ -2730,6 +2753,14 @@
       },
       "type_usage": {}
     },
+    "code/Shared/ws_change_log.py": {
+      "imports": {
+        "SIL.WritingSystems": [
+          "IWritingSystemChangeLogDataMapper"
+        ]
+      },
+      "type_usage": {}
+    },
     "code/System/AnnotationDefOperations.py": {
       "imports": {
         "SIL.LCModel": [
@@ -2896,6 +2927,9 @@
         "SIL.LCModel": [
           "SpecialWritingSystemCodes"
         ],
+        "SIL.LCModel.DomainServices": [
+          "WritingSystemServices"
+        ],
         "SIL.LCModel.Core.KernelInterfaces": [
           "IMultiString",
           "IMultiUnicode",
@@ -2908,7 +2942,16 @@
           "WritingSystemDefinition"
         ]
       },
-      "type_usage": {}
+      "type_usage": {
+        "WritingSystemServices": {
+          "properties": [
+            "DeleteWritingSystem"
+          ],
+          "methods": [
+            "DeleteWritingSystem"
+          ]
+        }
+      }
     },
     "code/TextsWords/DiscourseOperations.py": {
       "imports": {
@@ -3223,13 +3266,13 @@
     }
   },
   "summary": {
-    "total_files_with_lcm_deps": 82,
-    "total_unique_imports": 273,
+    "total_files_with_lcm_deps": 83,
+    "total_unique_imports": 275,
     "total_modules": 14,
     "total_factories": 83,
     "total_repositories": 18,
-    "total_interfaces": 116,
-    "total_classes": 56,
-    "total_type_usages_tracked": 36
+    "total_interfaces": 117,
+    "total_classes": 57,
+    "total_type_usages_tracked": 37
   }
 }

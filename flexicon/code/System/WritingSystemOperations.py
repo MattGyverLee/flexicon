@@ -15,6 +15,7 @@ import logging
 
 # Import FLEx LCM types
 from SIL.LCModel import SpecialWritingSystemCodes
+from SIL.LCModel.DomainServices import WritingSystemServices
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
 from SIL.WritingSystems import WritingSystemDefinition  # Fixed: was IWritingSystemDefinition
@@ -434,7 +435,22 @@ class WritingSystemOperations(BaseOperations):
     @OperationsMethod
     def Delete(self, ws_handle_or_tag):
         """
-        Remove a writing system from the project.
+        Remove a writing system from the project, the way FieldWorks does.
+
+        Uses LCM's ``WritingSystemServices.DeleteWritingSystem`` and then
+        saves the writing-system store, so the deletion reaches disk:
+
+        - every string alternative / text run in this writing system is
+          purged from the project data;
+        - the writing system is removed from the vernacular and analysis
+          lists (full and current);
+        - ``WritingSystemStore/<tag>.ldml`` is moved to
+          ``WritingSystemStore/trash/``, so ``ExistsInStore(tag)`` becomes
+          False;
+        - a ``<Delete>`` entry is appended to
+          ``WritingSystemStore/idchangelog.xml``. The earlier ``<Add>`` entry
+          is intentionally left in place: the change log is an append-only
+          history, exactly as FieldWorks leaves it.
 
         Args:
             ws_handle_or_tag: Either a writing system handle (int) or
@@ -448,7 +464,7 @@ class WritingSystemOperations(BaseOperations):
 
         Example:
             >>> # Delete by language tag
-            >>> if project.WritingSystems.Exists("qaa-x-old"):
+            >>> if project.WritingSystems.ExistsInStore("qaa-x-old"):
             ...     project.WritingSystems.Delete("qaa-x-old")
 
             >>> # Delete by handle
@@ -458,12 +474,15 @@ class WritingSystemOperations(BaseOperations):
 
         Notes:
             - Cannot delete default vernacular or analysis writing systems
-            - Should check that no data uses this writing system before deleting
-            - This operation cannot be undone
-            - Writing system is removed from both the store and active lists
+            - DESTRUCTIVE: data stored in this writing system is deleted
+              along with it (this is FieldWorks' own behaviour). There is no
+              in-use check; look before you delete if the data matters.
+            - The data purge is part of the project's unit of work, but the
+              store changes (.ldml move, change-log entry) are written to
+              disk immediately and are not undone by an undo/rollback.
 
         See Also:
-            Create, Exists
+            Create, Exists, ExistsInStore
         """
         self._EnsureWriteEnabled()
 
@@ -493,20 +512,16 @@ class WritingSystemOperations(BaseOperations):
         self._EnsureSchemaWriteAllowed(f"WritingSystems.Delete({language_tag!r})")
 
         with self._TransactionCM(f"Delete writing system '{language_tag}'"):
-            # Removal contract from IWritingSystemContainer: "first remove from
-            # AnalysisWritingSystems [the full list], then from
-            # CurrentAnalysisWritingSystems [the current list]." Same for
-            # vernacular. Going through the collections (rather than
-            # rewriting the CurXxxWss space-delimited string) keeps the full
-            # list and current list in sync.
-            for full_list, current_list in (
-                (self.project.lp.VernacularWritingSystems, self.project.lp.CurrentVernacularWritingSystems),
-                (self.project.lp.AnalysisWritingSystems, self.project.lp.CurrentAnalysisWritingSystems),
-            ):
-                if full_list.Contains(ws):
-                    full_list.Remove(ws)
-                if current_list.Contains(ws):
-                    current_list.Remove(ws)
+            # LCM's own implementation: crawls the data removing this WS,
+            # drops it from the vernacular/analysis lists (full and current)
+            # and marks it for deletion in the store.
+            WritingSystemServices.DeleteWritingSystem(self.project.project, ws)
+
+        # MarkedForDeletion is only acted on when the store is saved: that is
+        # when the .ldml moves to trash/ and the <Delete> entry is logged
+        # (issue #607). Done after the unit of work closes, as FieldWorks does.
+        self.project.project.ServiceLocator.WritingSystemManager.Save()
+        logger.info("WritingSystems.Delete(%r): removed from store.", language_tag)
 
     # --- Configuration Methods ---
 
