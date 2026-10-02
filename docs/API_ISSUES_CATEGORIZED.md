@@ -1250,6 +1250,33 @@ spec = project.MSA.GetFeatures(sense)
 print(project.InflectionFeatures.DescribeFeatStruc(spec))  # [nc: 1/2; num: sg]
 ```
 
+## Category 16: Writing-system store left behind / unattributed change log (issues #607, #608)
+
+### [DONE] RESOLVED - `WritingSystems.Delete` reaches the store; change log attributed to flexicon
+
+**#607 -- behaviour change.** `WritingSystemOperations.Delete` used to only
+remove the writing system from the vernacular/analysis lists: the
+`WritingSystemStore/<tag>.ldml` stayed (so `ExistsInStore(tag)` was still
+True) and no `<Delete>` change-log entry was written, contradicting its
+docstring. It now calls LCM's `WritingSystemServices.DeleteWritingSystem`
+and saves the writing-system store, as FieldWorks does: the `.ldml` moves to
+`WritingSystemStore/trash/`, `idchangelog.xml` gains a `<Delete>` entry (the
+earlier `<Add>` stays; the log is append-only), and `ExistsInStore(tag)` is
+False. **Callers must know:** LCM's routine also purges every string
+alternative/run in that writing system from the project data, exactly as the
+FLEx UI does; there is no in-use check.
+
+**#608.** libpalaso stamps change-log entries from
+`Assembly.GetEntryAssembly()`, which is null under Python, giving
+`Producer="???" ProducerVersion="unknown"`. `FLExProject.OpenProject` (write
+enabled only) now installs a pass-through change-log data mapper
+(`flexicon/code/Shared/ws_change_log.py`) that stamps unattributed entries
+`Producer="flexicon" ProducerVersion="<flexicon.version>"`. FieldWorks'
+own entries are untouched. Best effort: failure is logged and never blocks
+opening a project.
+
+Live evidence: `specs/607-608-ws-store/evidence/live-607.md`.
+
 ---
 
 ## Summary Statistics

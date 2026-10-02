@@ -55,6 +55,18 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`WritingSystems.Delete` now removes the writing system from the store
+  (#607).** It used to only drop the writing system from the vernacular and
+  analysis lists, leaving `WritingSystemStore/<tag>.ldml` on disk
+  (`ExistsInStore()` stayed True) and no `<Delete>` change-log entry. It now
+  uses LCM's `WritingSystemServices.DeleteWritingSystem` and saves the store,
+  as FieldWorks does: the `.ldml` moves to `trash/` and `idchangelog.xml`
+  records the delete. **Behaviour note:** like FieldWorks, this also purges
+  data stored in that writing system.
+- **Writing-system change-log entries are attributed to flexicon (#608).**
+  Entries written through flexicon read `Producer="flexicon"
+  ProducerVersion="<version>"` instead of `Producer="???"
+  ProducerVersion="unknown"`. Applied when a project is opened write-enabled.
 - **`FLExProject.LexiconSetListFieldSingle` accepts every `CmPossibility`
   subclass (follow-up to #448).** It compared `ClassName` to `"CmPossibility"`,
   but `ClassName` is the concrete class, so passing a `PartOfSpeech`,

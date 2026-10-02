@@ -409,6 +409,17 @@ class FLExProject(object):
 
         self.writeEnabled = writeEnabled
         self._undoable = undoable and writeEnabled  # Only meaningful if write-enabled
+
+        if writeEnabled:
+            # Issue #608: attribute writing-system change-log entries
+            # (idchangelog.xml) to flexicon instead of Producer="???".
+            # Read-only sessions never write the log, so they are left alone.
+            # Best effort: install_producer_stamp() never raises.
+            from .Shared.ws_change_log import install_producer_stamp
+            import flexicon as _flexicon_pkg
+            install_producer_stamp(
+                self.project, "flexicon",
+                getattr(_flexicon_pkg, "version", "unknown"))
         # Off by default; see SetPeerSchemaGuard(). Reset on every open so a
         # reused FLExProject never inherits the previous project's setting.
         self._peer_schema_guard = False
