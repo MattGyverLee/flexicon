@@ -134,6 +134,19 @@ class WordformOperations(BaseOperations):
                 return cast_to_concrete(wordform_or_hvo)
             except Exception:
                 pass
+        if wordform_or_hvo is None or isinstance(
+            wordform_or_hvo, (str, bytes, float, bool, list, tuple, dict)
+        ) or not hasattr(wordform_or_hvo, "Form"):
+            # Issue #600: a str used to fall through and die later with a
+            # raw AttributeError ('str' object has no attribute 'Form').
+            # A str is deliberately NOT looked up as a form: the writing
+            # system is ambiguous (the wsHandle argument of most methods
+            # selects the output WS, not the search WS), so be explicit.
+            raise FP_ParameterError(
+                "Expected an IWfiWordform object or an int HVO, got "
+                f"{type(wordform_or_hvo).__name__}. To get a wordform from "
+                "its text use project.Wordforms.Find(form) first."
+            )
         return wordform_or_hvo
 
     @wrap_enumerable
