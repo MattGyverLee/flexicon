@@ -1308,6 +1308,20 @@ opening a project.
 
 Live evidence: `specs/607-608-ws-store/evidence/live-607.md`.
 
+**#625 -- `Create`/`Ensure` now save the store too.** They used to add the
+writing system to the LCM and leave `<tag>.ldml` and the `idchangelog.xml`
+`<Add>` entry to the next store save or `CloseProject`. They now save the
+store right after the operation's unit of work closes (shared helper
+`_SaveWritingSystemStore`, also used by `Delete`). `Ensure` on a tag already
+active in the requested category is still a no-op and does not save. Verified
+live inside a caller's `Transaction`, an `UndoableOperation`, and on a
+`FromOpenProject` attached view: the save is safe there. The store write is
+not undone if an outer unit of work later rolls back. If the save itself
+fails, `FP_RuntimeError` is raised; the in-memory change stays and is
+written by the next store save/close.
+
+Live evidence: `specs/625-ws-create-save-store/evidence/live-625.md`.
+
 ---
 
 ## Category 16: Wrong-type resolver arguments (issue #618)

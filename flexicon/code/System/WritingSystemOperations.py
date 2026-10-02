@@ -24,6 +24,7 @@ from SIL.WritingSystems import WritingSystemDefinition  # Fixed: was IWritingSys
 from ..FLExProject import (
     FP_ParameterError,
     FP_WritingSystemError,
+    FP_RuntimeError,
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
@@ -211,6 +212,8 @@ class WritingSystemOperations(BaseOperations):
             FP_NullParameterError: If language_tag or name is None
             FP_ParameterError: If language_tag is empty, or already active
                 (vernacular or analysis) -- see ``Exists()``
+            FP_RuntimeError: If the writing-system store cannot be saved after
+                the change was applied (the in-memory change stays)
 
         Example:
             >>> # Create a vernacular writing system
@@ -232,6 +235,13 @@ class WritingSystemOperations(BaseOperations):
             - Use "qaa-x-" prefix for undocumented languages
             - The writing system is automatically added to vernacular or
               analysis list based on is_vernacular parameter
+            - The writing-system store is saved immediately (the ``.ldml``
+              and the ``idchangelog.xml`` ``<Add>`` entry reach disk before
+              this returns), the same as ``Delete``. Inside a caller's outer
+              unit of work the save still runs (verified safe live); it is
+              not undone if that outer unit of work rolls back. A failing
+              save raises ``FP_RuntimeError`` (the in-memory change
+              stays and is written by the next store save/close)
             - Default font settings may be inherited from system defaults
             - **Store-present-but-inactive tags (issue #250 Defect 2):** the
               guard above only refuses an already-ACTIVE tag (what
@@ -308,7 +318,8 @@ class WritingSystemOperations(BaseOperations):
             else:
                 self.project.lp.AddToCurrentAnalysisWritingSystems(ws)
 
-            return ws
+        self._SaveWritingSystemStore(f"Create({language_tag!r})")
+        return ws
 
     @OperationsMethod
     def Ensure(self, language_tag, name, is_vernacular=True):
@@ -353,6 +364,8 @@ class WritingSystemOperations(BaseOperations):
             FP_ReadOnlyError: If project is not opened with write enabled
             FP_NullParameterError: If language_tag or name is None
             FP_ParameterError: If language_tag is empty
+            FP_RuntimeError: If the writing-system store cannot be saved after
+                the change was applied (the in-memory change stays)
 
         Example:
             >>> # Replaces the old, incorrect Exists()-then-Create() dance:
@@ -371,6 +384,9 @@ class WritingSystemOperations(BaseOperations):
               log, or can call ``Exists()`` before ``Ensure()`` if it needs
               to know synchronously which case applied.
             - Never removes or deactivates a writing system; only adds.
+            - When it changes anything, the writing-system store is saved
+              immediately (``.ldml`` and ``idchangelog.xml`` reach disk). The
+              already-active no-op does not save.
 
         See Also:
             Exists, ExistsInStore, Create
@@ -430,7 +446,8 @@ class WritingSystemOperations(BaseOperations):
             else:
                 self.project.lp.AddToCurrentAnalysisWritingSystems(ws)
 
-            return ws, created
+        self._SaveWritingSystemStore(f"Ensure({language_tag!r})")
+        return ws, created
 
     @OperationsMethod
     def Delete(self, ws_handle_or_tag):
@@ -460,6 +477,8 @@ class WritingSystemOperations(BaseOperations):
             FP_ReadOnlyError: If project is not opened with write enabled
             FP_NullParameterError: If ws_handle_or_tag is None
             FP_WritingSystemError: If writing system not found
+            FP_RuntimeError: If the writing-system store cannot be saved after
+                the change was applied (the in-memory change stays)
             FP_ParameterError: If trying to delete the default WS
 
         Example:
@@ -520,7 +539,7 @@ class WritingSystemOperations(BaseOperations):
         # MarkedForDeletion is only acted on when the store is saved: that is
         # when the .ldml moves to trash/ and the <Delete> entry is logged
         # (issue #607). Done after the unit of work closes, as FieldWorks does.
-        self.project.project.ServiceLocator.WritingSystemManager.Save()
+        self._SaveWritingSystemStore(f"Delete({language_tag!r})")
         logger.info("WritingSystems.Delete(%r): removed from store.", language_tag)
 
     # --- Configuration Methods ---
@@ -1161,6 +1180,49 @@ class WritingSystemOperations(BaseOperations):
         return "" if s == "***" else s
 
     # --- Private Helper Methods ---
+
+    def _SaveWritingSystemStore(self, what):
+        """Flush the writing-system store to disk (issues #607, #625).
+
+        Writes ``WritingSystemStore/<tag>.ldml`` and the ``idchangelog.xml``
+        entry now rather than at the next store save / CloseProject, so a
+        crash or a second reader sees the change.
+
+        Callers MUST already have passed ``_EnsureWriteEnabled()`` (and the
+        peer schema guard): this helper does not re-check and must only run
+        after a mutation was made.
+
+        Unit-of-work context: called after the operation's own unit of work
+        closes. When the caller has an outer unit of work open (a
+        ``project.Transaction`` / ``UndoableOperation`` block, a sync pass,
+        the legacy session-long envelope, or a ``FromOpenProject`` attached
+        view whose host owns the envelope) the save runs inside that outer
+        unit of work. This was verified safe live in all of those contexts
+        (tests/operations/test_issue625_ws_create_save_store_live.py): the
+        store save is independent of the LCM unit of work. The store write is
+        not undone if the outer unit of work later rolls back.
+
+        Raises:
+            FP_RuntimeError: If the store cannot be saved. The LCM
+                change has already been made at that point and will still be
+                written by the next successful store save / CloseProject.
+        """
+        try:
+            self.project.project.ServiceLocator.WritingSystemManager.Save()
+        except Exception as e:
+            logger.warning(
+                "WritingSystems.%s: the writing-system store could not be "
+                "saved (%s: %s); the change is applied in memory and will be "
+                "written by the next store save or CloseProject.",
+                what, type(e).__name__, e,
+            )
+            raise FP_RuntimeError(
+                f"WritingSystems.{what} succeeded in the project, but saving "
+                f"the writing-system store failed: {e}. The change is held in "
+                f"memory and will be written by the next store save or "
+                f"CloseProject."
+            ) from e
+        logger.debug("WritingSystems.%s: writing-system store saved.", what)
 
     def _GetAllVernacularWSTags(self):
         """

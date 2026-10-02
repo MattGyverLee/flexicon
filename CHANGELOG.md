@@ -55,6 +55,14 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ### Fixed
 
+- **`WritingSystems.Create` / `Ensure` now save the writing-system store
+  immediately (#625).** They used to add the writing system to the LCM but
+  leave `WritingSystemStore/<tag>.ldml` and the `idchangelog.xml` `<Add>`
+  entry unwritten until the next store save or `CloseProject`, so a crash
+  lost the `.ldml` and other readers (a second process, FieldWorks,
+  Send/Receive tooling) could not see it. They now save the store after the
+  unit of work closes, as `Delete` does. `Ensure` on a tag already active in
+  the requested category is still a no-op and does not save.
 - **`FLExProject.FromOpenProject` attributes writing-system change-log
   entries to flexicon (#626).** Follow-up to #608: projects a host such as
   FlexTools hands over already open were still logged as `Producer="???"
