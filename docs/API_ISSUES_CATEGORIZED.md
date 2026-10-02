@@ -1317,7 +1317,7 @@ active in the requested category is still a no-op and does not save. Verified
 live inside a caller's `Transaction`, an `UndoableOperation`, and on a
 `FromOpenProject` attached view: the save is safe there. The store write is
 not undone if an outer unit of work later rolls back. If the save itself
-fails, `FP_WritingSystemError` is raised; the in-memory change stays and is
+fails, `FP_RuntimeError` is raised; the in-memory change stays and is
 written by the next store save/close.
 
 Live evidence: `specs/625-ws-create-save-store/evidence/live-625.md`.

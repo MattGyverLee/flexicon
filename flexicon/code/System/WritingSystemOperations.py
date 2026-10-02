@@ -24,6 +24,7 @@ from SIL.WritingSystems import WritingSystemDefinition  # Fixed: was IWritingSys
 from ..FLExProject import (
     FP_ParameterError,
     FP_WritingSystemError,
+    FP_RuntimeError,
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
@@ -211,6 +212,8 @@ class WritingSystemOperations(BaseOperations):
             FP_NullParameterError: If language_tag or name is None
             FP_ParameterError: If language_tag is empty, or already active
                 (vernacular or analysis) -- see ``Exists()``
+            FP_RuntimeError: If the writing-system store cannot be saved after
+                the change was applied (the in-memory change stays)
 
         Example:
             >>> # Create a vernacular writing system
@@ -237,7 +240,7 @@ class WritingSystemOperations(BaseOperations):
               this returns), the same as ``Delete``. Inside a caller's outer
               unit of work the save still runs (verified safe live); it is
               not undone if that outer unit of work rolls back. A failing
-              save raises ``FP_WritingSystemError`` (the in-memory change
+              save raises ``FP_RuntimeError`` (the in-memory change
               stays and is written by the next store save/close)
             - Default font settings may be inherited from system defaults
             - **Store-present-but-inactive tags (issue #250 Defect 2):** the
@@ -361,6 +364,8 @@ class WritingSystemOperations(BaseOperations):
             FP_ReadOnlyError: If project is not opened with write enabled
             FP_NullParameterError: If language_tag or name is None
             FP_ParameterError: If language_tag is empty
+            FP_RuntimeError: If the writing-system store cannot be saved after
+                the change was applied (the in-memory change stays)
 
         Example:
             >>> # Replaces the old, incorrect Exists()-then-Create() dance:
@@ -472,6 +477,8 @@ class WritingSystemOperations(BaseOperations):
             FP_ReadOnlyError: If project is not opened with write enabled
             FP_NullParameterError: If ws_handle_or_tag is None
             FP_WritingSystemError: If writing system not found
+            FP_RuntimeError: If the writing-system store cannot be saved after
+                the change was applied (the in-memory change stays)
             FP_ParameterError: If trying to delete the default WS
 
         Example:
@@ -1196,7 +1203,7 @@ class WritingSystemOperations(BaseOperations):
         not undone if the outer unit of work later rolls back.
 
         Raises:
-            FP_WritingSystemError: If the store cannot be saved. The LCM
+            FP_RuntimeError: If the store cannot be saved. The LCM
                 change has already been made at that point and will still be
                 written by the next successful store save / CloseProject.
         """
@@ -1209,7 +1216,7 @@ class WritingSystemOperations(BaseOperations):
                 "written by the next store save or CloseProject.",
                 what, type(e).__name__, e,
             )
-            raise FP_WritingSystemError(
+            raise FP_RuntimeError(
                 f"WritingSystems.{what} succeeded in the project, but saving "
                 f"the writing-system store failed: {e}. The change is held in "
                 f"memory and will be written by the next store save or "
