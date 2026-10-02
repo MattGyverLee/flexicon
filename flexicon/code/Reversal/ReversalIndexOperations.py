@@ -145,7 +145,10 @@ class ReversalIndexOperations(BaseOperations):
             >>> rev_index = project.ReversalIndexes.Create("French", fr_ws)
 
         Notes:
-            - Name is stored in the default analysis writing system
+            - Name is stored in the default analysis writing system. It
+              is the ``Name`` field only; FLEx displays a name derived
+              from the index's writing system (``ShortName``), so the
+              ``name`` argument is not what the FLEx UI shows.
             - One reversal index per writing system
             - Writing system must be an analysis writing system
             - Index is automatically added to project's reversal indexes
@@ -340,7 +343,10 @@ class ReversalIndexOperations(BaseOperations):
             wsHandle: Optional writing system handle. Defaults to analysis WS.
 
         Returns:
-            str: The index name (empty string if not set)
+            str: The value of the index's ``Name`` field (empty string if
+            not set). This is the stored field, NOT necessarily the name
+            FieldWorks displays: FLEx derives the displayed name
+            (``IReversalIndex.ShortName``) from the index's writing system.
 
         Raises:
             FP_NullParameterError: If index_or_hvo is None
@@ -365,7 +371,21 @@ class ReversalIndexOperations(BaseOperations):
     @OperationsMethod
     def SetName(self, index_or_hvo, name, wsHandle=None):
         """
-        Set the name of a reversal index.
+        Set the ``Name`` field of a reversal index.
+
+        Notes:
+            - This does NOT rename the index as FieldWorks displays it.
+              Verified against a live Sena 3 project: after SetName,
+              ``IReversalIndex.ShortName`` (the derived display name,
+              taken from the index's writing system) is unchanged, while
+              ``Name`` and ``ChooserNameTS`` reflect the new value. To
+              change the name FLEx shows for the index, change the
+              display name of its writing system (see
+              ``project.WritingSystems``) instead.
+            - The value is written in the analysis writing system only
+              (or ``wsHandle`` if given), and is only visible to code or
+              UI that reads ``Name`` directly. ``Create`` writes ``Name``
+              the same way.
 
         Args:
             index_or_hvo: Either an IReversalIndex object or its HVO
