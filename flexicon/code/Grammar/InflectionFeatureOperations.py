@@ -5,7 +5,9 @@
 #          Inflection class and feature operations for FieldWorks Language
 #          Explorer projects via SIL Language and Culture Model (LCM) API.
 #
-#          Manages inflection classes (IMoInflClass) under MorphologicalDataOA
+#          Manages inflection classes (IMoInflClass, owned by parts of
+#          speech and nested via SubclassesOC), exception features
+#          (ICmPossibility items in MorphologicalDataOA.ProdRestrictOA)
 #          and the morphosyntactic feature system (MsFeatureSystemOA), which
 #          owns IFsClosedFeature definitions and their IFsSymFeatVal value
 #          children. The MGA EticGlossList.xml catalog is the canonical
@@ -19,6 +21,10 @@
 #   Copyright 2025-2026
 #
 
+import logging
+
+import logging
+
 # Import BaseOperations parent class
 from ..Shared.arg_checks import is_non_lcm_value, require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod
@@ -27,6 +33,9 @@ from ..BaseOperations import BaseOperations, OperationsMethod
 from SIL.LCModel import (
     IMoInflClass,
     IMoInflClassFactory,
+    ICmPossibility,
+    ICmPossibilityFactory,
+    ICmPossibilityListFactory,
     IFsFeatStruc,
     IFsFeatStrucFactory,
     IFsFeatDefn,  # Fixed: was IFsFeatureDefn
@@ -56,11 +65,15 @@ from ..FLExProject import (
 from ..lcm_casting import cast_to_concrete
 
 # Import string utilities
-from ..Shared.string_utils import best_analysis_text, normalize_match_key
+from ..Shared.string_utils import best_analysis_text, normalize_match_key, normalize_text
 
 # Catalog (eticGlossList) parsing helpers
 from ..Shared.catalog import parse_etic_gloss_list
 from ..Shared.catalog_backed import CatalogBackedMixin
+
+logger = logging.getLogger(__name__)
+
+logger = logging.getLogger(__name__)
 
 
 # Canonical relative subdir for the MGA inflection-feature catalog under
@@ -101,7 +114,8 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
             print(f"Inflection Class: {name}")
 
         # Create a new inflection class
-        first_decl = inflOps.InflectionClassCreate("First Declension")
+        noun = project.POS.Find("Noun")
+        first_decl = inflOps.InflectionClassCreate("First Declension", pos=noun)
 
         # Work with features
         for feature in inflOps.FeatureGetAll():
@@ -154,6 +168,13 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         """
         Get all inflection classes in the project.
 
+        Inflection classes (IMoInflClass) are owned by parts of speech
+        (``IPartOfSpeech.InflectionClassesOC``) and nest through
+        ``IMoInflClass.SubclassesOC``. This walks every POS (including
+        sub-categories) and every class subclass, depth-first, parents
+        before children. It delegates to
+        ``POSOperations.GetInflectionClasses(recursive=True)``.
+
         Yields:
             IMoInflClass: Each inflection class object in the project.
 
@@ -164,32 +185,37 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
             ...     print(f"Class: {name}")
             Class: First Declension
             Class: Second Declension
-            Class: Irregular Verb
-            Class: Regular Verb
 
         Notes:
-            - Returns all inflection classes from MorphologicalDataOA
-            - Classes organize lexical items by inflectional pattern
-            - Each class defines how entries inflect (conjugate/decline)
-            - Returns empty if no classes defined
+            - Classes are read from each POS, never from
+              MorphologicalDataOA.ProdRestrictOA (that list holds
+              exception features; see ExceptionFeatureGetAll)
+            - Returns empty if no classes are defined
 
         See Also:
-            InflectionClassCreate, InflectionClassGetName
+            InflectionClassCreate, InflectionClassGetName,
+            ExceptionFeatureGetAll
         """
-        morph_data = self.project.lp.MorphologicalDataOA
-        if morph_data is not None and hasattr(morph_data, "ProdRestrictOA") and morph_data.ProdRestrictOA is not None:
-            # Inflection classes are stored in the ProdRestrictOA (Production Restrictions)
-            infl_classes = morph_data.ProdRestrictOA
-            for ic in infl_classes.PossibilitiesOS:
+        pos_ops = self.project.POS
+        for pos in pos_ops.GetAll(recursive=True):
+            for ic in pos_ops.GetInflectionClasses(pos, recursive=True):
                 yield IMoInflClass(ic)
 
     @OperationsMethod
-    def InflectionClassCreate(self, name):
+    def InflectionClassCreate(self, name, pos=None, parent=None):
         """
-        Create a new inflection class.
+        Create a new inflection class under a part of speech or under a
+        parent inflection class.
 
         Args:
             name (str): The name of the inflection class (e.g., "First Declension").
+            pos: The IPartOfSpeech object or HVO that will own the class
+                (added to ``pos.InflectionClassesOC``).
+            parent: An existing IMoInflClass object or HVO; the new class
+                becomes its subclass (added to ``parent.SubclassesOC``).
+                When both are given, ``parent`` wins and ``pos`` is ignored.
+
+        At least one of ``pos`` or ``parent`` is required.
 
         Returns:
             IMoInflClass: The newly created inflection class object.
@@ -197,26 +223,19 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If name is None.
-            FP_ParameterError: If name is empty or if a class with this name
-                already exists.
+            FP_ParameterError: If name is empty, neither pos nor parent was
+                given, or a sibling class with this name already exists.
 
         Example:
             >>> inflOps = InflectionFeatureOperations(project)
-            >>> first_decl = inflOps.InflectionClassCreate("First Declension")
-            >>> print(inflOps.InflectionClassGetName(first_decl))
-            First Declension
-
-            >>> # Create Spanish verb conjugation classes
-            >>> ar_verbs = inflOps.InflectionClassCreate("AR Verbs")
-            >>> er_verbs = inflOps.InflectionClassCreate("ER Verbs")
-            >>> ir_verbs = inflOps.InflectionClassCreate("IR Verbs")
+            >>> noun = project.POS.Find("Noun")
+            >>> first_decl = inflOps.InflectionClassCreate("First Declension", pos=noun)
+            >>> sub = inflOps.InflectionClassCreate("Irregular", parent=first_decl)
 
         Notes:
-            - Inflection classes group entries that inflect the same way
-            - Name should describe the inflectional pattern
-            - Classes can be associated with specific parts of speech
-            - Used in morphological templates and paradigms
-            - The class is created in the default analysis writing system
+            - Inflection classes are never stored in ProdRestrictOA
+            - The name is set in the default analysis writing system
+            - Name uniqueness is checked among the siblings only
 
         See Also:
             InflectionClassDelete, InflectionClassGetAll, InflectionClassSetName
@@ -228,43 +247,45 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         if not name or not name.strip():
             raise FP_ParameterError("Name cannot be empty")
 
-        # Check if class already exists
+        if pos is None and parent is None:
+            raise FP_ParameterError(
+                "An inflection class must be owned by a part of speech or a "
+                "parent inflection class: pass pos=<POS> or parent=<class>. "
+                "(Inflection classes are not stored in the production "
+                "restrictions list.)"
+            )
+
+        if parent is not None:
+            siblings = self.__ResolveInflectionClass(parent).SubclassesOC
+        else:
+            siblings = self.__ResolvePOS(pos).InflectionClassesOC
+
         target = normalize_match_key(name, casefold=True)
-        for existing_ic in self.InflectionClassGetAll():
+        for existing_ic in siblings:
             existing_name = self.InflectionClassGetName(existing_ic)
             if existing_name and normalize_match_key(existing_name, casefold=True) == target:
-                raise FP_ParameterError(f"Inflection class '{name}' already exists")
+                raise FP_ParameterError(f"Inflection class '{name}' already exists here")
 
-        # Get the writing system handle
         wsHandle = self.project.project.DefaultAnalWs
-
-        # Create the new inflection class using the factory
         factory = self.project.project.ServiceLocator.GetService(IMoInflClassFactory)
-
-        # Pre-flight: ensure the morphological data container and production
-        # restrictions list exist before creating any object.
-        morph_data = self.project.lp.MorphologicalDataOA
-        if morph_data is None or morph_data.ProdRestrictOA is None:
-            raise FP_ParameterError(
-                "Project has no morphological data / production restrictions list defined"
-            )
 
         with self._TransactionCM(f"Create inflection class '{name}'"):
             new_ic = factory.Create()
 
-            # Add to the inflection classes list (must be done before setting properties)
-            morph_data.ProdRestrictOA.PossibilitiesOS.Add(new_ic)
+            # Add to the owner first (must precede setting properties)
+            siblings.Add(new_ic)
+            logger.debug("Created inflection class '%s'", name)
+            logger.debug("Created inflection class '%s'", name)
 
-            # Set name
-            mkstr_name = TsStringUtils.MakeString(name, wsHandle)
-            new_ic.Name.set_String(wsHandle, mkstr_name)
+            new_ic.Name.set_String(wsHandle, TsStringUtils.MakeString(name, wsHandle))
 
             return new_ic
 
     @OperationsMethod
     def InflectionClassDelete(self, ic_or_hvo):
         """
-        Delete an inflection class.
+        Delete an inflection class from its real owner (the POS's
+        ``InflectionClassesOC`` or the parent class's ``SubclassesOC``).
 
         Args:
             ic_or_hvo: The IMoInflClass object or HVO to delete.
@@ -272,21 +293,19 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If ic_or_hvo is None.
-            FP_ParameterError: If the class is in use and cannot be deleted.
+            FP_ParameterError: If the class has no recognised owner.
 
         Example:
             >>> inflOps = InflectionFeatureOperations(project)
-            >>> # Find and delete an obsolete class
             >>> for ic in inflOps.InflectionClassGetAll():
             ...     if inflOps.InflectionClassGetName(ic) == "Obsolete":
             ...         inflOps.InflectionClassDelete(ic)
             ...         break
 
         Warning:
-            - Deleting a class that is in use may raise an error from FLEx
+            - Deleting a class also deletes its subclasses
             - Entries using this class should be updated first
-            - Deletion is permanent and cannot be undone
-            - Check for references before deletion
+            - Deletion is permanent
 
         See Also:
             InflectionClassCreate, InflectionClassGetAll
@@ -295,14 +314,21 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
 
         self._ValidateParam(ic_or_hvo, "ic_or_hvo")
 
-        # Resolve to inflection class object
         ic = self.__ResolveInflectionClass(ic_or_hvo)
 
-        # Remove from the inflection classes list
-        morph_data = self.project.lp.MorphologicalDataOA
-        if morph_data.ProdRestrictOA:
-            with self._TransactionCM("Delete inflection class"):
-                morph_data.ProdRestrictOA.PossibilitiesOS.Remove(ic)
+        owner = ic.Owner
+        owning = None
+        if owner is not None:
+            owner = cast_to_concrete(owner)
+            if getattr(owner, "ClassName", None) == "MoInflClass":
+                owning = getattr(owner, "SubclassesOC", None)
+            else:
+                owning = getattr(owner, "InflectionClassesOC", None)
+        if owning is None:
+            raise FP_ParameterError("Inflection class has no owning part of speech or class")
+
+        with self._TransactionCM("Delete inflection class"):
+            owning.Remove(ic)
 
     @OperationsMethod
     def InflectionClassGetName(self, ic_or_hvo, wsHandle=None):
@@ -355,7 +381,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
 
         Example:
             >>> inflOps = InflectionFeatureOperations(project)
-            >>> ic = inflOps.InflectionClassCreate("1st Decl")
+            >>> ic = inflOps.InflectionClassCreate("1st Decl", pos=noun)
             >>> inflOps.InflectionClassSetName(ic, "First Declension")
             >>> print(inflOps.InflectionClassGetName(ic))
             First Declension
@@ -434,7 +460,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
 
         Example:
             >>> inflOps = InflectionFeatureOperations(project)
-            >>> ic = inflOps.InflectionClassCreate("1st Decl")
+            >>> ic = inflOps.InflectionClassCreate("1st Decl", pos=noun)
             >>> inflOps.InflectionClassSetAbbreviation(ic, "1D")
             >>> print(inflOps.InflectionClassGetAbbreviation(ic))
             1D
@@ -1924,6 +1950,116 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         # CatalogSourceId and the value's canonical GUID.
 
         return new_val
+
+    # ========================================================================
+    # EXCEPTION FEATURE OPERATIONS (MorphologicalDataOA.ProdRestrictOA)
+    # ========================================================================
+
+    @OperationsMethod
+    def ExceptionFeatureGetAll(self):
+        """
+        Get all exception features ("production restrictions").
+
+        Exception features are ICmPossibility items in the
+        ``MorphologicalDataOA.ProdRestrictOA`` list. They are not inflection
+        classes.
+
+        Yields:
+            ICmPossibility: Each top-level exception feature. Nothing is
+            yielded if the list does not exist.
+
+        Example:
+            >>> for ef in project.InflectionFeatures.ExceptionFeatureGetAll():
+            ...     print(ef.Name.BestAnalysisAlternative.Text)
+
+        See Also:
+            ExceptionFeatureCreate, ExceptionFeatureFind
+        """
+        morph_data = self.project.lp.MorphologicalDataOA
+        if morph_data is None or morph_data.ProdRestrictOA is None:
+            return
+        for item in morph_data.ProdRestrictOA.PossibilitiesOS:
+            yield ICmPossibility(item)
+
+    @OperationsMethod
+    def ExceptionFeatureFind(self, name, wsHandle=None):
+        """
+        Find an exception feature by name (case-insensitive).
+
+        Args:
+            name (str): The feature name.
+            wsHandle: Optional writing system handle. Defaults to analysis WS.
+
+        Returns:
+            ICmPossibility or None: The match, or None if not found.
+
+        Raises:
+            FP_NullParameterError: If name is None.
+
+        See Also:
+            ExceptionFeatureGetAll, ExceptionFeatureCreate
+        """
+        self._ValidateParam(name, "name")
+        ws = self.__WSHandle(wsHandle)
+        target = normalize_match_key(name, casefold=True)
+        for ef in self.ExceptionFeatureGetAll():
+            text = normalize_text(ITsString(ef.Name.get_String(ws)).Text)
+            if text and normalize_match_key(text, casefold=True) == target:
+                return ef
+        return None
+
+    @OperationsMethod
+    def ExceptionFeatureCreate(self, name, abbreviation=None):
+        """
+        Create an exception feature in ``MorphologicalDataOA.ProdRestrictOA``.
+
+        If the project has no production-restrictions list yet, it is
+        created first.
+
+        Args:
+            name (str): The feature name.
+            abbreviation (str, optional): Abbreviation; defaults to ``name``.
+
+        Returns:
+            ICmPossibility: The new exception feature.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not write enabled.
+            FP_NullParameterError: If name is None.
+            FP_ParameterError: If name is empty, the project has no
+                morphological data, or the feature already exists.
+
+        Example:
+            >>> ef = project.InflectionFeatures.ExceptionFeatureCreate("Irregular", "irr")
+
+        See Also:
+            ExceptionFeatureGetAll, ExceptionFeatureFind
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(name, "name")
+        if not name or not name.strip():
+            raise FP_ParameterError("Name cannot be empty")
+
+        morph_data = self.project.lp.MorphologicalDataOA
+        if morph_data is None:
+            raise FP_ParameterError("Project has no morphological data defined")
+
+        if self.ExceptionFeatureFind(name) is not None:
+            raise FP_ParameterError(f"Exception feature '{name}' already exists")
+
+        ws = self.project.project.DefaultAnalWs
+        sl = self.project.project.ServiceLocator
+        factory = sl.GetService(ICmPossibilityFactory)
+
+        with self._TransactionCM(f"Create exception feature '{name}'"):
+            if morph_data.ProdRestrictOA is None:
+                morph_data.ProdRestrictOA = sl.GetService(ICmPossibilityListFactory).Create()
+            new_ef = factory.Create()
+            morph_data.ProdRestrictOA.PossibilitiesOS.Add(new_ef)
+            new_ef.Name.set_String(ws, TsStringUtils.MakeString(name, ws))
+            abbr = abbreviation if abbreviation else name
+            new_ef.Abbreviation.set_String(ws, TsStringUtils.MakeString(abbr, ws))
+            return new_ef
 
     # ========================================================================
     # PRIVATE HELPER METHODS

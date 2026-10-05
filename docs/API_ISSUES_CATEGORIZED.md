@@ -1436,6 +1436,27 @@ every resolver x wrong-type argument) and
 
 ---
 
+## Issue #631: Inflection classes were read from / written to ProdRestrictOA
+
+`InflectionFeatureOperations.InflectionClassGetAll/Create/Delete` treated
+`MorphologicalDataOA.ProdRestrictOA` as the inflection-class store. That list
+holds *exception features* (`ICmPossibility`), so `InflectionClassGetAll`
+raised `TypeError` whenever any existed, and `Create` put an `IMoInflClass`
+in the wrong owner. Real classes are owned by
+`IPartOfSpeech.InflectionClassesOC` and nest via `IMoInflClass.SubclassesOC`.
+
+- `InflectionClassGetAll()` now walks all POS (recursive) and subclasses.
+- `InflectionClassCreate(name, pos=None, parent=None)` requires a POS or a
+  parent class (`FP_ParameterError` otherwise; name-only calls now fail).
+- `InflectionClassDelete` removes from the real owner.
+- New exception-feature helpers over `ProdRestrictOA`:
+  `ExceptionFeatureGetAll()`, `ExceptionFeatureFind(name)`,
+  `ExceptionFeatureCreate(name, abbreviation=None)`.
+
+Breaking: `InflectionClassCreate(name)` with no `pos`/`parent` raises.
+
+---
+
 ## Conclusion
 
 **Progress Through Phase 0-3**:
