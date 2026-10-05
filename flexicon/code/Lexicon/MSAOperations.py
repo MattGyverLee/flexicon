@@ -1089,24 +1089,26 @@ class MSAOperations(BaseOperations):
             msa_or_hvo: An MSA object, HVO, or GUID (resolved via the
                 internal ``__GetMsaObject``).
             side: ``"from"`` (default) or ``"to"``. Only meaningful for
-                ``MoDerivAffMsa``; ignored for ``MoStemMsa``.
+                ``MoDerivAffMsa``; stem MSAs (``MoStemMsa``) ignore
+                ``side`` entirely.
 
         Returns:
             list[ICmPossibility]: The exception-feature possibility
             objects, so callers can read names/abbreviations via the
             existing possibility-list wrappers (e.g.
             ``PossibilityListOperations.GetItemName``). ``[]`` when none
-            are set.
+            are set, and also (with a logged warning) for
+            ``MoUnclassifiedAffixMsa`` and for ``MoInflAffMsa`` with
+            ``side="to"``, which have no such field.
 
         Raises:
             FP_NullParameterError: If ``msa_or_hvo`` is null.
-            FP_ParameterError: If ``side`` is not "from"/"to"; if the MSA
-                type carries no exception features
-                (``MoUnclassifiedAffixMsa``); or if ``side="to"`` is
-                requested on a ``MoInflAffMsa``. (Changed in #630: an
-                unsupported type now raises, consistent with
-                ``AddExceptionFeature`` / ``RemoveExceptionFeature``,
-                instead of silently returning ``[]``.)
+            FP_ParameterError: If ``side`` is not "from"/"to", or the MSA
+                is not an MSA type known to this class. The read path is
+                lenient (warn and return ``[]``) for unclassified affixes
+                and inflectional ``side="to"``;
+                ``AddExceptionFeature`` / ``RemoveExceptionFeature`` still
+                raise for those.
 
         Example:
             >>> feats = project.MSA.GetExceptionFeatures(msa)
@@ -1131,6 +1133,28 @@ class MSAOperations(BaseOperations):
         self._ValidateParam(msa_or_hvo, "msa_or_hvo")
 
         msa = self.__GetMsaObject(msa_or_hvo)
+        # Lenient read path: nothing to read on these, so warn and return
+        # an empty list rather than raising (Add/Remove still raise).
+        # side is still validated first.
+        if side not in self._EXCEPTION_FEATURE_SIDES:
+            raise FP_ParameterError(
+                f"side must be one of {list(self._EXCEPTION_FEATURE_SIDES)}; "
+                f"got {side!r}"
+            )
+        class_name = getattr(msa, "ClassName", None)
+        if class_name == "MoUnclassifiedAffixMsa":
+            logger.warning(
+                "GetExceptionFeatures: MoUnclassifiedAffixMsa has no "
+                "exception-feature field; returning []."
+            )
+            return []
+        if class_name == "MoInflAffMsa" and side == "to":
+            logger.warning(
+                "GetExceptionFeatures: MoInflAffMsa has only 'from' "
+                "exception features (FromProdRestrictRC); side='to' "
+                "returns []."
+            )
+            return []
         rc = self.__ExceptionFeatureRC(msa, side)
         return [ICmPossibility(item) for item in rc]
 
@@ -1689,8 +1713,14 @@ class MSAOperations(BaseOperations):
               both senses and morph bundles (issue #206).
             - Fields that cannot transfer across a conversion (SlotsRC,
               InflFeatsOA, FromPartOfSpeechRA, From/ToInflectionClassRA,
-              StratumRA, From/ToProdRestrictRC) are logged as warnings
-              only when they carry actual data on the source MSA.
+              StratumRA) are logged as warnings only when they carry
+              actual data on the source MSA.
+            - Exception features (LCM ``FromProdRestrictRC`` /
+              ``ToProdRestrictRC``): the "from" side is copied between
+              infl and deriv. Lost (and warned about, when populated):
+              ``ToProdRestrictRC`` on deriv -> infl; both sides on
+              anything -> unclassified (which has no exception-feature
+              field).
         """
         self._EnsureWriteEnabled()
         msa = self._UnwrapLcm(msa)
@@ -1760,7 +1790,11 @@ class MSAOperations(BaseOperations):
                 lost_fields.append("SlotsRC")
             if infl_src.InflFeatsOA is not None:
                 lost_fields.append("InflFeatsOA")
-            if self.__RCHasItems(infl_src, "FromProdRestrictRC"):
+            # infl -> deriv copies FromProdRestrictRC; unclassified affixes
+            # have no exception-feature field, so it is lost there only.
+            if target_kind == "unclassified" and self.__RCHasItems(
+                infl_src, "FromProdRestrictRC"
+            ):
                 lost_fields.append("FromProdRestrictRC")
         elif source_kind == "deriv" and target_kind in ("infl", "unclassified"):
             deriv_src = concrete_src
@@ -1781,9 +1815,21 @@ class MSAOperations(BaseOperations):
                 and deriv_src.StratumRA is not None
             ):
                 lost_fields.append("StratumRA")
-            for rc_name in ("FromProdRestrictRC", "ToProdRestrictRC"):
-                if self.__RCHasItems(deriv_src, rc_name):
-                    lost_fields.append(rc_name)
+            # deriv -> infl copies FromProdRestrictRC (infl has no To side);
+            # deriv -> unclassified loses both sides.
+            if self.__RCHasItems(deriv_src, "ToProdRestrictRC"):
+                lost_fields.append("ToProdRestrictRC")
+            if target_kind == "unclassified" and self.__RCHasItems(
+                deriv_src, "FromProdRestrictRC"
+            ):
+                lost_fields.append("FromProdRestrictRC")
+
+        # Snapshot the "from" exception features now: the old MSA may be
+        # cascade-deleted while the new one is attached.
+        from_features = []
+        if target_kind in ("infl", "deriv") and source_kind in ("infl", "deriv"):
+            if self.__RCHasItems(concrete_src, "FromProdRestrictRC"):
+                from_features = list(concrete_src.FromProdRestrictRC)
 
         if lost_fields:
             logger.warning(
@@ -1838,6 +1884,17 @@ class MSAOperations(BaseOperations):
             sandbox.MainPOS = src_pos
             raw_new = self.__CreateAndAttach(any_sense, sandbox, IMoUnclassifiedAffixMsaFactory)
             new_msa = IMoUnclassifiedAffixMsa(raw_new)
+
+        # --- Carry the "from" exception features across (issue 630) ---
+        # infl <-> deriv both have FromProdRestrictRC; the possibilities
+        # live in MorphologicalDataOA.ProdRestrictOA, so they survive the
+        # old MSA's deletion. Snapshot was taken before creation.
+        if from_features and target_kind in ("infl", "deriv"):
+            with self._TransactionCM("Copy exception features"):
+                new_rc = new_msa.FromProdRestrictRC
+                for feat in from_features:
+                    if feat not in new_rc:
+                        new_rc.Add(feat)
 
         # --- Repoint all senses in the entry that reference the old MSA ---
         repointed = 0

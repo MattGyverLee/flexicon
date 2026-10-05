@@ -22,3 +22,19 @@ Read-back values (re-queried from the LCM owner collections, one-off probe run, 
 (prodrestrict stays equal to the number of exception features: classes never land in ProdRestrictOA.)
 
 Result: 4 passed. PASS.
+
+## Cycle 3 re-run (review findings)
+
+Command:
+
+    FLEXLIBS_REQUIRE_LIVE=1 python -m pytest tests/operations/test_issue630_affix_msa_exception_features_live.py tests/operations/test_issue631_inflection_class_store_live.py -m requires_live_project -q
+
+run_mode (tests/live_status.json): "live". Fixture: sena3_sandbox.
+
+New case: InflectionClassCreate(name, pos=<other POS>, parent=<class under Nome>).
+- Pre: other.InflectionClassesOC.Count = N; top (under Nome) has no subclasses.
+- Post (re-read): kid.Owner.Hvo == top.Hvo; top.SubclassesOC == [kid]; other.InflectionClassesOC.Count == N;
+  a WARNING naming pos=<other.Hvo> and parent=<top.Hvo> was logged (parent wins).
+- Name-only create: raises FP_ParameterError whose message names both "pos=" and "parent=".
+
+Result: PASS -- 15 passed (both live files). Offline run: 3719 passed, 1174 deselected.

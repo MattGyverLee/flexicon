@@ -1467,6 +1467,10 @@ in the wrong owner. Real classes are owned by
 
 Breaking: `InflectionClassCreate(name)` with no `pos`/`parent` raises.
 
+- If both `pos` and `parent` are given, **parent wins** (rule 6: warn, don't
+  block); a warning naming both is logged when the parent's owning POS is not
+  that `pos`.
+
 ---
 
 ## Issue #630: MSA exception-feature wrappers did not work on affix MSAs
@@ -1484,13 +1488,16 @@ Get silently returned `[]`.
   Ignored for stem MSAs; selects `ToProdRestrictRC` for derivational
   affixes; `side="to"` on an inflectional affix raises `FP_ParameterError`
   (that field does not exist); any other `side` value raises.
-- `GetExceptionFeatures` on `MoUnclassifiedAffixMsa` now raises
-  `FP_ParameterError` like Add/Remove (it used to return `[]`).
+- Lenient read path: `GetExceptionFeatures` on `MoUnclassifiedAffixMsa`, or
+  on `MoInflAffMsa` with `side="to"`, logs a warning and returns `[]` (no
+  exception-feature field there). `AddExceptionFeature` /
+  `RemoveExceptionFeature` still raise `FP_ParameterError` for those.
 - The error message and docstrings name the real fields; the claim that
   exception features are "in practice inflection classes" is gone (see #631
   for `InflectionFeatures.ExceptionFeature*`).
-- `ChangeAffixVariant` now warns when From/ToProdRestrictRC data would be
-  lost, as its docstring already claimed.
+- `ChangeAffixVariant` copies the "from" exception features between
+  inflectional and derivational affixes; it warns only about what is really
+  lost (`ToProdRestrictRC` on deriv -> infl; both sides on -> unclassified).
 
 ---
 

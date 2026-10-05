@@ -78,8 +78,29 @@ class TestInflectionClassStoreLive:
 
     @pytest.mark.live_phase("InflectionFeatureOperations", "add")
     def test_name_only_create_raises(self, sena3_sandbox):
-        with pytest.raises(FP_ParameterError):
+        with pytest.raises(FP_ParameterError) as excinfo:
             sena3_sandbox.InflectionFeatures.InflectionClassCreate(f"{TEST_PREFIX}x")
+        assert "pos=" in str(excinfo.value) and "parent=" in str(excinfo.value)
+
+    @pytest.mark.live_phase("InflectionFeatureOperations", "add")
+    def test_pos_and_parent_mismatch_warns_parent_wins(self, sena3_sandbox, caplog):
+        ops = sena3_sandbox.InflectionFeatures
+        nome = _nome_pos(sena3_sandbox)
+        other = next(
+            p for p in sena3_sandbox.POS.GetAll() if p.Hvo != nome.Hvo
+        )
+        top = ops.InflectionClassCreate(f"{TEST_PREFIX}wtop", pos=nome)
+        other_before = other.InflectionClassesOC.Count
+
+        with caplog.at_level("WARNING"):
+            kid = ops.InflectionClassCreate(f"{TEST_PREFIX}wkid", pos=other, parent=top)
+
+        # Read back from the LCM: parent wins, the other POS is untouched.
+        assert kid.Owner.Hvo == top.Hvo
+        assert [_name(ops, c) for c in top.SubclassesOC] == [f"{TEST_PREFIX}wkid"]
+        assert other.InflectionClassesOC.Count == other_before
+        msgs = [r.getMessage() for r in caplog.records if r.levelname == "WARNING"]
+        assert any(f"pos={other.Hvo}" in m and f"parent={top.Hvo}" in m for m in msgs)
 
     @pytest.mark.live_phase("InflectionFeatureOperations", "add")
     def test_create_under_pos_and_parent_then_delete(self, sena3_sandbox):

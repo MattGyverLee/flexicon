@@ -22,3 +22,22 @@ casting to the concrete interface, and reading the LCM field (not the wrapper ge
 
 Result: PASS -- 5 passed (live file), offline 574 file deselected by the marker filter
 (39 tests pass in the offline run). Full offline run: 3710 passed.
+
+## Cycle 3 re-run (review findings)
+
+Command:
+
+    FLEXLIBS_REQUIRE_LIVE=1 python -m pytest tests/operations/test_issue630_affix_msa_exception_features_live.py tests/operations/test_issue631_inflection_class_store_live.py -m requires_live_project -q
+
+run_mode (tests/live_status.json): "live". Fixture: sena3_sandbox. All values re-queried from the LCM.
+
+| Case | Pre | Post (read back) |
+|---|---|---|
+| MoInflAffMsa side="to": Get | FromProdRestrictRC=[feat] | Get returns [] + warning; Add/Remove raise; FromProdRestrictRC still [feat] |
+| MoUnclassifiedAffixMsa Get | no field | returns [] + warning; Add raises |
+| ExceptionFeatureCreate with MorphologicalDataOA.ProdRestrictOA set to None | ProdRestrictOA is None | ProdRestrictOA not None, PossibilitiesOS == [new feature], name read back |
+| ChangeAffixVariant infl -> deriv | infl From=[feat] | new deriv From=[feat], To=[]; no "FromProdRestrictRC" lost warning |
+| ChangeAffixVariant deriv -> infl | deriv From=[f_from], To=[f_to] | new infl From=[f_from]; lost-warning names ToProdRestrictRC only |
+| ChangeAffixVariant infl -> unclassified | infl From=[feat] | new MoUnclassifiedAffixMsa; lost-warning names FromProdRestrictRC |
+
+Result: PASS -- 15 passed (both live files, 630 + 631). Offline run: 3719 passed, 1174 deselected.

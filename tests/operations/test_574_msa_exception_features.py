@@ -115,11 +115,12 @@ class TestGetExceptionFeatures:
 
         assert ops.GetExceptionFeatures(msa) == [f1, f2]
 
-    def test_unclassified_msa_raises_parameter_error(self, ops):
+    def test_unclassified_msa_warns_and_returns_empty(self, ops, caplog):
         msa = _FakeMSA("MoUnclassifiedAffixMsa")
 
-        with pytest.raises(FP_ParameterError):
-            ops.GetExceptionFeatures(msa)
+        with caplog.at_level("WARNING"):
+            assert ops.GetExceptionFeatures(msa) == []
+        assert any("MoUnclassifiedAffixMsa" in r.getMessage() for r in caplog.records)
 
     def test_empty_collection_returns_empty(self, ops):
         assert ops.GetExceptionFeatures(_FakeMSA("MoStemMsa")) == []
@@ -298,12 +299,18 @@ class TestPerTypeMappingAndSide:
         assert list(msa.ProdRestrictRC) == [f]
         assert ops.GetExceptionFeatures(msa, side=side) == [f]
 
-    @pytest.mark.parametrize("method", ["get", "add", "remove"])
+    def test_infl_affix_get_side_to_warns_and_returns_empty(self, ops, caplog):
+        msa = _FakeMSA("MoInflAffMsa", [_FakePossibility("pl")])
+
+        with caplog.at_level("WARNING"):
+            assert ops.GetExceptionFeatures(msa, side="to") == []
+        assert any("side='to'" in r.getMessage() for r in caplog.records)
+
+    @pytest.mark.parametrize("method", ["add", "remove"])
     def test_infl_affix_side_to_raises(self, ops, method):
         msa = _FakeMSA("MoInflAffMsa")
         f = _FakePossibility("pl")
         calls = {
-            "get": lambda: ops.GetExceptionFeatures(msa, side="to"),
             "add": lambda: ops.AddExceptionFeature(msa, f, side="to"),
             "remove": lambda: ops.RemoveExceptionFeature(msa, f, side="to"),
         }
@@ -341,3 +348,114 @@ class TestPerTypeMappingAndSide:
             assert token in msg
         # The old self-contradicting wording is gone.
         assert "does not carry exception features (ProdRestrictRC)" not in msg
+
+
+# ---------- ChangeAffixVariant: exception-feature carry-over / warnings ----------
+
+class _FakeSense:
+    def __init__(self, msa):
+        self.MorphoSyntaxAnalysisRA = msa
+
+
+class _FakeEntry:
+    Hvo = 900
+
+    def __init__(self):
+        self.SensesOS = []
+        self.MorphoSyntaxAnalysesOC = _FakeRC()
+
+
+def _affix(class_name, entry, hvo, from_feats=(), to_feats=()):
+    msa = _FakeMSA(class_name, from_feats, to_feats)
+    msa.Hvo = hvo
+    msa.Owner = entry
+    msa.IsValidObject = True
+    msa.PartOfSpeechRA = None
+    msa.FromPartOfSpeechRA = None
+    msa.ToPartOfSpeechRA = None
+    msa.FromInflectionClassRA = None
+    msa.ToInflectionClassRA = None
+    msa.StratumRA = None
+    msa.SlotsRC = _FakeRC()
+    msa.InflFeatsOA = None
+    return msa
+
+
+@pytest.fixture
+def cav(ops):
+    """ops wired so ChangeAffixVariant runs against fakes."""
+    extra = [
+        patch.object(msa_ops_module, "ILexEntry", side_effect=lambda o: o),
+        patch.object(msa_ops_module, "SandboxGenericMSA", new=Mock()),
+        patch.object(msa_ops_module, "MsaType", new=Mock()),
+    ]
+    for p in extra:
+        p.start()
+
+    def run(source_class, target_kind, from_feats=(), to_feats=()):
+        entry = _FakeEntry()
+        src = _affix(source_class, entry, 1, from_feats, to_feats)
+        entry.MorphoSyntaxAnalysesOC.append(src)
+        entry.SensesOS.append(_FakeSense(src))
+        target_class = {
+            "infl": "MoInflAffMsa",
+            "deriv": "MoDerivAffMsa",
+            "unclassified": "MoUnclassifiedAffixMsa",
+        }[target_kind]
+        new = _affix(target_class, entry, 2)
+        ops._MSAOperations__CreateAndAttach = Mock(return_value=new)
+        return ops.ChangeAffixVariant(src, target_kind), src
+
+    yield run
+    for p in reversed(extra):
+        p.stop()
+
+
+def _lost_messages(caplog):
+    return [r.getMessage() for r in caplog.records if "will be lost" in r.getMessage()]
+
+
+class TestChangeAffixVariantExceptionFeatures:
+    def test_infl_to_deriv_copies_from_no_lost_warning(self, cav, caplog):
+        f = _FakePossibility("pl")
+        with caplog.at_level("WARNING"):
+            new, _ = cav("MoInflAffMsa", "deriv", from_feats=[f])
+        assert list(new.FromProdRestrictRC) == [f]
+        assert list(new.ToProdRestrictRC) == []
+        assert _lost_messages(caplog) == []
+
+    def test_infl_to_unclassified_warns_from_lost(self, cav, caplog):
+        with caplog.at_level("WARNING"):
+            cav("MoInflAffMsa", "unclassified", from_feats=[_FakePossibility("pl")])
+        lost = _lost_messages(caplog)
+        assert len(lost) == 1 and "FromProdRestrictRC" in lost[0]
+
+    def test_infl_to_unclassified_empty_no_warning(self, cav, caplog):
+        with caplog.at_level("WARNING"):
+            cav("MoInflAffMsa", "unclassified")
+        assert _lost_messages(caplog) == []
+
+    def test_deriv_to_infl_copies_from_warns_only_to(self, cav, caplog):
+        f, g = _FakePossibility("a"), _FakePossibility("b")
+        with caplog.at_level("WARNING"):
+            new, _ = cav("MoDerivAffMsa", "infl", from_feats=[f], to_feats=[g])
+        assert list(new.FromProdRestrictRC) == [f]
+        lost = _lost_messages(caplog)
+        assert len(lost) == 1
+        assert "ToProdRestrictRC" in lost[0] and "FromProdRestrictRC" not in lost[0]
+
+    def test_deriv_to_infl_from_only_no_warning(self, cav, caplog):
+        with caplog.at_level("WARNING"):
+            new, _ = cav("MoDerivAffMsa", "infl", from_feats=[_FakePossibility("a")])
+        assert len(new.FromProdRestrictRC) == 1
+        assert _lost_messages(caplog) == []
+
+    def test_deriv_to_unclassified_warns_both(self, cav, caplog):
+        with caplog.at_level("WARNING"):
+            cav(
+                "MoDerivAffMsa", "unclassified",
+                from_feats=[_FakePossibility("a")], to_feats=[_FakePossibility("b")],
+            )
+        lost = _lost_messages(caplog)
+        assert len(lost) == 1
+        assert "FromProdRestrictRC" in lost[0] and "ToProdRestrictRC" in lost[0]

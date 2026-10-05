@@ -115,6 +115,42 @@ class TestInflectionClassCreate:
         with pytest.raises(FP_ParameterError, match="part of speech"):
             ops.InflectionClassCreate("X")
 
+    def test_neither_given_error_names_both_options(self, lcm_stubs):
+        ops, _ = _ops()
+        with pytest.raises(FP_ParameterError) as excinfo:
+            ops.InflectionClassCreate("X")
+        msg = str(excinfo.value)
+        assert "pos=" in msg and "parent=" in msg
+
+    def test_pos_and_parent_mismatch_warns_and_parent_wins(self, lcm_stubs, caplog):
+        ops, project = _ops()
+        self._factory(project)
+        real_pos = _pos()
+        real_pos.Hvo = 1
+        other_pos = _pos()
+        other_pos.Hvo = 2
+        parent = _ic("P")
+        parent.Name = _FakeName("P")
+        parent.Owner = real_pos
+        with caplog.at_level("WARNING"):
+            ic = ops.InflectionClassCreate("Kid", pos=other_pos, parent=parent)
+        assert list(parent.SubclassesOC) == [ic]
+        assert list(other_pos.InflectionClassesOC) == []
+        msgs = [r.getMessage() for r in caplog.records]
+        assert any("pos=2" in m and "parent=" in m for m in msgs)
+
+    def test_pos_and_parent_consistent_does_not_warn(self, lcm_stubs, caplog):
+        ops, project = _ops()
+        self._factory(project)
+        pos = _pos()
+        pos.Hvo = 1
+        parent = _ic("P")
+        parent.Name = _FakeName("P")
+        parent.Owner = pos
+        with caplog.at_level("WARNING"):
+            ops.InflectionClassCreate("Kid", pos=pos, parent=parent)
+        assert not [r for r in caplog.records if r.levelname == "WARNING"]
+
     def test_read_only_raises(self, lcm_stubs):
         ops, _ = _ops(write=False)
         with pytest.raises(FP_ReadOnlyError):

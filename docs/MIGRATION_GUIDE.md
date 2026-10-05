@@ -850,3 +850,54 @@ project.Senses.AddDoNotPublishIn(sense, publication)  # new in 4.11.0 (#545)
 ```
 
 ---
+
+
+---
+
+## Breaking Change: `InflectionClassCreate(name)` now requires `pos=` or `parent=`
+
+### What Changed
+
+`InflectionFeatureOperations.InflectionClassGetAll/Create/Delete` used
+`MorphologicalDataOA.ProdRestrictOA` as the inflection-class store. That list
+holds **exception features** (the FLEx UI term; LCM calls the list
+`ProdRestrict`), not inflection classes. Inflection classes are owned by
+`IPartOfSpeech.InflectionClassesOC`, or by a parent class's `SubclassesOC`.
+(issue 631)
+
+So a class can no longer be created from a name alone: it has to be told
+which part of speech or parent class owns it.
+
+### Before / After
+
+```python
+# BEFORE (wrote an IMoInflClass into the exception-features list)
+ic = project.InflectionFeatures.InflectionClassCreate("First Declension")
+
+# AFTER -- under a part of speech
+noun = project.POS.Find("Noun")
+ic = project.InflectionFeatures.InflectionClassCreate("First Declension", pos=noun)
+
+# AFTER -- as a subclass of an existing class
+sub = project.InflectionFeatures.InflectionClassCreate("Irregular", parent=ic)
+```
+
+`InflectionClassCreate("X")` with neither argument raises `FP_ParameterError`
+naming both options. If both are given, `parent` wins; a warning naming both
+is logged when the parent is not owned by that `pos`.
+
+### Exception features
+
+Use the new helpers for the `ProdRestrictOA` items:
+`InflectionFeatures.ExceptionFeatureGetAll()`, `ExceptionFeatureFind(name)`,
+`ExceptionFeatureCreate(name, abbreviation=None)`.
+
+### Related behaviour changes (issue 630)
+
+- `MSAOperations.GetExceptionFeatures/AddExceptionFeature/RemoveExceptionFeature`
+  now work on affix MSAs and take `side="from"|"to"`.
+- `GetExceptionFeatures` on an unclassified affix MSA, or on an inflectional
+  affix MSA with `side="to"`, logs a warning and returns `[]`. Add/Remove still
+  raise `FP_ParameterError`.
+- `ChangeAffixVariant` now copies the "from" exception features between
+  inflectional and derivational affixes and warns about what is really lost.

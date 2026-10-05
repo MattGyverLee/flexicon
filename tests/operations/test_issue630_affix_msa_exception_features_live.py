@@ -80,18 +80,115 @@ class TestInflAffixExceptionFeaturesLive:
         assert p.MSA.GetExceptionFeatures(msa) == []
 
     @pytest.mark.live_phase("MSAOperations", "update")
-    def test_side_to_raises_and_writes_nothing(self, sena3_sandbox):
+    def test_side_to_write_raises_and_read_returns_empty(self, sena3_sandbox, caplog):
         p = sena3_sandbox
         msa = p.MSA.CreateInflAff(_sense(p, "infl_to"), _pos(p))
         feat = _feature(p, "infltofeat")
+        # Put a "from" feature in place so an empty "to" read is meaningful.
+        p.MSA.AddExceptionFeature(msa, feat)
+        assert _hvos(_cast("IMoInflAffMsa", p.Object(msa.Hvo)).FromProdRestrictRC) == [feat.Hvo]
 
         with pytest.raises(FP_ParameterError):
             p.MSA.AddExceptionFeature(msa, feat, side="to")
         with pytest.raises(FP_ParameterError):
-            p.MSA.GetExceptionFeatures(msa, side="to")
-        with pytest.raises(FP_ParameterError):
             p.MSA.RemoveExceptionFeature(msa, feat, side="to")
-        assert _hvos(_cast("IMoInflAffMsa", p.Object(msa.Hvo)).FromProdRestrictRC) == []
+        with caplog.at_level("WARNING"):
+            assert p.MSA.GetExceptionFeatures(msa, side="to") == []
+        assert any("side='to'" in r.getMessage() for r in caplog.records)
+        # Nothing was written or removed on the "from" side.
+        assert _hvos(_cast("IMoInflAffMsa", p.Object(msa.Hvo)).FromProdRestrictRC) == [feat.Hvo]
+
+    @pytest.mark.live_phase("MSAOperations", "update")
+    def test_unclassified_get_returns_empty_add_raises(self, sena3_sandbox, caplog):
+        p = sena3_sandbox
+        msa = p.MSA.CreateUnclassifiedAffix(_sense(p, "uncl_get"), _pos(p))
+        feat = _feature(p, "unclfeat")
+        with caplog.at_level("WARNING"):
+            assert p.MSA.GetExceptionFeatures(msa) == []
+        assert any("MoUnclassifiedAffixMsa" in r.getMessage() for r in caplog.records)
+        with pytest.raises(FP_ParameterError):
+            p.MSA.AddExceptionFeature(msa, feat)
+
+
+class TestProdRestrictListMissingLive:
+    @pytest.mark.live_phase("InflectionFeatureOperations", "add")
+    def test_create_when_prodrestrict_is_none(self, sena3_sandbox):
+        p = sena3_sandbox
+        md = p.lp.MorphologicalDataOA
+        # Pre-state: remove the list so Create has to build it.
+        with p.Transaction("TEST_630 clear ProdRestrictOA"):
+            md.ProdRestrictOA = None
+        assert p.lp.MorphologicalDataOA.ProdRestrictOA is None
+
+        feat = p.InflectionFeatures.ExceptionFeatureCreate(f"{TEST_PREFIX}nolist")
+
+        # Post-state: re-query the LCM.
+        pr = p.lp.MorphologicalDataOA.ProdRestrictOA
+        assert pr is not None, "ExceptionFeatureCreate did not create the list"
+        stored = [x.Hvo for x in pr.PossibilitiesOS]
+        assert stored == [feat.Hvo]
+        assert (
+            pr.PossibilitiesOS[0].Name.BestAnalysisAlternative.Text
+            == f"{TEST_PREFIX}nolist"
+        )
+
+
+class TestChangeAffixVariantExceptionFeaturesLive:
+    @pytest.mark.live_phase("MSAOperations", "update")
+    def test_infl_to_deriv_keeps_from_features_without_lost_warning(
+        self, sena3_sandbox, caplog
+    ):
+        p = sena3_sandbox
+        msa = p.MSA.CreateInflAff(_sense(p, "cav_deriv"), _pos(p))
+        feat = _feature(p, "cavfeat")
+        p.MSA.AddExceptionFeature(msa, feat)
+
+        with caplog.at_level("WARNING"):
+            new = p.MSA.ChangeAffixVariant(msa, "deriv")
+
+        raw = _cast("IMoDerivAffMsa", p.Object(new.Hvo))
+        assert _hvos(raw.FromProdRestrictRC) == [feat.Hvo]
+        assert _hvos(raw.ToProdRestrictRC) == []
+        assert not any(
+            "FromProdRestrictRC" in r.getMessage() for r in caplog.records
+        ), "FromProdRestrictRC is copied, so it must not be reported lost"
+
+    @pytest.mark.live_phase("MSAOperations", "update")
+    def test_deriv_to_infl_copies_from_and_warns_only_about_to(
+        self, sena3_sandbox, caplog
+    ):
+        p = sena3_sandbox
+        pos = _pos(p)
+        msa = p.MSA.CreateDerivAff(_sense(p, "cav_infl"), pos, pos)
+        f_from = _feature(p, "cavfrom")
+        f_to = _feature(p, "cavto")
+        p.MSA.AddExceptionFeature(msa, f_from)
+        p.MSA.AddExceptionFeature(msa, f_to, side="to")
+
+        with caplog.at_level("WARNING"):
+            new = p.MSA.ChangeAffixVariant(msa, "infl")
+
+        raw = _cast("IMoInflAffMsa", p.Object(new.Hvo))
+        assert _hvos(raw.FromProdRestrictRC) == [f_from.Hvo]
+        lost = [r.getMessage() for r in caplog.records if "will be lost" in r.getMessage()]
+        assert any("ToProdRestrictRC" in m for m in lost)
+        assert not any("FromProdRestrictRC" in m for m in lost)
+
+    @pytest.mark.live_phase("MSAOperations", "update")
+    def test_infl_to_unclassified_warns_from_lost(self, sena3_sandbox, caplog):
+        p = sena3_sandbox
+        msa = p.MSA.CreateInflAff(_sense(p, "cav_uncl"), _pos(p))
+        feat = _feature(p, "cavuncl")
+        p.MSA.AddExceptionFeature(msa, feat)
+
+        with caplog.at_level("WARNING"):
+            new = p.MSA.ChangeAffixVariant(msa, "unclassified")
+
+        assert p.Object(new.Hvo).ClassName == "MoUnclassifiedAffixMsa"
+        assert any(
+            "will be lost" in r.getMessage() and "FromProdRestrictRC" in r.getMessage()
+            for r in caplog.records
+        )
 
 
 class TestDerivAffixExceptionFeaturesLive:

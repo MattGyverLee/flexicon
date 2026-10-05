@@ -213,7 +213,9 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
                 (added to ``pos.InflectionClassesOC``).
             parent: An existing IMoInflClass object or HVO; the new class
                 becomes its subclass (added to ``parent.SubclassesOC``).
-                When both are given, ``parent`` wins and ``pos`` is ignored.
+                When both are given, ``parent`` wins and ``pos`` is ignored;
+                a warning naming both is logged if the parent is not owned
+                by that ``pos``.
 
         At least one of ``pos`` or ``parent`` is required.
 
@@ -250,13 +252,32 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         if pos is None and parent is None:
             raise FP_ParameterError(
                 "An inflection class must be owned by a part of speech or a "
-                "parent inflection class: pass pos=<POS> or parent=<class>. "
-                "(Inflection classes are not stored in the production "
-                "restrictions list.)"
+                "parent inflection class: pass pos=<POS> (a part of speech) "
+                "or parent=<class> (an existing inflection class). "
+                "(Inflection classes are not stored in the exception "
+                "features list.)"
             )
 
         if parent is not None:
-            siblings = self.__ResolveInflectionClass(parent).SubclassesOC
+            parent_ic = self.__ResolveInflectionClass(parent)
+            if pos is not None:
+                # Rule 6: warn, don't block. parent wins.
+                given_pos = self.__ResolvePOS(pos)
+                owner = getattr(parent_ic, "Owner", None)
+                while owner is not None and getattr(owner, "ClassName", None) != "PartOfSpeech":
+                    owner = getattr(owner, "Owner", None)
+                if owner is None or not (
+                    owner is given_pos or owner.Hvo == given_pos.Hvo
+                ):
+                    logger.warning(
+                        "InflectionClassCreate: both pos=%s and parent=%s "
+                        "were given but the parent class is not owned by "
+                        "that part of speech; parent wins and pos is "
+                        "ignored.",
+                        getattr(given_pos, "Hvo", pos),
+                        getattr(parent_ic, "Hvo", parent),
+                    )
+            siblings = parent_ic.SubclassesOC
         else:
             siblings = self.__ResolvePOS(pos).InflectionClassesOC
 
@@ -274,7 +295,6 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
 
             # Add to the owner first (must precede setting properties)
             siblings.Add(new_ic)
-            logger.debug("Created inflection class '%s'", name)
             logger.debug("Created inflection class '%s'", name)
 
             new_ic.Name.set_String(wsHandle, TsStringUtils.MakeString(name, wsHandle))
