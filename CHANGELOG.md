@@ -11,6 +11,27 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+### Changed (breaking)
+
+- **`InflectionClassCreate(name)` with no `pos=` / `parent=` now raises
+  `FP_ParameterError`** (issue 631). Inflection classes are owned by
+  `IPartOfSpeech.InflectionClassesOC` (or a parent class's `SubclassesOC`),
+  not by `MorphologicalDataOA.ProdRestrictOA`, which holds exception features
+  (LCM ProdRestrict). Before: `InflectionClassCreate("First Declension")`.
+  After: `InflectionClassCreate("First Declension", pos=noun)` or
+  `parent=<class>`. When both are given, `parent` wins and a warning names both
+  if the parent is not owned by that `pos`. See `docs/MIGRATION_GUIDE.md`.
+
+### Fixed
+
+- `InflectionClassGetAll` no longer raises when exception features exist
+  (issue 631); new `ExceptionFeatureGetAll/Find/Create` helpers.
+- `MSAOperations` exception-feature wrappers work on affix MSAs and accept
+  `side="from"|"to"` (issue 630). `GetExceptionFeatures` warns and returns `[]`
+  for unclassified affixes and inflectional `side="to"`. `ChangeAffixVariant`
+  copies "from" exception features between inflectional and derivational
+  affixes and warns only about what is actually lost.
+
 ---
 
 ## [4.12.0] - 2026-10-02

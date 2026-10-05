@@ -459,6 +459,18 @@ Note: `ICmBaseAnnotation` does NOT expose a `Source` field. The source-of-confus
 
 Reference: see `LexSenseOperations._ReadTsString` / `_MakeTsString` (ITsString helpers, single source of truth on `BaseOperations`) versus `NoteOperations` which iterates ws handles for the `IMultiString` form. `EtymologyOperations` used to be listed here too, but see the correction immediately below -- it no longer touches a field named `Source` at all.
 
+### The exception-feature field (`ProdRestrictRC`, issue #630)
+
+| Object type | Exception-feature field(s) | Notes |
+|---|---|---|
+| `IMoStemMsa` | `ProdRestrictRC` | The only MSA type with a field literally named `ProdRestrictRC` |
+| `IMoInflAffMsa` | `FromProdRestrictRC` | No `ProdRestrictRC`, no `ToProdRestrictRC` |
+| `IMoDerivAffMsa` | `FromProdRestrictRC`, `ToProdRestrictRC` | Two independent collections |
+| `IMoUnclassifiedAffixMsa` | *(none)* | |
+
+All are reference collections of `ICmPossibility` drawn from
+`MorphologicalDataOA.ProdRestrictOA` (not inflection classes).
+
 ### CORRECTED 2026-08-18: the vanished `ILexEtymology.Source` field
 
 This table previously listed `ILexEtymology.Source` as `IMultiString`. That entry was **wrong** and has caused real breakage (flexicon issue tracker; live-LCM regression closed alongside the 4.4.1 release). Live reflection against the installed LCM (`dir()` on a freshly-`factory.Create()`'d, owned `ILexEtymology`) shows **no `Source` member at all** -- not renamed, not retyped, simply absent. `getattr(etymology, "Source")` raises `AttributeError` unconditionally.
@@ -1433,6 +1445,59 @@ every resolver x wrong-type argument) and
 8. **Category 6**: Accept as expected behavior, document in FAQ
 9. **Category 7**: Fix demo code and validate signatures
 10. **Phase 4**: Complete testing for new capabilities
+
+---
+
+## Issue #631: Inflection classes were read from / written to ProdRestrictOA
+
+`InflectionFeatureOperations.InflectionClassGetAll/Create/Delete` treated
+`MorphologicalDataOA.ProdRestrictOA` as the inflection-class store. That list
+holds *exception features* (`ICmPossibility`), so `InflectionClassGetAll`
+raised `TypeError` whenever any existed, and `Create` put an `IMoInflClass`
+in the wrong owner. Real classes are owned by
+`IPartOfSpeech.InflectionClassesOC` and nest via `IMoInflClass.SubclassesOC`.
+
+- `InflectionClassGetAll()` now walks all POS (recursive) and subclasses.
+- `InflectionClassCreate(name, pos=None, parent=None)` requires a POS or a
+  parent class (`FP_ParameterError` otherwise; name-only calls now fail).
+- `InflectionClassDelete` removes from the real owner.
+- New exception-feature helpers over `ProdRestrictOA`:
+  `ExceptionFeatureGetAll()`, `ExceptionFeatureFind(name)`,
+  `ExceptionFeatureCreate(name, abbreviation=None)`.
+
+Breaking: `InflectionClassCreate(name)` with no `pos`/`parent` raises.
+
+- If both `pos` and `parent` are given, **parent wins** (rule 6: warn, don't
+  block); a warning naming both is logged when the parent's owning POS is not
+  that `pos`.
+
+---
+
+## Issue #630: MSA exception-feature wrappers did not work on affix MSAs
+
+`MSAOperations.GetExceptionFeatures/AddExceptionFeature/RemoveExceptionFeature`
+(added for #574) read `ProdRestrictRC` through `getattr` on the base
+interface. Only `IMoStemMsa` has that field; affix MSAs use
+`FromProdRestrictRC` (`IMoInflAffMsa`) and `FromProdRestrictRC` /
+`ToProdRestrictRC` (`IMoDerivAffMsa`). Add/Remove therefore always raised
+`FP_ParameterError` (with a self-contradicting message) on affix MSAs, and
+Get silently returned `[]`.
+
+- A per-type mapping (concrete casts) now picks the field.
+- New keyword `side="from"|"to"` (default `"from"`) on all three methods.
+  Ignored for stem MSAs; selects `ToProdRestrictRC` for derivational
+  affixes; `side="to"` on an inflectional affix raises `FP_ParameterError`
+  (that field does not exist); any other `side` value raises.
+- Lenient read path: `GetExceptionFeatures` on `MoUnclassifiedAffixMsa`, or
+  on `MoInflAffMsa` with `side="to"`, logs a warning and returns `[]` (no
+  exception-feature field there). `AddExceptionFeature` /
+  `RemoveExceptionFeature` still raise `FP_ParameterError` for those.
+- The error message and docstrings name the real fields; the claim that
+  exception features are "in practice inflection classes" is gone (see #631
+  for `InflectionFeatures.ExceptionFeature*`).
+- `ChangeAffixVariant` copies the "from" exception features between
+  inflectional and derivational affixes; it warns only about what is really
+  lost (`ToProdRestrictRC` on deriv -> infl; both sides on -> unclassified).
 
 ---
 
