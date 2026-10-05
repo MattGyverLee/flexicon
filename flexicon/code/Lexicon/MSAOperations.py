@@ -968,48 +968,89 @@ class MSAOperations(BaseOperations):
             return repr(obj)
 
     # ------------------------------------------------------------------
-    # MSA exception features (issue #574)
+    # MSA exception features (issues #574, #630)
     # ------------------------------------------------------------------
     #
-    # FLEx shows "Exception features" on a stem, inflectional-affix, or
-    # derivational-affix MSA (used by HermitCrab to block rules/affixes).
-    # In LCM this is the ProdRestrictRC reference collection of
-    # ICmPossibility items -- in practice, inflection classes drawn from
-    # the project's "Production Restrictions" list (see
-    # InflectionFeatureOperations.InflectionClassGetAll). MoUnclassifiedAffixMsa
-    # does not carry ProdRestrictRC.
+    # FLEx shows "Exception features" on stem, inflectional-affix and
+    # derivational-affix MSAs (HermitCrab uses them to block rules and
+    # affixes). In LCM the field differs per MSA type:
+    #
+    #   IMoStemMsa      -> ProdRestrictRC
+    #   IMoInflAffMsa   -> FromProdRestrictRC
+    #   IMoDerivAffMsa  -> FromProdRestrictRC and ToProdRestrictRC
+    #   IMoUnclassifiedAffixMsa -> none
+    #
+    # Each is a reference collection of ICmPossibility items drawn from
+    # MorphologicalDataOA.ProdRestrictOA (see
+    # InflectionFeatureOperations.ExceptionFeatureGetAll / Find / Create).
+    # They are NOT inflection classes.
     #
     # NOTE: this is a DIFFERENT field from
     # LexEntryOperations.GetRestrictions / LexSenseOperations.GetRestrictions
     # (the free-text Restrictions multistring), which is not a substitute.
 
-    #: MSA ClassNames that carry ProdRestrictRC ("Exception features").
-    _PROD_RESTRICT_MSA_CLASSES = frozenset(
-        ("MoStemMsa", "MoInflAffMsa", "MoDerivAffMsa")
+    #: Valid values for the ``side`` keyword.
+    _EXCEPTION_FEATURE_SIDES = ("from", "to")
+
+    #: Human-readable list of the types that carry exception features.
+    _EXCEPTION_FEATURE_TYPES_MSG = (
+        "MoStemMsa (ProdRestrictRC), MoInflAffMsa (FromProdRestrictRC) "
+        "and MoDerivAffMsa (FromProdRestrictRC / ToProdRestrictRC)"
     )
 
-    def __ProdRestrictRC(self, msa):
+    def __ExceptionFeatureRC(self, msa, side="from"):
         """
-        Return the ``ProdRestrictRC`` collection on ``msa``, or ``None``
-        when the MSA's ``ClassName`` is not one of the three types that
-        carry it (``MoUnclassifiedAffixMsa`` has no such member).
+        Return the exception-feature reference collection on ``msa`` for
+        ``side``, cast to the concrete MSA interface.
 
-        Never raises on a wrong-type MSA -- mirrors
-        ``GetInflAffMsaSlots``'s graceful non-raise on a wrong-type MSA.
+        Mapping: ``MoStemMsa`` -> ``ProdRestrictRC`` (side ignored);
+        ``MoInflAffMsa`` -> ``FromProdRestrictRC`` (``side="to"`` raises);
+        ``MoDerivAffMsa`` -> ``FromProdRestrictRC`` / ``ToProdRestrictRC``.
+
+        Raises:
+            FP_ParameterError: ``side`` is not "from"/"to"; the MSA type
+                carries no exception features; or ``side="to"`` on a
+                ``MoInflAffMsa``.
         """
-        if (
-            getattr(msa, "ClassName", None)
-            not in self._PROD_RESTRICT_MSA_CLASSES
-        ):
-            return None
-        return getattr(msa, "ProdRestrictRC", None)
+        if side not in self._EXCEPTION_FEATURE_SIDES:
+            raise FP_ParameterError(
+                f"side must be one of {list(self._EXCEPTION_FEATURE_SIDES)}; "
+                f"got {side!r}"
+            )
+        class_name = getattr(msa, "ClassName", None)
+        if class_name == "MoStemMsa":
+            return IMoStemMsa(msa).ProdRestrictRC
+        if class_name == "MoInflAffMsa":
+            if side == "to":
+                raise FP_ParameterError(
+                    "MoInflAffMsa has only 'from' exception features "
+                    "(FromProdRestrictRC); side='to' is not available. "
+                    "Only MoDerivAffMsa has ToProdRestrictRC."
+                )
+            return IMoInflAffMsa(msa).FromProdRestrictRC
+        if class_name == "MoDerivAffMsa":
+            deriv = IMoDerivAffMsa(msa)
+            if side == "to":
+                return deriv.ToProdRestrictRC
+            return deriv.FromProdRestrictRC
+        raise FP_ParameterError(
+            f"MSA type '{class_name}' does not carry exception features; "
+            f"only {self._EXCEPTION_FEATURE_TYPES_MSG} do."
+        )
+
+    @staticmethod
+    def __RCHasItems(msa, rc_name):
+        """True when ``msa.<rc_name>`` is a non-empty reference collection."""
+        rc = getattr(msa, rc_name, None)
+        count = getattr(rc, "Count", 0)
+        return isinstance(count, int) and count > 0
 
     def __ResolveExceptionFeature(self, feature_or_hvo):
         """
         Resolve an exception-feature parameter to ``ICmPossibility``.
 
-        Accepts an ``ICmPossibility`` object (or a subclass instance such
-        as ``IMoInflClass``), an HVO (int), or a GUID (str).
+        Accepts an ``ICmPossibility`` object (or a subclass instance),
+        an HVO (int), or a GUID (str).
 
         Raises:
             FP_ParameterError: If the resolved object is not a
@@ -1027,32 +1068,45 @@ class MSAOperations(BaseOperations):
             )
 
     @OperationsMethod
-    def GetExceptionFeatures(self, msa_or_hvo):
+    def GetExceptionFeatures(self, msa_or_hvo, side="from"):
         """
         Get an MSA's exception features ("Exception features" in FLEx).
 
-        Reads the ``ProdRestrictRC`` reference collection on a stem,
-        inflectional-affix, or derivational-affix MSA. HermitCrab uses
-        these features to block rules/affixes. In practice the items are
-        inflection classes drawn from the project's "Production
-        Restrictions" list (see
-        ``InflectionFeatureOperations.InflectionClassGetAll``).
+        Reads the per-type reference collection (HermitCrab uses these
+        features to block rules/affixes):
+
+        - ``MoStemMsa``: ``ProdRestrictRC`` (``side`` is ignored)
+        - ``MoInflAffMsa``: ``FromProdRestrictRC`` (only ``side="from"``)
+        - ``MoDerivAffMsa``: ``FromProdRestrictRC`` (``side="from"``) or
+          ``ToProdRestrictRC`` (``side="to"``)
+
+        The items are ``ICmPossibility`` entries from
+        ``MorphologicalDataOA.ProdRestrictOA`` (see
+        ``InflectionFeatureOperations.ExceptionFeatureGetAll``); they are
+        not inflection classes.
 
         Args:
             msa_or_hvo: An MSA object, HVO, or GUID (resolved via the
                 internal ``__GetMsaObject``).
+            side: ``"from"`` (default) or ``"to"``. Only meaningful for
+                ``MoDerivAffMsa``; ignored for ``MoStemMsa``.
 
         Returns:
             list[ICmPossibility]: The exception-feature possibility
             objects, so callers can read names/abbreviations via the
             existing possibility-list wrappers (e.g.
-            ``PossibilityListOperations.GetItemName``). ``[]`` when the
-            MSA type does not carry ``ProdRestrictRC``
-            (``MoUnclassifiedAffixMsa``) or when none are set -- never
-            raises on a wrong-type MSA.
+            ``PossibilityListOperations.GetItemName``). ``[]`` when none
+            are set.
 
         Raises:
             FP_NullParameterError: If ``msa_or_hvo`` is null.
+            FP_ParameterError: If ``side`` is not "from"/"to"; if the MSA
+                type carries no exception features
+                (``MoUnclassifiedAffixMsa``); or if ``side="to"`` is
+                requested on a ``MoInflAffMsa``. (Changed in #630: an
+                unsupported type now raises, consistent with
+                ``AddExceptionFeature`` / ``RemoveExceptionFeature``,
+                instead of silently returning ``[]``.)
 
         Example:
             >>> feats = project.MSA.GetExceptionFeatures(msa)
@@ -1060,9 +1114,8 @@ class MSAOperations(BaseOperations):
             ...     name = project.PossibilityLists.GetItemName(feat)
             ...     print(f"blocked unless: {name}")
 
-            >>> # Unclassified-affix MSAs carry no exception features
-            >>> project.MSA.GetExceptionFeatures(unclassified_msa)
-            []
+            >>> # Derivational affix: the "to" side is a separate field
+            >>> project.MSA.GetExceptionFeatures(deriv_msa, side="to")
 
         Notes:
             - This is NOT the same field as
@@ -1072,50 +1125,50 @@ class MSAOperations(BaseOperations):
 
         See Also:
             AddExceptionFeature, RemoveExceptionFeature,
-            InflectionFeatureOperations.InflectionClassGetAll,
+            InflectionFeatureOperations.ExceptionFeatureGetAll,
             PossibilityListOperations.GetItemName
         """
         self._ValidateParam(msa_or_hvo, "msa_or_hvo")
 
         msa = self.__GetMsaObject(msa_or_hvo)
-        rc = self.__ProdRestrictRC(msa)
-        if rc is None:
-            return []
+        rc = self.__ExceptionFeatureRC(msa, side)
         return [ICmPossibility(item) for item in rc]
 
     @OperationsMethod
-    def AddExceptionFeature(self, msa_or_hvo, feature_or_hvo):
+    def AddExceptionFeature(self, msa_or_hvo, feature_or_hvo, side="from"):
         """
         Add an exception feature to an MSA.
 
-        Appends one ``ICmPossibility`` (in practice, an inflection class
-        from the project's "Production Restrictions" list) to the MSA's
-        ``ProdRestrictRC`` ("Exception features" in FLEx).
+        Appends one ``ICmPossibility`` from
+        ``MorphologicalDataOA.ProdRestrictOA`` to the MSA's exception
+        features. The field written depends on the MSA type:
+
+        - ``MoStemMsa``: ``ProdRestrictRC`` (``side`` is ignored)
+        - ``MoInflAffMsa``: ``FromProdRestrictRC`` (only ``side="from"``)
+        - ``MoDerivAffMsa``: ``FromProdRestrictRC`` (``side="from"``) or
+          ``ToProdRestrictRC`` (``side="to"``)
 
         Args:
             msa_or_hvo: A stem, inflectional-affix, or
                 derivational-affix MSA object, HVO, or GUID (resolved via
                 the internal ``__GetMsaObject``).
-            feature_or_hvo: An ``ICmPossibility`` object (or subclass
-                instance such as ``IMoInflClass``), HVO, or GUID.
+            feature_or_hvo: An ``ICmPossibility`` object, HVO, or GUID.
+            side: ``"from"`` (default) or ``"to"``; see above.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write
                 enabled.
             FP_NullParameterError: If either parameter is null.
-            FP_ParameterError: If the MSA type does not carry
-                ``ProdRestrictRC`` (``MoUnclassifiedAffixMsa``), or the
-                feature is not an ``ICmPossibility``.
+            FP_ParameterError: If ``side`` is not "from"/"to"; the MSA
+                type carries no exception features
+                (``MoUnclassifiedAffixMsa``); ``side="to"`` is requested
+                on a ``MoInflAffMsa`` (it has no ``ToProdRestrictRC``);
+                or the feature is not an ``ICmPossibility``.
 
         Example:
-            >>> classes = list(
-            ...     project.InflectionFeatures.InflectionClassGetAll()
-            ... )
-            >>> if classes:
-            ...     project.MSA.AddExceptionFeature(msa, classes[0])
-
-            >>> # ... or by HVO
-            >>> project.MSA.AddExceptionFeature(msa_hvo, class_hvo)
+            >>> ef = project.InflectionFeatures.ExceptionFeatureFind("pl")
+            >>> project.MSA.AddExceptionFeature(infl_msa, ef)
+            >>> project.MSA.AddExceptionFeature(deriv_msa, ef, side="to")
 
         Notes:
             - Adding a feature that is already present is a no-op (no
@@ -1125,20 +1178,15 @@ class MSAOperations(BaseOperations):
               ``LexEntryOperations.GetRestrictions`` for that.
 
         See Also:
-            GetExceptionFeatures, RemoveExceptionFeature
+            GetExceptionFeatures, RemoveExceptionFeature,
+            InflectionFeatureOperations.ExceptionFeatureCreate
         """
         self._EnsureWriteEnabled()
         self._ValidateParam(msa_or_hvo, "msa_or_hvo")
         self._ValidateParam(feature_or_hvo, "feature_or_hvo")
 
         msa = self.__GetMsaObject(msa_or_hvo)
-        rc = self.__ProdRestrictRC(msa)
-        if rc is None:
-            raise FP_ParameterError(
-                f"MSA type '{getattr(msa, 'ClassName', None)}' does not "
-                "carry exception features (ProdRestrictRC); only "
-                "MoStemMsa, MoInflAffMsa and MoDerivAffMsa do."
-            )
+        rc = self.__ExceptionFeatureRC(msa, side)
         poss = self.__ResolveExceptionFeature(feature_or_hvo)
 
         # Membership test stays outside the transaction so a redundant add
@@ -1149,27 +1197,34 @@ class MSAOperations(BaseOperations):
                 rc.Add(poss)
 
     @OperationsMethod
-    def RemoveExceptionFeature(self, msa_or_hvo, feature_or_hvo):
+    def RemoveExceptionFeature(self, msa_or_hvo, feature_or_hvo, side="from"):
         """
         Remove an exception feature from an MSA.
 
-        Removes one ``ICmPossibility`` from the MSA's ``ProdRestrictRC``
-        ("Exception features" in FLEx).
+        Removes one ``ICmPossibility`` from the MSA's exception features.
+        The field touched depends on the MSA type:
+
+        - ``MoStemMsa``: ``ProdRestrictRC`` (``side`` is ignored)
+        - ``MoInflAffMsa``: ``FromProdRestrictRC`` (only ``side="from"``)
+        - ``MoDerivAffMsa``: ``FromProdRestrictRC`` (``side="from"``) or
+          ``ToProdRestrictRC`` (``side="to"``)
 
         Args:
             msa_or_hvo: A stem, inflectional-affix, or
                 derivational-affix MSA object, HVO, or GUID (resolved via
                 the internal ``__GetMsaObject``).
-            feature_or_hvo: An ``ICmPossibility`` object (or subclass
-                instance such as ``IMoInflClass``), HVO, or GUID.
+            feature_or_hvo: An ``ICmPossibility`` object, HVO, or GUID.
+            side: ``"from"`` (default) or ``"to"``; see above.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write
                 enabled.
             FP_NullParameterError: If either parameter is null.
-            FP_ParameterError: If the MSA type does not carry
-                ``ProdRestrictRC`` (``MoUnclassifiedAffixMsa``), or the
-                feature is not an ``ICmPossibility``.
+            FP_ParameterError: If ``side`` is not "from"/"to"; the MSA
+                type carries no exception features
+                (``MoUnclassifiedAffixMsa``); ``side="to"`` is requested
+                on a ``MoInflAffMsa``; or the feature is not an
+                ``ICmPossibility``.
 
         Example:
             >>> feats = project.MSA.GetExceptionFeatures(msa)
@@ -1191,13 +1246,7 @@ class MSAOperations(BaseOperations):
         self._ValidateParam(feature_or_hvo, "feature_or_hvo")
 
         msa = self.__GetMsaObject(msa_or_hvo)
-        rc = self.__ProdRestrictRC(msa)
-        if rc is None:
-            raise FP_ParameterError(
-                f"MSA type '{getattr(msa, 'ClassName', None)}' does not "
-                "carry exception features (ProdRestrictRC); only "
-                "MoStemMsa, MoInflAffMsa and MoDerivAffMsa do."
-            )
+        rc = self.__ExceptionFeatureRC(msa, side)
         poss = self.__ResolveExceptionFeature(feature_or_hvo)
 
         # Membership test stays outside the bracket so a redundant remove
@@ -1711,6 +1760,8 @@ class MSAOperations(BaseOperations):
                 lost_fields.append("SlotsRC")
             if infl_src.InflFeatsOA is not None:
                 lost_fields.append("InflFeatsOA")
+            if self.__RCHasItems(infl_src, "FromProdRestrictRC"):
+                lost_fields.append("FromProdRestrictRC")
         elif source_kind == "deriv" and target_kind in ("infl", "unclassified"):
             deriv_src = concrete_src
             if deriv_src.FromPartOfSpeechRA is not None:
@@ -1730,6 +1781,9 @@ class MSAOperations(BaseOperations):
                 and deriv_src.StratumRA is not None
             ):
                 lost_fields.append("StratumRA")
+            for rc_name in ("FromProdRestrictRC", "ToProdRestrictRC"):
+                if self.__RCHasItems(deriv_src, rc_name):
+                    lost_fields.append(rc_name)
 
         if lost_fields:
             logger.warning(

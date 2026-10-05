@@ -44,11 +44,29 @@ class _FakeRC(list):
 
 
 class _FakeMSA:
-    """Concrete-typed MSA stand-in (ClassName drives the ProdRestrict gate)."""
+    """Concrete-typed MSA stand-in (ClassName drives the per-type mapping).
 
-    def __init__(self, class_name, features=()):
+    Mirrors LCM: MoStemMsa -> ProdRestrictRC; MoInflAffMsa ->
+    FromProdRestrictRC; MoDerivAffMsa -> From/ToProdRestrictRC. Fields the
+    real type lacks are absent (AttributeError), as in LCM (issue #630).
+    """
+
+    def __init__(self, class_name, features=(), to_features=()):
         self.ClassName = class_name
-        self.ProdRestrictRC = _FakeRC(features)
+        if class_name == "MoStemMsa":
+            self.ProdRestrictRC = _FakeRC(features)
+        elif class_name == "MoInflAffMsa":
+            self.FromProdRestrictRC = _FakeRC(features)
+        elif class_name == "MoDerivAffMsa":
+            self.FromProdRestrictRC = _FakeRC(features)
+            self.ToProdRestrictRC = _FakeRC(to_features)
+
+
+def _primary(msa):
+    """The collection a default (side='from') call reads/writes."""
+    if msa.ClassName == "MoStemMsa":
+        return msa.ProdRestrictRC
+    return msa.FromProdRestrictRC
 
 
 class _FakePossibility:
@@ -97,10 +115,11 @@ class TestGetExceptionFeatures:
 
         assert ops.GetExceptionFeatures(msa) == [f1, f2]
 
-    def test_unclassified_msa_returns_empty_never_raises(self, ops):
+    def test_unclassified_msa_raises_parameter_error(self, ops):
         msa = _FakeMSA("MoUnclassifiedAffixMsa")
 
-        assert ops.GetExceptionFeatures(msa) == []
+        with pytest.raises(FP_ParameterError):
+            ops.GetExceptionFeatures(msa)
 
     def test_empty_collection_returns_empty(self, ops):
         assert ops.GetExceptionFeatures(_FakeMSA("MoStemMsa")) == []
@@ -127,7 +146,7 @@ class TestAddExceptionFeature:
 
         ops.AddExceptionFeature(msa, feat)
 
-        assert list(msa.ProdRestrictRC) == [feat]
+        assert list(_primary(msa)) == [feat]
         assert ops._TransactionCM.call_count == 1
 
     def test_redundant_add_is_noop_without_transaction(self, ops):
@@ -136,7 +155,7 @@ class TestAddExceptionFeature:
 
         ops.AddExceptionFeature(msa, feat)
 
-        assert list(msa.ProdRestrictRC) == [feat]
+        assert list(_primary(msa)) == [feat]
         assert ops._TransactionCM.call_count == 0
 
     def test_add_by_hvo(self, ops):
@@ -146,7 +165,7 @@ class TestAddExceptionFeature:
 
         ops.AddExceptionFeature(111, 222)
 
-        assert list(msa.ProdRestrictRC) == [feat]
+        assert list(_primary(msa)) == [feat]
 
     def test_unclassified_msa_raises_parameter_error(self, ops):
         msa = _FakeMSA("MoUnclassifiedAffixMsa")
@@ -168,7 +187,7 @@ class TestAddExceptionFeature:
             with pytest.raises(FP_ParameterError):
                 ops.AddExceptionFeature(msa, not_a_possibility)
 
-        assert list(msa.ProdRestrictRC) == []
+        assert list(_primary(msa)) == []
         assert ops._TransactionCM.call_count == 0
 
     def test_none_msa_raises_null_parameter_error(self, ops):
@@ -198,7 +217,7 @@ class TestRemoveExceptionFeature:
 
         ops.RemoveExceptionFeature(msa, feat)
 
-        assert list(msa.ProdRestrictRC) == [other]
+        assert list(_primary(msa)) == [other]
         assert ops._TransactionCM.call_count == 1
 
     def test_absent_feature_is_noop_without_transaction(self, ops):
@@ -207,7 +226,7 @@ class TestRemoveExceptionFeature:
 
         ops.RemoveExceptionFeature(msa, feat)
 
-        assert len(msa.ProdRestrictRC) == 1
+        assert len(_primary(msa)) == 1
         assert ops._TransactionCM.call_count == 0
 
     def test_unclassified_msa_raises_parameter_error(self, ops):
@@ -229,3 +248,96 @@ class TestRemoveExceptionFeature:
             ops.RemoveExceptionFeature(
                 _FakeMSA("MoStemMsa"), _FakePossibility("pl")
             )
+
+
+# ---------- Issue #630: per-type mapping and side keyword ----------
+
+class TestPerTypeMappingAndSide:
+    def test_infl_affix_reads_from_field(self, ops):
+        f = _FakePossibility("pl")
+        msa = _FakeMSA("MoInflAffMsa", [f])
+
+        assert ops.GetExceptionFeatures(msa) == [f]
+        assert ops.GetExceptionFeatures(msa, side="from") == [f]
+
+    def test_infl_affix_add_remove_use_from_field(self, ops):
+        msa = _FakeMSA("MoInflAffMsa")
+        f = _FakePossibility("pl")
+
+        ops.AddExceptionFeature(msa, f)
+        ops.AddExceptionFeature(msa, f)  # second add: no change
+        assert list(msa.FromProdRestrictRC) == [f]
+        assert ops._TransactionCM.call_count == 1
+
+        ops.RemoveExceptionFeature(msa, f)
+        assert list(msa.FromProdRestrictRC) == []
+
+    def test_deriv_sides_are_independent(self, ops):
+        f, g = _FakePossibility("a"), _FakePossibility("b")
+        msa = _FakeMSA("MoDerivAffMsa")
+
+        ops.AddExceptionFeature(msa, f)  # default from
+        ops.AddExceptionFeature(msa, g, side="to")
+
+        assert list(msa.FromProdRestrictRC) == [f]
+        assert list(msa.ToProdRestrictRC) == [g]
+        assert ops.GetExceptionFeatures(msa, side="from") == [f]
+        assert ops.GetExceptionFeatures(msa, side="to") == [g]
+
+        ops.RemoveExceptionFeature(msa, g, side="to")
+        assert list(msa.FromProdRestrictRC) == [f]
+        assert list(msa.ToProdRestrictRC) == []
+
+    @pytest.mark.parametrize("side", ["from", "to"])
+    def test_stem_ignores_side(self, ops, side):
+        f = _FakePossibility("pl")
+        msa = _FakeMSA("MoStemMsa")
+
+        ops.AddExceptionFeature(msa, f, side=side)
+
+        assert list(msa.ProdRestrictRC) == [f]
+        assert ops.GetExceptionFeatures(msa, side=side) == [f]
+
+    @pytest.mark.parametrize("method", ["get", "add", "remove"])
+    def test_infl_affix_side_to_raises(self, ops, method):
+        msa = _FakeMSA("MoInflAffMsa")
+        f = _FakePossibility("pl")
+        calls = {
+            "get": lambda: ops.GetExceptionFeatures(msa, side="to"),
+            "add": lambda: ops.AddExceptionFeature(msa, f, side="to"),
+            "remove": lambda: ops.RemoveExceptionFeature(msa, f, side="to"),
+        }
+        with pytest.raises(FP_ParameterError) as excinfo:
+            calls[method]()
+        assert "FromProdRestrictRC" in str(excinfo.value)
+        assert ops._TransactionCM.call_count == 0
+
+    @pytest.mark.parametrize("class_name", ["MoStemMsa", "MoDerivAffMsa"])
+    @pytest.mark.parametrize("bad", ["both", "FROM", "", None, 1])
+    def test_invalid_side_raises(self, ops, class_name, bad):
+        msa = _FakeMSA(class_name)
+        f = _FakePossibility("pl")
+
+        with pytest.raises(FP_ParameterError):
+            ops.GetExceptionFeatures(msa, side=bad)
+        with pytest.raises(FP_ParameterError):
+            ops.AddExceptionFeature(msa, f, side=bad)
+        with pytest.raises(FP_ParameterError):
+            ops.RemoveExceptionFeature(msa, f, side=bad)
+
+    def test_unsupported_type_error_message_names_real_fields(self, ops):
+        msa = _FakeMSA("MoUnclassifiedAffixMsa")
+
+        with pytest.raises(FP_ParameterError) as excinfo:
+            ops.AddExceptionFeature(msa, _FakePossibility("pl"))
+
+        msg = str(excinfo.value)
+        assert "MoUnclassifiedAffixMsa" in msg
+        for token in (
+            "MoStemMsa (ProdRestrictRC)",
+            "MoInflAffMsa (FromProdRestrictRC)",
+            "ToProdRestrictRC",
+        ):
+            assert token in msg
+        # The old self-contradicting wording is gone.
+        assert "does not carry exception features (ProdRestrictRC)" not in msg
