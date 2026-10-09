@@ -10,6 +10,30 @@ None
 
 ## History
 
+### 2026-10-09 - v4.13.0: inflection classes move back to the part of speech
+
+Cuts v4.13.0 from `main`. One behavioural breaking change. The release is the
+#630/#631 pair. Both came from the same confusion: `ProdRestrictOA`, LCM's
+name for the exception-features list, was being treated as the
+inflection-class store.
+
+**Inflection classes are owned by a part of speech.**
+`InflectionClassGetAll/Create/Delete` now use
+`IPartOfSpeech.InflectionClassesOC`, or a parent class's `SubclassesOC`.
+`InflectionClassCreate(name)` with no `pos=` or `parent=` raises instead of
+writing into the exception-features list (#631). That resolves the known
+issue carried since 4.10.0. Exception features get their own
+`ExceptionFeatureGetAll/Find/Create` helpers.
+
+**Exception features work on affixes.** The MSA wrappers now reach
+`From/ToProdRestrictRC` on affix MSAs with a `side=` argument, and reads on
+sides that do not exist warn and return `[]` instead of raising.
+`ChangeAffixVariant` carries "from" exception features across the
+inflectional/derivational switch (#630).
+
+Gates were run on the release head: offline 3719 passed; live 1132 passed,
+40 skipped, 2 xfailed, `run_mode: live`.
+
 ### 2026-10-02 - v4.12.0: the writing-system store, and a name path that stops guessing
 
 Cuts v4.12.0 from `main`. Nothing breaking. The release is mostly a

@@ -11,6 +11,13 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+---
+
+## [4.13.0] - 2026-10-09
+
+> **Contains one behavioural breaking change**: `InflectionClassCreate`
+> now needs `pos=` or `parent=`. See `docs/MIGRATION_GUIDE.md`.
+
 ### Changed (breaking)
 
 - **`InflectionClassCreate(name)` with no `pos=` / `parent=` now raises
