@@ -509,8 +509,20 @@ class AllomorphOperations(BaseOperations):
             elif hasattr(parent, "AlternateFormsOS"):
                 # Source is alternate form
                 if insert_after:
-                    source_index = parent.AlternateFormsOS.IndexOf(source)
-                    parent.AlternateFormsOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #646). AlternateFormsOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    alt_list = list(parent.AlternateFormsOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, allo in enumerate(alt_list):
+                        if allo.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(alt_list)
+                    else:
+                        insert_index = source_index + 1
+                    parent.AlternateFormsOS.Insert(insert_index, duplicate)
                 else:
                     parent.AlternateFormsOS.Add(duplicate)
 
