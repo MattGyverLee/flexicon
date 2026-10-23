@@ -878,15 +878,29 @@ class LexSenseOperations(BaseOperations):
 
         entry = self.__GetEntryObject(entry_or_hvo)
 
-        # Resolve HVOs to sense objects
-        resolved_senses = []
+        # Resolve HVOs to sense objects (validates each item exists).
+        ordered_hvos = []
+        seen_hvo = set()
         for sense_or_hvo in sense_list:
             sense = self.__GetSenseObject(sense_or_hvo)
-            resolved_senses.append(sense)
+            hvo = sense.Hvo
+            if hvo in seen_hvo:
+                raise FP_ParameterError("Duplicate sense in sense_list")
+            seen_hvo.add(hvo)
+            ordered_hvos.append(hvo)
 
-        ordered_set = set(resolved_senses)
-        tail = [s for s in entry.SensesOS if s not in ordered_set]
-        desired_order = resolved_senses + tail
+        # Partition by HVO (issue #692). SensesOS can yield bare interface views
+        # while callers pass cast handles from Object(hvo); Python set membership
+        # on proxies then duplicates senses in desired_order.
+        sense_by_hvo = {s.Hvo: s for s in entry.SensesOS}
+        for hvo in ordered_hvos:
+            if hvo not in sense_by_hvo:
+                raise FP_ParameterError("Sense does not belong to entry")
+
+        tail_hvos = [s.Hvo for s in entry.SensesOS if s.Hvo not in seen_hvo]
+        desired_order = [
+            sense_by_hvo[hvo] for hvo in ordered_hvos + tail_hvos
+        ]
 
         with self._TransactionCM("Reorder senses"):
             self._ApplySequenceOrder(entry.SensesOS, desired_order)
