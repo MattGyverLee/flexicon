@@ -1027,8 +1027,20 @@ class PersonOperations(BaseOperations):
 
             # Determine insertion position and add to parent FIRST
             if insert_after:
-                source_index = self.project.lp.PeopleOA.PossibilitiesOS.IndexOf(source)
-                self.project.lp.PeopleOA.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                # Index by HVO (issue #654). PossibilitiesOS can yield bare interface
+                # views whose Python identity differs from source.
+                people_list = list(self.project.lp.PeopleOA.PossibilitiesOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, person in enumerate(people_list):
+                    if person.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(people_list)
+                else:
+                    insert_index = source_index + 1
+                self.project.lp.PeopleOA.PossibilitiesOS.Insert(insert_index, duplicate)
             else:
                 self.project.lp.PeopleOA.PossibilitiesOS.Add(duplicate)
 
