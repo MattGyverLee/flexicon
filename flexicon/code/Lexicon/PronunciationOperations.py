@@ -847,8 +847,11 @@ class PronunciationOperations(BaseOperations):
             logger.warning("Source and destination are the same pronunciation")
             return False
 
-        # Verify media is in source collection
-        if media not in from_pron.MediaFilesOS:
+        # Membership by HVO (issue #686). MediaFilesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and MoveMediaFile raises spuriously.
+        target_hvo = media.Hvo
+        if not any(f.Hvo == target_hvo for f in from_pron.MediaFilesOS):
             raise FP_ParameterError("Media file not found in source pronunciation's media collection")
 
         with self._TransactionCM("Move media file"):
