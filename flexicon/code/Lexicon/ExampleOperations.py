@@ -1456,7 +1456,11 @@ class ExampleOperations(BaseOperations):
         if not hasattr(from_example, "MediaFilesOS"):
             raise FP_ParameterError("Source example does not support media files")
 
-        if media not in from_example.MediaFilesOS:
+        # Membership by HVO (issue #684). MediaFilesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and MoveMediaFile raises spuriously.
+        target_hvo = media.Hvo
+        if not any(f.Hvo == target_hvo for f in from_example.MediaFilesOS):
             raise FP_ParameterError("Media file not found in source example's media collection")
 
         # Verify destination supports media
