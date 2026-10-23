@@ -281,9 +281,20 @@ class PossibilityItemOperations(BaseOperations):
 
             # ADD TO PARENT FIRST before copying properties (CRITICAL)
             if insert_after:
-                # Insert after source item
-                source_index = list_obj.PossibilitiesOS.IndexOf(source)
-                list_obj.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                # Index by HVO (issue #668). PossibilitiesOS can yield bare
+                # interface views whose Python identity differs from source.
+                pos_list = list(list_obj.PossibilitiesOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, item in enumerate(pos_list):
+                    if item.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(pos_list)
+                else:
+                    insert_index = source_index + 1
+                list_obj.PossibilitiesOS.Insert(insert_index, duplicate)
             else:
                 # Insert at end
                 list_obj.PossibilitiesOS.Add(duplicate)
