@@ -8,6 +8,6 @@ python3 -m pytest tests/operations/test_issue708_datanotebook_researcher_hvo_off
 
 **run_mode:** mock (cloud agent; no FieldWorks/clr)
 
-**Result:** (filled after test run)
+**Result:** PASS (3/3, 2026-10-24 cron cloud agent)
 
 **Live LCM:** FAIL: unverified (no clr on cloud agent)
