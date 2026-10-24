@@ -3530,7 +3530,10 @@ class LexSenseOperations(BaseOperations):
             if not anthro_code:
                 raise FP_ParameterError(f"Anthropology code '{anthro_code_name}' not found")
 
-        if anthro_code not in sense.AnthroCodesRC:
+        target_hvo = anthro_code.Hvo
+        # Membership by HVO (issue #724). AnthroCodesRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        if not any(code.Hvo == target_hvo for code in sense.AnthroCodesRC):
             with self._TransactionCM("Add anthropology code"):
                 sense.AnthroCodesRC.Add(anthro_code)
 
@@ -3541,9 +3544,14 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(sense_or_hvo, "sense_or_hvo")
         self._ValidateParam(anthro_code, "anthro_code")
         sense = self.__GetSenseObject(sense_or_hvo)
-        if anthro_code in sense.AnthroCodesRC:
-            with self._TransactionCM("Remove anthropology code"):
-                sense.AnthroCodesRC.Remove(anthro_code)
+        # Membership by HVO (issue #724). AnthroCodesRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        target_hvo = anthro_code.Hvo
+        for linked in sense.AnthroCodesRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove anthropology code"):
+                    sense.AnthroCodesRC.Remove(linked)
+                break
 
     @OperationsMethod
     def GetDoNotPublishIn(self, sense_or_hvo):
