@@ -1813,7 +1813,11 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         domain = self.__GetSemanticDomainObject(domain_or_hvo)
 
-        if domain not in sense.SemanticDomainsRC:
+        target_hvo = domain.Hvo
+        # Membership by HVO (issue #718). SemanticDomainsRC can yield bare
+        # interface views while callers pass cast handles from Object(hvo);
+        # Python ``in`` then false-negates and Add can duplicate-link.
+        if not any(d.Hvo == target_hvo for d in sense.SemanticDomainsRC):
             with self._TransactionCM("Add semantic domain"):
                 sense.SemanticDomainsRC.Add(domain)
 
@@ -1854,10 +1858,15 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         domain = self.__GetSemanticDomainObject(domain_or_hvo)
 
-        # Only remove if it's actually in the collection
-        if domain in sense.SemanticDomainsRC:
-            with self._TransactionCM("Remove semantic domain"):
-                sense.SemanticDomainsRC.Remove(domain)
+        # Membership by HVO (issue #718). SemanticDomainsRC can yield bare
+        # interface views while callers pass cast handles from Object(hvo);
+        # Python ``in`` then false-negates and Remove becomes a silent no-op.
+        target_hvo = domain.Hvo
+        for linked in sense.SemanticDomainsRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove semantic domain"):
+                    sense.SemanticDomainsRC.Remove(linked)
+                break
 
     # --- Example Sentence Operations ---
 
