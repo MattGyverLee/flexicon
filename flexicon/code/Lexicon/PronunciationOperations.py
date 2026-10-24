@@ -480,17 +480,38 @@ class PronunciationOperations(BaseOperations):
         if not hasattr(entry, "PronunciationsOS"):
             raise FP_ParameterError("Entry does not support pronunciations")
 
-        # Validate that all pronunciations belong to this entry
+        pronunciation_list = list(pronunciation_list)
+
         current_count = entry.PronunciationsOS.Count
         if len(pronunciation_list) != current_count:
-            raise FP_ParameterError(f"Pronunciation list must contain all {current_count} pronunciations")
+            raise FP_ParameterError(
+                f"Pronunciation list must contain all {current_count} pronunciations"
+            )
 
-        pronunciations = [
-            self.__GetPronunciationObject(pron) for pron in pronunciation_list
-        ]
+        ordered_hvos = []
+        seen_hvo = set()
+        for pron in pronunciation_list:
+            pronunciation = self.__GetPronunciationObject(pron)
+            hvo = pronunciation.Hvo
+            if hvo in seen_hvo:
+                raise FP_ParameterError("Duplicate pronunciation in pronunciation_list")
+            seen_hvo.add(hvo)
+            ordered_hvos.append(hvo)
+
+        # Partition by HVO (issue #700). PronunciationsOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python set
+        # membership on proxies then rejects valid reorder lists.
+        current_hvos = {p.Hvo for p in entry.PronunciationsOS}
+        if set(ordered_hvos) != current_hvos:
+            raise FP_ParameterError(
+                "Pronunciation list must contain exactly the same pronunciations as the entry"
+            )
+
+        pronunciation_by_hvo = {p.Hvo: p for p in entry.PronunciationsOS}
+        desired_order = [pronunciation_by_hvo[hvo] for hvo in ordered_hvos]
 
         with self._TransactionCM("Reorder pronunciations"):
-            self._ApplySequenceOrder(entry.PronunciationsOS, pronunciations)
+            self._ApplySequenceOrder(entry.PronunciationsOS, desired_order)
 
     # --- Form Management ---
 
