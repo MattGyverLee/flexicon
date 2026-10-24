@@ -706,18 +706,31 @@ class ExampleOperations(BaseOperations):
         # Convert to list if it's an iterator
         example_list = list(example_list)
 
-        # Resolve all to objects
-        examples = [self.__GetExampleObject(ex) for ex in example_list]
+        # Resolve all to objects (validates each item exists).
+        ordered_hvos = []
+        seen_hvo = set()
+        for ex in example_list:
+            example = self.__GetExampleObject(ex)
+            hvo = example.Hvo
+            if hvo in seen_hvo:
+                raise FP_ParameterError("Duplicate example in example_list")
+            seen_hvo.add(hvo)
+            ordered_hvos.append(hvo)
 
-        # Verify all examples belong to this sense
-        current_examples = set(sense.ExamplesOS)
-        new_examples = set(examples)
+        # Partition by HVO (issue #694). ExamplesOS can yield bare interface views
+        # while callers pass cast handles from Object(hvo); Python set membership
+        # on proxies then rejects valid reorder lists.
+        current_hvos = {ex.Hvo for ex in sense.ExamplesOS}
+        if set(ordered_hvos) != current_hvos:
+            raise FP_ParameterError(
+                "Example list must contain exactly the same examples as the sense"
+            )
 
-        if current_examples != new_examples:
-            raise FP_ParameterError("Example list must contain exactly the same examples as the sense")
+        example_by_hvo = {ex.Hvo: ex for ex in sense.ExamplesOS}
+        desired_order = [example_by_hvo[hvo] for hvo in ordered_hvos]
 
         with self._TransactionCM("Reorder examples"):
-            self._ApplySequenceOrder(sense.ExamplesOS, examples)
+            self._ApplySequenceOrder(sense.ExamplesOS, desired_order)
 
     @OperationsMethod
     def GetExample(self, example_or_hvo, wsHandle=None):
