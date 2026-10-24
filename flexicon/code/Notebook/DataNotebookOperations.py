@@ -1419,7 +1419,12 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        if person not in record.ResearchersRC:
+        # Membership by HVO (issue #708). ResearchersRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and Add can duplicate-link.
+        target_hvo = person.Hvo
+        already_linked = any(p.Hvo == target_hvo for p in record.ResearchersRC)
+        if not already_linked:
             with self._TransactionCM("Add researcher to notebook record"):
                 record.ResearchersRC.Add(person)
 
@@ -1458,9 +1463,15 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        if person in record.ResearchersRC:
-            with self._TransactionCM("Remove researcher from notebook record"):
-                record.ResearchersRC.Remove(person)
+        # Membership by HVO (issue #708). ResearchersRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and Remove becomes a silent no-op.
+        target_hvo = person.Hvo
+        for linked in record.ResearchersRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove researcher from notebook record"):
+                    record.ResearchersRC.Remove(linked)
+                break
 
     # --- Linking Operations: Participants ---
 
