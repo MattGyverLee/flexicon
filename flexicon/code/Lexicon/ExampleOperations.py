@@ -1654,15 +1654,12 @@ class ExampleOperations(BaseOperations):
         self._ValidateParam(publication, "publication")
 
         example = self.__GetExampleObject(example_or_hvo)
+        publication = self.__ResolvePublication(publication)
 
-        # Find publication object if string provided
-        if isinstance(publication, str):
-            pub_obj = self.project.Publications.Find(publication)
-            if not pub_obj:
-                raise FP_ParameterError(f"Publication '{publication}' not found")
-            publication = pub_obj
-
-        if publication not in example.DoNotPublishInRC:
+        target_hvo = publication.Hvo
+        # Membership by HVO (issue #732). DoNotPublishInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        if not any(pub.Hvo == target_hvo for pub in example.DoNotPublishInRC):
             with self._TransactionCM("Add example publication exclusion"):
                 example.DoNotPublishInRC.Add(publication)
 
@@ -1685,19 +1682,27 @@ class ExampleOperations(BaseOperations):
         self._ValidateParam(publication, "publication")
 
         example = self.__GetExampleObject(example_or_hvo)
+        publication = self.__ResolvePublication(publication)
 
-        # Find publication object if string provided
-        if isinstance(publication, str):
-            pub_obj = self.project.Publications.Find(publication)
-            if not pub_obj:
-                raise FP_ParameterError(f"Publication '{publication}' not found")
-            publication = pub_obj
-
-        if publication in example.DoNotPublishInRC:
-            with self._TransactionCM("Remove example publication exclusion"):
-                example.DoNotPublishInRC.Remove(publication)
+        # Membership by HVO (issue #732). DoNotPublishInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        target_hvo = publication.Hvo
+        for linked in example.DoNotPublishInRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove example publication exclusion"):
+                    example.DoNotPublishInRC.Remove(linked)
+                break
 
     # --- Private Helper Methods ---
+
+    def __ResolvePublication(self, publication):
+        """Resolve a publication name or object to an ICmPossibility."""
+        if isinstance(publication, str):
+            pub_obj = self.project.Publications.Find(publication)
+            if pub_obj is None:
+                raise FP_ParameterError(f"Publication '{publication}' not found")
+            return pub_obj
+        return publication
 
     def __GetSenseObject(self, sense_or_hvo):
         """
