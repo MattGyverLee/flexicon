@@ -612,7 +612,14 @@ class OverlayOperations(PossibilityItemOperations):
         # the InstancesOS/Elements dead-code evidence); the membership test
         # stays outside the transaction so an already-present element is a
         # true no-op.
-        if element not in overlay.PossItemsRC:
+        # Membership by HVO (issue #736). PossItemsRC can yield bare interface
+        # views while element is a cast handle; Python ``in`` then false-negates
+        # and AddElement inserts duplicates.
+        target_hvo = int(element.Hvo)
+        already_present = any(
+            int(item.Hvo) == target_hvo for item in overlay.PossItemsRC
+        )
+        if not already_present:
             with self._TransactionCM("Add overlay element"):
                 overlay.PossItemsRC.Add(element)
 
@@ -650,9 +657,17 @@ class OverlayOperations(PossibilityItemOperations):
         # reference collection is pure unlink -- it never deletes the
         # underlying ICmPossibility. The membership test stays outside the
         # transaction so an absent element is a true no-op.
-        if element in overlay.PossItemsRC:
+        # Membership by HVO (issue #736). Locate the PossItemsRC member to pass
+        # to Remove -- the caller's handle identity may differ from the RC slot.
+        target_hvo = int(element.Hvo)
+        member_to_remove = None
+        for item in overlay.PossItemsRC:
+            if int(item.Hvo) == target_hvo:
+                member_to_remove = item
+                break
+        if member_to_remove is not None:
             with self._TransactionCM("Remove overlay element"):
-                overlay.PossItemsRC.Remove(element)
+                overlay.PossItemsRC.Remove(member_to_remove)
 
     # --- Chart Association Operations ---
 
