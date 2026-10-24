@@ -2418,7 +2418,10 @@ class LexEntryOperations(BaseOperations):
                 raise FP_ParameterError(f"Publication '{publication}' not found")
             publication = pub_obj
 
-        if publication not in entry.DoNotPublishInRC:
+        target_hvo = publication.Hvo
+        # Membership by HVO (issue #728). DoNotPublishInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        if not any(pub.Hvo == target_hvo for pub in entry.DoNotPublishInRC):
             with self._TransactionCM("Add entry publication exclusion"):
                 entry.DoNotPublishInRC.Add(publication)
 
@@ -2444,9 +2447,14 @@ class LexEntryOperations(BaseOperations):
                 raise FP_ParameterError(f"Publication '{publication}' not found")
             publication = pub_obj
 
-        if publication in entry.DoNotPublishInRC:
-            with self._TransactionCM("Remove entry publication exclusion"):
-                entry.DoNotPublishInRC.Remove(publication)
+        # Membership by HVO (issue #728). DoNotPublishInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        target_hvo = publication.Hvo
+        for linked in entry.DoNotPublishInRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove entry publication exclusion"):
+                    entry.DoNotPublishInRC.Remove(linked)
+                break
 
     @OperationsMethod
     def GetDoNotShowMainEntryIn(self, entry_or_hvo):
