@@ -3251,6 +3251,16 @@ class LexEntryOperations(BaseOperations):
             logger.warning(f"Error during sense deduplication: {e}")
             # Don't fail the whole merge operation if deduplication fails
 
+    def __OwningSequenceContainsHvo(self, sequence, hvo):
+        """Return True if ``sequence`` has a member with the given HVO (issue #702)."""
+        if hvo is None:
+            return False
+        target = int(hvo)
+        for member in sequence:
+            if int(member.Hvo) == target:
+                return True
+        return False
+
     def __DeduplicatePronunciationsInEntry(self, entry):
         """
         Detect and remove duplicate pronunciations within an entry.
@@ -3320,8 +3330,12 @@ class LexEntryOperations(BaseOperations):
                     # -- a benign LCM-side "can't remove, still referenced"
                     # condition could return normally without removing
                     # anything, and that must be distinguishable from a
-                    # real removal (issue #291's collapse).
-                    if dupe not in entry.PronunciationsOS:
+                    # real removal (issue #291's collapse). Membership by HVO
+                    # (issue #702): Python ``in`` false-negates when the dupe
+                    # handle identity differs from sequence members.
+                    if not self.__OwningSequenceContainsHvo(
+                        entry.PronunciationsOS, dupe.Hvo
+                    ):
                         removed_count += 1
 
         if found_count > 0:
@@ -3401,8 +3415,10 @@ class LexEntryOperations(BaseOperations):
                     # See __DeduplicatePronunciationsInEntry above: verify
                     # the removal actually took effect rather than
                     # assuming success just because .Remove() didn't
-                    # raise (issue #291's collapse).
-                    if dupe not in entry.AlternateFormsOS:
+                    # raise (issue #291's collapse). Membership by HVO (issue #702).
+                    if not self.__OwningSequenceContainsHvo(
+                        entry.AlternateFormsOS, dupe.Hvo
+                    ):
                         removed_count += 1
 
         if found_count > 0:
