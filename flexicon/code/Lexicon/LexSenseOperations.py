@@ -3600,7 +3600,10 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         publication = self.__ResolvePublication(publication)
 
-        if publication not in sense.DoNotPublishInRC:
+        target_hvo = publication.Hvo
+        # Membership by HVO (issue #726). DoNotPublishInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        if not any(pub.Hvo == target_hvo for pub in sense.DoNotPublishInRC):
             with self._TransactionCM("Add sense publication exclusion"):
                 sense.DoNotPublishInRC.Add(publication)
 
@@ -3629,9 +3632,14 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         publication = self.__ResolvePublication(publication)
 
-        if publication in sense.DoNotPublishInRC:
-            with self._TransactionCM("Remove sense publication exclusion"):
-                sense.DoNotPublishInRC.Remove(publication)
+        # Membership by HVO (issue #726). DoNotPublishInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        target_hvo = publication.Hvo
+        for linked in sense.DoNotPublishInRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove sense publication exclusion"):
+                    sense.DoNotPublishInRC.Remove(linked)
+                break
 
     def __ResolvePublication(self, publication):
         """Resolve a publication name or object to an ICmPossibility."""
