@@ -627,18 +627,31 @@ class EtymologyOperations(BaseOperations):
         # Convert to list if it's an iterator
         etymology_list = list(etymology_list)
 
-        # Resolve all to objects
-        etymologies = [self.__GetEtymologyObject(etym) for etym in etymology_list]
+        # Resolve all to objects (validates each item exists).
+        ordered_hvos = []
+        seen_hvo = set()
+        for etym in etymology_list:
+            etymology = self.__GetEtymologyObject(etym)
+            hvo = etymology.Hvo
+            if hvo in seen_hvo:
+                raise FP_ParameterError("Duplicate etymology in etymology_list")
+            seen_hvo.add(hvo)
+            ordered_hvos.append(hvo)
 
-        # Verify all etymologies belong to this entry
-        current_etymologies = set(entry.EtymologyOS)
-        new_etymologies = set(etymologies)
+        # Partition by HVO (issue #696). EtymologyOS can yield bare interface views
+        # while callers pass cast handles from Object(hvo); Python set membership
+        # on proxies then rejects valid reorder lists.
+        current_hvos = {e.Hvo for e in entry.EtymologyOS}
+        if set(ordered_hvos) != current_hvos:
+            raise FP_ParameterError(
+                "Etymology list must contain exactly the same etymologies as the entry"
+            )
 
-        if current_etymologies != new_etymologies:
-            raise FP_ParameterError("Etymology list must contain exactly the same etymologies as the entry")
+        etymology_by_hvo = {e.Hvo: e for e in entry.EtymologyOS}
+        desired_order = [etymology_by_hvo[hvo] for hvo in ordered_hvos]
 
         with self._TransactionCM("Reorder etymologies"):
-            self._ApplySequenceOrder(entry.EtymologyOS, etymologies)
+            self._ApplySequenceOrder(entry.EtymologyOS, desired_order)
 
     # --- Source Language Operations ---
 
