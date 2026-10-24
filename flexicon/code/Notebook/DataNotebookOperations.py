@@ -1589,7 +1589,10 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         group = record.DefaultRoledParticipants
-        if group is not None and person in group.ParticipantsRC:
+        target_hvo = person.Hvo
+        if group is not None and any(
+            p.Hvo == target_hvo for p in group.ParticipantsRC
+        ):
             return
 
         with self._TransactionCM("Add participant to notebook record"):
@@ -1600,7 +1603,10 @@ class DataNotebookOperations(BaseOperations):
             if group is None:
                 group = record.MakeDefaultRoledParticipant()
 
-            if person not in group.ParticipantsRC:
+            # Membership by HVO (issue #714). ParticipantsRC can yield bare
+            # interface views while callers pass cast handles from Object(hvo);
+            # Python ``in`` then false-negates and Add can duplicate-link.
+            if not any(p.Hvo == target_hvo for p in group.ParticipantsRC):
                 group.ParticipantsRC.Add(person)
 
     @OperationsMethod
@@ -1653,8 +1659,14 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
+        # Membership by HVO (issue #714). ParticipantsRC can yield bare
+        # interface views while callers pass cast handles from Object(hvo);
+        # Python ``in`` then false-negates and Remove becomes a silent no-op.
+        target_hvo = person.Hvo
         groups_with_person = [
-            group for group in record.ParticipantsOC if person in group.ParticipantsRC
+            group
+            for group in record.ParticipantsOC
+            if any(p.Hvo == target_hvo for p in group.ParticipantsRC)
         ]
 
         if not groups_with_person:
@@ -1667,7 +1679,10 @@ class DataNotebookOperations(BaseOperations):
                 # and removing a group from it would delete the group
                 # (and orphan/destroy its participant links), not just
                 # unlink this one person.
-                group.ParticipantsRC.Remove(person)
+                for linked in group.ParticipantsRC:
+                    if linked.Hvo == target_hvo:
+                        group.ParticipantsRC.Remove(linked)
+                        break
 
     # --- Linking Operations: Locations ---
 
