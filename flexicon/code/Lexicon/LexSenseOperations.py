@@ -3448,7 +3448,11 @@ class LexSenseOperations(BaseOperations):
             if not usage_type:
                 raise FP_ParameterError(f"Usage type '{usage_type_name}' not found")
 
-        if usage_type not in sense.UsageTypesRC:
+        target_hvo = usage_type.Hvo
+        # Membership by HVO (issue #720). UsageTypesRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and Add can duplicate-link.
+        if not any(item.Hvo == target_hvo for item in sense.UsageTypesRC):
             with self._TransactionCM("Add usage type"):
                 sense.UsageTypesRC.Add(usage_type)
 
@@ -3459,9 +3463,16 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(sense_or_hvo, "sense_or_hvo")
         self._ValidateParam(usage_type, "usage_type")
         sense = self.__GetSenseObject(sense_or_hvo)
-        if usage_type in sense.UsageTypesRC:
-            with self._TransactionCM("Remove usage type"):
-                sense.UsageTypesRC.Remove(usage_type)
+
+        # Membership by HVO (issue #720). UsageTypesRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and Remove becomes a silent no-op.
+        target_hvo = usage_type.Hvo
+        for linked in sense.UsageTypesRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove usage type"):
+                    sense.UsageTypesRC.Remove(linked)
+                break
 
     @OperationsMethod
     def GetDomainTypes(self, sense_or_hvo):
