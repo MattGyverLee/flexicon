@@ -268,12 +268,20 @@ class PhonologicalRuleOperations(BaseOperations):
         # Resolve to rule object
         rule = self.__ResolveObject(rule_or_hvo)
 
-        # Remove from phonological rules collection
+        # Remove from phonological rules collection. Membership by HVO (issue #748).
+        # PhonRulesOS can yield bare interface views while callers pass cast handles
+        # from Object(hvo); Python ``in`` then false-negates and Delete is a no-op.
         phon_data = self.project.lp.PhonologicalDataOA
         if phon_data and hasattr(phon_data, "PhonRulesOS"):
-            if rule in phon_data.PhonRulesOS:
+            target_hvo = int(rule.Hvo)
+            member_to_remove = None
+            for slot in phon_data.PhonRulesOS:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+            if member_to_remove is not None:
                 with self._TransactionCM("Delete phonological rule"):
-                    phon_data.PhonRulesOS.Remove(rule)
+                    phon_data.PhonRulesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Exists(self, name):
@@ -1330,17 +1338,26 @@ class PhonologicalRuleOperations(BaseOperations):
         constraint = self.__ResolveObject(constraint_or_hvo)
 
         phon_data = self.project.lp.PhonologicalDataOA
-        if (
-            not phon_data
-            or not hasattr(phon_data, "FeatConstraintsOS")
-            or constraint not in phon_data.FeatConstraintsOS
-        ):
+        if not phon_data or not hasattr(phon_data, "FeatConstraintsOS"):
+            raise FP_ParameterError(
+                "constraint is not present in "
+                "PhonologicalDataOA.FeatConstraintsOS"
+            )
+        # Membership by HVO (issue #748). FeatConstraintsOS can yield bare interface
+        # views while callers pass cast handles; Python ``in`` false-negates.
+        target_hvo = int(constraint.Hvo)
+        member_to_remove = None
+        for slot in phon_data.FeatConstraintsOS:
+            if int(slot.Hvo) == target_hvo:
+                member_to_remove = slot
+                break
+        if member_to_remove is None:
             raise FP_ParameterError(
                 "constraint is not present in "
                 "PhonologicalDataOA.FeatConstraintsOS"
             )
         with self._TransactionCM("Delete feature constraint"):
-            phon_data.FeatConstraintsOS.Remove(constraint)
+            phon_data.FeatConstraintsOS.Remove(member_to_remove)
 
     @OperationsMethod
     def GetConstraints(self):
