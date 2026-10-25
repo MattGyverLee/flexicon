@@ -754,7 +754,10 @@ class BaseOperations:
                 # Find where the item that should be at target_index currently is
                 current_index = target_index
                 for j in range(target_index, count):
-                    if sequence[j] == items_with_indices[target_index][1]:
+                    # issue #776: locate by HVO, not pythonnet proxy identity
+                    if self._SameLcmObjectByHvo(
+                        sequence[j], items_with_indices[target_index][1]
+                    ):
                         current_index = j
                         break
 
@@ -787,7 +790,13 @@ class BaseOperations:
             )
 
         current = [sequence[i] for i in range(count)]
-        if set(current) != set(desired_order):
+        current_hvos = self._HvoSetForObjects(current)
+        desired_hvos = self._HvoSetForObjects(desired_order)
+        if (
+            current_hvos is None
+            or desired_hvos is None
+            or current_hvos != desired_hvos
+        ):
             raise FP_ParameterError(
                 "desired_order must contain exactly the same objects as the sequence"
             )
@@ -800,7 +809,8 @@ class BaseOperations:
                 current_index = target_index
                 target_item = desired_order[target_index]
                 for j in range(target_index, count):
-                    if sequence[j] == target_item:
+                    # issue #776: locate by HVO, not pythonnet proxy identity
+                    if self._SameLcmObjectByHvo(sequence[j], target_item):
                         current_index = j
                         break
 
@@ -3189,6 +3199,16 @@ class BaseOperations:
             except Exception:
                 continue
         return -1
+
+    def _HvoSetForObjects(self, objects):
+        """Return set of int HVOs for LCM objects (issue #776 membership)."""
+        hvos = set()
+        for obj in objects:
+            hvo = self._LcmObjectHvo(obj)
+            if hvo is None:
+                return None
+            hvos.add(hvo)
+        return hvos
 
     def _FindCommonSequence(self, item1, item2):
         """
