@@ -640,18 +640,32 @@ class PossibilityListOperations(BaseOperations):
         self._ValidateParam(item_or_hvo, "item_or_hvo")
 
         item = self.__ResolveItem(item_or_hvo)
+        target_hvo = int(item.Hvo)
 
         # Get the parent or owning list
         parent = self.GetParentItem(item)
 
         with self._TransactionCM("Delete list item"):
             if parent:
-                # Remove from parent's subitems
-                parent.SubPossibilitiesOS.Remove(item)
+                # Membership by HVO (issue #754). SubPossibilitiesOS can yield bare
+                # interface views while callers pass cast handles from Object(hvo);
+                # Remove on the wrong proxy can leave the item linked.
+                member_to_remove = None
+                for slot in parent.SubPossibilitiesOS:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is not None:
+                    parent.SubPossibilitiesOS.Remove(member_to_remove)
             else:
-                # Remove from top-level list
                 owner = self.__GetListOwner(item)
-                owner.PossibilitiesOS.Remove(item)
+                member_to_remove = None
+                for slot in owner.PossibilitiesOS:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is not None:
+                    owner.PossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):
