@@ -285,19 +285,33 @@ class LocationOperations(BaseOperations):
         self._ValidateParam(location_or_hvo, "location_or_hvo")
 
         location = self.__ResolveObject(location_or_hvo)
+        target_hvo = int(location.Hvo)
 
         # Get the parent or top-level list
         parent = self.GetRegion(location)
 
         with self._TransactionCM("Delete location"):
             if parent:
-                # Remove from parent's sublocations
-                parent.SubPossibilitiesOS.Remove(location)
+                # Membership by HVO (issue #756). SubPossibilitiesOS can yield bare
+                # interface views while callers pass cast handles from Object(hvo);
+                # Remove on the wrong proxy can leave the location linked.
+                member_to_remove = None
+                for slot in parent.SubPossibilitiesOS:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is not None:
+                    parent.SubPossibilitiesOS.Remove(member_to_remove)
             else:
-                # Remove from top-level list
                 location_list = self.project.lp.LocationsOA
-                if location_list:
-                    location_list.PossibilitiesOS.Remove(location)
+                if location_list and hasattr(location_list, "PossibilitiesOS"):
+                    member_to_remove = None
+                    for slot in location_list.PossibilitiesOS:
+                        if int(slot.Hvo) == target_hvo:
+                            member_to_remove = slot
+                            break
+                    if member_to_remove is not None:
+                        location_list.PossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Find(self, name, wsHandle=None):
