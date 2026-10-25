@@ -8,4 +8,4 @@ python -m pytest tests/operations/test_issue768_variant_delete_hvo_offline.py -m
 
 **run_mode:** offline (cloud agent)
 
-**Result:** PASS (cron cloud agent 2026-10-25)
+**Result:** PASS (2 passed, cron cloud agent 2026-10-25)
