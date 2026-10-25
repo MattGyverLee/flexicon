@@ -322,12 +322,24 @@ class LexReferenceOperations(BaseOperations):
         self._ValidateParam(ref_type_or_hvo, "ref_type_or_hvo")
 
         ref_type = self.__ResolveRefType(ref_type_or_hvo)
+        target_hvo = int(ref_type.Hvo)
 
         # Remove from the references list
         ref_types_list = self.project.lexDB.ReferencesOA
-        if ref_types_list:
-            with self._TransactionCM("Delete lexical reference type"):
-                ref_types_list.PossibilitiesOS.Remove(ref_type)
+        if ref_types_list and hasattr(ref_types_list, "PossibilitiesOS"):
+            member_to_remove = None
+            for slot in ref_types_list.PossibilitiesOS:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+
+            if member_to_remove is not None:
+                with self._TransactionCM("Delete lexical reference type"):
+                    # References list membership by HVO (issue #766).
+                    # PossibilitiesOS can yield bare interface views while callers
+                    # pass cast handles from Object(hvo); Remove on the wrong proxy
+                    # can leave the relation type linked.
+                    ref_types_list.PossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def FindType(self, name, wsHandle=None):
