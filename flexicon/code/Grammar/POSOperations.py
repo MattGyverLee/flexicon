@@ -306,12 +306,24 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
 
         # Resolve to POS object
         pos = self.__ResolveObject(pos_or_hvo)
+        target_hvo = int(pos.Hvo)
 
         # Remove from the POS list
         pos_list = self.project.lp.PartsOfSpeechOA
 
-        with self._TransactionCM("Delete part of speech"):
-            pos_list.PossibilitiesOS.Remove(pos)
+        member_to_remove = None
+        if pos_list is not None and hasattr(pos_list, "PossibilitiesOS"):
+            for slot in pos_list.PossibilitiesOS:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+
+        if member_to_remove is not None:
+            with self._TransactionCM("Delete part of speech"):
+                # Top-level membership by HVO (issue #762). PossibilitiesOS can
+                # yield bare interface views while callers pass cast handles from
+                # Object(hvo); Remove on the wrong proxy can leave the POS linked.
+                pos_list.PossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Exists(self, name):
@@ -766,10 +778,22 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
 
         pos = self.__ResolveObject(pos_or_hvo)
         subcat = self.__ResolveObject(subcat_or_hvo)
+        target_hvo = int(subcat.Hvo)
 
-        # Remove from parent's SubPossibilitiesOS
-        with self._TransactionCM("Remove subcategory"):
-            pos.SubPossibilitiesOS.Remove(subcat)
+        member_to_remove = None
+        if hasattr(pos, "SubPossibilitiesOS"):
+            for slot in pos.SubPossibilitiesOS:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+
+        if member_to_remove is not None:
+            with self._TransactionCM("Remove subcategory"):
+                # Subcategory membership by HVO (issue #762). SubPossibilitiesOS
+                # can yield bare interface views while callers pass cast handles
+                # from Object(hvo); Remove on the wrong proxy can leave the
+                # subcategory linked.
+                pos.SubPossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def GetCatalogSourceId(self, pos_or_hvo):
