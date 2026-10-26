@@ -455,8 +455,21 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         feat = self.__Unwrap(self.__ResolveObject(feature_or_hvo))
         feature_system = self.project.lp.PhFeatureSystemOA
         if feature_system is not None:
+            # Membership by HVO (issue #816). FeaturesOC can yield bare
+            # interface views while callers pass cast handles from Object(hvo);
+            # Remove with the wrong proxy is a silent no-op on live LCM.
+            target_hvo = int(feat.Hvo)
+            member_to_remove = None
+            for slot in feature_system.FeaturesOC:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+            if member_to_remove is None:
+                raise FP_ParameterError(
+                    "Feature is not a member of FeaturesOC"
+                )
             with self._TransactionCM("Delete phonological feature"):
-                feature_system.FeaturesOC.Remove(feat)
+                feature_system.FeaturesOC.Remove(member_to_remove)
 
     # ========================================================================
     # WRITE METHODS - VALUE (IFsSymFeatVal under a feature)
@@ -542,8 +555,19 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
                 # non-IFsClosedFeature owner is swallowed without opening an
                 # empty named undo entry.
                 feat = IFsClosedFeature(owner)
+                # Membership by HVO (issue #816); same proxy gap as Delete().
+                target_hvo = int(val.Hvo)
+                member_to_remove = None
+                for slot in feat.ValuesOC:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is None:
+                    raise FP_ParameterError(
+                        "Value is not a member of ValuesOC"
+                    )
                 with self._TransactionCM("Delete feature value"):
-                    feat.ValuesOC.Remove(val)
+                    feat.ValuesOC.Remove(member_to_remove)
             except Exception:
                 pass
 

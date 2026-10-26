@@ -1170,14 +1170,20 @@ class WritingSystemOperations(BaseOperations):
         # Import types locally to avoid circular imports
         from SIL.LCModel.Core.KernelInterfaces import IMultiUnicode, IMultiString
 
-        if not isinstance(string_obj, (IMultiUnicode, IMultiString)):
-            raise FP_ParameterError("GetBestString: string_obj must be IMultiUnicode or IMultiString")
+        from ..Shared.string_utils import best_text
 
-        # Get the best alternative (analysis preferred, then vernacular)
-        s = string_obj.BestAnalysisVernacularAlternative.Text
+        # pythonnet exposes LCM multistrings as concrete accessor types whose
+        # Python class does not list IMultiUnicode/IMultiString as bases, so
+        # isinstance() rejects every live value (issue #640).
+        if not (
+            IMultiUnicode.IsInstanceOfType(string_obj)
+            or IMultiString.IsInstanceOfType(string_obj)
+        ):
+            raise FP_ParameterError(
+                "GetBestString: string_obj must be IMultiUnicode or IMultiString"
+            )
 
-        # Return empty string for FLEx's null marker "***"
-        return "" if s == "***" else s
+        return best_text(string_obj)
 
     # --- Private Helper Methods ---
 

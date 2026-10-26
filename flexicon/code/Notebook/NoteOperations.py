@@ -108,8 +108,20 @@ class NoteOperations(BaseOperations):
             try:
                 scr_parent = IScrScriptureNote(parent_note)
                 if insert_after and after_source is not None:
-                    idx = scr_parent.ResponsesOS.IndexOf(after_source)
-                    scr_parent.ResponsesOS.Insert(idx + 1, reply)
+                    # Index by HVO (issue #658). ResponsesOS can yield bare interface
+                    # views whose Python identity differs from after_source.
+                    resp_list = list(scr_parent.ResponsesOS)
+                    target_hvo = after_source.Hvo
+                    source_index = None
+                    for i, resp in enumerate(resp_list):
+                        if resp.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(resp_list)
+                    else:
+                        insert_index = source_index + 1
+                    scr_parent.ResponsesOS.Insert(insert_index, reply)
                 else:
                     scr_parent.ResponsesOS.Add(reply)
                 return
@@ -422,8 +434,20 @@ class NoteOperations(BaseOperations):
                 )
             elif owner is not None and hasattr(owner, "ResponsesOS"):
                 if insert_after:
-                    idx = owner.ResponsesOS.IndexOf(source)
-                    owner.ResponsesOS.Insert(idx + 1, duplicate)
+                    # Index by HVO (issue #658). ResponsesOS can yield bare interface
+                    # views whose Python identity differs from source.
+                    resp_list = list(owner.ResponsesOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, resp in enumerate(resp_list):
+                        if resp.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(resp_list)
+                    else:
+                        insert_index = source_index + 1
+                    owner.ResponsesOS.Insert(insert_index, duplicate)
                 else:
                     owner.ResponsesOS.Add(duplicate)
             elif owner is not None and hasattr(owner, "AnnotationsOC"):

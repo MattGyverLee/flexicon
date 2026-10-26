@@ -279,8 +279,20 @@ class ParagraphOperations(BaseOperations):
         owner = self._GetTypedOwner(para_obj)
         if owner is None:
             raise FP_ParameterError("Paragraph has no valid owner or cannot be removed")
+        # Membership by HVO (issue #788). ParagraphsOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # a non-member proxy can no-op and Delete retains the paragraph.
+        target_hvo = int(para_obj.Hvo)
+        member_to_remove = None
+        for para in owner.ParagraphsOS:
+            if int(para.Hvo) == target_hvo:
+                member_to_remove = para
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError("Paragraph does not exist on the owning text")
+
         with self._TransactionCM("Delete paragraph"):
-            owner.ParagraphsOS.Remove(para_obj)
+            owner.ParagraphsOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):

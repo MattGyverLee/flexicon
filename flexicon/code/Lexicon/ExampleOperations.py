@@ -261,9 +261,25 @@ class ExampleOperations(BaseOperations):
         # recover the concrete ILexSense first. Same shape as #160 / #98.
         # (issue #162)
         sense = self._GetTypedOwner(example)
-        if sense is not None and hasattr(sense, "ExamplesOS"):
-            with self._TransactionCM("Delete example"):
-                sense.ExamplesOS.Remove(example)
+        if sense is None or not hasattr(sense, "ExamplesOS"):
+            raise FP_ParameterError("Example has no owning sense with ExamplesOS")
+
+        # Membership by HVO (issue #810). ExamplesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # the wrong proxy is a silent no-op on live LCM (cf. #552 Duplicate).
+        target_hvo = int(example.Hvo)
+        member_to_remove = None
+        for slot in sense.ExamplesOS:
+            if int(slot.Hvo) == target_hvo:
+                member_to_remove = slot
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError(
+                "Example is not a member of ExamplesOS"
+            )
+
+        with self._TransactionCM("Delete example"):
+            sense.ExamplesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
@@ -706,18 +722,31 @@ class ExampleOperations(BaseOperations):
         # Convert to list if it's an iterator
         example_list = list(example_list)
 
-        # Resolve all to objects
-        examples = [self.__GetExampleObject(ex) for ex in example_list]
+        # Resolve all to objects (validates each item exists).
+        ordered_hvos = []
+        seen_hvo = set()
+        for ex in example_list:
+            example = self.__GetExampleObject(ex)
+            hvo = example.Hvo
+            if hvo in seen_hvo:
+                raise FP_ParameterError("Duplicate example in example_list")
+            seen_hvo.add(hvo)
+            ordered_hvos.append(hvo)
 
-        # Verify all examples belong to this sense
-        current_examples = set(sense.ExamplesOS)
-        new_examples = set(examples)
+        # Partition by HVO (issue #694). ExamplesOS can yield bare interface views
+        # while callers pass cast handles from Object(hvo); Python set membership
+        # on proxies then rejects valid reorder lists.
+        current_hvos = {ex.Hvo for ex in sense.ExamplesOS}
+        if set(ordered_hvos) != current_hvos:
+            raise FP_ParameterError(
+                "Example list must contain exactly the same examples as the sense"
+            )
 
-        if current_examples != new_examples:
-            raise FP_ParameterError("Example list must contain exactly the same examples as the sense")
+        example_by_hvo = {ex.Hvo: ex for ex in sense.ExamplesOS}
+        desired_order = [example_by_hvo[hvo] for hvo in ordered_hvos]
 
         with self._TransactionCM("Reorder examples"):
-            self._ApplySequenceOrder(sense.ExamplesOS, examples)
+            self._ApplySequenceOrder(sense.ExamplesOS, desired_order)
 
     @OperationsMethod
     def GetExample(self, example_or_hvo, wsHandle=None):
@@ -1456,7 +1485,11 @@ class ExampleOperations(BaseOperations):
         if not hasattr(from_example, "MediaFilesOS"):
             raise FP_ParameterError("Source example does not support media files")
 
-        if media not in from_example.MediaFilesOS:
+        # Membership by HVO (issue #684). MediaFilesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and MoveMediaFile raises spuriously.
+        target_hvo = media.Hvo
+        if not any(f.Hvo == target_hvo for f in from_example.MediaFilesOS):
             raise FP_ParameterError("Media file not found in source example's media collection")
 
         # Verify destination supports media
@@ -1654,15 +1687,12 @@ class ExampleOperations(BaseOperations):
         self._ValidateParam(publication, "publication")
 
         example = self.__GetExampleObject(example_or_hvo)
+        publication = self.__ResolvePublication(publication)
 
-        # Find publication object if string provided
-        if isinstance(publication, str):
-            pub_obj = self.project.Publications.Find(publication)
-            if not pub_obj:
-                raise FP_ParameterError(f"Publication '{publication}' not found")
-            publication = pub_obj
-
-        if publication not in example.DoNotPublishInRC:
+        target_hvo = publication.Hvo
+        # Membership by HVO (issue #732). DoNotPublishInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        if not any(pub.Hvo == target_hvo for pub in example.DoNotPublishInRC):
             with self._TransactionCM("Add example publication exclusion"):
                 example.DoNotPublishInRC.Add(publication)
 
@@ -1685,19 +1715,27 @@ class ExampleOperations(BaseOperations):
         self._ValidateParam(publication, "publication")
 
         example = self.__GetExampleObject(example_or_hvo)
+        publication = self.__ResolvePublication(publication)
 
-        # Find publication object if string provided
-        if isinstance(publication, str):
-            pub_obj = self.project.Publications.Find(publication)
-            if not pub_obj:
-                raise FP_ParameterError(f"Publication '{publication}' not found")
-            publication = pub_obj
-
-        if publication in example.DoNotPublishInRC:
-            with self._TransactionCM("Remove example publication exclusion"):
-                example.DoNotPublishInRC.Remove(publication)
+        # Membership by HVO (issue #732). DoNotPublishInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        target_hvo = publication.Hvo
+        for linked in example.DoNotPublishInRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove example publication exclusion"):
+                    example.DoNotPublishInRC.Remove(linked)
+                break
 
     # --- Private Helper Methods ---
+
+    def __ResolvePublication(self, publication):
+        """Resolve a publication name or object to an ICmPossibility."""
+        if isinstance(publication, str):
+            pub_obj = self.project.Publications.Find(publication)
+            if pub_obj is None:
+                raise FP_ParameterError(f"Publication '{publication}' not found")
+            return pub_obj
+        return publication
 
     def __GetSenseObject(self, sense_or_hvo):
         """
