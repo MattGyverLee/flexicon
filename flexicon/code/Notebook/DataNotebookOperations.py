@@ -2681,8 +2681,20 @@ class DataNotebookOperations(BaseOperations):
             if parent_record is not None and hasattr(parent_record, "SubRecordsOS"):
                 # Parent is another notebook record (sub-record)
                 if insert_after:
-                    source_index = parent_record.SubRecordsOS.IndexOf(source)
-                    parent_record.SubRecordsOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #650). SubRecordsOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    sub_list = list(parent_record.SubRecordsOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, sub in enumerate(sub_list):
+                        if sub.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(sub_list)
+                    else:
+                        insert_index = source_index + 1
+                    parent_record.SubRecordsOS.Insert(insert_index, duplicate)
                 else:
                     parent_record.SubRecordsOS.Add(duplicate)
             else:
