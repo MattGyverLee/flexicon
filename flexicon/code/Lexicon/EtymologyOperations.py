@@ -289,8 +289,20 @@ class EtymologyOperations(BaseOperations):
         if owner is None:
             raise FP_ParameterError("Etymology has no owning entry")
 
+        # Membership by HVO (issue #806). EtymologyOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # the wrong proxy is a silent no-op on live LCM (cf. #642 Duplicate).
+        target_hvo = int(etymology.Hvo)
+        member_to_remove = None
+        for slot in owner.EtymologyOS:
+            if int(slot.Hvo) == target_hvo:
+                member_to_remove = slot
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError("Etymology is not a member of EtymologyOS")
+
         with self._TransactionCM("Delete etymology"):
-            owner.EtymologyOS.Remove(etymology)
+            owner.EtymologyOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
