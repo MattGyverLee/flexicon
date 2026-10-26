@@ -1782,8 +1782,20 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                 owner = ICmAnthroItem(raw_owner)
                 # Parent is another anthropology item
                 if insert_after:
-                    source_index = owner.SubPossibilitiesOS.IndexOf(source)
-                    owner.SubPossibilitiesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #660). SubPossibilitiesOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    sub_list = list(owner.SubPossibilitiesOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, sub_item in enumerate(sub_list):
+                        if sub_item.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(sub_list)
+                    else:
+                        insert_index = source_index + 1
+                    owner.SubPossibilitiesOS.Insert(insert_index, duplicate)
                 else:
                     owner.SubPossibilitiesOS.Add(duplicate)
             else:
@@ -1791,8 +1803,20 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                 anthro_list = self.project.lp.AnthroListOA
                 if anthro_list is not None:
                     if insert_after:
-                        source_index = anthro_list.PossibilitiesOS.IndexOf(source)
-                        anthro_list.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                        # Index by HVO (issue #660). PossibilitiesOS can yield bare
+                        # interface views whose Python identity differs from source.
+                        top_list = list(anthro_list.PossibilitiesOS)
+                        target_hvo = source.Hvo
+                        source_index = None
+                        for i, item in enumerate(top_list):
+                            if item.Hvo == target_hvo:
+                                source_index = i
+                                break
+                        if source_index is None:
+                            insert_index = len(top_list)
+                        else:
+                            insert_index = source_index + 1
+                        anthro_list.PossibilitiesOS.Insert(insert_index, duplicate)
                     else:
                         anthro_list.PossibilitiesOS.Add(duplicate)
 
