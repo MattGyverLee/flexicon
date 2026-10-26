@@ -396,9 +396,13 @@ class AllomorphOperations(BaseOperations):
         if owner is None:
             raise FP_ParameterError("Allomorph has no owning entry")
 
+        target_hvo = int(allomorph.Hvo)
+        lexeme = owner.LexemeFormOA if hasattr(owner, "LexemeFormOA") else None
+        is_lexeme = lexeme is not None and int(lexeme.Hvo) == target_hvo
+
         # Check if this is the lexeme form or an alternate
         with self._TransactionCM("Delete allomorph"):
-            if hasattr(owner, "LexemeFormOA") and owner.LexemeFormOA == allomorph:
+            if is_lexeme:
                 # Deleting the lexeme form
                 # If there are alternates, promote the first one to lexeme
                 if owner.AlternateFormsOS.Count > 0:
@@ -409,8 +413,19 @@ class AllomorphOperations(BaseOperations):
                     # No alternates, just clear the lexeme form
                     owner.LexemeFormOA = None
             elif hasattr(owner, "AlternateFormsOS"):
-                # Deleting an alternate form
-                owner.AlternateFormsOS.Remove(allomorph)
+                # Membership by HVO (issue #812). AlternateFormsOS can yield bare
+                # interface views while callers pass cast handles from Object(hvo);
+                # Remove with the wrong proxy is a silent no-op on live LCM (cf. #646).
+                member_to_remove = None
+                for slot in owner.AlternateFormsOS:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is None:
+                    raise FP_ParameterError(
+                        "Allomorph is not a member of AlternateFormsOS"
+                    )
+                owner.AlternateFormsOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
