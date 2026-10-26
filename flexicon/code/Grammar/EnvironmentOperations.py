@@ -231,7 +231,20 @@ class EnvironmentOperations(BaseOperations):
         phon_data = self.project.lp.PhonologicalDataOA
 
         with self._TransactionCM("Delete environment"):
-            phon_data.EnvironmentsOS.Remove(env)
+            # Membership by HVO (issue #794). EnvironmentsOS can yield bare
+            # interface views while callers pass cast handles from Object(hvo);
+            # Remove with the wrong proxy is a silent no-op on live LCM.
+            target_hvo = int(env.Hvo)
+            member_to_remove = None
+            for slot in phon_data.EnvironmentsOS:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+            if member_to_remove is None:
+                raise FP_ParameterError(
+                    "Environment is not a member of EnvironmentsOS"
+                )
+            phon_data.EnvironmentsOS.Remove(member_to_remove)
 
     @OperationsMethod
     def GetName(self, env_or_hvo, wsHandle=None):
