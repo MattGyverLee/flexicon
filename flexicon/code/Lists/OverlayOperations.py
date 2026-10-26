@@ -238,9 +238,18 @@ class OverlayOperations(PossibilityItemOperations):
         self._ValidateParam(overlay_or_hvo, "overlay_or_hvo")
 
         overlay = self.__ResolveOverlay(overlay_or_hvo)
-        if overlay in self.project.lp.OverlaysOC:
+        # Membership by HVO (issue #772). OverlaysOC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and Delete becomes a silent no-op.
+        target_hvo = int(overlay.Hvo)
+        member_to_remove = None
+        for item in self.project.lp.OverlaysOC:
+            if int(item.Hvo) == target_hvo:
+                member_to_remove = item
+                break
+        if member_to_remove is not None:
             with self._TransactionCM("Delete Overlay"):
-                self.project.lp.OverlaysOC.Remove(overlay)
+                self.project.lp.OverlaysOC.Remove(member_to_remove)
 
     @OperationsMethod
     def Find(self, name):
