@@ -742,18 +742,22 @@ class MorphRuleOperations(BaseOperations):
         if class_name in ("MoEndoCompound", "MoExoCompound"):
             if morph_data is not None:
                 with self._TransactionCM("Delete compound rule"):
-                    morph_data.CompoundRulesOS.Remove(rule)
+                    # Membership by HVO (issue #802). CompoundRulesOS can yield
+                    # bare interface views while callers pass cast handles.
+                    self.__RemoveMemberByHvo(morph_data.CompoundRulesOS, rule)
         elif class_name == "MoInflAffixTemplate":
             # AffixTemplatesOS lives on IPartOfSpeech, not on the base
             # ICmObject returned from .Owner / _GetObject(Hvo). (issue #467)
             owner = self._GetTypedOwner(rule)
             if owner is not None and hasattr(owner, "AffixTemplatesOS"):
                 with self._TransactionCM("Delete affix template"):
-                    owner.AffixTemplatesOS.Remove(rule)
+                    self.__RemoveMemberByHvo(owner.AffixTemplatesOS, rule)
         elif class_name in ("MoAdhocProhibGr", "MoAdhocProhibMorph", "MoAdhocProhibAllomorph"):
             if morph_data is not None:
                 with self._TransactionCM("Delete ad hoc prohibition"):
-                    morph_data.AdhocCoProhibitionsOC.Remove(rule)
+                    self.__RemoveMemberByHvo(
+                        morph_data.AdhocCoProhibitionsOC, rule
+                    )
 
     # ========== PROPERTIES ==========
 
@@ -1125,6 +1129,17 @@ class MorphRuleOperations(BaseOperations):
                             dst_slots.Add(slot)
 
             return duplicate
+
+    def __RemoveMemberByHvo(self, collection, item):
+        """Remove ``item`` from ``collection`` using HVO membership (issue #802)."""
+        target_hvo = int(item.Hvo)
+        member_to_remove = None
+        for slot in collection:
+            if int(slot.Hvo) == target_hvo:
+                member_to_remove = slot
+                break
+        if member_to_remove is not None:
+            collection.Remove(member_to_remove)
 
     def __DuplicateCompoundRule(self, source, class_name, insert_after):
         """Create and insert a duplicate compound rule."""
