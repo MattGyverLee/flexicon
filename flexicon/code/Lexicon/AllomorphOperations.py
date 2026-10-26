@@ -1561,11 +1561,18 @@ class AllomorphOperations(BaseOperations):
         allomorph = self.__GetAllomorphObject(allomorph_or_hvo)
         env = self.__GetEnvironmentObject(env_or_hvo)
 
-        # Membership test stays outside the bracket so a redundant remove is a
-        # true no-op rather than an empty named undo entry (D5).
-        if env in allomorph.PhoneEnvRC:
+        # issue #740: PhoneEnvRC iteration can yield bare interface views;
+        # locate the RC member by Hvo rather than Python ``in`` / identity.
+        target_hvo = int(env.Hvo)
+        member_to_remove = None
+        for linked in allomorph.PhoneEnvRC:
+            if int(linked.Hvo) == target_hvo:
+                member_to_remove = linked
+                break
+
+        if member_to_remove is not None:
             with self._TransactionCM("Remove phonological environment"):
-                allomorph.PhoneEnvRC.Remove(env)
+                allomorph.PhoneEnvRC.Remove(member_to_remove)
 
     # --- Inflection class membership (issue #581) ---
 
@@ -1669,9 +1676,10 @@ class AllomorphOperations(BaseOperations):
                 f"{getattr(infl_class, 'ClassName', type(infl_class).__name__)}"
             )
 
-        # Membership test stays outside the bracket so a redundant add is a
-        # true no-op rather than an empty named undo entry (D5) -- see Notes.
-        if infl_class not in allomorph.InflectionClassesRC:
+        # issue #740: InflectionClassesRC can yield bare interface views; compare
+        # Hvo rather than Python ``in`` on Add (D5 no-op stays outside bracket).
+        target_hvo = int(infl_class.Hvo)
+        if not any(int(linked.Hvo) == target_hvo for linked in allomorph.InflectionClassesRC):
             with self._TransactionCM("Add inflection class"):
                 allomorph.InflectionClassesRC.Add(infl_class)
 
@@ -1727,11 +1735,17 @@ class AllomorphOperations(BaseOperations):
                 f"{getattr(infl_class, 'ClassName', type(infl_class).__name__)}"
             )
 
-        # Membership test stays outside the bracket so a redundant remove is a
-        # true no-op rather than an empty named undo entry (D5).
-        if infl_class in allomorph.InflectionClassesRC:
+        # issue #740: locate InflectionClassesRC member by Hvo, then Remove(linked).
+        target_hvo = int(infl_class.Hvo)
+        member_to_remove = None
+        for linked in allomorph.InflectionClassesRC:
+            if int(linked.Hvo) == target_hvo:
+                member_to_remove = linked
+                break
+
+        if member_to_remove is not None:
             with self._TransactionCM("Remove inflection class"):
-                allomorph.InflectionClassesRC.Remove(infl_class)
+                allomorph.InflectionClassesRC.Remove(member_to_remove)
 
     # --- Required features (MsEnvFeaturesOA, issue #581) ---
 
@@ -2359,13 +2373,11 @@ class AllomorphOperations(BaseOperations):
         (unlike ``__GetAllomorphObject``'s two-branch
         ``IMoStemAllomorph``/``IMoAffixAllomorph`` dispatch).
 
-        **Identity hazard.** ``RemovePhoneEnv`` does
-        ``if env in allomorph.PhoneEnvRC`` before ``.Remove(env)``.
-        Casting mints a NEW pythonnet wrapper over the same CLR object,
-        so that membership test now depends on .NET equality of a
-        re-wrapped object rather than the original bare one. Re-verified
-        LIVE after this cast landed (cycle2-programmer.md, P9): both of
-        this resolver's existing gate tests stay green and unchanged.
+        **Identity hazard (issue #740).** ``RemovePhoneEnv`` now locates
+        the ``PhoneEnvRC`` member by ``Hvo`` before ``.Remove``; callers
+        may pass a cast handle from this resolver without breaking detach.
+        Re-verified LIVE after the cast landed (cycle2-programmer.md, P9):
+        both of this resolver's existing gate tests stay green and unchanged.
 
         Any ``ClassName`` other than ``"PhEnvironment"`` (or a non-LCM
         input with no ``ClassName``) is returned UNCHANGED -- this
