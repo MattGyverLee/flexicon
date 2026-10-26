@@ -507,7 +507,12 @@ class ReversalIndexEntryOperations(BaseOperations):
         # Add sense if not already linked. The membership test stays OUTSIDE
         # the transaction so an already-linked sense is a true no-op and does
         # not open an empty undo task.
-        if sense not in entry.SensesRS:
+        # Membership by HVO (issue #716). SensesRS can yield bare interface views
+        # while callers pass cast handles from Object(hvo); Python ``in`` then
+        # false-negates and Add can duplicate-link.
+        target_hvo = sense.Hvo
+        already_linked = any(linked.Hvo == target_hvo for linked in entry.SensesRS)
+        if not already_linked:
             with self._TransactionCM("Link sense to reversal entry"):
                 entry.SensesRS.Add(sense)
 
@@ -547,9 +552,15 @@ class ReversalIndexEntryOperations(BaseOperations):
         # Remove sense if linked. The membership test stays OUTSIDE the
         # transaction so an unlinked sense is a true no-op and does not open
         # an empty undo task.
-        if sense in entry.SensesRS:
-            with self._TransactionCM("Unlink sense from reversal entry"):
-                entry.SensesRS.Remove(sense)
+        # Membership by HVO (issue #716). SensesRS can yield bare interface views
+        # while callers pass cast handles from Object(hvo); Python ``in`` then
+        # false-negates and Remove becomes a silent no-op.
+        target_hvo = sense.Hvo
+        for linked in entry.SensesRS:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Unlink sense from reversal entry"):
+                    entry.SensesRS.Remove(linked)
+                break
 
     # --- Hierarchical Structure ---
 
