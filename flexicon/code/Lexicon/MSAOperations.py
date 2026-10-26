@@ -1213,10 +1213,10 @@ class MSAOperations(BaseOperations):
         rc = self.__ExceptionFeatureRC(msa, side)
         poss = self.__ResolveExceptionFeature(feature_or_hvo)
 
-        # Membership test stays outside the transaction so a redundant add
-        # is a true no-op rather than an empty named undo entry (D5 --
-        # same rationale as AllomorphOperations.RemovePhoneEnv).
-        if poss not in rc:
+        # Membership by HVO (issue #770). ProdRestrictRC and siblings can yield
+        # bare interface views; Python ``in`` false-negates against cast handles.
+        target_hvo = int(poss.Hvo)
+        if not any(int(item.Hvo) == target_hvo for item in rc):
             with self._TransactionCM("Add exception feature"):
                 rc.Add(poss)
 
@@ -1273,11 +1273,16 @@ class MSAOperations(BaseOperations):
         rc = self.__ExceptionFeatureRC(msa, side)
         poss = self.__ResolveExceptionFeature(feature_or_hvo)
 
-        # Membership test stays outside the bracket so a redundant remove
-        # is a true no-op rather than an empty named undo entry (D5).
-        if poss in rc:
+        # Membership by HVO (issue #770). Locate the RC member to pass to Remove.
+        target_hvo = int(poss.Hvo)
+        member_to_remove = None
+        for linked in rc:
+            if int(linked.Hvo) == target_hvo:
+                member_to_remove = linked
+                break
+        if member_to_remove is not None:
             with self._TransactionCM("Remove exception feature"):
-                rc.Remove(poss)
+                rc.Remove(member_to_remove)
 
     # ------------------------------------------------------------------
     # MSA feature-structure getters (issue #544 -- reverse of MakeFeatStruc)
