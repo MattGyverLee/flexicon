@@ -2499,7 +2499,10 @@ class LexEntryOperations(BaseOperations):
                 raise FP_ParameterError(f"Publication '{publication}' not found")
             publication = pub_obj
 
-        if publication not in entry.DoNotShowMainEntryInRC:
+        target_hvo = publication.Hvo
+        # Membership by HVO (issue #730). DoNotShowMainEntryInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        if not any(pub.Hvo == target_hvo for pub in entry.DoNotShowMainEntryInRC):
             with self._TransactionCM("Add main-entry display exclusion"):
                 entry.DoNotShowMainEntryInRC.Add(publication)
 
@@ -2525,9 +2528,14 @@ class LexEntryOperations(BaseOperations):
                 raise FP_ParameterError(f"Publication '{publication}' not found")
             publication = pub_obj
 
-        if publication in entry.DoNotShowMainEntryInRC:
-            with self._TransactionCM("Remove main-entry display exclusion"):
-                entry.DoNotShowMainEntryInRC.Remove(publication)
+        # Membership by HVO (issue #730). DoNotShowMainEntryInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        target_hvo = publication.Hvo
+        for linked in entry.DoNotShowMainEntryInRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove main-entry display exclusion"):
+                    entry.DoNotShowMainEntryInRC.Remove(linked)
+                break
 
     # --- Private Helper Methods ---
 
