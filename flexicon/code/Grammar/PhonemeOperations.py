@@ -941,12 +941,20 @@ class PhonemeOperations(BaseOperations):
         phoneme = self.__GetPhonemeObject(phoneme_or_hvo)
         code = self.__GetCodeObject(code_or_hvo)
 
-        # Check if code is in the phoneme's codes
-        if code not in phoneme.CodesOS:
+        # Membership by HVO (issue #746). CodesOS can yield bare interface views
+        # while callers pass cast handles from Object(hvo); Python ``in`` then
+        # false-negates and RemoveCode raises even when the code is on the phoneme.
+        target_hvo = int(code.Hvo)
+        member_to_remove = None
+        for slot in phoneme.CodesOS:
+            if int(slot.Hvo) == target_hvo:
+                member_to_remove = slot
+                break
+        if member_to_remove is None:
             raise FP_ParameterError("Code not found in phoneme's code list")
 
         with self._TransactionCM("Remove phoneme code"):
-            phoneme.CodesOS.Remove(code)
+            phoneme.CodesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def FindCode(self, phoneme_or_hvo, representation, wsHandle=None):
