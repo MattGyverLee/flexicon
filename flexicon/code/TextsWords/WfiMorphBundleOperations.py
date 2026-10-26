@@ -252,8 +252,20 @@ class WfiMorphBundleOperations(BaseOperations):
         owner = self._GetTypedOwner(bundle)
         if owner is None:
             raise FP_ParameterError("Morph bundle has no owning analysis")
+        # Membership by HVO (issue #786). MorphBundlesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # a non-member proxy can no-op and Delete retains the bundle.
+        target_hvo = int(bundle.Hvo)
+        member_to_remove = None
+        for mb in owner.MorphBundlesOS:
+            if int(mb.Hvo) == target_hvo:
+                member_to_remove = mb
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError("Morph bundle does not exist on the analysis")
+
         with self._TransactionCM("Delete morph bundle"):
-            owner.MorphBundlesOS.Remove(bundle)
+            owner.MorphBundlesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
@@ -534,15 +546,33 @@ class WfiMorphBundleOperations(BaseOperations):
 
         analysis = self.__GetAnalysisObject(analysis_or_hvo)
 
-        # Validate that all bundles belong to this analysis
-        current_bundles = set(analysis.MorphBundlesOS)
-        new_bundles = set(bundle_list)
+        bundle_list = list(bundle_list)
 
-        if current_bundles != new_bundles:
-            raise FP_ParameterError("Bundle list must contain exactly the same bundles as the analysis")
+        # Resolve all to objects (validates each item exists).
+        ordered_hvos = []
+        seen_hvo = set()
+        for bundle in bundle_list:
+            bundle_obj = self.__GetBundleObject(bundle)
+            hvo = bundle_obj.Hvo
+            if hvo in seen_hvo:
+                raise FP_ParameterError("Duplicate morph bundle in bundle_list")
+            seen_hvo.add(hvo)
+            ordered_hvos.append(hvo)
+
+        # Partition by HVO (issue #698). MorphBundlesOS can yield bare interface views
+        # while callers pass cast handles from Object(hvo); Python set membership
+        # on proxies then rejects valid reorder lists.
+        current_hvos = {b.Hvo for b in analysis.MorphBundlesOS}
+        if set(ordered_hvos) != current_hvos:
+            raise FP_ParameterError(
+                "Bundle list must contain exactly the same bundles as the analysis"
+            )
+
+        bundle_by_hvo = {b.Hvo: b for b in analysis.MorphBundlesOS}
+        desired_order = [bundle_by_hvo[hvo] for hvo in ordered_hvos]
 
         with self._TransactionCM("Reorder morph bundles"):
-            self._ApplySequenceOrder(analysis.MorphBundlesOS, list(bundle_list))
+            self._ApplySequenceOrder(analysis.MorphBundlesOS, desired_order)
 
     # ==================== FORM & GLOSS OPERATIONS ====================
 

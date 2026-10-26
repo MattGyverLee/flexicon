@@ -358,7 +358,20 @@ class NaturalClassOperations(BaseOperations):
         phon_data = self.project.lp.PhonologicalDataOA
 
         with self._TransactionCM("Delete natural class"):
-            phon_data.NaturalClassesOS.Remove(nc)
+            # Membership by HVO (issue #796). NaturalClassesOS can yield bare
+            # interface views while callers pass cast handles from Object(hvo);
+            # Remove with the wrong proxy is a silent no-op on live LCM.
+            target_hvo = int(nc.Hvo)
+            member_to_remove = None
+            for slot in phon_data.NaturalClassesOS:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+            if member_to_remove is None:
+                raise FP_ParameterError(
+                    "Natural class is not a member of NaturalClassesOS"
+                )
+            phon_data.NaturalClassesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
@@ -735,8 +748,14 @@ class NaturalClassOperations(BaseOperations):
                 "for feature-based classes use SetFeatures or CreateFeatureBased."
             )
 
-        # Add the phoneme if not already present
-        if phoneme not in nc.SegmentsRC:
+        # Membership by HVO (issue #706). SegmentsRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and AddPhoneme inserts duplicates.
+        target_hvo = int(phoneme.Hvo)
+        already_present = any(
+            int(seg.Hvo) == target_hvo for seg in nc.SegmentsRC
+        )
+        if not already_present:
             with self._TransactionCM("Add phoneme to natural class"):
                 nc.SegmentsRC.Add(phoneme)
 
@@ -792,13 +811,19 @@ class NaturalClassOperations(BaseOperations):
                 "Use IsFeatureBased() or GetType() to branch before RemovePhoneme."
             )
 
-        # Check if phoneme is in the collection
-        if phoneme not in nc.SegmentsRC:
+        # Membership by HVO (issue #706). Locate the SegmentsRC member to pass
+        # to Remove -- the caller's handle identity may differ from the RC slot.
+        target_hvo = int(phoneme.Hvo)
+        member_to_remove = None
+        for seg in nc.SegmentsRC:
+            if int(seg.Hvo) == target_hvo:
+                member_to_remove = seg
+                break
+        if member_to_remove is None:
             raise FP_ParameterError("Phoneme not found in natural class")
 
-        # Remove the phoneme
         with self._TransactionCM("Remove phoneme from natural class"):
-            nc.SegmentsRC.Remove(phoneme)
+            nc.SegmentsRC.Remove(member_to_remove)
 
     # ========== FEATURE-BASED NATURAL CLASSES ==========
 

@@ -481,11 +481,22 @@ class DiscourseOperations(BaseOperations):
         # stays OUTSIDE the transaction so an unremovable chart raises without
         # opening an empty undo task.
         owner = self._GetTypedOwner(chart_obj)
-        if owner and hasattr(owner, "ChartsOC"):
-            with self._TransactionCM("Delete chart"):
-                owner.ChartsOC.Remove(chart_obj)
-        else:
+        if owner is None or not hasattr(owner, "ChartsOC"):
             raise FP_ParameterError("Chart has no valid owner or cannot be removed")
+        # Membership by HVO (issue #792). ChartsOC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # a non-member proxy can no-op and DeleteChart retains the chart.
+        target_hvo = int(chart_obj.Hvo)
+        member_to_remove = None
+        for chart in owner.ChartsOC:
+            if int(chart.Hvo) == target_hvo:
+                member_to_remove = chart
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError("Chart does not exist on the owning text")
+
+        with self._TransactionCM("Delete chart"):
+            owner.ChartsOC.Remove(member_to_remove)
 
     @OperationsMethod
     def GetChartName(self, chart_or_hvo, wsHandle=None):
@@ -841,11 +852,22 @@ class DiscourseOperations(BaseOperations):
         # check stays OUTSIDE the transaction so an unremovable row raises
         # without opening an empty undo task.
         owner = self._GetTypedOwner(row_obj)
-        if owner and hasattr(owner, "RowsOS"):
-            with self._TransactionCM("Delete chart row"):
-                owner.RowsOS.Remove(row_obj)
-        else:
+        if owner is None or not hasattr(owner, "RowsOS"):
             raise FP_ParameterError("Row has no valid owner or cannot be removed")
+        # Membership by HVO (issue #792). RowsOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # a non-member proxy can no-op and DeleteRow retains the row.
+        target_hvo = int(row_obj.Hvo)
+        member_to_remove = None
+        for row in owner.RowsOS:
+            if int(row.Hvo) == target_hvo:
+                member_to_remove = row
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError("Row does not exist on the owning chart")
+
+        with self._TransactionCM("Delete chart row"):
+            owner.RowsOS.Remove(member_to_remove)
 
     # --- Chart Content Operations ---
 
