@@ -1165,16 +1165,40 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             if parent:
                 # Has a parent - add to parent's subdomains
                 if insert_after:
-                    source_index = parent.SubPossibilitiesOS.IndexOf(source)
-                    parent.SubPossibilitiesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #656). SubPossibilitiesOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    sub_list = list(parent.SubPossibilitiesOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, subdomain in enumerate(sub_list):
+                        if subdomain.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(sub_list)
+                    else:
+                        insert_index = source_index + 1
+                    parent.SubPossibilitiesOS.Insert(insert_index, duplicate)
                 else:
                     parent.SubPossibilitiesOS.Add(duplicate)
             else:
                 # Top-level domain - add to main list
                 domain_list = self.project.lp.SemanticDomainListOA
                 if insert_after:
-                    source_index = domain_list.PossibilitiesOS.IndexOf(source)
-                    domain_list.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #656). PossibilitiesOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    domain_seq = list(domain_list.PossibilitiesOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, domain in enumerate(domain_seq):
+                        if domain.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(domain_seq)
+                    else:
+                        insert_index = source_index + 1
+                    domain_list.PossibilitiesOS.Insert(insert_index, duplicate)
                 else:
                     domain_list.PossibilitiesOS.Add(duplicate)
 
