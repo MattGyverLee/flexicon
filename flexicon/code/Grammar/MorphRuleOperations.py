@@ -670,10 +670,33 @@ class MorphRuleOperations(BaseOperations):
         if templates is None:
             raise FP_ParameterError("pos has no AffixTemplatesOS")
 
-        desired = [self.__ResolveObject(t) for t in ordered_templates]
+        ordered_templates = list(ordered_templates)
+
+        # Resolve all to objects (validates each item exists).
+        ordered_hvos = []
+        seen_hvo = set()
+        for item in ordered_templates:
+            template = self.__ResolveObject(item)
+            hvo = template.Hvo
+            if hvo in seen_hvo:
+                raise FP_ParameterError("Duplicate affix template in ordered_templates")
+            seen_hvo.add(hvo)
+            ordered_hvos.append(hvo)
+
+        # Partition by HVO (issue #704). AffixTemplatesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python set
+        # membership on proxies then rejects valid reorder lists.
+        current_hvos = {t.Hvo for t in templates}
+        if set(ordered_hvos) != current_hvos:
+            raise FP_ParameterError(
+                "ordered_templates must contain exactly the same templates as the POS"
+            )
+
+        template_by_hvo = {t.Hvo: t for t in templates}
+        desired_order = [template_by_hvo[hvo] for hvo in ordered_hvos]
 
         with self._TransactionCM("Reorder affix templates"):
-            self._ApplySequenceOrder(templates, desired)
+            self._ApplySequenceOrder(templates, desired_order)
         return pos
 
     # ========== DELETION ==========
