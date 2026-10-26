@@ -386,7 +386,11 @@ class ConstChartClauseMarkerOperations(BaseOperations):
         # membership test stay OUTSIDE the transaction so an already-dependent
         # clause is a true no-op and does not open an empty undo task.
         if hasattr(marker, "DependentClausesRS"):
-            if clause_marker not in marker.DependentClausesRS:
+            target_hvo = clause_marker.Hvo
+            # Membership by HVO (issue #752). DependentClausesRS can yield bare
+            # interface views while callers pass cast handles from Object(hvo);
+            # Python ``in`` then false-negates and Add can duplicate-link.
+            if not any(dep.Hvo == target_hvo for dep in marker.DependentClausesRS):
                 with self._TransactionCM("Add dependent clause"):
                     marker.DependentClausesRS.Add(clause_marker)
 

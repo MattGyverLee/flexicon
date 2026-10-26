@@ -237,11 +237,21 @@ class PossibilityItemOperations(BaseOperations):
 
         item = self.__ResolveObject(item_or_hvo)
 
-        # Remove from list
+        # Remove from list. Membership by HVO (issue #750).
+        # PossibilitiesOS can yield bare interface views while callers pass cast
+        # handles from Object(hvo); Python ``in`` then false-negates and Delete
+        # is a silent no-op.
         list_obj = self._get_list_object()
-        if list_obj and item in list_obj.PossibilitiesOS:
-            with self._TransactionCM(f"Delete {self._get_item_class_name()}"):
-                list_obj.PossibilitiesOS.Remove(item)
+        if list_obj and hasattr(list_obj, "PossibilitiesOS"):
+            target_hvo = int(item.Hvo)
+            member_to_remove = None
+            for slot in list_obj.PossibilitiesOS:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+            if member_to_remove is not None:
+                with self._TransactionCM(f"Delete {self._get_item_class_name()}"):
+                    list_obj.PossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
@@ -281,9 +291,20 @@ class PossibilityItemOperations(BaseOperations):
 
             # ADD TO PARENT FIRST before copying properties (CRITICAL)
             if insert_after:
-                # Insert after source item
-                source_index = list_obj.PossibilitiesOS.IndexOf(source)
-                list_obj.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                # Index by HVO (issue #668). PossibilitiesOS can yield bare
+                # interface views whose Python identity differs from source.
+                pos_list = list(list_obj.PossibilitiesOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, item in enumerate(pos_list):
+                    if item.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(pos_list)
+                else:
+                    insert_index = source_index + 1
+                list_obj.PossibilitiesOS.Insert(insert_index, duplicate)
             else:
                 # Insert at end
                 list_obj.PossibilitiesOS.Add(duplicate)

@@ -459,8 +459,15 @@ class ScrSectionOperations(BaseOperations):
 
         with self._TransactionCM("Move section"):
             if current_book == target_book:
-                current_index = target_book.SectionsOS.IndexOf(section)
-                if current_index != -1 and current_index != index:
+                # Index by HVO (issue #674). SectionsOS can yield bare interface
+                # views whose Python identity differs from section.
+                section_hvo = section.Hvo
+                current_index = None
+                for i, member in enumerate(target_book.SectionsOS):
+                    if member.Hvo == section_hvo:
+                        current_index = i
+                        break
+                if current_index is not None and current_index != index:
                     if current_index < index:
                         target_book.SectionsOS.MoveTo(
                             current_index, current_index, target_book.SectionsOS, index + 1

@@ -285,19 +285,33 @@ class LocationOperations(BaseOperations):
         self._ValidateParam(location_or_hvo, "location_or_hvo")
 
         location = self.__ResolveObject(location_or_hvo)
+        target_hvo = int(location.Hvo)
 
         # Get the parent or top-level list
         parent = self.GetRegion(location)
 
         with self._TransactionCM("Delete location"):
             if parent:
-                # Remove from parent's sublocations
-                parent.SubPossibilitiesOS.Remove(location)
+                # Membership by HVO (issue #756). SubPossibilitiesOS can yield bare
+                # interface views while callers pass cast handles from Object(hvo);
+                # Remove on the wrong proxy can leave the location linked.
+                member_to_remove = None
+                for slot in parent.SubPossibilitiesOS:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is not None:
+                    parent.SubPossibilitiesOS.Remove(member_to_remove)
             else:
-                # Remove from top-level list
                 location_list = self.project.lp.LocationsOA
-                if location_list:
-                    location_list.PossibilitiesOS.Remove(location)
+                if location_list and hasattr(location_list, "PossibilitiesOS"):
+                    member_to_remove = None
+                    for slot in location_list.PossibilitiesOS:
+                        if int(slot.Hvo) == target_hvo:
+                            member_to_remove = slot
+                            break
+                    if member_to_remove is not None:
+                        location_list.PossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Find(self, name, wsHandle=None):
@@ -1179,8 +1193,20 @@ class LocationOperations(BaseOperations):
             if parent:
                 # Parent is another location (sublocation)
                 if insert_after:
-                    source_index = parent.SubPossibilitiesOS.IndexOf(source)
-                    parent.SubPossibilitiesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #652). SubPossibilitiesOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    sub_list = list(parent.SubPossibilitiesOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, sub_loc in enumerate(sub_list):
+                        if sub_loc.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(sub_list)
+                    else:
+                        insert_index = source_index + 1
+                    parent.SubPossibilitiesOS.Insert(insert_index, duplicate)
                 else:
                     parent.SubPossibilitiesOS.Add(duplicate)
             else:
@@ -1188,8 +1214,20 @@ class LocationOperations(BaseOperations):
                 location_list = self.project.lp.LocationsOA
                 if location_list:
                     if insert_after:
-                        source_index = location_list.PossibilitiesOS.IndexOf(source)
-                        location_list.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                        # Index by HVO (issue #652). PossibilitiesOS can yield bare
+                        # interface views whose Python identity differs from source.
+                        top_list = list(location_list.PossibilitiesOS)
+                        target_hvo = source.Hvo
+                        source_index = None
+                        for i, loc in enumerate(top_list):
+                            if loc.Hvo == target_hvo:
+                                source_index = i
+                                break
+                        if source_index is None:
+                            insert_index = len(top_list)
+                        else:
+                            insert_index = source_index + 1
+                        location_list.PossibilitiesOS.Insert(insert_index, duplicate)
                     else:
                         location_list.PossibilitiesOS.Add(duplicate)
 
