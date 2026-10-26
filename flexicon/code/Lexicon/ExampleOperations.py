@@ -261,9 +261,25 @@ class ExampleOperations(BaseOperations):
         # recover the concrete ILexSense first. Same shape as #160 / #98.
         # (issue #162)
         sense = self._GetTypedOwner(example)
-        if sense is not None and hasattr(sense, "ExamplesOS"):
-            with self._TransactionCM("Delete example"):
-                sense.ExamplesOS.Remove(example)
+        if sense is None or not hasattr(sense, "ExamplesOS"):
+            raise FP_ParameterError("Example has no owning sense with ExamplesOS")
+
+        # Membership by HVO (issue #810). ExamplesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # the wrong proxy is a silent no-op on live LCM (cf. #552 Duplicate).
+        target_hvo = int(example.Hvo)
+        member_to_remove = None
+        for slot in sense.ExamplesOS:
+            if int(slot.Hvo) == target_hvo:
+                member_to_remove = slot
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError(
+                "Example is not a member of ExamplesOS"
+            )
+
+        with self._TransactionCM("Delete example"):
+            sense.ExamplesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
