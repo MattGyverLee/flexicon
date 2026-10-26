@@ -488,8 +488,20 @@ class VariantOperations(BaseOperations):
         if owner is None:
             raise FP_ParameterError("Variant ref has no owning entry")
 
-        with self._TransactionCM("Delete variant reference"):
-            owner.EntryRefsOS.Remove(variant)
+        target_hvo = int(variant.Hvo)
+        member_to_remove = None
+        for ref in owner.EntryRefsOS:
+            if int(ref.Hvo) == target_hvo:
+                member_to_remove = ref
+                break
+
+        if member_to_remove is not None:
+            with self._TransactionCM("Delete variant reference"):
+                # EntryRefsOS membership by HVO (issue #768). The collection
+                # can yield bare interface views while callers pass cast handles
+                # from Object(hvo); Remove on the wrong proxy can leave the
+                # variant reference linked.
+                owner.EntryRefsOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
