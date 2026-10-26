@@ -284,14 +284,24 @@ class CheckOperations(BaseOperations):
         check_list = self._GetCheckList()
         if check_list:
             with self._TransactionCM("Delete check type"):
-                # Try to remove from top level
-                if check_obj in check_list.PossibilitiesOS:
-                    check_list.PossibilitiesOS.Remove(check_obj)
-                else:
-                    # Try to remove from parent's subitems
+                # Membership by HVO (issue #676). PossibilitiesOS can yield bare
+                # interface views while __GetCheckObject returns cast handles;
+                # Python ``in`` then false-negates for the same LCM check.
+                target_hvo = check_obj.Hvo
+                removed = False
+                for poss in check_list.PossibilitiesOS:
+                    if poss.Hvo == target_hvo:
+                        check_list.PossibilitiesOS.Remove(poss)
+                        removed = True
+                        break
+                if not removed:
                     for parent in check_list.PossibilitiesOS:
-                        if check_obj in parent.SubPossibilitiesOS:
-                            parent.SubPossibilitiesOS.Remove(check_obj)
+                        for sub in parent.SubPossibilitiesOS:
+                            if sub.Hvo == target_hvo:
+                                parent.SubPossibilitiesOS.Remove(sub)
+                                removed = True
+                                break
+                        if removed:
                             break
 
         # Clear cached data. Deliberately OUTSIDE the transaction: these are
