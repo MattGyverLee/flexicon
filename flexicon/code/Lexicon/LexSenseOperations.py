@@ -4100,6 +4100,16 @@ class LexSenseOperations(BaseOperations):
 
         return duplicates
 
+    def __OwningSequenceContainsHvo(self, sequence, hvo):
+        """Return True if ``sequence`` has a member with the given HVO (issue #702)."""
+        if hvo is None:
+            return False
+        target = int(hvo)
+        for member in sequence:
+            if int(member.Hvo) == target:
+                return True
+        return False
+
     def __DeduplicateExamplesInSense(self, sense):
         """
         Detect and merge duplicate examples within a sense.
@@ -4150,8 +4160,8 @@ class LexSenseOperations(BaseOperations):
                 # assuming success just because .Remove() didn't raise
                 # (issue #291's collapse: "0 removed because 0 duplicates
                 # existed" and "0 removed because removal failed" must be
-                # distinguishable).
-                if dupe not in sense.ExamplesOS:
+                # distinguishable). Membership by HVO (issue #702).
+                if not self.__OwningSequenceContainsHvo(sense.ExamplesOS, dupe.Hvo):
                     merged_count += 1
 
         if found_count > 0:
