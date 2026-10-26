@@ -1240,7 +1240,12 @@ class LexReferenceOperations(BaseOperations):
                     # For tree relations, other targets are related complex forms
                     for j, other_target in enumerate(targets):
                         if i != j and other_target.ClassName == "LexEntry":
-                            if other_target not in complex_forms:
+                            # Dedupe by HVO (issue #744). TargetsRS members can
+                            # be distinct pythonnet proxies for the same entry.
+                            other_hvo = other_target.Hvo
+                            if not any(
+                                cf.Hvo == other_hvo for cf in complex_forms
+                            ):
                                 complex_forms.append(other_target)
 
         return complex_forms
@@ -1302,7 +1307,12 @@ class LexReferenceOperations(BaseOperations):
                     # For tree relations, other targets are components
                     for j, other_target in enumerate(targets):
                         if i != j and other_target.ClassName == "LexEntry":
-                            if other_target not in components:
+                            # Dedupe by HVO (issue #744). TargetsRS members can
+                            # be distinct pythonnet proxies for the same entry.
+                            other_hvo = other_target.Hvo
+                            if not any(
+                                comp.Hvo == other_hvo for comp in components
+                            ):
                                 components.append(other_target)
 
         return components
