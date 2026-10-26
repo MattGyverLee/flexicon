@@ -1432,8 +1432,21 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         # Remove from the feature system
         feature_system = self.project.lp.MsFeatureSystemOA
         if feature_system:
+            # Membership by HVO (issue #820). FeaturesOC can yield bare
+            # interface views while callers pass cast handles from Object(hvo);
+            # Remove with the wrong proxy is a silent no-op on live LCM.
+            target_hvo = int(feature.Hvo)
+            member_to_remove = None
+            for slot in feature_system.FeaturesOC:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+            if member_to_remove is None:
+                raise FP_ParameterError(
+                    "Feature is not a member of FeaturesOC"
+                )
             with self._TransactionCM("Delete inflection feature"):
-                feature_system.FeaturesOC.Remove(feature)
+                feature_system.FeaturesOC.Remove(member_to_remove)
 
     @OperationsMethod
     def FeatureGetValues(self, feature_or_hvo):
