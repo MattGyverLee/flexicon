@@ -870,8 +870,11 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         sense_repo = self.project.project.ServiceLocator.GetService(ILexSenseRepository)
 
         for sense in sense_repo.AllInstances():
-            # Check if this sense has this domain in its SemanticDomainsRC
-            if domain in sense.SemanticDomainsRC:
+            # Membership by HVO (issue #734). SemanticDomainsRC can yield bare
+            # interface views while domain is a cast handle from __ResolveObject;
+            # Python ``in`` then false-negates and GetSensesInDomain omits the
+            # sense. GetSenseCount already matches by Hvo (issue #106).
+            if any(d.Hvo == domain_hvo for d in sense.SemanticDomainsRC):
                 senses.append(sense)
 
         return senses
