@@ -219,10 +219,23 @@ class PersonOperations(BaseOperations):
 
         # Resolve to person object
         person = self.__ResolveObject(person_or_hvo)
+        target_hvo = int(person.Hvo)
 
-        # Remove from people collection
-        with self._TransactionCM("Delete person"):
-            self.project.lp.PeopleOA.PossibilitiesOS.Remove(person)
+        people_oa = self.project.lp.PeopleOA
+        member_to_remove = None
+        if people_oa is not None and hasattr(people_oa, "PossibilitiesOS"):
+            for slot in people_oa.PossibilitiesOS:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+
+        if member_to_remove is not None:
+            with self._TransactionCM("Delete person"):
+                # People collection membership by HVO (issue #764).
+                # PossibilitiesOS can yield bare interface views while callers
+                # pass cast handles from Object(hvo); Remove on the wrong proxy
+                # can leave the person linked.
+                people_oa.PossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Exists(self, name, wsHandle=None):
