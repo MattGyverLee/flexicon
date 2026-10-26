@@ -1529,16 +1529,40 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
                 # Source is a subcategory
                 parent_pos = IPartOfSpeech(source.Owner)
                 if insert_after:
-                    source_index = parent_pos.SubPossibilitiesOS.IndexOf(source)
-                    parent_pos.SubPossibilitiesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #648). SubPossibilitiesOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    sub_list = list(parent_pos.SubPossibilitiesOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, sub_pos in enumerate(sub_list):
+                        if sub_pos.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(sub_list)
+                    else:
+                        insert_index = source_index + 1
+                    parent_pos.SubPossibilitiesOS.Insert(insert_index, duplicate)
                 else:
                     parent_pos.SubPossibilitiesOS.Add(duplicate)
             else:
                 # Source is top-level
                 pos_list = self.project.lp.PartsOfSpeechOA
                 if insert_after:
-                    source_index = pos_list.PossibilitiesOS.IndexOf(source)
-                    pos_list.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #648). PossibilitiesOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    top_list = list(pos_list.PossibilitiesOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, pos in enumerate(top_list):
+                        if pos.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(top_list)
+                    else:
+                        insert_index = source_index + 1
+                    pos_list.PossibilitiesOS.Insert(insert_index, duplicate)
                 else:
                     pos_list.PossibilitiesOS.Add(duplicate)
 

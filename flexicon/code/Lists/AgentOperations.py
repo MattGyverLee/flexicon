@@ -203,9 +203,21 @@ class AgentOperations(PossibilityItemOperations):
         agent = self._PossibilityItemOperations__ResolveObject(agent_or_hvo)
 
         agents_oc = self._get_list_object()
-        if agents_oc is not None and agent in agents_oc:
+        if agents_oc is None:
+            return
+
+        # Membership by HVO (issue #780). AnalyzingAgentsOC can yield bare
+        # interface views while callers pass cast handles from Object(hvo);
+        # Python ``in`` then false-negates and Delete becomes a silent no-op.
+        target_hvo = int(agent.Hvo)
+        member_to_remove = None
+        for item in agents_oc:
+            if int(item.Hvo) == target_hvo:
+                member_to_remove = item
+                break
+        if member_to_remove is not None:
             with self._TransactionCM("Delete agent"):
-                agents_oc.Remove(agent)
+                agents_oc.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, agent_or_hvo, insert_after=True, deep=False):

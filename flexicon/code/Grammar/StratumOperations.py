@@ -252,7 +252,18 @@ class StratumOperations(BaseOperations):
         stratum = self.__ResolveObject(stratum_or_hvo)
 
         with self._TransactionCM("Delete stratum"):
-            self.__Container().Remove(stratum)
+            # Membership by HVO (issue #800). StrataOS can yield bare
+            # interface views while callers pass cast handles from Object(hvo);
+            # Remove with the wrong proxy is a silent no-op on live LCM.
+            container = self.__Container()
+            target_hvo = int(stratum.Hvo)
+            member_to_remove = None
+            for slot in container:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+            if member_to_remove is not None:
+                container.Remove(member_to_remove)
 
     # ----- accessors -----
 

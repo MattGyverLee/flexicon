@@ -748,8 +748,20 @@ class SegmentOperations(BaseOperations):
         owner = self._GetTypedOwner(segment_obj)
         if owner is None:
             raise FP_ParameterError("Segment has no owning paragraph")
+        # Membership by HVO (issue #790). SegmentsOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # a non-member proxy can no-op and Delete retains the segment.
+        target_hvo = int(segment_obj.Hvo)
+        member_to_remove = None
+        for seg in owner.SegmentsOS:
+            if int(seg.Hvo) == target_hvo:
+                member_to_remove = seg
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError("Segment does not exist on the owning paragraph")
+
         with self._TransactionCM("Delete segment"):
-            owner.SegmentsOS.Remove(segment_obj)
+            owner.SegmentsOS.Remove(member_to_remove)
 
     @OperationsMethod
     def SetAnalysis(self, segment_or_hvo, index, analysis_or_hvo):
@@ -1027,7 +1039,18 @@ class SegmentOperations(BaseOperations):
             para.Contents = bldr.GetString()
 
             # --- Step 2: insert new segment into SegmentsOS ---
-            idx = para.SegmentsOS.IndexOf(seg)
+            # Index by HVO (issue #670). SegmentsOS can yield bare interface
+            # views whose Python identity differs from seg.
+            seg_hvo = seg.Hvo
+            idx = None
+            for i, member in enumerate(para.SegmentsOS):
+                if member.Hvo == seg_hvo:
+                    idx = i
+                    break
+            if idx is None:
+                raise FP_ParameterError(
+                    "Segment is not in the paragraph SegmentsOS"
+                )
             factory = self.__GetSegmentFactory()
             new_seg = factory.Create()
             para.SegmentsOS.Insert(idx + 1, new_seg)
