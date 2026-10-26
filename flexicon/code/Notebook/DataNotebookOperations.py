@@ -1780,7 +1780,12 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         if hasattr(record, "LocationsRC"):
-            if location not in record.LocationsRC:
+            # Membership by HVO (issue #710). LocationsRC can yield bare interface
+            # views while callers pass cast handles from Object(hvo); Python ``in``
+            # then false-negates and Add can duplicate-link.
+            target_hvo = location.Hvo
+            already_linked = any(loc.Hvo == target_hvo for loc in record.LocationsRC)
+            if not already_linked:
                 with self._TransactionCM("Add location to notebook record"):
                     record.LocationsRC.Add(location)
 
@@ -1820,9 +1825,15 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         if hasattr(record, "LocationsRC"):
-            if location in record.LocationsRC:
-                with self._TransactionCM("Remove location from notebook record"):
-                    record.LocationsRC.Remove(location)
+            # Membership by HVO (issue #710). LocationsRC can yield bare interface
+            # views while callers pass cast handles from Object(hvo); Python ``in``
+            # then false-negates and Remove becomes a silent no-op.
+            target_hvo = location.Hvo
+            for linked in record.LocationsRC:
+                if linked.Hvo == target_hvo:
+                    with self._TransactionCM("Remove location from notebook record"):
+                        record.LocationsRC.Remove(linked)
+                    break
 
     # --- Linking Operations: Sources ---
 
