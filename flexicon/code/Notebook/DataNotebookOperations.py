@@ -488,13 +488,36 @@ class DataNotebookOperations(BaseOperations):
             # row. Route through _GetTypedOwner to recover IRnGenericRec
             # before checking the slot. (issue #133, same class as #98/#116)
             parent = self._GetTypedOwner(record)
+            target_hvo = int(record.Hvo)
             if parent is not None and hasattr(parent, "SubRecordsOS"):
-                parent.SubRecordsOS.Remove(record)
+                # Membership by HVO (issue #818); SubRecordsOS can yield bare
+                # interface views while callers pass cast handles from Object(hvo);
+                # Remove with the wrong proxy is a silent no-op on live LCM.
+                member_to_remove = None
+                for slot in parent.SubRecordsOS:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is None:
+                    raise FP_ParameterError(
+                        "Record is not a member of SubRecordsOS"
+                    )
+                parent.SubRecordsOS.Remove(member_to_remove)
             else:
                 # Top-level record: RecordsOC is owned by the project's
                 # single ResearchNotebookOA, not by the repository, which
                 # has no RecordsOC member (ruling C1).
-                self.project.lp.ResearchNotebookOA.RecordsOC.Remove(record)
+                records_oc = self.project.lp.ResearchNotebookOA.RecordsOC
+                member_to_remove = None
+                for slot in records_oc:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is None:
+                    raise FP_ParameterError(
+                        "Record is not a member of RecordsOC"
+                    )
+                records_oc.Remove(member_to_remove)
 
     @OperationsMethod
     def Exists(self, title, wsHandle=None):
