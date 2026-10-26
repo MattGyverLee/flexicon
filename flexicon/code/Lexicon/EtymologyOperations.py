@@ -359,9 +359,20 @@ class EtymologyOperations(BaseOperations):
 
             # Determine insertion position
             if insert_after:
-                # Insert after source etymology
-                source_index = parent.EtymologyOS.IndexOf(source)
-                parent.EtymologyOS.Insert(source_index + 1, duplicate)
+                # Index by HVO (issue #642). EtymologyOS can yield bare interface
+                # views whose Python identity differs from source.
+                etym_list = list(parent.EtymologyOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, etym in enumerate(etym_list):
+                    if etym.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(etym_list)
+                else:
+                    insert_index = source_index + 1
+                parent.EtymologyOS.Insert(insert_index, duplicate)
             else:
                 # Insert at end
                 parent.EtymologyOS.Add(duplicate)
