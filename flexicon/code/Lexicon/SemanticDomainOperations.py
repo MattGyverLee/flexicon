@@ -870,8 +870,11 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         sense_repo = self.project.project.ServiceLocator.GetService(ILexSenseRepository)
 
         for sense in sense_repo.AllInstances():
-            # Check if this sense has this domain in its SemanticDomainsRC
-            if domain in sense.SemanticDomainsRC:
+            # Membership by HVO (issue #734). SemanticDomainsRC can yield bare
+            # interface views while domain is a cast handle from __ResolveObject;
+            # Python ``in`` then false-negates and GetSensesInDomain omits the
+            # sense. GetSenseCount already matches by Hvo (issue #106).
+            if any(d.Hvo == domain_hvo for d in sense.SemanticDomainsRC):
                 senses.append(sense)
 
         return senses
@@ -1082,21 +1085,38 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         self._ValidateParam(domain_or_hvo, "domain_or_hvo")
 
         domain = self.__ResolveObject(domain_or_hvo)
+        target_hvo = int(domain.Hvo)
 
         # Get the parent or top-level list
         parent = self.GetParent(domain)
 
+        def _member_to_remove(sequence):
+            if sequence is None or not hasattr(sequence, "__iter__"):
+                return None
+            for slot in sequence:
+                if int(slot.Hvo) == target_hvo:
+                    return slot
+            return None
+
         # One bracket per branch inside the parent/top-level dispatch, so the
         # transaction opens only around the branch that actually mutates (D5).
         if parent:
-            # Remove from parent's subdomains
-            with self._TransactionCM("Delete semantic domain"):
-                parent.SubPossibilitiesOS.Remove(domain)
+            # Subdomain membership by HVO (issue #760). SubPossibilitiesOS can
+            # yield bare interface views while callers pass cast handles from
+            # Object(hvo); Remove on the wrong proxy can leave the domain linked.
+            member_to_remove = _member_to_remove(parent.SubPossibilitiesOS)
+            if member_to_remove is not None:
+                with self._TransactionCM("Delete semantic domain"):
+                    parent.SubPossibilitiesOS.Remove(member_to_remove)
         else:
             # Remove from top-level list
             domain_list = self.project.lp.SemanticDomainListOA
-            with self._TransactionCM("Delete semantic domain"):
-                domain_list.PossibilitiesOS.Remove(domain)
+            member_to_remove = None
+            if domain_list is not None and hasattr(domain_list, "PossibilitiesOS"):
+                member_to_remove = _member_to_remove(domain_list.PossibilitiesOS)
+            if member_to_remove is not None:
+                with self._TransactionCM("Delete semantic domain"):
+                    domain_list.PossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):
@@ -1165,16 +1185,40 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
             if parent:
                 # Has a parent - add to parent's subdomains
                 if insert_after:
-                    source_index = parent.SubPossibilitiesOS.IndexOf(source)
-                    parent.SubPossibilitiesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #656). SubPossibilitiesOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    sub_list = list(parent.SubPossibilitiesOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, subdomain in enumerate(sub_list):
+                        if subdomain.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(sub_list)
+                    else:
+                        insert_index = source_index + 1
+                    parent.SubPossibilitiesOS.Insert(insert_index, duplicate)
                 else:
                     parent.SubPossibilitiesOS.Add(duplicate)
             else:
                 # Top-level domain - add to main list
                 domain_list = self.project.lp.SemanticDomainListOA
                 if insert_after:
-                    source_index = domain_list.PossibilitiesOS.IndexOf(source)
-                    domain_list.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #656). PossibilitiesOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    domain_seq = list(domain_list.PossibilitiesOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, domain in enumerate(domain_seq):
+                        if domain.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(domain_seq)
+                    else:
+                        insert_index = source_index + 1
+                    domain_list.PossibilitiesOS.Insert(insert_index, duplicate)
                 else:
                     domain_list.PossibilitiesOS.Add(duplicate)
 
