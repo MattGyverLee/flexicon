@@ -1972,7 +1972,12 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         if hasattr(record, "SourcesRC"):
-            if source not in record.SourcesRC:
+            # Membership by HVO (issue #712). SourcesRC can yield bare interface
+            # views while callers pass cast handles from Object(hvo); Python ``in``
+            # then false-negates and Add can duplicate-link.
+            target_hvo = source.Hvo
+            already_linked = any(src.Hvo == target_hvo for src in record.SourcesRC)
+            if not already_linked:
                 with self._TransactionCM("Add source to notebook record"):
                     record.SourcesRC.Add(source)
 
@@ -2013,9 +2018,15 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         if hasattr(record, "SourcesRC"):
-            if source in record.SourcesRC:
-                with self._TransactionCM("Remove source from notebook record"):
-                    record.SourcesRC.Remove(source)
+            # Membership by HVO (issue #712). SourcesRC can yield bare interface
+            # views while callers pass cast handles from Object(hvo); Python ``in``
+            # then false-negates and Remove becomes a silent no-op.
+            target_hvo = source.Hvo
+            for linked in record.SourcesRC:
+                if linked.Hvo == target_hvo:
+                    with self._TransactionCM("Remove source from notebook record"):
+                        record.SourcesRC.Remove(linked)
+                    break
 
     # --- Text Linking Operations ---
 
