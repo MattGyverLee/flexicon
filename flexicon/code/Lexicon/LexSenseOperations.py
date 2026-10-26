@@ -3509,7 +3509,11 @@ class LexSenseOperations(BaseOperations):
             if not domain_type:
                 raise FP_ParameterError(f"Domain type '{domain_type_name}' not found")
 
-        if domain_type not in sense.DomainTypesRC:
+        target_hvo = domain_type.Hvo
+        # Membership by HVO (issue #722). DomainTypesRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and Add can duplicate-link.
+        if not any(item.Hvo == target_hvo for item in sense.DomainTypesRC):
             with self._TransactionCM("Add domain type"):
                 sense.DomainTypesRC.Add(domain_type)
 
@@ -3520,9 +3524,16 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(sense_or_hvo, "sense_or_hvo")
         self._ValidateParam(domain_type, "domain_type")
         sense = self.__GetSenseObject(sense_or_hvo)
-        if domain_type in sense.DomainTypesRC:
-            with self._TransactionCM("Remove domain type"):
-                sense.DomainTypesRC.Remove(domain_type)
+
+        # Membership by HVO (issue #722). DomainTypesRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and Remove becomes a silent no-op.
+        target_hvo = domain_type.Hvo
+        for linked in sense.DomainTypesRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove domain type"):
+                    sense.DomainTypesRC.Remove(linked)
+                break
 
     @OperationsMethod
     def GetAnthroCodes(self, sense_or_hvo):
