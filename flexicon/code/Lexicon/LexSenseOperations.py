@@ -2712,8 +2712,11 @@ class LexSenseOperations(BaseOperations):
             logger.warning("Source and destination are the same sense")
             return False
 
-        # Verify picture is in source collection
-        if picture not in from_sense.PicturesOS:
+        # Membership by HVO (issue #688). PicturesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and MovePicture raises spuriously.
+        target_hvo = picture.Hvo
+        if not any(p.Hvo == target_hvo for p in from_sense.PicturesOS):
             raise FP_ParameterError("Picture not found in source sense's picture collection")
 
         with self._TransactionCM("Move picture"):
