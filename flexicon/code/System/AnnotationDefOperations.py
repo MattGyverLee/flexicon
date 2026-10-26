@@ -271,14 +271,24 @@ class AnnotationDefOperations(BaseOperations):
         self._ValidateParam(anno_def, "anno_def")
 
         with self._TransactionCM("Delete annotation definition"):
-            # Remove from parent's collection
+            # Remove from parent's collection. Membership by HVO (issue #678).
+            # PossibilitiesOS can yield bare interface views while callers pass
+            # cast handles from Object(hvo); Python ``in`` then false-negates.
+            target_hvo = anno_def.Hvo
             owner = anno_def.Owner
-            if hasattr(owner, "PossibilitiesOS"):
-                if anno_def in owner.PossibilitiesOS:
-                    owner.PossibilitiesOS.Remove(anno_def)
-            elif hasattr(owner, "SubPossibilitiesOS"):
-                if anno_def in owner.SubPossibilitiesOS:
-                    owner.SubPossibilitiesOS.Remove(anno_def)
+            removed = False
+            if owner is not None and hasattr(owner, "PossibilitiesOS"):
+                for poss in owner.PossibilitiesOS:
+                    if poss.Hvo == target_hvo:
+                        owner.PossibilitiesOS.Remove(poss)
+                        removed = True
+                        break
+            if not removed and owner is not None and hasattr(owner, "SubPossibilitiesOS"):
+                for sub in owner.SubPossibilitiesOS:
+                    if sub.Hvo == target_hvo:
+                        owner.SubPossibilitiesOS.Remove(sub)
+                        removed = True
+                        break
 
             # Delete the object
             if hasattr(anno_def, "Delete"):

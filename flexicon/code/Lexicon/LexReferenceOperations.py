@@ -322,12 +322,24 @@ class LexReferenceOperations(BaseOperations):
         self._ValidateParam(ref_type_or_hvo, "ref_type_or_hvo")
 
         ref_type = self.__ResolveRefType(ref_type_or_hvo)
+        target_hvo = int(ref_type.Hvo)
 
         # Remove from the references list
         ref_types_list = self.project.lexDB.ReferencesOA
-        if ref_types_list:
-            with self._TransactionCM("Delete lexical reference type"):
-                ref_types_list.PossibilitiesOS.Remove(ref_type)
+        if ref_types_list and hasattr(ref_types_list, "PossibilitiesOS"):
+            member_to_remove = None
+            for slot in ref_types_list.PossibilitiesOS:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+
+            if member_to_remove is not None:
+                with self._TransactionCM("Delete lexical reference type"):
+                    # References list membership by HVO (issue #766).
+                    # PossibilitiesOS can yield bare interface views while callers
+                    # pass cast handles from Object(hvo); Remove on the wrong proxy
+                    # can leave the relation type linked.
+                    ref_types_list.PossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def FindType(self, name, wsHandle=None):
@@ -835,8 +847,22 @@ class LexReferenceOperations(BaseOperations):
         if owner is None:
             raise FP_ParameterError("Lex reference has no owning type")
 
+        target_hvo = int(lex_ref.Hvo)
+
         with self._TransactionCM("Delete lexical reference"):
-            owner.MembersOC.Remove(lex_ref)
+            # Membership by HVO (issue #814). MembersOC can yield bare interface
+            # views while callers pass cast handles from Object(hvo); Remove with
+            # the wrong proxy is a silent no-op on live LCM (cf. #808/#812).
+            member_to_remove = None
+            for slot in owner.MembersOC:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+            if member_to_remove is None:
+                raise FP_ParameterError(
+                    "Lex reference is not a member of MembersOC"
+                )
+            owner.MembersOC.Remove(member_to_remove)
 
     @OperationsMethod
     def GetTargets(self, lex_ref_or_hvo):
@@ -1003,10 +1029,16 @@ class LexReferenceOperations(BaseOperations):
                 "Use Delete() to remove the entire reference instead."
             )
 
-        # Remove the target if it exists
-        if target in lex_ref.TargetsRS:
-            with self._TransactionCM("Remove reference target"):
-                lex_ref.TargetsRS.Remove(target)
+        # Remove the target if it exists. Membership by HVO (issue #742).
+        # TargetsRS can yield bare interface views while callers pass cast
+        # handles from Object(hvo); Python ``in`` then false-negates and
+        # Remove becomes a silent no-op.
+        target_hvo = target.Hvo
+        for linked in lex_ref.TargetsRS:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove reference target"):
+                    lex_ref.TargetsRS.Remove(linked)
+                break
 
     @OperationsMethod
     def GetType(self, lex_ref_or_hvo):
@@ -1234,7 +1266,12 @@ class LexReferenceOperations(BaseOperations):
                     # For tree relations, other targets are related complex forms
                     for j, other_target in enumerate(targets):
                         if i != j and other_target.ClassName == "LexEntry":
-                            if other_target not in complex_forms:
+                            # Dedupe by HVO (issue #744). TargetsRS members can
+                            # be distinct pythonnet proxies for the same entry.
+                            other_hvo = other_target.Hvo
+                            if not any(
+                                cf.Hvo == other_hvo for cf in complex_forms
+                            ):
                                 complex_forms.append(other_target)
 
         return complex_forms
@@ -1296,7 +1333,12 @@ class LexReferenceOperations(BaseOperations):
                     # For tree relations, other targets are components
                     for j, other_target in enumerate(targets):
                         if i != j and other_target.ClassName == "LexEntry":
-                            if other_target not in components:
+                            # Dedupe by HVO (issue #744). TargetsRS members can
+                            # be distinct pythonnet proxies for the same entry.
+                            other_hvo = other_target.Hvo
+                            if not any(
+                                comp.Hvo == other_hvo for comp in components
+                            ):
                                 components.append(other_target)
 
         return components
