@@ -327,14 +327,24 @@ class PronunciationOperations(BaseOperations):
             duplicate = factory.Create()
 
             # Determine insertion position
-            if insert_after and hasattr(parent, "PronunciationsOS"):
-                # Insert after source pronunciation
-                source_index = parent.PronunciationsOS.IndexOf(source)
-                parent.PronunciationsOS.Insert(source_index + 1, duplicate)
+            if insert_after:
+                # Index by HVO (issue #644). PronunciationsOS can yield bare
+                # interface views whose Python identity differs from source.
+                pron_list = list(parent.PronunciationsOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, pron in enumerate(pron_list):
+                    if pron.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(pron_list)
+                else:
+                    insert_index = source_index + 1
+                parent.PronunciationsOS.Insert(insert_index, duplicate)
             else:
                 # Insert at end
-                if hasattr(parent, "PronunciationsOS"):
-                    parent.PronunciationsOS.Add(duplicate)
+                parent.PronunciationsOS.Add(duplicate)
 
             # Copy simple MultiString properties (AFTER adding to parent)
             # Use GetString/SetString instead of CopyAlternatives for safer copying
