@@ -329,12 +329,25 @@ class NoteOperations(BaseOperations):
         # ICmObject and does not expose AnnotationsOC / ResponsesOS; cast
         # to the concrete owner so the typed collection is reachable.
         with self._TransactionCM("Delete note"):
+            # Remove from owner's collection. Membership by HVO (issue #680).
+            # AnnotationsOC / ResponsesOS can yield bare interface views while
+            # callers pass cast handles from Object(hvo); Python ``in`` then
+            # false-negates.
+            target_hvo = note.Hvo
             owner = self._GetTypedOwner(note)
-            if owner is not None:
-                if hasattr(owner, "AnnotationsOC") and note in owner.AnnotationsOC:
-                    owner.AnnotationsOC.Remove(note)
-                elif hasattr(owner, "ResponsesOS") and note in owner.ResponsesOS:
-                    owner.ResponsesOS.Remove(note)
+            removed = False
+            if owner is not None and hasattr(owner, "AnnotationsOC"):
+                for ann in owner.AnnotationsOC:
+                    if ann.Hvo == target_hvo:
+                        owner.AnnotationsOC.Remove(ann)
+                        removed = True
+                        break
+            if not removed and owner is not None and hasattr(owner, "ResponsesOS"):
+                for resp in owner.ResponsesOS:
+                    if resp.Hvo == target_hvo:
+                        owner.ResponsesOS.Remove(resp)
+                        removed = True
+                        break
 
             # Removing from an owning collection (AnnotationsOC/RepliesOS)
             # already deletes the underlying CmObject -- calling
