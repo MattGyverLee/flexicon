@@ -1130,13 +1130,33 @@ class AnnotationDefOperations(BaseOperations):
 
             # ADD TO PARENT FIRST
             if insert_after:
-                # Insert after source
+                target_hvo = source.Hvo
                 if hasattr(parent, "PossibilitiesOS"):
-                    source_index = parent.PossibilitiesOS.IndexOf(source)
-                    parent.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #666). PossibilitiesOS can yield bare interface
+                    # views whose Python identity differs from source.
+                    seq_list = list(parent.PossibilitiesOS)
+                    source_index = None
+                    for i, poss in enumerate(seq_list):
+                        if poss.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    insert_index = (
+                        len(seq_list) if source_index is None else source_index + 1
+                    )
+                    parent.PossibilitiesOS.Insert(insert_index, duplicate)
                 elif hasattr(parent, "SubPossibilitiesOS"):
-                    source_index = parent.SubPossibilitiesOS.IndexOf(source)
-                    parent.SubPossibilitiesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #666). SubPossibilitiesOS can yield bare interface
+                    # views whose Python identity differs from source.
+                    seq_list = list(parent.SubPossibilitiesOS)
+                    source_index = None
+                    for i, poss in enumerate(seq_list):
+                        if poss.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    insert_index = (
+                        len(seq_list) if source_index is None else source_index + 1
+                    )
+                    parent.SubPossibilitiesOS.Insert(insert_index, duplicate)
             else:
                 # Insert at end
                 if hasattr(parent, "PossibilitiesOS"):
