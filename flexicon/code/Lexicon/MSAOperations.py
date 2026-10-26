@@ -1898,7 +1898,11 @@ class MSAOperations(BaseOperations):
             with self._TransactionCM("Copy exception features"):
                 new_rc = new_msa.FromProdRestrictRC
                 for feat in from_features:
-                    if feat not in new_rc:
+                    # Membership by HVO (issue #778). FromProdRestrictRC can
+                    # yield bare interface views while the snapshot list holds
+                    # cast handles from the source MSA iteration.
+                    target_hvo = int(feat.Hvo)
+                    if not any(int(item.Hvo) == target_hvo for item in new_rc):
                         new_rc.Add(feat)
 
         # --- Repoint all senses in the entry that reference the old MSA ---
