@@ -1003,10 +1003,16 @@ class LexReferenceOperations(BaseOperations):
                 "Use Delete() to remove the entire reference instead."
             )
 
-        # Remove the target if it exists
-        if target in lex_ref.TargetsRS:
-            with self._TransactionCM("Remove reference target"):
-                lex_ref.TargetsRS.Remove(target)
+        # Remove the target if it exists. Membership by HVO (issue #742).
+        # TargetsRS can yield bare interface views while callers pass cast
+        # handles from Object(hvo); Python ``in`` then false-negates and
+        # Remove becomes a silent no-op.
+        target_hvo = target.Hvo
+        for linked in lex_ref.TargetsRS:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove reference target"):
+                    lex_ref.TargetsRS.Remove(linked)
+                break
 
     @OperationsMethod
     def GetType(self, lex_ref_or_hvo):
