@@ -257,8 +257,22 @@ class PronunciationOperations(BaseOperations):
         # and the Remove() silently never runs (issue #151).
         entry = ILexEntry(pronunciation.Owner)
 
+        # Membership by HVO (issue #808). PronunciationsOS can yield bare
+        # interface views while callers pass cast handles from Object(hvo);
+        # Remove with the wrong proxy is a silent no-op on live LCM (cf. #644).
+        target_hvo = int(pronunciation.Hvo)
+        member_to_remove = None
+        for slot in entry.PronunciationsOS:
+            if int(slot.Hvo) == target_hvo:
+                member_to_remove = slot
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError(
+                "Pronunciation is not a member of PronunciationsOS"
+            )
+
         with self._TransactionCM("Delete pronunciation"):
-            entry.PronunciationsOS.Remove(pronunciation)
+            entry.PronunciationsOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
@@ -327,14 +341,24 @@ class PronunciationOperations(BaseOperations):
             duplicate = factory.Create()
 
             # Determine insertion position
-            if insert_after and hasattr(parent, "PronunciationsOS"):
-                # Insert after source pronunciation
-                source_index = parent.PronunciationsOS.IndexOf(source)
-                parent.PronunciationsOS.Insert(source_index + 1, duplicate)
+            if insert_after:
+                # Index by HVO (issue #644). PronunciationsOS can yield bare
+                # interface views whose Python identity differs from source.
+                pron_list = list(parent.PronunciationsOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, pron in enumerate(pron_list):
+                    if pron.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(pron_list)
+                else:
+                    insert_index = source_index + 1
+                parent.PronunciationsOS.Insert(insert_index, duplicate)
             else:
                 # Insert at end
-                if hasattr(parent, "PronunciationsOS"):
-                    parent.PronunciationsOS.Add(duplicate)
+                parent.PronunciationsOS.Add(duplicate)
 
             # Copy simple MultiString properties (AFTER adding to parent)
             # Use GetString/SetString instead of CopyAlternatives for safer copying
@@ -480,17 +504,38 @@ class PronunciationOperations(BaseOperations):
         if not hasattr(entry, "PronunciationsOS"):
             raise FP_ParameterError("Entry does not support pronunciations")
 
-        # Validate that all pronunciations belong to this entry
+        pronunciation_list = list(pronunciation_list)
+
         current_count = entry.PronunciationsOS.Count
         if len(pronunciation_list) != current_count:
-            raise FP_ParameterError(f"Pronunciation list must contain all {current_count} pronunciations")
+            raise FP_ParameterError(
+                f"Pronunciation list must contain all {current_count} pronunciations"
+            )
 
-        pronunciations = [
-            self.__GetPronunciationObject(pron) for pron in pronunciation_list
-        ]
+        ordered_hvos = []
+        seen_hvo = set()
+        for pron in pronunciation_list:
+            pronunciation = self.__GetPronunciationObject(pron)
+            hvo = pronunciation.Hvo
+            if hvo in seen_hvo:
+                raise FP_ParameterError("Duplicate pronunciation in pronunciation_list")
+            seen_hvo.add(hvo)
+            ordered_hvos.append(hvo)
+
+        # Partition by HVO (issue #700). PronunciationsOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python set
+        # membership on proxies then rejects valid reorder lists.
+        current_hvos = {p.Hvo for p in entry.PronunciationsOS}
+        if set(ordered_hvos) != current_hvos:
+            raise FP_ParameterError(
+                "Pronunciation list must contain exactly the same pronunciations as the entry"
+            )
+
+        pronunciation_by_hvo = {p.Hvo: p for p in entry.PronunciationsOS}
+        desired_order = [pronunciation_by_hvo[hvo] for hvo in ordered_hvos]
 
         with self._TransactionCM("Reorder pronunciations"):
-            self._ApplySequenceOrder(entry.PronunciationsOS, pronunciations)
+            self._ApplySequenceOrder(entry.PronunciationsOS, desired_order)
 
     # --- Form Management ---
 
@@ -847,8 +892,11 @@ class PronunciationOperations(BaseOperations):
             logger.warning("Source and destination are the same pronunciation")
             return False
 
-        # Verify media is in source collection
-        if media not in from_pron.MediaFilesOS:
+        # Membership by HVO (issue #686). MediaFilesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and MoveMediaFile raises spuriously.
+        target_hvo = media.Hvo
+        if not any(f.Hvo == target_hvo for f in from_pron.MediaFilesOS):
             raise FP_ParameterError("Media file not found in source pronunciation's media collection")
 
         with self._TransactionCM("Move media file"):

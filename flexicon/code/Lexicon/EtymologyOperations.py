@@ -289,8 +289,20 @@ class EtymologyOperations(BaseOperations):
         if owner is None:
             raise FP_ParameterError("Etymology has no owning entry")
 
+        # Membership by HVO (issue #806). EtymologyOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # the wrong proxy is a silent no-op on live LCM (cf. #642 Duplicate).
+        target_hvo = int(etymology.Hvo)
+        member_to_remove = None
+        for slot in owner.EtymologyOS:
+            if int(slot.Hvo) == target_hvo:
+                member_to_remove = slot
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError("Etymology is not a member of EtymologyOS")
+
         with self._TransactionCM("Delete etymology"):
-            owner.EtymologyOS.Remove(etymology)
+            owner.EtymologyOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
@@ -359,9 +371,20 @@ class EtymologyOperations(BaseOperations):
 
             # Determine insertion position
             if insert_after:
-                # Insert after source etymology
-                source_index = parent.EtymologyOS.IndexOf(source)
-                parent.EtymologyOS.Insert(source_index + 1, duplicate)
+                # Index by HVO (issue #642). EtymologyOS can yield bare interface
+                # views whose Python identity differs from source.
+                etym_list = list(parent.EtymologyOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, etym in enumerate(etym_list):
+                    if etym.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(etym_list)
+                else:
+                    insert_index = source_index + 1
+                parent.EtymologyOS.Insert(insert_index, duplicate)
             else:
                 # Insert at end
                 parent.EtymologyOS.Add(duplicate)
@@ -627,18 +650,31 @@ class EtymologyOperations(BaseOperations):
         # Convert to list if it's an iterator
         etymology_list = list(etymology_list)
 
-        # Resolve all to objects
-        etymologies = [self.__GetEtymologyObject(etym) for etym in etymology_list]
+        # Resolve all to objects (validates each item exists).
+        ordered_hvos = []
+        seen_hvo = set()
+        for etym in etymology_list:
+            etymology = self.__GetEtymologyObject(etym)
+            hvo = etymology.Hvo
+            if hvo in seen_hvo:
+                raise FP_ParameterError("Duplicate etymology in etymology_list")
+            seen_hvo.add(hvo)
+            ordered_hvos.append(hvo)
 
-        # Verify all etymologies belong to this entry
-        current_etymologies = set(entry.EtymologyOS)
-        new_etymologies = set(etymologies)
+        # Partition by HVO (issue #696). EtymologyOS can yield bare interface views
+        # while callers pass cast handles from Object(hvo); Python set membership
+        # on proxies then rejects valid reorder lists.
+        current_hvos = {e.Hvo for e in entry.EtymologyOS}
+        if set(ordered_hvos) != current_hvos:
+            raise FP_ParameterError(
+                "Etymology list must contain exactly the same etymologies as the entry"
+            )
 
-        if current_etymologies != new_etymologies:
-            raise FP_ParameterError("Etymology list must contain exactly the same etymologies as the entry")
+        etymology_by_hvo = {e.Hvo: e for e in entry.EtymologyOS}
+        desired_order = [etymology_by_hvo[hvo] for hvo in ordered_hvos]
 
         with self._TransactionCM("Reorder etymologies"):
-            self._ApplySequenceOrder(entry.EtymologyOS, etymologies)
+            self._ApplySequenceOrder(entry.EtymologyOS, desired_order)
 
     # --- Source Language Operations ---
 

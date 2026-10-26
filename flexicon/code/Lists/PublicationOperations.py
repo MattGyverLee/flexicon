@@ -359,9 +359,16 @@ class PublicationOperations(PossibilityItemOperations):
 
         seq = pub_list.PossibilitiesOS
         with self._TransactionCM("Set default publication"):
-            if publication not in seq:
+            # Index by HVO (issue #672). PossibilitiesOS can yield bare interface
+            # views whose Python identity differs from publication.
+            target_hvo = publication.Hvo
+            current_index = None
+            for i, member in enumerate(seq):
+                if member.Hvo == target_hvo:
+                    current_index = i
+                    break
+            if current_index is None:
                 return
-            current_index = seq.IndexOf(publication)
             if is_default:
                 if current_index == 0:
                     return

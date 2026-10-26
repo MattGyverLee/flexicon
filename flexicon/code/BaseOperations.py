@@ -881,12 +881,9 @@ class BaseOperations:
         parent = self._GetObject(parent_or_hvo)
         sequence = self._GetSequence(parent)
 
-        # Find current index
-        current_index = -1
-        for i in range(sequence.Count):
-            if sequence[i] == item:
-                current_index = i
-                break
+        # Find current index by HVO (issue #774). Owning sequences can yield
+        # bare interface views whose Python identity differs from item.
+        current_index = self._IndexInOwningSequenceByHvo(sequence, item)
 
         if current_index == -1:
             raise ValueError("Item not found in sequence")
@@ -979,12 +976,8 @@ class BaseOperations:
         parent = self._GetObject(parent_or_hvo)
         sequence = self._GetSequence(parent)
 
-        # Find current index
-        current_index = -1
-        for i in range(sequence.Count):
-            if sequence[i] == item:
-                current_index = i
-                break
+        # Find current index by HVO (issue #774).
+        current_index = self._IndexInOwningSequenceByHvo(sequence, item)
 
         if current_index == -1:
             raise ValueError("Item not found in sequence")
@@ -1066,12 +1059,8 @@ class BaseOperations:
         parent = self._GetObject(parent_or_hvo)
         sequence = self._GetSequence(parent)
 
-        # Find current index
-        current_index = -1
-        for i in range(sequence.Count):
-            if sequence[i] == item:
-                current_index = i
-                break
+        # Find current index by HVO (issue #774).
+        current_index = self._IndexInOwningSequenceByHvo(sequence, item)
 
         if current_index == -1:
             raise ValueError("Item not found in sequence")
@@ -1154,9 +1143,9 @@ class BaseOperations:
         target_index = -1
         index = 0
         for item in sequence:
-            if item == item_to_move:
+            if self._SameLcmObjectByHvo(item, item_to_move):
                 move_index = index
-            if item == target_item:
+            if self._SameLcmObjectByHvo(item, target_item):
                 target_index = index
             index += 1
 
@@ -1233,9 +1222,9 @@ class BaseOperations:
         target_index = -1
         index = 0
         for item in sequence:
-            if item == item_to_move:
+            if self._SameLcmObjectByHvo(item, item_to_move):
                 move_index = index
-            if item == target_item:
+            if self._SameLcmObjectByHvo(item, target_item):
                 target_index = index
             index += 1
 
@@ -1312,9 +1301,9 @@ class BaseOperations:
         idx2 = -1
         index = 0
         for item in sequence:
-            if item == item1:
+            if self._SameLcmObjectByHvo(item, item1):
                 idx1 = index
-            if item == item2:
+            if self._SameLcmObjectByHvo(item, item2):
                 idx2 = index
             index += 1
 
@@ -3169,6 +3158,38 @@ class BaseOperations:
                 f"unexpected keyword argument(s) {unknown!r}"
             )
 
+    def _LcmObjectHvo(self, obj):
+        """Return int HVO for an LCM object, or None if unavailable."""
+        obj = self._UnwrapLcm(obj)
+        hvo = getattr(obj, "Hvo", None)
+        if hvo is None:
+            return None
+        return int(hvo)
+
+    def _SameLcmObjectByHvo(self, member, reference):
+        """True when member and reference denote the same LCM object (HVO)."""
+        ref_hvo = self._LcmObjectHvo(reference)
+        if ref_hvo is None:
+            return member == reference
+        try:
+            return int(member.Hvo) == ref_hvo
+        except Exception:
+            return False
+
+    def _IndexInOwningSequenceByHvo(self, sequence, item):
+        """Locate item in an owning sequence by HVO (issue #774)."""
+        target_hvo = self._LcmObjectHvo(item)
+        if target_hvo is None:
+            return -1
+        count = sequence.Count
+        for i in range(count):
+            try:
+                if int(sequence[i].Hvo) == target_hvo:
+                    return i
+            except Exception:
+                continue
+        return -1
+
     def _FindCommonSequence(self, item1, item2):
         """
         Find the sequence that contains both items.
@@ -3258,9 +3279,9 @@ class BaseOperations:
                     found1 = False
                     found2 = False
                     for item in sequence:
-                        if item == item1:
+                        if self._SameLcmObjectByHvo(item, item1):
                             found1 = True
-                        if item == item2:
+                        if self._SameLcmObjectByHvo(item, item2):
                             found2 = True
                         if found1 and found2:
                             return sequence

@@ -534,8 +534,20 @@ class WfiAnalysisOperations(BaseOperations):
         # returns analysis.Owner as the base ICmObject, which has no
         # AnalysesOC; cast to IWfiWordform first (issue #32).
         wordform = IWfiWordform(analysis.Owner)
+        # Membership by HVO (issue #782). AnalysesOC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # a non-member proxy can no-op and Delete retains the analysis.
+        target_hvo = int(analysis.Hvo)
+        member_to_remove = None
+        for wf_analysis in wordform.AnalysesOC:
+            if int(wf_analysis.Hvo) == target_hvo:
+                member_to_remove = wf_analysis
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError("Analysis does not exist on the wordform")
+
         with self._TransactionCM("Delete analysis"):
-            wordform.AnalysesOC.Remove(analysis)
+            wordform.AnalysesOC.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=False, deep=False):
