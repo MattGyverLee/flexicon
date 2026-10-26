@@ -257,8 +257,22 @@ class PronunciationOperations(BaseOperations):
         # and the Remove() silently never runs (issue #151).
         entry = ILexEntry(pronunciation.Owner)
 
+        # Membership by HVO (issue #808). PronunciationsOS can yield bare
+        # interface views while callers pass cast handles from Object(hvo);
+        # Remove with the wrong proxy is a silent no-op on live LCM (cf. #644).
+        target_hvo = int(pronunciation.Hvo)
+        member_to_remove = None
+        for slot in entry.PronunciationsOS:
+            if int(slot.Hvo) == target_hvo:
+                member_to_remove = slot
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError(
+                "Pronunciation is not a member of PronunciationsOS"
+            )
+
         with self._TransactionCM("Delete pronunciation"):
-            entry.PronunciationsOS.Remove(pronunciation)
+            entry.PronunciationsOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
