@@ -2205,7 +2205,12 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         if hasattr(record, "MediaFilesOS"):
-            if media_file not in record.MediaFilesOS:
+            # Membership by HVO (issue #682). MediaFilesOS can yield bare interface
+            # views while callers pass cast handles from Object(hvo); Python ``in``
+            # then false-negates and Add can duplicate-link.
+            target_hvo = media_file.Hvo
+            already_linked = any(f.Hvo == target_hvo for f in record.MediaFilesOS)
+            if not already_linked:
                 with self._TransactionCM("Add media file to notebook record"):
                     record.MediaFilesOS.Add(media_file)
 
@@ -2246,9 +2251,15 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         if hasattr(record, "MediaFilesOS"):
-            if media_file in record.MediaFilesOS:
-                with self._TransactionCM("Remove media file from notebook record"):
-                    record.MediaFilesOS.Remove(media_file)
+            # Membership by HVO (issue #682). MediaFilesOS can yield bare interface
+            # views while callers pass cast handles from Object(hvo); Python ``in``
+            # then false-negates and Remove becomes a silent no-op.
+            target_hvo = media_file.Hvo
+            for linked in record.MediaFilesOS:
+                if linked.Hvo == target_hvo:
+                    with self._TransactionCM("Remove media file from notebook record"):
+                        record.MediaFilesOS.Remove(linked)
+                    break
 
     # --- Status Operations ---
 
