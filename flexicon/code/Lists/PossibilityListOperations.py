@@ -718,20 +718,35 @@ class PossibilityListOperations(BaseOperations):
         with self._TransactionCM("Duplicate list item"):
             duplicate = factory.Create()
 
+            def _insert_after(sequence):
+                # Index by HVO (issue #662). SubPossibilitiesOS / PossibilitiesOS
+                # can yield bare interface views whose Python identity differs
+                # from source.
+                members = list(sequence)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, member in enumerate(members):
+                    if member.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(members)
+                else:
+                    insert_index = source_index + 1
+                sequence.Insert(insert_index, duplicate)
+
             # ADD TO PARENT FIRST before copying properties (CRITICAL)
             if parent:
                 # Insert into parent's subitems
                 if insert_after:
-                    source_index = parent.SubPossibilitiesOS.IndexOf(source)
-                    parent.SubPossibilitiesOS.Insert(source_index + 1, duplicate)
+                    _insert_after(parent.SubPossibilitiesOS)
                 else:
                     parent.SubPossibilitiesOS.Add(duplicate)
             else:
                 # Insert into top-level list
                 owner = self.__GetListOwner(source)
                 if insert_after:
-                    source_index = owner.PossibilitiesOS.IndexOf(source)
-                    owner.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                    _insert_after(owner.PossibilitiesOS)
                 else:
                     owner.PossibilitiesOS.Add(duplicate)
 
