@@ -410,9 +410,21 @@ class WfiGlossOperations(BaseOperations):
         # cast unconditionally to surface the typed collection accessor.
         analysis = IWfiAnalysis(gloss.Owner)
 
+        # Membership by HVO (issue #784). MeaningsOC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # a non-member proxy can no-op and Delete retains the gloss.
+        target_hvo = int(gloss.Hvo)
+        member_to_remove = None
+        for meaning in analysis.MeaningsOC:
+            if int(meaning.Hvo) == target_hvo:
+                member_to_remove = meaning
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError("Gloss does not exist on the analysis")
+
         # Remove from analysis's Meanings collection
         with self._TransactionCM("Delete gloss"):
-            analysis.MeaningsOC.Remove(gloss)
+            analysis.MeaningsOC.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=False, deep=False):

@@ -292,7 +292,20 @@ class PhonemeOperations(BaseOperations):
         if phon_data and phon_data.PhonemeSetsOS.Count > 0:
             phoneme_set = phon_data.PhonemeSetsOS[0]
             with self._TransactionCM("Delete phoneme"):
-                phoneme_set.PhonemesOC.Remove(phoneme)
+                # Membership by HVO (issue #798). PhonemesOC can yield bare
+                # interface views while callers pass cast handles from Object(hvo);
+                # Remove with the wrong proxy is a silent no-op on live LCM.
+                target_hvo = int(phoneme.Hvo)
+                member_to_remove = None
+                for slot in phoneme_set.PhonemesOC:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is None:
+                    raise FP_ParameterError(
+                        "Phoneme is not a member of PhonemesOC"
+                    )
+                phoneme_set.PhonemesOC.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):

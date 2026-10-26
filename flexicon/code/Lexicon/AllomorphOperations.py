@@ -396,9 +396,13 @@ class AllomorphOperations(BaseOperations):
         if owner is None:
             raise FP_ParameterError("Allomorph has no owning entry")
 
+        target_hvo = int(allomorph.Hvo)
+        lexeme = owner.LexemeFormOA if hasattr(owner, "LexemeFormOA") else None
+        is_lexeme = lexeme is not None and int(lexeme.Hvo) == target_hvo
+
         # Check if this is the lexeme form or an alternate
         with self._TransactionCM("Delete allomorph"):
-            if hasattr(owner, "LexemeFormOA") and owner.LexemeFormOA == allomorph:
+            if is_lexeme:
                 # Deleting the lexeme form
                 # If there are alternates, promote the first one to lexeme
                 if owner.AlternateFormsOS.Count > 0:
@@ -409,8 +413,19 @@ class AllomorphOperations(BaseOperations):
                     # No alternates, just clear the lexeme form
                     owner.LexemeFormOA = None
             elif hasattr(owner, "AlternateFormsOS"):
-                # Deleting an alternate form
-                owner.AlternateFormsOS.Remove(allomorph)
+                # Membership by HVO (issue #812). AlternateFormsOS can yield bare
+                # interface views while callers pass cast handles from Object(hvo);
+                # Remove with the wrong proxy is a silent no-op on live LCM (cf. #646).
+                member_to_remove = None
+                for slot in owner.AlternateFormsOS:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is None:
+                    raise FP_ParameterError(
+                        "Allomorph is not a member of AlternateFormsOS"
+                    )
+                owner.AlternateFormsOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
@@ -509,8 +524,20 @@ class AllomorphOperations(BaseOperations):
             elif hasattr(parent, "AlternateFormsOS"):
                 # Source is alternate form
                 if insert_after:
-                    source_index = parent.AlternateFormsOS.IndexOf(source)
-                    parent.AlternateFormsOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #646). AlternateFormsOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    alt_list = list(parent.AlternateFormsOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, allo in enumerate(alt_list):
+                        if allo.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(alt_list)
+                    else:
+                        insert_index = source_index + 1
+                    parent.AlternateFormsOS.Insert(insert_index, duplicate)
                 else:
                     parent.AlternateFormsOS.Add(duplicate)
 
@@ -1549,11 +1576,18 @@ class AllomorphOperations(BaseOperations):
         allomorph = self.__GetAllomorphObject(allomorph_or_hvo)
         env = self.__GetEnvironmentObject(env_or_hvo)
 
-        # Membership test stays outside the bracket so a redundant remove is a
-        # true no-op rather than an empty named undo entry (D5).
-        if env in allomorph.PhoneEnvRC:
+        # issue #740: PhoneEnvRC iteration can yield bare interface views;
+        # locate the RC member by Hvo rather than Python ``in`` / identity.
+        target_hvo = int(env.Hvo)
+        member_to_remove = None
+        for linked in allomorph.PhoneEnvRC:
+            if int(linked.Hvo) == target_hvo:
+                member_to_remove = linked
+                break
+
+        if member_to_remove is not None:
             with self._TransactionCM("Remove phonological environment"):
-                allomorph.PhoneEnvRC.Remove(env)
+                allomorph.PhoneEnvRC.Remove(member_to_remove)
 
     # --- Inflection class membership (issue #581) ---
 
@@ -1657,9 +1691,10 @@ class AllomorphOperations(BaseOperations):
                 f"{getattr(infl_class, 'ClassName', type(infl_class).__name__)}"
             )
 
-        # Membership test stays outside the bracket so a redundant add is a
-        # true no-op rather than an empty named undo entry (D5) -- see Notes.
-        if infl_class not in allomorph.InflectionClassesRC:
+        # issue #740: InflectionClassesRC can yield bare interface views; compare
+        # Hvo rather than Python ``in`` on Add (D5 no-op stays outside bracket).
+        target_hvo = int(infl_class.Hvo)
+        if not any(int(linked.Hvo) == target_hvo for linked in allomorph.InflectionClassesRC):
             with self._TransactionCM("Add inflection class"):
                 allomorph.InflectionClassesRC.Add(infl_class)
 
@@ -1715,11 +1750,17 @@ class AllomorphOperations(BaseOperations):
                 f"{getattr(infl_class, 'ClassName', type(infl_class).__name__)}"
             )
 
-        # Membership test stays outside the bracket so a redundant remove is a
-        # true no-op rather than an empty named undo entry (D5).
-        if infl_class in allomorph.InflectionClassesRC:
+        # issue #740: locate InflectionClassesRC member by Hvo, then Remove(linked).
+        target_hvo = int(infl_class.Hvo)
+        member_to_remove = None
+        for linked in allomorph.InflectionClassesRC:
+            if int(linked.Hvo) == target_hvo:
+                member_to_remove = linked
+                break
+
+        if member_to_remove is not None:
             with self._TransactionCM("Remove inflection class"):
-                allomorph.InflectionClassesRC.Remove(infl_class)
+                allomorph.InflectionClassesRC.Remove(member_to_remove)
 
     # --- Required features (MsEnvFeaturesOA, issue #581) ---
 
@@ -2347,13 +2388,11 @@ class AllomorphOperations(BaseOperations):
         (unlike ``__GetAllomorphObject``'s two-branch
         ``IMoStemAllomorph``/``IMoAffixAllomorph`` dispatch).
 
-        **Identity hazard.** ``RemovePhoneEnv`` does
-        ``if env in allomorph.PhoneEnvRC`` before ``.Remove(env)``.
-        Casting mints a NEW pythonnet wrapper over the same CLR object,
-        so that membership test now depends on .NET equality of a
-        re-wrapped object rather than the original bare one. Re-verified
-        LIVE after this cast landed (cycle2-programmer.md, P9): both of
-        this resolver's existing gate tests stay green and unchanged.
+        **Identity hazard (issue #740).** ``RemovePhoneEnv`` now locates
+        the ``PhoneEnvRC`` member by ``Hvo`` before ``.Remove``; callers
+        may pass a cast handle from this resolver without breaking detach.
+        Re-verified LIVE after the cast landed (cycle2-programmer.md, P9):
+        both of this resolver's existing gate tests stay green and unchanged.
 
         Any ``ClassName`` other than ``"PhEnvironment"`` (or a non-LCM
         input with no ``ClassName``) is returned UNCHANGED -- this
