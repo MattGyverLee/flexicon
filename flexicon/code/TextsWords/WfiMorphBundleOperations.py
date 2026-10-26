@@ -252,8 +252,20 @@ class WfiMorphBundleOperations(BaseOperations):
         owner = self._GetTypedOwner(bundle)
         if owner is None:
             raise FP_ParameterError("Morph bundle has no owning analysis")
+        # Membership by HVO (issue #786). MorphBundlesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # a non-member proxy can no-op and Delete retains the bundle.
+        target_hvo = int(bundle.Hvo)
+        member_to_remove = None
+        for mb in owner.MorphBundlesOS:
+            if int(mb.Hvo) == target_hvo:
+                member_to_remove = mb
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError("Morph bundle does not exist on the analysis")
+
         with self._TransactionCM("Delete morph bundle"):
-            owner.MorphBundlesOS.Remove(bundle)
+            owner.MorphBundlesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
