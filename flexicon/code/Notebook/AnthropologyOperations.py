@@ -488,14 +488,24 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         self._EnsureWriteEnabled()
 
         item = self.__GetItemObject(item_or_hvo)
+        target_hvo = int(item.Hvo)
 
         # Get the anthropology list
         anthro_list = self.project.lp.AnthroListOA
         if anthro_list is not None:
-            # Check if it's a top-level item
-            if anthro_list.PossibilitiesOS.Contains(item):
+            # Top-level membership by HVO (issue #758). PossibilitiesOS can
+            # yield bare interface views while callers pass cast handles from
+            # Object(hvo); Contains/Remove on the wrong proxy can leave the item
+            # linked.
+            member_to_remove = None
+            if hasattr(anthro_list, "PossibilitiesOS"):
+                for slot in anthro_list.PossibilitiesOS:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+            if member_to_remove is not None:
                 with self._TransactionCM("Delete anthropology item"):
-                    anthro_list.PossibilitiesOS.Remove(item)
+                    anthro_list.PossibilitiesOS.Remove(member_to_remove)
             else:
                 # It's a subitem, remove from parent. item.Owner is
                 # typed as ICmObject; cast to the concrete possibility
@@ -512,8 +522,14 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                         "Anthropology subitem has no resolvable owner"
                     )
                 if hasattr(parent, "SubPossibilitiesOS"):
-                    with self._TransactionCM("Delete anthropology item"):
-                        parent.SubPossibilitiesOS.Remove(item)
+                    member_to_remove = None
+                    for slot in parent.SubPossibilitiesOS:
+                        if int(slot.Hvo) == target_hvo:
+                            member_to_remove = slot
+                            break
+                    if member_to_remove is not None:
+                        with self._TransactionCM("Delete anthropology item"):
+                            parent.SubPossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Exists(self, name):
@@ -1782,8 +1798,20 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                 owner = ICmAnthroItem(raw_owner)
                 # Parent is another anthropology item
                 if insert_after:
-                    source_index = owner.SubPossibilitiesOS.IndexOf(source)
-                    owner.SubPossibilitiesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #660). SubPossibilitiesOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    sub_list = list(owner.SubPossibilitiesOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, sub_item in enumerate(sub_list):
+                        if sub_item.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(sub_list)
+                    else:
+                        insert_index = source_index + 1
+                    owner.SubPossibilitiesOS.Insert(insert_index, duplicate)
                 else:
                     owner.SubPossibilitiesOS.Add(duplicate)
             else:
@@ -1791,8 +1819,20 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                 anthro_list = self.project.lp.AnthroListOA
                 if anthro_list is not None:
                     if insert_after:
-                        source_index = anthro_list.PossibilitiesOS.IndexOf(source)
-                        anthro_list.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                        # Index by HVO (issue #660). PossibilitiesOS can yield bare
+                        # interface views whose Python identity differs from source.
+                        top_list = list(anthro_list.PossibilitiesOS)
+                        target_hvo = source.Hvo
+                        source_index = None
+                        for i, item in enumerate(top_list):
+                            if item.Hvo == target_hvo:
+                                source_index = i
+                                break
+                        if source_index is None:
+                            insert_index = len(top_list)
+                        else:
+                            insert_index = source_index + 1
+                        anthro_list.PossibilitiesOS.Insert(insert_index, duplicate)
                     else:
                         anthro_list.PossibilitiesOS.Add(duplicate)
 
