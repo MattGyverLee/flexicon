@@ -1179,8 +1179,20 @@ class LocationOperations(BaseOperations):
             if parent:
                 # Parent is another location (sublocation)
                 if insert_after:
-                    source_index = parent.SubPossibilitiesOS.IndexOf(source)
-                    parent.SubPossibilitiesOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #652). SubPossibilitiesOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    sub_list = list(parent.SubPossibilitiesOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, sub_loc in enumerate(sub_list):
+                        if sub_loc.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(sub_list)
+                    else:
+                        insert_index = source_index + 1
+                    parent.SubPossibilitiesOS.Insert(insert_index, duplicate)
                 else:
                     parent.SubPossibilitiesOS.Add(duplicate)
             else:
@@ -1188,8 +1200,20 @@ class LocationOperations(BaseOperations):
                 location_list = self.project.lp.LocationsOA
                 if location_list:
                     if insert_after:
-                        source_index = location_list.PossibilitiesOS.IndexOf(source)
-                        location_list.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                        # Index by HVO (issue #652). PossibilitiesOS can yield bare
+                        # interface views whose Python identity differs from source.
+                        top_list = list(location_list.PossibilitiesOS)
+                        target_hvo = source.Hvo
+                        source_index = None
+                        for i, loc in enumerate(top_list):
+                            if loc.Hvo == target_hvo:
+                                source_index = i
+                                break
+                        if source_index is None:
+                            insert_index = len(top_list)
+                        else:
+                            insert_index = source_index + 1
+                        location_list.PossibilitiesOS.Insert(insert_index, duplicate)
                     else:
                         location_list.PossibilitiesOS.Add(duplicate)
 
