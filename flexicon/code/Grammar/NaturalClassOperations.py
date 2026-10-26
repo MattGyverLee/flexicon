@@ -358,7 +358,20 @@ class NaturalClassOperations(BaseOperations):
         phon_data = self.project.lp.PhonologicalDataOA
 
         with self._TransactionCM("Delete natural class"):
-            phon_data.NaturalClassesOS.Remove(nc)
+            # Membership by HVO (issue #796). NaturalClassesOS can yield bare
+            # interface views while callers pass cast handles from Object(hvo);
+            # Remove with the wrong proxy is a silent no-op on live LCM.
+            target_hvo = int(nc.Hvo)
+            member_to_remove = None
+            for slot in phon_data.NaturalClassesOS:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+            if member_to_remove is None:
+                raise FP_ParameterError(
+                    "Natural class is not a member of NaturalClassesOS"
+                )
+            phon_data.NaturalClassesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
