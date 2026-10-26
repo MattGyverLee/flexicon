@@ -219,10 +219,23 @@ class PersonOperations(BaseOperations):
 
         # Resolve to person object
         person = self.__ResolveObject(person_or_hvo)
+        target_hvo = int(person.Hvo)
 
-        # Remove from people collection
-        with self._TransactionCM("Delete person"):
-            self.project.lp.PeopleOA.PossibilitiesOS.Remove(person)
+        people_oa = self.project.lp.PeopleOA
+        member_to_remove = None
+        if people_oa is not None and hasattr(people_oa, "PossibilitiesOS"):
+            for slot in people_oa.PossibilitiesOS:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+
+        if member_to_remove is not None:
+            with self._TransactionCM("Delete person"):
+                # People collection membership by HVO (issue #764).
+                # PossibilitiesOS can yield bare interface views while callers
+                # pass cast handles from Object(hvo); Remove on the wrong proxy
+                # can leave the person linked.
+                people_oa.PossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Exists(self, name, wsHandle=None):
@@ -1027,8 +1040,20 @@ class PersonOperations(BaseOperations):
 
             # Determine insertion position and add to parent FIRST
             if insert_after:
-                source_index = self.project.lp.PeopleOA.PossibilitiesOS.IndexOf(source)
-                self.project.lp.PeopleOA.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                # Index by HVO (issue #654). PossibilitiesOS can yield bare interface
+                # views whose Python identity differs from source.
+                people_list = list(self.project.lp.PeopleOA.PossibilitiesOS)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, person in enumerate(people_list):
+                    if person.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(people_list)
+                else:
+                    insert_index = source_index + 1
+                self.project.lp.PeopleOA.PossibilitiesOS.Insert(insert_index, duplicate)
             else:
                 self.project.lp.PeopleOA.PossibilitiesOS.Add(duplicate)
 

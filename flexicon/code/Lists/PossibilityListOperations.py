@@ -640,18 +640,32 @@ class PossibilityListOperations(BaseOperations):
         self._ValidateParam(item_or_hvo, "item_or_hvo")
 
         item = self.__ResolveItem(item_or_hvo)
+        target_hvo = int(item.Hvo)
 
         # Get the parent or owning list
         parent = self.GetParentItem(item)
 
         with self._TransactionCM("Delete list item"):
             if parent:
-                # Remove from parent's subitems
-                parent.SubPossibilitiesOS.Remove(item)
+                # Membership by HVO (issue #754). SubPossibilitiesOS can yield bare
+                # interface views while callers pass cast handles from Object(hvo);
+                # Remove on the wrong proxy can leave the item linked.
+                member_to_remove = None
+                for slot in parent.SubPossibilitiesOS:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is not None:
+                    parent.SubPossibilitiesOS.Remove(member_to_remove)
             else:
-                # Remove from top-level list
                 owner = self.__GetListOwner(item)
-                owner.PossibilitiesOS.Remove(item)
+                member_to_remove = None
+                for slot in owner.PossibilitiesOS:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is not None:
+                    owner.PossibilitiesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):
@@ -718,20 +732,35 @@ class PossibilityListOperations(BaseOperations):
         with self._TransactionCM("Duplicate list item"):
             duplicate = factory.Create()
 
+            def _insert_after(sequence):
+                # Index by HVO (issue #662). SubPossibilitiesOS / PossibilitiesOS
+                # can yield bare interface views whose Python identity differs
+                # from source.
+                members = list(sequence)
+                target_hvo = source.Hvo
+                source_index = None
+                for i, member in enumerate(members):
+                    if member.Hvo == target_hvo:
+                        source_index = i
+                        break
+                if source_index is None:
+                    insert_index = len(members)
+                else:
+                    insert_index = source_index + 1
+                sequence.Insert(insert_index, duplicate)
+
             # ADD TO PARENT FIRST before copying properties (CRITICAL)
             if parent:
                 # Insert into parent's subitems
                 if insert_after:
-                    source_index = parent.SubPossibilitiesOS.IndexOf(source)
-                    parent.SubPossibilitiesOS.Insert(source_index + 1, duplicate)
+                    _insert_after(parent.SubPossibilitiesOS)
                 else:
                     parent.SubPossibilitiesOS.Add(duplicate)
             else:
                 # Insert into top-level list
                 owner = self.__GetListOwner(source)
                 if insert_after:
-                    source_index = owner.PossibilitiesOS.IndexOf(source)
-                    owner.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                    _insert_after(owner.PossibilitiesOS)
                 else:
                     owner.PossibilitiesOS.Add(duplicate)
 
