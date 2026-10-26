@@ -2611,21 +2611,29 @@ class LexSenseOperations(BaseOperations):
 
         sense = self.__GetSenseObject(sense_or_hvo)
 
-        # Verify picture is in collection
-        if picture not in sense.PicturesOS:
+        # Membership by HVO (issue #690). PicturesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and RemovePicture raises spuriously.
+        target_hvo = picture.Hvo
+        linked_picture = None
+        for linked in sense.PicturesOS:
+            if linked.Hvo == target_hvo:
+                linked_picture = linked
+                break
+        if linked_picture is None:
             raise FP_ParameterError("Picture not found in sense's picture collection")
 
         # Get file path before removing (for optional deletion)
         file_path = None
-        if delete_file and hasattr(picture, "PictureFileRA") and picture.PictureFileRA:
-            file_path = self.project.Media.GetExternalPath(picture.PictureFileRA)
+        if delete_file and hasattr(linked_picture, "PictureFileRA") and linked_picture.PictureFileRA:
+            file_path = self.project.Media.GetExternalPath(linked_picture.PictureFileRA)
 
         # Remove from collection. The optional file deletion below is a
         # filesystem side-effect the LCM cannot roll back, so it stays
         # outside the bracket rather than inside a unit of work that
         # implies it is reversible.
         with self._TransactionCM("Remove picture from sense"):
-            sense.PicturesOS.Remove(picture)
+            sense.PicturesOS.Remove(linked_picture)
 
         # Delete physical file if requested
         if delete_file and file_path and os.path.exists(file_path):
