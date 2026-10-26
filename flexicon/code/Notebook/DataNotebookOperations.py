@@ -488,13 +488,36 @@ class DataNotebookOperations(BaseOperations):
             # row. Route through _GetTypedOwner to recover IRnGenericRec
             # before checking the slot. (issue #133, same class as #98/#116)
             parent = self._GetTypedOwner(record)
+            target_hvo = int(record.Hvo)
             if parent is not None and hasattr(parent, "SubRecordsOS"):
-                parent.SubRecordsOS.Remove(record)
+                # Membership by HVO (issue #818); SubRecordsOS can yield bare
+                # interface views while callers pass cast handles from Object(hvo);
+                # Remove with the wrong proxy is a silent no-op on live LCM.
+                member_to_remove = None
+                for slot in parent.SubRecordsOS:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is None:
+                    raise FP_ParameterError(
+                        "Record is not a member of SubRecordsOS"
+                    )
+                parent.SubRecordsOS.Remove(member_to_remove)
             else:
                 # Top-level record: RecordsOC is owned by the project's
                 # single ResearchNotebookOA, not by the repository, which
                 # has no RecordsOC member (ruling C1).
-                self.project.lp.ResearchNotebookOA.RecordsOC.Remove(record)
+                records_oc = self.project.lp.ResearchNotebookOA.RecordsOC
+                member_to_remove = None
+                for slot in records_oc:
+                    if int(slot.Hvo) == target_hvo:
+                        member_to_remove = slot
+                        break
+                if member_to_remove is None:
+                    raise FP_ParameterError(
+                        "Record is not a member of RecordsOC"
+                    )
+                records_oc.Remove(member_to_remove)
 
     @OperationsMethod
     def Exists(self, title, wsHandle=None):
@@ -1419,7 +1442,12 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        if person not in record.ResearchersRC:
+        # Membership by HVO (issue #708). ResearchersRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and Add can duplicate-link.
+        target_hvo = person.Hvo
+        already_linked = any(p.Hvo == target_hvo for p in record.ResearchersRC)
+        if not already_linked:
             with self._TransactionCM("Add researcher to notebook record"):
                 record.ResearchersRC.Add(person)
 
@@ -1458,9 +1486,15 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        if person in record.ResearchersRC:
-            with self._TransactionCM("Remove researcher from notebook record"):
-                record.ResearchersRC.Remove(person)
+        # Membership by HVO (issue #708). ResearchersRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and Remove becomes a silent no-op.
+        target_hvo = person.Hvo
+        for linked in record.ResearchersRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove researcher from notebook record"):
+                    record.ResearchersRC.Remove(linked)
+                break
 
     # --- Linking Operations: Participants ---
 
@@ -1589,7 +1623,10 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         group = record.DefaultRoledParticipants
-        if group is not None and person in group.ParticipantsRC:
+        target_hvo = person.Hvo
+        if group is not None and any(
+            p.Hvo == target_hvo for p in group.ParticipantsRC
+        ):
             return
 
         with self._TransactionCM("Add participant to notebook record"):
@@ -1600,7 +1637,10 @@ class DataNotebookOperations(BaseOperations):
             if group is None:
                 group = record.MakeDefaultRoledParticipant()
 
-            if person not in group.ParticipantsRC:
+            # Membership by HVO (issue #714). ParticipantsRC can yield bare
+            # interface views while callers pass cast handles from Object(hvo);
+            # Python ``in`` then false-negates and Add can duplicate-link.
+            if not any(p.Hvo == target_hvo for p in group.ParticipantsRC):
                 group.ParticipantsRC.Add(person)
 
     @OperationsMethod
@@ -1653,8 +1693,14 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
+        # Membership by HVO (issue #714). ParticipantsRC can yield bare
+        # interface views while callers pass cast handles from Object(hvo);
+        # Python ``in`` then false-negates and Remove becomes a silent no-op.
+        target_hvo = person.Hvo
         groups_with_person = [
-            group for group in record.ParticipantsOC if person in group.ParticipantsRC
+            group
+            for group in record.ParticipantsOC
+            if any(p.Hvo == target_hvo for p in group.ParticipantsRC)
         ]
 
         if not groups_with_person:
@@ -1667,7 +1713,10 @@ class DataNotebookOperations(BaseOperations):
                 # and removing a group from it would delete the group
                 # (and orphan/destroy its participant links), not just
                 # unlink this one person.
-                group.ParticipantsRC.Remove(person)
+                for linked in group.ParticipantsRC:
+                    if linked.Hvo == target_hvo:
+                        group.ParticipantsRC.Remove(linked)
+                        break
 
     # --- Linking Operations: Locations ---
 
@@ -1769,7 +1818,12 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         if hasattr(record, "LocationsRC"):
-            if location not in record.LocationsRC:
+            # Membership by HVO (issue #710). LocationsRC can yield bare interface
+            # views while callers pass cast handles from Object(hvo); Python ``in``
+            # then false-negates and Add can duplicate-link.
+            target_hvo = location.Hvo
+            already_linked = any(loc.Hvo == target_hvo for loc in record.LocationsRC)
+            if not already_linked:
                 with self._TransactionCM("Add location to notebook record"):
                     record.LocationsRC.Add(location)
 
@@ -1809,9 +1863,15 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         if hasattr(record, "LocationsRC"):
-            if location in record.LocationsRC:
-                with self._TransactionCM("Remove location from notebook record"):
-                    record.LocationsRC.Remove(location)
+            # Membership by HVO (issue #710). LocationsRC can yield bare interface
+            # views while callers pass cast handles from Object(hvo); Python ``in``
+            # then false-negates and Remove becomes a silent no-op.
+            target_hvo = location.Hvo
+            for linked in record.LocationsRC:
+                if linked.Hvo == target_hvo:
+                    with self._TransactionCM("Remove location from notebook record"):
+                        record.LocationsRC.Remove(linked)
+                    break
 
     # --- Linking Operations: Sources ---
 
@@ -2205,7 +2265,12 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         if hasattr(record, "MediaFilesOS"):
-            if media_file not in record.MediaFilesOS:
+            # Membership by HVO (issue #682). MediaFilesOS can yield bare interface
+            # views while callers pass cast handles from Object(hvo); Python ``in``
+            # then false-negates and Add can duplicate-link.
+            target_hvo = media_file.Hvo
+            already_linked = any(f.Hvo == target_hvo for f in record.MediaFilesOS)
+            if not already_linked:
                 with self._TransactionCM("Add media file to notebook record"):
                     record.MediaFilesOS.Add(media_file)
 
@@ -2246,9 +2311,15 @@ class DataNotebookOperations(BaseOperations):
         record = self.__GetRecordObject(record_or_hvo)
 
         if hasattr(record, "MediaFilesOS"):
-            if media_file in record.MediaFilesOS:
-                with self._TransactionCM("Remove media file from notebook record"):
-                    record.MediaFilesOS.Remove(media_file)
+            # Membership by HVO (issue #682). MediaFilesOS can yield bare interface
+            # views while callers pass cast handles from Object(hvo); Python ``in``
+            # then false-negates and Remove becomes a silent no-op.
+            target_hvo = media_file.Hvo
+            for linked in record.MediaFilesOS:
+                if linked.Hvo == target_hvo:
+                    with self._TransactionCM("Remove media file from notebook record"):
+                        record.MediaFilesOS.Remove(linked)
+                    break
 
     # --- Status Operations ---
 
@@ -2681,8 +2752,20 @@ class DataNotebookOperations(BaseOperations):
             if parent_record is not None and hasattr(parent_record, "SubRecordsOS"):
                 # Parent is another notebook record (sub-record)
                 if insert_after:
-                    source_index = parent_record.SubRecordsOS.IndexOf(source)
-                    parent_record.SubRecordsOS.Insert(source_index + 1, duplicate)
+                    # Index by HVO (issue #650). SubRecordsOS can yield bare
+                    # interface views whose Python identity differs from source.
+                    sub_list = list(parent_record.SubRecordsOS)
+                    target_hvo = source.Hvo
+                    source_index = None
+                    for i, sub in enumerate(sub_list):
+                        if sub.Hvo == target_hvo:
+                            source_index = i
+                            break
+                    if source_index is None:
+                        insert_index = len(sub_list)
+                    else:
+                        insert_index = source_index + 1
+                    parent_record.SubRecordsOS.Insert(insert_index, duplicate)
                 else:
                     parent_record.SubRecordsOS.Add(duplicate)
             else:

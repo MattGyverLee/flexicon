@@ -2418,7 +2418,10 @@ class LexEntryOperations(BaseOperations):
                 raise FP_ParameterError(f"Publication '{publication}' not found")
             publication = pub_obj
 
-        if publication not in entry.DoNotPublishInRC:
+        target_hvo = publication.Hvo
+        # Membership by HVO (issue #728). DoNotPublishInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        if not any(pub.Hvo == target_hvo for pub in entry.DoNotPublishInRC):
             with self._TransactionCM("Add entry publication exclusion"):
                 entry.DoNotPublishInRC.Add(publication)
 
@@ -2444,9 +2447,14 @@ class LexEntryOperations(BaseOperations):
                 raise FP_ParameterError(f"Publication '{publication}' not found")
             publication = pub_obj
 
-        if publication in entry.DoNotPublishInRC:
-            with self._TransactionCM("Remove entry publication exclusion"):
-                entry.DoNotPublishInRC.Remove(publication)
+        # Membership by HVO (issue #728). DoNotPublishInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        target_hvo = publication.Hvo
+        for linked in entry.DoNotPublishInRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove entry publication exclusion"):
+                    entry.DoNotPublishInRC.Remove(linked)
+                break
 
     @OperationsMethod
     def GetDoNotShowMainEntryIn(self, entry_or_hvo):
@@ -2491,7 +2499,10 @@ class LexEntryOperations(BaseOperations):
                 raise FP_ParameterError(f"Publication '{publication}' not found")
             publication = pub_obj
 
-        if publication not in entry.DoNotShowMainEntryInRC:
+        target_hvo = publication.Hvo
+        # Membership by HVO (issue #730). DoNotShowMainEntryInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        if not any(pub.Hvo == target_hvo for pub in entry.DoNotShowMainEntryInRC):
             with self._TransactionCM("Add main-entry display exclusion"):
                 entry.DoNotShowMainEntryInRC.Add(publication)
 
@@ -2517,9 +2528,14 @@ class LexEntryOperations(BaseOperations):
                 raise FP_ParameterError(f"Publication '{publication}' not found")
             publication = pub_obj
 
-        if publication in entry.DoNotShowMainEntryInRC:
-            with self._TransactionCM("Remove main-entry display exclusion"):
-                entry.DoNotShowMainEntryInRC.Remove(publication)
+        # Membership by HVO (issue #730). DoNotShowMainEntryInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        target_hvo = publication.Hvo
+        for linked in entry.DoNotShowMainEntryInRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove main-entry display exclusion"):
+                    entry.DoNotShowMainEntryInRC.Remove(linked)
+                break
 
     # --- Private Helper Methods ---
 
@@ -3251,6 +3267,16 @@ class LexEntryOperations(BaseOperations):
             logger.warning(f"Error during sense deduplication: {e}")
             # Don't fail the whole merge operation if deduplication fails
 
+    def __OwningSequenceContainsHvo(self, sequence, hvo):
+        """Return True if ``sequence`` has a member with the given HVO (issue #702)."""
+        if hvo is None:
+            return False
+        target = int(hvo)
+        for member in sequence:
+            if int(member.Hvo) == target:
+                return True
+        return False
+
     def __DeduplicatePronunciationsInEntry(self, entry):
         """
         Detect and remove duplicate pronunciations within an entry.
@@ -3320,8 +3346,12 @@ class LexEntryOperations(BaseOperations):
                     # -- a benign LCM-side "can't remove, still referenced"
                     # condition could return normally without removing
                     # anything, and that must be distinguishable from a
-                    # real removal (issue #291's collapse).
-                    if dupe not in entry.PronunciationsOS:
+                    # real removal (issue #291's collapse). Membership by HVO
+                    # (issue #702): Python ``in`` false-negates when the dupe
+                    # handle identity differs from sequence members.
+                    if not self.__OwningSequenceContainsHvo(
+                        entry.PronunciationsOS, dupe.Hvo
+                    ):
                         removed_count += 1
 
         if found_count > 0:
@@ -3401,8 +3431,10 @@ class LexEntryOperations(BaseOperations):
                     # See __DeduplicatePronunciationsInEntry above: verify
                     # the removal actually took effect rather than
                     # assuming success just because .Remove() didn't
-                    # raise (issue #291's collapse).
-                    if dupe not in entry.AlternateFormsOS:
+                    # raise (issue #291's collapse). Membership by HVO (issue #702).
+                    if not self.__OwningSequenceContainsHvo(
+                        entry.AlternateFormsOS, dupe.Hvo
+                    ):
                         removed_count += 1
 
         if found_count > 0:

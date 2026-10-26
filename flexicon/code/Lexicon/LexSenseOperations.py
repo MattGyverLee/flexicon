@@ -293,8 +293,20 @@ class LexSenseOperations(BaseOperations):
         if owner is None:
             raise FP_ParameterError("Sense has no owning entry or parent sense")
 
+        # Membership by HVO (issue #804). SensesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Remove with
+        # the wrong proxy is a silent no-op on live LCM (cf. #550 Duplicate).
+        target_hvo = int(sense.Hvo)
+        member_to_remove = None
+        for slot in owner.SensesOS:
+            if int(slot.Hvo) == target_hvo:
+                member_to_remove = slot
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError("Sense is not a member of SensesOS")
+
         with self._TransactionCM("Delete sense"):
-            owner.SensesOS.Remove(sense)
+            owner.SensesOS.Remove(member_to_remove)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):
@@ -1813,7 +1825,11 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         domain = self.__GetSemanticDomainObject(domain_or_hvo)
 
-        if domain not in sense.SemanticDomainsRC:
+        target_hvo = domain.Hvo
+        # Membership by HVO (issue #718). SemanticDomainsRC can yield bare
+        # interface views while callers pass cast handles from Object(hvo);
+        # Python ``in`` then false-negates and Add can duplicate-link.
+        if not any(d.Hvo == target_hvo for d in sense.SemanticDomainsRC):
             with self._TransactionCM("Add semantic domain"):
                 sense.SemanticDomainsRC.Add(domain)
 
@@ -1854,10 +1870,15 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         domain = self.__GetSemanticDomainObject(domain_or_hvo)
 
-        # Only remove if it's actually in the collection
-        if domain in sense.SemanticDomainsRC:
-            with self._TransactionCM("Remove semantic domain"):
-                sense.SemanticDomainsRC.Remove(domain)
+        # Membership by HVO (issue #718). SemanticDomainsRC can yield bare
+        # interface views while callers pass cast handles from Object(hvo);
+        # Python ``in`` then false-negates and Remove becomes a silent no-op.
+        target_hvo = domain.Hvo
+        for linked in sense.SemanticDomainsRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove semantic domain"):
+                    sense.SemanticDomainsRC.Remove(linked)
+                break
 
     # --- Example Sentence Operations ---
 
@@ -2611,21 +2632,29 @@ class LexSenseOperations(BaseOperations):
 
         sense = self.__GetSenseObject(sense_or_hvo)
 
-        # Verify picture is in collection
-        if picture not in sense.PicturesOS:
+        # Membership by HVO (issue #690). PicturesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and RemovePicture raises spuriously.
+        target_hvo = picture.Hvo
+        linked_picture = None
+        for linked in sense.PicturesOS:
+            if linked.Hvo == target_hvo:
+                linked_picture = linked
+                break
+        if linked_picture is None:
             raise FP_ParameterError("Picture not found in sense's picture collection")
 
         # Get file path before removing (for optional deletion)
         file_path = None
-        if delete_file and hasattr(picture, "PictureFileRA") and picture.PictureFileRA:
-            file_path = self.project.Media.GetExternalPath(picture.PictureFileRA)
+        if delete_file and hasattr(linked_picture, "PictureFileRA") and linked_picture.PictureFileRA:
+            file_path = self.project.Media.GetExternalPath(linked_picture.PictureFileRA)
 
         # Remove from collection. The optional file deletion below is a
         # filesystem side-effect the LCM cannot roll back, so it stays
         # outside the bracket rather than inside a unit of work that
         # implies it is reversible.
         with self._TransactionCM("Remove picture from sense"):
-            sense.PicturesOS.Remove(picture)
+            sense.PicturesOS.Remove(linked_picture)
 
         # Delete physical file if requested
         if delete_file and file_path and os.path.exists(file_path):
@@ -2712,8 +2741,11 @@ class LexSenseOperations(BaseOperations):
             logger.warning("Source and destination are the same sense")
             return False
 
-        # Verify picture is in source collection
-        if picture not in from_sense.PicturesOS:
+        # Membership by HVO (issue #688). PicturesOS can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and MovePicture raises spuriously.
+        target_hvo = picture.Hvo
+        if not any(p.Hvo == target_hvo for p in from_sense.PicturesOS):
             raise FP_ParameterError("Picture not found in source sense's picture collection")
 
         with self._TransactionCM("Move picture"):
@@ -3500,7 +3532,11 @@ class LexSenseOperations(BaseOperations):
             if not domain_type:
                 raise FP_ParameterError(f"Domain type '{domain_type_name}' not found")
 
-        if domain_type not in sense.DomainTypesRC:
+        target_hvo = domain_type.Hvo
+        # Membership by HVO (issue #722). DomainTypesRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and Add can duplicate-link.
+        if not any(item.Hvo == target_hvo for item in sense.DomainTypesRC):
             with self._TransactionCM("Add domain type"):
                 sense.DomainTypesRC.Add(domain_type)
 
@@ -3511,9 +3547,16 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(sense_or_hvo, "sense_or_hvo")
         self._ValidateParam(domain_type, "domain_type")
         sense = self.__GetSenseObject(sense_or_hvo)
-        if domain_type in sense.DomainTypesRC:
-            with self._TransactionCM("Remove domain type"):
-                sense.DomainTypesRC.Remove(domain_type)
+
+        # Membership by HVO (issue #722). DomainTypesRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Python ``in``
+        # then false-negates and Remove becomes a silent no-op.
+        target_hvo = domain_type.Hvo
+        for linked in sense.DomainTypesRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove domain type"):
+                    sense.DomainTypesRC.Remove(linked)
+                break
 
     @OperationsMethod
     def GetAnthroCodes(self, sense_or_hvo):
@@ -3541,7 +3584,10 @@ class LexSenseOperations(BaseOperations):
             if not anthro_code:
                 raise FP_ParameterError(f"Anthropology code '{anthro_code_name}' not found")
 
-        if anthro_code not in sense.AnthroCodesRC:
+        target_hvo = anthro_code.Hvo
+        # Membership by HVO (issue #724). AnthroCodesRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        if not any(code.Hvo == target_hvo for code in sense.AnthroCodesRC):
             with self._TransactionCM("Add anthropology code"):
                 sense.AnthroCodesRC.Add(anthro_code)
 
@@ -3552,9 +3598,14 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(sense_or_hvo, "sense_or_hvo")
         self._ValidateParam(anthro_code, "anthro_code")
         sense = self.__GetSenseObject(sense_or_hvo)
-        if anthro_code in sense.AnthroCodesRC:
-            with self._TransactionCM("Remove anthropology code"):
-                sense.AnthroCodesRC.Remove(anthro_code)
+        # Membership by HVO (issue #724). AnthroCodesRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        target_hvo = anthro_code.Hvo
+        for linked in sense.AnthroCodesRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove anthropology code"):
+                    sense.AnthroCodesRC.Remove(linked)
+                break
 
     @OperationsMethod
     def GetDoNotPublishIn(self, sense_or_hvo):
@@ -3611,7 +3662,10 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         publication = self.__ResolvePublication(publication)
 
-        if publication not in sense.DoNotPublishInRC:
+        target_hvo = publication.Hvo
+        # Membership by HVO (issue #726). DoNotPublishInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        if not any(pub.Hvo == target_hvo for pub in sense.DoNotPublishInRC):
             with self._TransactionCM("Add sense publication exclusion"):
                 sense.DoNotPublishInRC.Add(publication)
 
@@ -3640,9 +3694,14 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         publication = self.__ResolvePublication(publication)
 
-        if publication in sense.DoNotPublishInRC:
-            with self._TransactionCM("Remove sense publication exclusion"):
-                sense.DoNotPublishInRC.Remove(publication)
+        # Membership by HVO (issue #726). DoNotPublishInRC can yield bare interface
+        # views whose Python identity differs from the caller's object.
+        target_hvo = publication.Hvo
+        for linked in sense.DoNotPublishInRC:
+            if linked.Hvo == target_hvo:
+                with self._TransactionCM("Remove sense publication exclusion"):
+                    sense.DoNotPublishInRC.Remove(linked)
+                break
 
     def __ResolvePublication(self, publication):
         """Resolve a publication name or object to an ICmPossibility."""
@@ -4100,6 +4159,16 @@ class LexSenseOperations(BaseOperations):
 
         return duplicates
 
+    def __OwningSequenceContainsHvo(self, sequence, hvo):
+        """Return True if ``sequence`` has a member with the given HVO (issue #702)."""
+        if hvo is None:
+            return False
+        target = int(hvo)
+        for member in sequence:
+            if int(member.Hvo) == target:
+                return True
+        return False
+
     def __DeduplicateExamplesInSense(self, sense):
         """
         Detect and merge duplicate examples within a sense.
@@ -4150,8 +4219,8 @@ class LexSenseOperations(BaseOperations):
                 # assuming success just because .Remove() didn't raise
                 # (issue #291's collapse: "0 removed because 0 duplicates
                 # existed" and "0 removed because removal failed" must be
-                # distinguishable).
-                if dupe not in sense.ExamplesOS:
+                # distinguishable). Membership by HVO (issue #702).
+                if not self.__OwningSequenceContainsHvo(sense.ExamplesOS, dupe.Hvo):
                     merged_count += 1
 
         if found_count > 0:
