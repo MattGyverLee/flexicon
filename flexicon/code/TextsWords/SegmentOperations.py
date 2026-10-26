@@ -1027,7 +1027,18 @@ class SegmentOperations(BaseOperations):
             para.Contents = bldr.GetString()
 
             # --- Step 2: insert new segment into SegmentsOS ---
-            idx = para.SegmentsOS.IndexOf(seg)
+            # Index by HVO (issue #670). SegmentsOS can yield bare interface
+            # views whose Python identity differs from seg.
+            seg_hvo = seg.Hvo
+            idx = None
+            for i, member in enumerate(para.SegmentsOS):
+                if member.Hvo == seg_hvo:
+                    idx = i
+                    break
+            if idx is None:
+                raise FP_ParameterError(
+                    "Segment is not in the paragraph SegmentsOS"
+                )
             factory = self.__GetSegmentFactory()
             new_seg = factory.Create()
             para.SegmentsOS.Insert(idx + 1, new_seg)
