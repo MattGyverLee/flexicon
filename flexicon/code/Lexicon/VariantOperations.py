@@ -969,7 +969,12 @@ class VariantOperations(BaseOperations):
         variant = self.__GetVariantObject(variant_or_hvo)
         entry = self.__GetEntryObject(entry_or_hvo)
 
-        # Add the entry as a component
+        # issue #738: ComponentLexemesRS iteration can yield bare interface
+        # views; compare Hvo rather than Python ``in`` / identity on Add.
+        target_hvo = int(entry.Hvo)
+        if any(int(item.Hvo) == target_hvo for item in variant.ComponentLexemesRS):
+            return
+
         with self._TransactionCM("Add component lexeme"):
             variant.ComponentLexemesRS.Add(entry)
 
@@ -1015,10 +1020,17 @@ class VariantOperations(BaseOperations):
         variant = self.__GetVariantObject(variant_or_hvo)
         entry = self.__GetEntryObject(entry_or_hvo)
 
-        # Remove if present
-        if entry in variant.ComponentLexemesRS:
+        # issue #738: locate the RS member by Hvo, then Remove that reference.
+        target_hvo = int(entry.Hvo)
+        member_to_remove = None
+        for item in variant.ComponentLexemesRS:
+            if int(item.Hvo) == target_hvo:
+                member_to_remove = item
+                break
+
+        if member_to_remove is not None:
             with self._TransactionCM("Remove component lexeme"):
-                variant.ComponentLexemesRS.Remove(entry)
+                variant.ComponentLexemesRS.Remove(member_to_remove)
 
     # --- Utilities ---
 
