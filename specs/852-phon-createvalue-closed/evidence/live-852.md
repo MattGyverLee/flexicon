@@ -21,3 +21,5 @@ FLEXLIBS_REQUIRE_LIVE=1 python -m pytest tests/operations/test_issue852_phon_cre
 ```text
 python3 -m pytest tests/operations/test_issue852_phon_createvalue_closed_offline.py -m "not requires_live_project" -q
 ```
+
+**Cron re-verify (2026-11-02T21:49Z):** 2 passed on cloud agent after fresh `origin/main` checkout (`fix/852-phon-createvalue-closed` branch).
