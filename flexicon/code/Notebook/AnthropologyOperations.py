@@ -1664,8 +1664,13 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         except Exception:
             raise FP_ParameterError("person must be a valid ICmPerson object")
 
-        # Check if already linked
-        if hasattr(item, "ResearchersRC") and item.ResearchersRC.Contains(person_obj):
+        # Membership by HVO (issue #842). ResearchersRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Contains then
+        # false-negates and Add can duplicate-link.
+        target_hvo = person_obj.Hvo
+        if hasattr(item, "ResearchersRC") and any(
+            p.Hvo == target_hvo for p in item.ResearchersRC
+        ):
             raise FP_ParameterError("Person is already linked to this item")
 
         # Add the person to the item's collection
@@ -1722,14 +1727,17 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         except Exception:
             raise FP_ParameterError("person must be a valid ICmPerson object")
 
-        # Check if linked
-        if hasattr(item, "ResearchersRC") and not item.ResearchersRC.Contains(person_obj):
-            raise FP_ParameterError("Person is not linked to this item")
-
-        # Remove the person from the item's collection
+        # Membership by HVO (issue #842). ResearchersRC can yield bare interface
+        # views while callers pass cast handles from Object(hvo); Contains then
+        # false-negates and Remove becomes a silent no-op.
+        target_hvo = person_obj.Hvo
         if hasattr(item, "ResearchersRC"):
-            with self._TransactionCM("Unlink researcher from anthropology item"):
-                item.ResearchersRC.Remove(person_obj)
+            for linked in item.ResearchersRC:
+                if linked.Hvo == target_hvo:
+                    with self._TransactionCM("Unlink researcher from anthropology item"):
+                        item.ResearchersRC.Remove(linked)
+                    return
+        raise FP_ParameterError("Person is not linked to this item")
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):
