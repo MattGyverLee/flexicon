@@ -1017,7 +1017,17 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
 
         # Resolve once so an HVO or wrapper input is handled uniformly by the
         # base loop and the value co-create below.
-        feature = IFsClosedFeature(self.__Unwrap(self.__ResolveObject(item)))
+        resolved = self.__Unwrap(self.__ResolveObject(item))
+        # Cast to IFsClosedFeature before value sync. Only closed phonological
+        # features own ValuesOC; wrong handles must not reach __ApplyValues with
+        # opaque LCM errors (issue #854; cf. CreateValue #852 / inflection #850).
+        try:
+            feature = IFsClosedFeature(resolved)
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "ApplySyncableProperties requires an IFsClosedFeature; complex "
+                "features do not have a ValuesOC collection."
+            )
 
         # Feature-level scalar/multistring fields via the base loop.
         values = props.get("Values")
