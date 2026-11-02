@@ -11,6 +11,8 @@
 #   Copyright 2025
 #
 
+import logging
+
 # Import FLEx LCM types
 from SIL.LCModel import (
     IScrScriptureNote,
@@ -32,6 +34,8 @@ from ..FLExProject import (
     FP_ParameterError,
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
+
+logger = logging.getLogger(__name__)
 
 
 class NoteOperations(BaseOperations):
@@ -128,6 +132,11 @@ class NoteOperations(BaseOperations):
             except Exception:
                 pass
 
+            if insert_after and after_source is not None:
+                logger.warning(
+                    "insert_after=True ignored for note reply on AnnotationsOC "
+                    "(unordered); appending at end (issue #834)."
+                )
             self.project.lp.AnnotationsOC.Add(reply)
             reply.BeginObjectRA = parent_note
 
@@ -396,7 +405,9 @@ class NoteOperations(BaseOperations):
 
         Notes:
             - Factory.Create() automatically generates a new GUID
-            - insert_after=True preserves the original note's position
+            - insert_after=True inserts after the source only when the owner
+              uses ordered ResponsesOS; AnnotationsOC owners ignore position
+              (see issue #834)
             - Simple properties copied: Comment, Source (author), DateCreated, DateModified
             - Reference properties copied: AnnotationTypeRA, BeginObjectRA
             - Owned objects (deep=True): RepliesOS (threaded discussion)
@@ -455,9 +466,19 @@ class NoteOperations(BaseOperations):
                 else:
                     owner.ResponsesOS.Add(duplicate)
             elif owner is not None and hasattr(owner, "AnnotationsOC"):
-                # AnnotationsOC is unordered (OC); insert_after is a no-op, add at end
+                # AnnotationsOC is unordered (OC); insert_after cannot fix position
+                if insert_after:
+                    logger.warning(
+                        "insert_after=True ignored for Duplicate on AnnotationsOC "
+                        "owner; appending at end (issue #834)."
+                    )
                 owner.AnnotationsOC.Add(duplicate)
             else:
+                if insert_after:
+                    logger.warning(
+                        "insert_after=True ignored for Duplicate on LangProject "
+                        "AnnotationsOC; appending at end (issue #834)."
+                    )
                 self.project.lp.AnnotationsOC.Add(duplicate)
 
             # Copy simple MultiString properties
