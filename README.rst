@@ -41,6 +41,16 @@ Installation
 Run:
 ``pip install pyflexicon``
 
+Choosing a FieldWorks build
+---------------------------
+By default flexicon finds FieldWorks through the registry (``RootCodeDir``,
+HKCU then HKLM). To use a specific build instead, set the environment
+variable ``FLEXICON_FW_DIR`` to the FieldWorks directory *before*
+``import flexicon`` (initialisation happens at import time). It wins over
+the registry, must be an existing directory containing ``SIL.LCModel.dll``
+and ``FwUtils.dll`` (and ``FieldWorks.exe``), and raises a clear error
+otherwise. When unset or blank the registry is used.
+
 Documentation
 -------------
 Full API documentation is published at https://flexicon.langtech.cloud.

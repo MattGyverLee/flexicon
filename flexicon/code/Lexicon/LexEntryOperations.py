@@ -564,6 +564,18 @@ class LexEntryOperations(BaseOperations):
                     literal_dict[ws_def.Id] = text
         props["LiteralMeaning"] = literal_dict
 
+        # SummaryDefinition / Restrictions (IMultiString on ILexEntry;
+        # issue #826). WS-keyed; applied by the base loop with ws_map.
+        for _name in ("SummaryDefinition", "Restrictions"):
+            _d = {}
+            if hasattr(item, _name):
+                _ms = getattr(item, _name)
+                for ws_def in _ws_defs:
+                    text = normalize_text(ITsString(_ms.get_String(ws_def.Handle)).Text)
+                    if text:
+                        _d[ws_def.Id] = text
+            props[_name] = _d
+
         # Atomic properties
         # HomographNumber - homograph number
         if hasattr(item, "HomographNumber"):

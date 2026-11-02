@@ -50,6 +50,12 @@ FW_SUPPORTED_VERSIONS = ["9"]
 FWREG_CODEDIR = "RootCodeDir"
 FWREG_PROJECTSDIR = "ProjectsDir"
 
+# Environment variable that overrides the registry RootCodeDir lookup.
+FW_DIR_ENV_VAR = "FLEXICON_FW_DIR"
+
+# A usable FieldWorks directory must contain these LCM assemblies.
+FW_REQUIRED_DLLS = ["SIL.LCModel.dll", "FwUtils.dll"]
+
 FWRegKeys = {
     "9": r"SOFTWARE\SIL\FieldWorks\9",
 }
@@ -85,6 +91,40 @@ def GetFWRegKey():
 # -------------------------------------------------------------------
 
 
+def GetFWDirOverride():
+    """
+    Return the validated FieldWorks directory from the FLEXICON_FW_DIR
+    environment variable, or None if it is unset/blank (registry lookup
+    then applies).
+
+    The override wins over the registry RootCodeDir. It must be an
+    existing directory containing the LCM assemblies (FW_REQUIRED_DLLS).
+
+    Raises:
+        Exception: If the variable is set but the directory does not
+            exist or does not look like a FieldWorks build.
+    """
+    value = os.environ.get(FW_DIR_ENV_VAR, "").strip().strip('"')
+    if not value:
+        return None
+
+    if not os.path.isdir(value):
+        raise Exception(
+            "%s is set to '%s', which is not an existing directory. "
+            "Point it at a FieldWorks build/install directory or unset it "
+            "to use the registry." % (FW_DIR_ENV_VAR, value)
+        )
+    missing = [d for d in FW_REQUIRED_DLLS if not os.path.isfile(os.path.join(value, d))]
+    if missing:
+        raise Exception(
+            "%s is set to '%s', but it does not contain the required "
+            "FieldWorks/LCM assemblies: %s. Point it at a FieldWorks "
+            "build/install directory or unset it to use the registry."
+            % (FW_DIR_ENV_VAR, value, ", ".join(missing))
+        )
+    return os.path.abspath(value)
+
+
 def InitialiseFWGlobals():
     global FWCodeDir
     global FWProjectsDir
@@ -92,13 +132,28 @@ def InitialiseFWGlobals():
     global FWShortVersion
     global FWLongVersion
 
-    try:
-        rKey = GetFWRegKey()
-    except Exception as e:
-        logging.exception("Couldn't find FieldWorks registry entry")
-        raise
+    overrideDir = GetFWDirOverride()  # raises on an invalid override
 
-    if platform.system() == "Linux":
+    if overrideDir:
+        logger.info("%s override in effect: %s" % (FW_DIR_ENV_VAR, overrideDir))
+        FWCodeDir = overrideDir
+        # The projects dir is not part of the override; take it from the
+        # registry if available (it may legitimately be absent).
+        try:
+            FWProjectsDir = GetFWRegKey().GetValue(FWREG_PROJECTSDIR)
+        except Exception:
+            FWProjectsDir = None
+        rKey = None
+    else:
+        try:
+            rKey = GetFWRegKey()
+        except Exception as e:
+            logging.exception("Couldn't find FieldWorks registry entry")
+            raise
+
+    if overrideDir:
+        pass
+    elif platform.system() == "Linux":
         # Linux support is incomplete: as of Apr2024 FW uses flatpak and
         # this path no longer works. On installed Linux FW,
         # FWREG_CODEDIR points to /usr/share/fieldworks,
@@ -116,12 +171,16 @@ def InitialiseFWGlobals():
         FWCodeDir = rKey.GetValue(FWREG_CODEDIR)
 
     # FWREG_PROJECTSDIR is correct on Windows and Linux.
-    FWProjectsDir = rKey.GetValue(FWREG_PROJECTSDIR)
+    if rKey is not None:
+        FWProjectsDir = rKey.GetValue(FWREG_PROJECTSDIR)
 
     if not os.access(os.path.join(FWCodeDir, "FieldWorks.exe"), os.F_OK):
         # On developer's machines we also check the build directories
         # for FieldWorks.exe
-        if platform.system() == "Linux":
+        if rKey is None:
+            # Explicit override: do not guess at other directories.
+            devPaths = []
+        elif platform.system() == "Linux":
             devPaths = [
                 os.path.dirname(rKey.GetValue(FWREG_CODEDIR)),
             ]
@@ -140,6 +199,8 @@ def InitialiseFWGlobals():
             # This can happen if there is a ghost registry entry for
             # an uninstalled FLEx
             msg = "FieldWorks.exe not found in %s" % FWCodeDir
+            if rKey is None:
+                msg += " (from %s)" % FW_DIR_ENV_VAR
             logger.error(msg)
             raise Exception(msg)
 

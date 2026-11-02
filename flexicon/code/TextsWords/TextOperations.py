@@ -31,7 +31,7 @@ from ..FLExProject import (
     FP_ParameterError,
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
-from ..Shared.string_utils import normalize_match_key
+from ..Shared.string_utils import normalize_match_key, normalize_text
 
 
 class TextOperations(BaseOperations):
@@ -821,6 +821,68 @@ class TextOperations(BaseOperations):
         with self._TransactionCM(f"Set text name '{name}'"):
             mkstr = TsStringUtils.MakeString(name, wsHandle)
             text_obj.Name.set_String(wsHandle, mkstr)
+
+    @OperationsMethod
+    def GetSource(self, text_or_hvo, wsHandle=None):
+        """
+        Get the source of a text (IText.Source, an IMultiString).
+
+        Args:
+            text_or_hvo: Either an IText object or its HVO.
+            wsHandle (int, optional): Writing system handle. Defaults to the
+                default analysis writing system.
+
+        Returns:
+            str: The source text in that writing system, or "" if unset.
+
+        Raises:
+            FP_NullParameterError: If text_or_hvo is None.
+            FP_ParameterError: If the text does not exist or is invalid.
+
+        Example:
+            >>> text = list(project.Texts.GetAll())[0]
+            >>> source = project.Texts.GetSource(text)
+
+        See Also:
+            SetSource
+        """
+        text_obj = self.__GetTextObject(text_or_hvo)
+        wsHandle = self.__WSHandle(wsHandle)
+        src = ITsString(text_obj.Source.get_String(wsHandle)).Text
+        return normalize_text(src) or ""
+
+    @OperationsMethod
+    def SetSource(self, text_or_hvo, source, wsHandle=None):
+        """
+        Set the source of a text (IText.Source, an IMultiString).
+
+        Args:
+            text_or_hvo: Either an IText object or its HVO.
+            source (str): The source text. An empty string clears it.
+            wsHandle (int, optional): Writing system handle. Defaults to the
+                default analysis writing system.
+
+        Raises:
+            FP_ReadOnlyError: If project was not opened with writeEnabled=True.
+            FP_NullParameterError: If text_or_hvo or source is None.
+            FP_ParameterError: If the text does not exist or is invalid.
+
+        Example:
+            >>> text = list(project.Texts.GetAll())[0]
+            >>> project.Texts.SetSource(text, "Told by Maria, 2019")
+
+        See Also:
+            GetSource
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(source, "source")
+
+        text_obj = self.__GetTextObject(text_or_hvo)
+        wsHandle = self.__WSHandle(wsHandle)
+
+        with self._TransactionCM("Set text source"):
+            mkstr = TsStringUtils.MakeString(source, wsHandle)
+            text_obj.Source.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetGenre(self, text_or_hvo):

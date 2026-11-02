@@ -421,6 +421,14 @@ class PronunciationOperations(BaseOperations):
                     form_dict[ws_def.Id] = text
         props["Form"] = form_dict
 
+        # CVPattern / Tone - single-string (ITsString) fields on
+        # ILexPronunciation (issue #826). Emitted as plain strings; the base
+        # apply loop wraps them back into an ITsString.
+        for _name in ("CVPattern", "Tone"):
+            props[_name] = (
+                self._ReadTsString(getattr(item, _name)) if hasattr(item, _name) else ""
+            )
+
         # Reference Atomic (RA) properties
         # LocationRA - CV pattern location
         if hasattr(item, "LocationRA") and item.LocationRA:
