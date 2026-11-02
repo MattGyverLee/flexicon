@@ -616,9 +616,14 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         # Route through _GetTypedOwner to recover the concrete interface
         # before checking the slot. (issue #133, same class as #98/#116)
         parent = self._GetTypedOwner(fs)
-        if parent is not None and hasattr(parent, "FeaturesOA") and parent.FeaturesOA == fs:
-            with self._TransactionCM("Delete feature structure"):
-                parent.FeaturesOA = None
+        if parent is not None and hasattr(parent, "FeaturesOA"):
+            slot_fs = parent.FeaturesOA
+            # Slot match by HVO (issue #846). FeaturesOA can hold a different
+            # pythonnet wrapper than the caller's fs handle; identity compare
+            # false-negates and Delete silently does nothing on live LCM.
+            if slot_fs is not None and int(slot_fs.Hvo) == int(fs.Hvo):
+                with self._TransactionCM("Delete feature structure"):
+                    parent.FeaturesOA = None
 
     # ========================================================================
     # FEATURE OPERATIONS
