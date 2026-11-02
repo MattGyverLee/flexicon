@@ -658,6 +658,19 @@ class LexSenseOperations(BaseOperations):
                     bibliography_dict[ws_def.Id] = text
         props["Bibliography"] = bibliography_dict
 
+        # AnthroNote / UsageNote - anthropology and usage notes (IMultiString
+        # on ILexSense; issue #826). Emitted WS-keyed so ApplySyncableProperties
+        # (base loop) round-trips them with ws_map honoured.
+        for _name in ("AnthroNote", "UsageNote"):
+            _d = {}
+            if hasattr(item, _name):
+                _ms = getattr(item, _name)
+                for ws_def in self.project.WritingSystems.GetAll():
+                    text = normalize_text(ITsString(_ms.get_String(ws_def.Handle)).Text)
+                    if text:
+                        _d[ws_def.Id] = text
+            props[_name] = _d
+
         # Reference Atomic (RA) properties
         # MorphoSyntaxAnalysisRA - grammatical info
         if hasattr(item, "MorphoSyntaxAnalysisRA") and item.MorphoSyntaxAnalysisRA:

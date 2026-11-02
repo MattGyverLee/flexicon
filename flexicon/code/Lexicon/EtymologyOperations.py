@@ -498,6 +498,20 @@ class EtymologyOperations(BaseOperations):
                     bibliography_dict[ws_tag] = text
         props["Bibliography"] = bibliography_dict
 
+        # Note / PrecComment - IMultiString fields on ILexEtymology
+        # (issue #826). Only emitted when present on the live object.
+        from SIL.LCModel.Core.KernelInterfaces import ITsString as _ITsString
+
+        for _name in ("Note", "PrecComment"):
+            _d = {}
+            if hasattr(item, _name):
+                _ms = getattr(item, _name)
+                for ws_def in self.project.WritingSystems.GetAll():
+                    text = normalize_text(_ITsString(_ms.get_String(ws_def.Handle)).Text)
+                    if text:
+                        _d[ws_def.Id] = text
+            props[_name] = _d
+
         # language_rs - source language sequence (ordered ICmPossibility list).
         # LanguageRS is on the concrete LexEtymology implementation, not on the
         # ILexEtymology interface; hasattr guard on the live object is required
