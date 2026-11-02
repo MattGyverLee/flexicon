@@ -901,3 +901,58 @@ Use the new helpers for the `ProdRestrictOA` items:
   raise `FP_ParameterError`.
 - `ChangeAffixVariant` now copies the "from" exception features between
   inflectional and derivational affixes and warns about what is really lost.
+
+---
+
+## Breaking Change: Pronunciation media is `ICmMedia`, not `ICmFile` (issue #828)
+
+### What Changed
+
+`ILexPronunciation.MediaFilesOS` owns `ICmMedia` objects. Each `ICmMedia`
+*references* the `ICmFile` (the LinkedFiles path) through `MediaFileRA` and
+carries its own `Label`. flexicon previously created an `ICmFile` and put it
+straight into `MediaFilesOS` -- the wrong element type -- so the media
+methods never worked as documented. 4.13.1 corrects this:
+
+- `project.Pronunciations.AddMediaFile(pron, path, label=None)` now returns
+  the **`ICmMedia`** it creates (previously documented as `ICmFile`). It is the
+  same type `GetMediaFiles` returns.
+- `project.Pronunciations.RemoveMediaFile(pron, media_or_hvo)` now **raises
+  `FP_ParameterError`** when the media is not in that pronunciation, or when
+  the object has no media collection. It previously returned without
+  raising.
+- A rejected `AddMediaFile` no longer copies the file into LinkedFiles first.
+- Additive: `RemoveMediaFile` and `MoveMediaFile` accept an `ICmMedia`, its
+  HVO, or the `ICmFile` it references.
+- `Pronunciations.Duplicate(deep=True)` and `LexEntry.Duplicate(deep=True)`
+  now copy each `ICmMedia` (new `ICmMedia`, same `ICmFile`, label copied).
+
+### Before / After
+
+```python
+# BEFORE (4.13.0 and earlier)
+f = project.Pronunciations.AddMediaFile(pron, "C:/audio/word.wav")
+print(f.InternalPath)                 # assumed an ICmFile
+
+# AFTER (4.13.1)
+media = project.Pronunciations.AddMediaFile(pron, "C:/audio/word.wav",
+                                            label="Speaker 1")
+print(media.MediaFileRA.InternalPath)  # the ICmFile is one hop away
+
+# Removing: pass the ICmMedia, its HVO, or the ICmFile
+project.Pronunciations.RemoveMediaFile(pron, media)
+```
+
+Code that wrapped `RemoveMediaFile` in a "remove if present" pattern must
+now catch `FP_ParameterError` or check `GetMediaFiles(pron)` first.
+
+---
+
+## Change: `LexReferences.GetAll` works (issue #829)
+
+`project.LexReferences.GetAll(...)` read `ReferringLexReferences`, which
+does not exist on `ILexSense` or `ILexEntry`, and raised on every call. It
+now returns references project-wide (no argument), per sense, and per
+entry (the entry's own references plus those of its senses and subsenses),
+de-duplicated by HVO. No working caller can break; code that caught the
+old exception as a "not supported" signal should drop that handling.

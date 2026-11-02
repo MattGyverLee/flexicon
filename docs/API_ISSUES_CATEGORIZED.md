@@ -509,6 +509,13 @@ Evidence: `specs/_archive/closed/325-syncable-properties/evidence/live-T0-etymol
 
 Evidence: `specs/_archive/closed/325-syncable-properties/evidence/live-T0-lexref-raw.json`, `live-T3-syncable-properties.md` (section b).
 
+### Wrong element type / missing backreference (issues #828, #829)
+
+| Trap | Fact | Correct access |
+|---|---|---|
+| `MediaFilesOS` holds `ICmFile` | It holds `ICmMedia` (a wrapper whose `MediaFileRA` points at the `ICmFile`). Creating `ICmFile` and appending it to `MediaFilesOS` is the wrong type | Create via `ICmMediaFactory`; set `MediaFileRA` to the `ICmFile`. `PronunciationOperations.AddMediaFile` returns the `ICmMedia` |
+| `ReferringLexReferences` | Does not exist on `ILexSense` or `ILexEntry`; reading it raises | Per sense: `LexSenseReferences`. Per entry: `LexEntryReferences`. Project-wide: `LexDb.ReferencesOA` -> each `ILexRefType` (recurse `SubPossibilitiesOS`) -> `MembersOC` |
+
 ### CORRECTED 2026-09-22: `IText` media path (`MediaFilesRC` vs owning atomic) (issue #325)
 
 | Trap | Fact | Correct access |

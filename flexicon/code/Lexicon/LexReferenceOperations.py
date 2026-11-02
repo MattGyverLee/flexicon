@@ -669,47 +669,56 @@ class LexReferenceOperations(BaseOperations):
 
         Notes:
             - When sense_or_entry is provided:
-              - Returns references where sense/entry is any of the targets
-              - For entry, checks all senses of the entry
-              - Returns empty generator if no references exist
+              - A sense yields its LexSenseReferences.
+              - An entry yields its LexEntryReferences plus the
+                LexSenseReferences of every sense (subsenses included),
+                deduplicated by HVO.
+              - Yields nothing if no references exist.
             - When sense_or_entry is None:
-              - Iterates ALL entries in the project
-              - For each entry, iterates all senses
-              - For each sense, yields all lexical references
-              - Useful for project-wide reference operations
+              - Walks lexDB.ReferencesOA (the reference type list),
+                recursing into SubPossibilitiesOS, and yields every member
+                of each ILexRefType.MembersOC (deduplicated by HVO).
+              - Useful for project-wide reference operations.
 
         See Also:
             Create, GetTargets, GetReferencesOfType
         """
-        if sense_or_entry is None:
-            # Iterate ALL lexical references in entire project
-            seen_refs = set()
-            for entry in self.project.lexDB.Entries:
-                for sense in entry.SensesOS:
-                    for ref in sense.ReferringLexReferences:
-                        # Avoid duplicates across different senses
-                        if ref.Hvo not in seen_refs:
-                            seen_refs.add(ref.Hvo)
-                            yield ref
-        else:
-            # Iterate references for specific sense or entry
-            obj = self.__ResolveSenseOrEntry(sense_or_entry)
+        seen_refs = set()
 
-            # Determine if this is a sense or entry
-            if hasattr(obj, "ClassName"):
-                if obj.ClassName == "LexSense":
-                    # Get references for this sense
-                    for ref in obj.ReferringLexReferences:
+        if sense_or_entry is None:
+            # Walk the reference type list; each ILexReference is owned by
+            # exactly one ILexRefType (MembersOC).
+            stack = list(self.project.lexDB.ReferencesOA.PossibilitiesOS)
+            stack.reverse()
+            while stack:
+                item = stack.pop()
+                ref_type = ILexRefType(cast_to_concrete(item))
+                for ref in ref_type.MembersOC:
+                    if ref.Hvo not in seen_refs:
+                        seen_refs.add(ref.Hvo)
                         yield ref
-                elif obj.ClassName == "LexEntry":
-                    # Get references for all senses of this entry
-                    seen_refs = set()
-                    for sense in obj.SensesOS:
-                        for ref in sense.ReferringLexReferences:
-                            # Avoid duplicates
-                            if ref.Hvo not in seen_refs:
-                                seen_refs.add(ref.Hvo)
-                                yield ref
+                subs = list(ref_type.SubPossibilitiesOS)
+                subs.reverse()
+                stack.extend(subs)
+            return
+
+        obj = self.__ResolveSenseOrEntry(sense_or_entry)
+        class_name = getattr(obj, "ClassName", None)
+        if class_name == "LexSense":
+            for ref in obj.LexSenseReferences:
+                if ref.Hvo not in seen_refs:
+                    seen_refs.add(ref.Hvo)
+                    yield ref
+        elif class_name == "LexEntry":
+            for ref in obj.LexEntryReferences:
+                if ref.Hvo not in seen_refs:
+                    seen_refs.add(ref.Hvo)
+                    yield ref
+            for sense in obj.AllSenses:
+                for ref in sense.LexSenseReferences:
+                    if ref.Hvo not in seen_refs:
+                        seen_refs.add(ref.Hvo)
+                        yield ref
 
     @OperationsMethod
     def Create(self, ref_type_or_name, targets):

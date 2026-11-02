@@ -27,7 +27,7 @@ from SIL.LCModel import (
     ILexPronunciation,
     ILexPronunciationFactory,
     ICmFile,
-    ICmFileFactory,
+    ICmMediaFactory,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
@@ -318,7 +318,7 @@ class PronunciationOperations(BaseOperations):
             - Simple properties copied: Form (MultiString)
             - Reference properties copied: LocationRA
             - Owned objects (deep=True): MediaFilesOS
-            - Media files are duplicated by creating new ICmFile objects with same properties
+            - Media entries are duplicated as new ICmMedia objects sharing the source's ICmFile (reference) with Label copied
             - LiftResidue is not copied (import-specific data)
 
         See Also:
@@ -382,17 +382,15 @@ class PronunciationOperations(BaseOperations):
 
             # Handle owned objects if deep=True
             if deep and hasattr(source, "MediaFilesOS"):
-                # Duplicate media files
+                # Duplicate media entries. MediaFilesOS holds ICmMedia, which
+                # references (does not own) an ICmFile: point the copy at the
+                # SAME ICmFile and copy Label (issue #828).
+                media_factory = self.project.project.ServiceLocator.GetService(ICmMediaFactory)
                 for media in source.MediaFilesOS:
-                    media_factory = self.project.project.ServiceLocator.GetService(ICmFileFactory)
                     new_media = media_factory.Create()
                     duplicate.MediaFilesOS.Add(new_media)
-
-                    # Copy media file properties
-                    new_media.InternalPath = media.InternalPath
-                    new_media.Description.CopyAlternatives(media.Description)
-                    if hasattr(media, "Copyright"):
-                        new_media.Copyright.CopyAlternatives(media.Copyright)
+                    new_media.MediaFileRA = media.MediaFileRA
+                    new_media.Label.CopyAlternatives(media.Label)
 
             return duplicate
 
@@ -728,7 +726,8 @@ class PronunciationOperations(BaseOperations):
             label (str, optional): Descriptive label for the media file.
 
         Returns:
-            ICmFile: The created media file object with proper path.
+            ICmMedia: The created media entry (owned by the pronunciation's
+            MediaFilesOS). ``MediaFileRA`` is the ICmFile copied into the project.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
@@ -749,7 +748,9 @@ class PronunciationOperations(BaseOperations):
         Notes:
             - File is copied to LinkedFiles/AudioVisual directory
             - Unique filename generated if collision occurs (audio_1.wav, etc.)
-            - Creates ICmFile object with proper LinkedFiles path
+            - Creates an ICmFile (LinkedFiles path) and wraps it in an ICmMedia
+              (ICmMediaFactory) added to MediaFilesOS; issue #828
+            - Returns ICmMedia, the same type GetMediaFiles returns
             - Supported formats: WAV, MP3, OGG, WMA (audio), MP4, AVI (video)
             - Multiple media files can be added to one pronunciation
 
@@ -765,20 +766,50 @@ class PronunciationOperations(BaseOperations):
 
         pronunciation = self.__GetPronunciationObject(pronunciation_or_hvo)
 
-        # Use MediaOperations to properly copy file and create ICmFile
-        # Copy file to project and get ICmFile reference
-        media_file = self.project.Media.CopyToProject(file_path, internal_subdir="AudioVisual", label=label)
-
-        # Add to pronunciation's media collection. The capability check stays
-        # outside the bracket so the rejection path raises without opening an
-        # empty named undo entry (D5).
-        if hasattr(pronunciation, "MediaFilesOS"):
-            with self._TransactionCM("Add pronunciation media file"):
-                pronunciation.MediaFilesOS.Add(media_file)
-        else:
+        # Capability check BEFORE copying, so a rejected call copies nothing and
+        # leaves no orphan ICmFile. It stays outside the bracket so the rejection
+        # path raises without opening an empty named undo entry (D5).
+        if not hasattr(pronunciation, "MediaFilesOS"):
             raise FP_ParameterError("Pronunciation does not support media files")
 
-        return media_file
+        # Copy file to project and get the ICmFile reference
+        media_file = self.project.Media.CopyToProject(file_path, internal_subdir="AudioVisual", label=label)
+
+        # MediaFilesOS holds ICmMedia (not ICmFile): wrap the ICmFile (issue #828).
+        with self._TransactionCM("Add pronunciation media file"):
+            media_factory = self.project.project.ServiceLocator.GetService(ICmMediaFactory)
+            new_media = media_factory.Create()
+            pronunciation.MediaFilesOS.Add(new_media)
+            new_media.MediaFileRA = media_file
+            if label:
+                ws = self.project.project.DefaultAnalWs
+                new_media.Label.set_String(ws, TsStringUtils.MakeString(label, ws))
+
+        return new_media
+
+    def __FindOwnedMedia(self, pronunciation, media_or_hvo):
+        """
+        Resolve an ICmMedia, ICmFile or HVO to the ICmMedia in
+        pronunciation.MediaFilesOS (issue #828).
+
+        An ICmFile matches the owning ICmMedia via MediaFileRA.Hvo.
+
+        Raises:
+            FP_ParameterError: If no entry of the pronunciation matches.
+        """
+        target_hvo = media_or_hvo if isinstance(media_or_hvo, int) else require_lcm_object(
+            media_or_hvo, "ICmMedia or ICmFile"
+        ).Hvo
+        # Membership by HVO (issue #686): MediaFilesOS can yield bare interface
+        # views while callers pass cast handles.
+        for f in pronunciation.MediaFilesOS:
+            if f.Hvo == target_hvo:
+                return f
+        for f in pronunciation.MediaFilesOS:
+            ref = f.MediaFileRA
+            if ref is not None and ref.Hvo == target_hvo:
+                return f
+        raise FP_ParameterError("Media file not found in the pronunciation's media collection")
 
     @OperationsMethod
     def RemoveMediaFile(self, pronunciation_or_hvo, media_or_hvo):
@@ -787,11 +818,15 @@ class PronunciationOperations(BaseOperations):
 
         Args:
             pronunciation_or_hvo: The ILexPronunciation object or HVO.
-            media_or_hvo: The ICmFile object or HVO to remove.
+            media_or_hvo: The ICmMedia (as returned by GetMediaFiles), its HVO,
+                or the ICmFile it references.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If pronunciation_or_hvo or media_or_hvo is None.
+            FP_ParameterError: If the media is not in the pronunciation, or the
+                pronunciation object has no media collection ("Pronunciation
+                does not support media files").
 
         Example:
             >>> pron = list(project.Pronunciations.GetAll(entry))[0]
@@ -802,7 +837,7 @@ class PronunciationOperations(BaseOperations):
         Notes:
             - Removes the media file reference from the pronunciation
             - Does NOT delete the actual file from disk
-            - The media file object is deleted from the database
+            - The ICmMedia entry is deleted; the referenced ICmFile object is kept
             - Cannot be undone
 
         See Also:
@@ -815,16 +850,12 @@ class PronunciationOperations(BaseOperations):
 
         pronunciation = self.__GetPronunciationObject(pronunciation_or_hvo)
 
-        # Resolve media object
-        if isinstance(media_or_hvo, int):
-            media = self.project.Object(media_or_hvo)
-        else:
-            media = require_lcm_object(media_or_hvo, "ICmFile")
+        if not hasattr(pronunciation, "MediaFilesOS"):
+            raise FP_ParameterError("Pronunciation does not support media files")
 
-        # Remove from collection
-        if hasattr(pronunciation, "MediaFilesOS"):
-            with self._TransactionCM("Remove pronunciation media file"):
-                pronunciation.MediaFilesOS.Remove(media)
+        media = self.__FindOwnedMedia(pronunciation, media_or_hvo)
+        with self._TransactionCM("Remove pronunciation media file"):
+            pronunciation.MediaFilesOS.Remove(media)
 
     @OperationsMethod
     def MoveMediaFile(self, media, from_pronunciation_or_hvo, to_pronunciation_or_hvo):
@@ -835,7 +866,8 @@ class PronunciationOperations(BaseOperations):
         correct pronunciation variant.
 
         Args:
-            media: ICmFile object to move
+            media: ICmMedia (as returned by GetMediaFiles), its HVO, or the
+                ICmFile it references (matched via MediaFileRA.Hvo)
             from_pronunciation_or_hvo: Source ILexPronunciation object or HVO
             to_pronunciation_or_hvo: Destination ILexPronunciation object or HVO
 
@@ -900,16 +932,13 @@ class PronunciationOperations(BaseOperations):
             logger.warning("Source and destination are the same pronunciation")
             return False
 
-        # Membership by HVO (issue #686). MediaFilesOS can yield bare interface
-        # views while callers pass cast handles from Object(hvo); Python ``in``
-        # then false-negates and MoveMediaFile raises spuriously.
-        target_hvo = media.Hvo
-        if not any(f.Hvo == target_hvo for f in from_pron.MediaFilesOS):
-            raise FP_ParameterError("Media file not found in source pronunciation's media collection")
+        # Membership by HVO (issue #686), resolved to the owning ICmMedia
+        # (issue #828); see __FindOwnedMedia.
+        owned_media = self.__FindOwnedMedia(from_pron, media)
 
         with self._TransactionCM("Move media file"):
             # LCM owning sequences re-parent on Add; Remove deletes (#471).
-            to_pron.MediaFilesOS.Add(media)
+            to_pron.MediaFilesOS.Add(owned_media)
 
             logger.info(f"Moved media from pronunciation {from_pron.Guid} to pronunciation {to_pron.Guid}")
 

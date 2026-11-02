@@ -15,8 +15,13 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [4.13.1] - 2026-11-01
 
-Patch release: a sweep of HVO-identity fixes (issues 640 and 642-820). No
-API changes and no breaking changes.
+Patch release: a sweep of HVO-identity fixes (issues 640 and 642-820), plus
+repairs to surfaces that never worked (#828, #829).
+
+> **Contains a breaking change** (#828): `PronunciationOperations.AddMediaFile`
+> now returns an `ICmMedia` instead of an `ICmFile`, and `RemoveMediaFile`
+> raises `FP_ParameterError` instead of returning silently. Read the #828 entry
+> below and `docs/MIGRATION_GUIDE.md` before upgrading.
 
 ### Fixed
 
@@ -46,6 +51,20 @@ API changes and no breaking changes.
     `Allomorph`, `POS`, `DataNotebook`, `Location`, `Person`, `Note`,
     `SemanticDomain`, `Anthropology`, `PossibilityList`.
 - **`WritingSystems.GetBestString` accepts live multistrings** (issue 640).
+- **Pronunciation media now uses `ICmMedia`, the element type of
+  `MediaFilesOS` (#828).** `PronunciationOperations.AddMediaFile`,
+  `RemoveMediaFile`, `MoveMediaFile` and the deep `Duplicate` path, plus
+  `LexEntryOperations.Duplicate` (deep pronunciation media), previously used
+  `ICmFile`. `AddMediaFile` now returns the `ICmMedia` (use `.MediaFileRA` for
+  the `ICmFile`); `RemoveMediaFile` and `MoveMediaFile` also accept an
+  `ICmFile` or an HVO. `RemoveMediaFile` now raises `FP_ParameterError`
+  instead of returning silently when the object has no media collection, and
+  a rejected `AddMediaFile` no longer copies the file.
+- **`LexReferences.GetAll` works (#829).** It read the non-existent
+  `ReferringLexReferences` and raised on every call. It now returns references
+  project-wide (walking `ReferencesOA` and each type's `MembersOC`), per sense
+  (`LexSenseReferences`) and per entry (`LexEntryReferences` plus the
+  references of the entry's senses and subsenses), deduplicated by HVO.
 
 ### Internal
 

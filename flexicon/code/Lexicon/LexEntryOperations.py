@@ -35,7 +35,7 @@ from SIL.LCModel import (
     LexEntryRefTags,
     ILexPronunciationFactory,
     ILexEtymologyFactory,
-    ICmFileFactory,
+    ICmMediaFactory,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
@@ -464,14 +464,13 @@ class LexEntryOperations(BaseOperations):
                         new_pron.LocationRA = pronunciation.LocationRA
                     # Copy media files
                     if hasattr(pronunciation, "MediaFilesOS"):
+                        # ICmMedia references (does not own) an ICmFile (issue #828)
+                        media_factory = self.project.project.ServiceLocator.GetService(ICmMediaFactory)
                         for media in pronunciation.MediaFilesOS:
-                            media_factory = self.project.project.ServiceLocator.GetService(ICmFileFactory)
                             new_media = media_factory.Create()
                             new_pron.MediaFilesOS.Add(new_media)
-                            new_media.InternalPath = media.InternalPath
-                            new_media.Description.CopyAlternatives(media.Description)
-                            if hasattr(media, "Copyright"):
-                                new_media.Copyright.CopyAlternatives(media.Copyright)
+                            new_media.MediaFileRA = media.MediaFileRA
+                            new_media.Label.CopyAlternatives(media.Label)
 
                 # Duplicate etymologies
                 for etymology in source_entry.EtymologyOS:

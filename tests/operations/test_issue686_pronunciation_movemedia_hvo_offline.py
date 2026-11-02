@@ -26,17 +26,28 @@ def _move_media_block(text: str) -> str:
     return text[start:next_def] if next_def != -1 else text[start:]
 
 
+def _find_owned_block(text: str) -> str:
+    start = text.index("def __FindOwnedMedia(self, pronunciation, media_or_hvo):")
+    return text[start : text.index("    @OperationsMethod", start)]
+
+
 def test_issue686_move_media_uses_hvo_membership():
-    block = _move_media_block(PRON_OPS.read_text(encoding="utf-8"))
+    text = PRON_OPS.read_text(encoding="utf-8")
+    block = _move_media_block(text)
+    # Membership resolution lives in __FindOwnedMedia (issue #828) and is
+    # still by HVO (issue #686); MoveMediaFile must delegate to it.
     assert "issue #686" in block
-    assert "f.Hvo == target_hvo" in block
+    assert "self.__FindOwnedMedia(from_pron, media)" in block
+    helper = _find_owned_block(text)
+    assert "f.Hvo == target_hvo" in helper
     assert "media not in from_pron.MediaFilesOS" not in block
 
 
 def test_issue686_move_media_still_reparents_with_add_only():
     block = _move_media_block(PRON_OPS.read_text(encoding="utf-8"))
-    assert "to_pron.MediaFilesOS.Add(media)" in block
-    assert ".Remove(media)" not in block
+    assert block.count("to_pron.MediaFilesOS.Add(") == 1
+    assert "to_pron.MediaFilesOS.Add(owned_media)" in block
+    assert ".Remove(" not in block
 
 
 def test_issue686_live_gate_module_exists():
