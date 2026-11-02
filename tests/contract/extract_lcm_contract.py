@@ -149,7 +149,8 @@ class LCMContractVisitor(ast.NodeVisitor):
         # Direct attribute on an LCM name: e.g. TsStringUtils.MakeString
         if isinstance(node.value, ast.Name) and node.value.id in self.lcm_names:
             type_name = node.value.id
-            self.type_usage[type_name]["properties"].add(node.attr)
+            if node.attr not in SYSTEM_TYPE_MEMBERS:
+                self.type_usage[type_name]["properties"].add(node.attr)
         self.generic_visit(node)
 
     def visit_Call(self, node):
@@ -159,7 +160,8 @@ class LCMContractVisitor(ast.NodeVisitor):
                 caller = node.func.value.id
                 if caller in self.lcm_names:
                     method = node.func.attr
-                    self.type_usage[caller]["methods"].add(method)
+                    if method not in SYSTEM_TYPE_MEMBERS:
+                        self.type_usage[caller]["methods"].add(method)
         self.generic_visit(node)
 
 
@@ -209,6 +211,11 @@ def extract_file_contract(filepath):
 #: mechanism as flexicon/code -- not a parallel one -- so the contract test
 #: suite can cover a type/member's shape before the real call site lands,
 #: per tasks.md item CB ("Must land before B1"). See its module docstring.
+# pythonnet exposes System.Type members on a type proxy, e.g.
+# ``IMultiString.IsInstanceOfType(obj)`` (issue #640). They are not members of
+# the LCM interface, so they must not enter the expected contract.
+SYSTEM_TYPE_MEMBERS = frozenset({"IsInstanceOfType"})
+
 PENDING_SEEDS_PATH = Path(__file__).resolve().parent / "pending_contract_seeds.py"
 
 

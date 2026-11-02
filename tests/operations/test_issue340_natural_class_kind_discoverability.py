@@ -11,6 +11,8 @@
 
 from pathlib import Path
 
+import types
+
 import pytest
 
 _NATURAL_CLASS_OPS = (
@@ -123,7 +125,7 @@ def test_is_feature_based_allows_branch_before_add_phoneme():
     ops = NaturalClassOperations(_FakeProject())
     seg = _FakeSegmentsNC()
     feat = _FakeFeaturesNC()
-    phoneme = object()
+    phoneme = types.SimpleNamespace(Hvo=1)
 
     for nc in (seg, feat):
         if ops.IsFeatureBased(nc):

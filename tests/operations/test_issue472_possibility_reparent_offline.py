@@ -144,6 +144,9 @@ class _MockOwningSequence:
     def __contains__(self, item):
         return item in self._items
 
+    def __iter__(self):
+        return iter(list(self._items))
+
     def IndexOf(self, item):
         try:
             return self._items.index(item)

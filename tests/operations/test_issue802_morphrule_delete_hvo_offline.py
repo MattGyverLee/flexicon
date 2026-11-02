@@ -30,7 +30,7 @@ def test_issue802_delete_uses_hvo_membership():
     text = MORPH_RULE_OPS.read_text(encoding="utf-8")
     block = _block(text, "Delete")
     assert "issue #802" in block
-    assert "__RemoveMemberByHvo" in block
+    assert "__FindMemberByHvo" in block
     assert "CompoundRulesOS.Remove(rule)" not in block
     assert "AffixTemplatesOS.Remove(rule)" not in block
     assert "AdhocCoProhibitionsOC.Remove(rule)" not in block
@@ -38,9 +38,9 @@ def test_issue802_delete_uses_hvo_membership():
 
 def test_issue802_remove_helper_uses_hvo():
     text = MORPH_RULE_OPS.read_text(encoding="utf-8")
-    block = _block(text, "__RemoveMemberByHvo")
+    block = _block(text, "__FindMemberByHvo")
     assert "issue #802" in block
-    assert "int(slot.Hvo) == target_hvo" in block
+    assert "int(member.Hvo) == target_hvo" in block
 
 
 def test_issue802_live_gate_module_exists():

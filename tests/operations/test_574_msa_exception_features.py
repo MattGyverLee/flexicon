@@ -72,8 +72,12 @@ def _primary(msa):
 class _FakePossibility:
     """ICmPossibility stand-in."""
 
+    _next_hvo = 1000
+
     def __init__(self, name):
         self.name = name
+        _FakePossibility._next_hvo += 1
+        self.Hvo = _FakePossibility._next_hvo
 
 
 @pytest.fixture

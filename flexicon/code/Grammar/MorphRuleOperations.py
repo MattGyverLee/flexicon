@@ -744,20 +744,24 @@ class MorphRuleOperations(BaseOperations):
                 with self._TransactionCM("Delete compound rule"):
                     # Membership by HVO (issue #802). CompoundRulesOS can yield
                     # bare interface views while callers pass cast handles.
-                    self.__RemoveMemberByHvo(morph_data.CompoundRulesOS, rule)
+                    member = self.__FindMemberByHvo(morph_data.CompoundRulesOS, rule)
+                    if member is not None:
+                        morph_data.CompoundRulesOS.Remove(member)
         elif class_name == "MoInflAffixTemplate":
             # AffixTemplatesOS lives on IPartOfSpeech, not on the base
             # ICmObject returned from .Owner / _GetObject(Hvo). (issue #467)
             owner = self._GetTypedOwner(rule)
             if owner is not None and hasattr(owner, "AffixTemplatesOS"):
                 with self._TransactionCM("Delete affix template"):
-                    self.__RemoveMemberByHvo(owner.AffixTemplatesOS, rule)
+                    member = self.__FindMemberByHvo(owner.AffixTemplatesOS, rule)
+                    if member is not None:
+                        owner.AffixTemplatesOS.Remove(member)
         elif class_name in ("MoAdhocProhibGr", "MoAdhocProhibMorph", "MoAdhocProhibAllomorph"):
             if morph_data is not None:
                 with self._TransactionCM("Delete ad hoc prohibition"):
-                    self.__RemoveMemberByHvo(
-                        morph_data.AdhocCoProhibitionsOC, rule
-                    )
+                    member = self.__FindMemberByHvo(morph_data.AdhocCoProhibitionsOC, rule)
+                    if member is not None:
+                        morph_data.AdhocCoProhibitionsOC.Remove(member)
 
     # ========== PROPERTIES ==========
 
@@ -1130,16 +1134,13 @@ class MorphRuleOperations(BaseOperations):
 
             return duplicate
 
-    def __RemoveMemberByHvo(self, collection, item):
-        """Remove ``item`` from ``collection`` using HVO membership (issue #802)."""
+    def __FindMemberByHvo(self, collection, item):
+        """Return the member of ``collection`` matching ``item`` by HVO, or None (issue #802)."""
         target_hvo = int(item.Hvo)
-        member_to_remove = None
-        for slot in collection:
-            if int(slot.Hvo) == target_hvo:
-                member_to_remove = slot
-                break
-        if member_to_remove is not None:
-            collection.Remove(member_to_remove)
+        for member in collection:
+            if int(member.Hvo) == target_hvo:
+                return member
+        return None
 
     def __DuplicateCompoundRule(self, source, class_name, insert_after):
         """Create and insert a duplicate compound rule."""

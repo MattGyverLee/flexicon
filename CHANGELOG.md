@@ -13,6 +13,55 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ---
 
+## [4.13.1] - 2026-11-01
+
+Patch release: a sweep of HVO-identity fixes (issues 640 and 642-820). No
+API changes and no breaking changes.
+
+### Fixed
+
+- **Owning/reference collection access now matches by HVO, not Python
+  identity.** pythonnet can yield bare interface views from `...OS` / `...OC`
+  / `...RS` collections whose identity differs from the object a caller
+  holds, so `IndexOf`, `Remove`, `in` and `MoveTo` silently missed. Fixed in:
+  - **`Delete`**: `LexSense`, `Example`, `Pronunciation`, `Etymology`,
+    `Allomorph`, `LexReference`, `Variant`, `POS`, `Phoneme`, `NaturalClass`,
+    `Environment`, `Stratum`, `MorphRule`, `PhonFeature`, `InflectionFeature`
+    (issue 820), `Paragraph`, `Segment`, `WfiAnalysis`, `WfiGloss`,
+    `WfiMorphBundle`, `Agent`, `Overlay`, `Note`, `Person`, `Location`,
+    `Anthropology`, `DataNotebook` (issue 818), `SemanticDomain`,
+    `PossibilityItem`, `PossibilityList`, `AnnotationDef`, `CheckType`, and
+    discourse `DeleteChart` / `DeleteRow`.
+  - **`Reorder` / `Move*`**: `LexSense`, `Example`, `Pronunciation`,
+    `Etymology`, `WfiMorphBundle`, `ReorderAffixTemplates`, picture and
+    media-file moves, Scripture `MoveTo`, and the `BaseOperations` move
+    helpers.
+  - **Add/Remove on reference collections**: `LexEntry`/`LexSense`
+    `DoNotPublishIn` and related lists, `SemanticDomains`, `UsageTypes`,
+    `DomainTypes`, `AnthroCodes`, `Variant` component lexemes, `Overlay`
+    elements, `DataNotebook` researchers/locations/sources/participants/media,
+    `NaturalClass` phonemes, `Phoneme` codes, reversal `AddSense`/`RemoveSense`,
+    and MSA exception-feature membership (issues 770, 778).
+  - **`Duplicate(insert_after=...)`**: `Etymology`, `Pronunciation`,
+    `Allomorph`, `POS`, `DataNotebook`, `Location`, `Person`, `Note`,
+    `SemanticDomain`, `Anthropology`, `PossibilityList`.
+- **`WritingSystems.GetBestString` accepts live multistrings** (issue 640).
+
+### Internal
+
+- Contract extractor ignores `System.Type` members (`IsInstanceOfType`) reached
+  through the pythonnet type proxy.
+- `MorphRuleOperations` find-by-HVO helper no longer calls `.Remove` outside a
+  transaction bracket; offline mocks updated for HVO lookup.
+
+### Known gaps
+
+- Issue 740 (`Allomorph` RC membership) has offline evidence only; its live
+  run was not recorded. Other fixes in this release carry offline and live
+  evidence under `specs/`.
+
+---
+
 ## [4.13.0] - 2026-10-09
 
 > **Contains one behavioural breaking change**: `InflectionClassCreate`
