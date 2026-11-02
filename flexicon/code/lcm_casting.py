@@ -560,6 +560,7 @@ def _ensure_interfaces() -> None:
         from SIL.LCModel import (
             ICmPossibilityList,
             ICmBaseAnnotation,
+            ICmMedia,
             IFsClosedFeature,
             IFsFeatureSystem,
             ILexExampleSentence,
@@ -576,7 +577,7 @@ def _ensure_interfaces() -> None:
             ISegment,
         )
     except ImportError:
-        ICmPossibilityList = ICmBaseAnnotation = None
+        ICmPossibilityList = ICmBaseAnnotation = ICmMedia = None
         IFsClosedFeature = IFsFeatureSystem = None
         ILexExampleSentence = ILexPronunciation = ILexReference = None
         ILexEtymology = IPhCode = IPhFeatureConstraint = None
@@ -587,6 +588,8 @@ def _ensure_interfaces() -> None:
     for _class_name, _iface in (
         ("CmPossibilityList", ICmPossibilityList),
         ("CmBaseAnnotation", ICmBaseAnnotation),
+        # issue #836: project.Object(hvo) on CmMedia must expose MediaFileRA / Label
+        ("CmMedia", ICmMedia),
         ("FsClosedFeature", IFsClosedFeature),
         ("FsFeatureSystem", IFsFeatureSystem),
         ("LexExampleSentence", ILexExampleSentence),
