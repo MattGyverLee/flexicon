@@ -754,7 +754,12 @@ class BaseOperations:
                 # Find where the item that should be at target_index currently is
                 current_index = target_index
                 for j in range(target_index, count):
-                    if sequence[j] == items_with_indices[target_index][1]:
+                    # HVO compare, not ==: members can be bare interface
+                    # views while key_func/natural order hands back other
+                    # proxies of the same object (issue #776, cf. #774).
+                    if self._SameLcmObjectByHvo(
+                        sequence[j], items_with_indices[target_index][1]
+                    ):
                         current_index = j
                         break
 
@@ -787,7 +792,16 @@ class BaseOperations:
             )
 
         current = [sequence[i] for i in range(count)]
-        if set(current) != set(desired_order):
+        # Compare by HVO, not Python proxy identity (issue #776, cf. #774):
+        # set() of pythonnet proxies treats a bare interface view and a cast
+        # handle of the same object as distinct.
+        def _key(obj):
+            hvo = self._LcmObjectHvo(obj)
+            return hvo if hvo is not None else obj
+
+        if sorted(map(_key, current), key=repr) != sorted(
+            map(_key, desired_order), key=repr
+        ):
             raise FP_ParameterError(
                 "desired_order must contain exactly the same objects as the sequence"
             )
@@ -800,7 +814,7 @@ class BaseOperations:
                 current_index = target_index
                 target_item = desired_order[target_index]
                 for j in range(target_index, count):
-                    if sequence[j] == target_item:
+                    if self._SameLcmObjectByHvo(sequence[j], target_item):
                         current_index = j
                         break
 
