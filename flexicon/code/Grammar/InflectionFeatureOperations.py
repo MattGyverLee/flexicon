@@ -347,8 +347,22 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         if owning is None:
             raise FP_ParameterError("Inflection class has no owning part of speech or class")
 
+        # Membership by HVO (issue #840). SubclassesOC / InflectionClassesOC
+        # can yield bare interface views while callers pass cast handles from
+        # Object(hvo); Remove with the wrong proxy is a silent no-op on live LCM.
+        target_hvo = int(ic.Hvo)
+        member_to_remove = None
+        for slot in owning:
+            if int(slot.Hvo) == target_hvo:
+                member_to_remove = slot
+                break
+        if member_to_remove is None:
+            raise FP_ParameterError(
+                "Inflection class is not a member of its owning sequence"
+            )
+
         with self._TransactionCM("Delete inflection class"):
-            owning.Remove(ic)
+            owning.Remove(member_to_remove)
 
     @OperationsMethod
     def InflectionClassGetName(self, ic_or_hvo, wsHandle=None):
