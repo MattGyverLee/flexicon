@@ -546,30 +546,27 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         val = self.__Unwrap(self.__ResolveObject(value_or_hvo))
         owner = val.Owner
         if owner is not None:
-            # ValuesOC is declared on IFsClosedFeature; cast unconditionally so
-            # pythonnet surfaces the typed collection accessor. The try/except
-            # guards against the unlikely case that owner is some other type
-            # (should not happen in practice, but preserves robustness).
+            # ValuesOC is declared on IFsClosedFeature; cast so pythonnet
+            # surfaces the typed collection accessor. Only invalid-owner cast
+            # failures are swallowed (issue #844); membership errors must raise.
             try:
-                # The cast stays inside the try but outside the bracket, so a
-                # non-IFsClosedFeature owner is swallowed without opening an
-                # empty named undo entry.
                 feat = IFsClosedFeature(owner)
-                # Membership by HVO (issue #816); same proxy gap as Delete().
-                target_hvo = int(val.Hvo)
-                member_to_remove = None
-                for slot in feat.ValuesOC:
-                    if int(slot.Hvo) == target_hvo:
-                        member_to_remove = slot
-                        break
-                if member_to_remove is None:
-                    raise FP_ParameterError(
-                        "Value is not a member of ValuesOC"
-                    )
-                with self._TransactionCM("Delete feature value"):
-                    feat.ValuesOC.Remove(member_to_remove)
-            except Exception:
-                pass
+            except (AttributeError, System.InvalidCastException):
+                return
+
+            # Membership by HVO (issue #816); same proxy gap as Delete().
+            target_hvo = int(val.Hvo)
+            member_to_remove = None
+            for slot in feat.ValuesOC:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+            if member_to_remove is None:
+                raise FP_ParameterError(
+                    "Value is not a member of ValuesOC"
+                )
+            with self._TransactionCM("Delete feature value"):
+                feat.ValuesOC.Remove(member_to_remove)
 
     # ========================================================================
     # COMPOSE - FsFeatStruc
