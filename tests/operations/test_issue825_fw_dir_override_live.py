@@ -22,7 +22,10 @@ def test_override_in_effect_and_project_opens(target_sandbox):
     from flexicon.code import FLExGlobals
 
     override = os.environ.get("FLEXICON_FW_DIR")
-    assert override, "FLEXICON_FW_DIR must be set for this live test"
+    if not override:
+        # FWCodeDir is resolved once at import, so the variable cannot be
+        # set from inside the test; it must be exported before pytest starts.
+        pytest.skip("FLEXICON_FW_DIR not exported; override cannot be exercised")
     assert os.path.normcase(os.path.normpath(FLExGlobals.FWCodeDir)) == \
         os.path.normcase(os.path.normpath(os.path.abspath(override)))
     assert target_sandbox.writeEnabled is True
