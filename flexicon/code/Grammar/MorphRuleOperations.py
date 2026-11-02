@@ -38,6 +38,8 @@ from .affix_template_collection import AffixTemplateCollection
 from .compound_rule import CompoundRule
 from .compound_rule_collection import CompoundRuleCollection
 
+import logging
+
 # Import FLEx LCM types
 from SIL.LCModel import (
     IMoEndoCompoundFactory,
@@ -54,6 +56,8 @@ from ..FLExProject import (
     FP_ParameterError,
     FP_ReadOnlyError,  # noqa: F401  -- raised by _EnsureWriteEnabled
 )
+
+logger = logging.getLogger(__name__)
 
 # IMoInflAffixTemplate reference sequences. clr reflection on
 # ILcmReferenceSequence<IMoInflAffixSlot> (SIL.LCModel 11.0.0) shows
@@ -736,32 +740,40 @@ class MorphRuleOperations(BaseOperations):
 
         morph_data = self.project.lp.MorphologicalDataOA
 
-        # One bracket per branch, each inside its own guard: an unmatched
-        # class_name or a missing container must not open an empty named undo
-        # entry that Phase 2 would Rollback(0).
+        # Locate the member first and open the undo bracket only when it was
+        # found: a missing container / unmatched class / absent member must not
+        # open an empty named undo entry. Membership is by HVO (issue #802):
+        # collections can yield bare interface views while callers pass cast
+        # handles.
+        collection = None
+        label = None
         if class_name in ("MoEndoCompound", "MoExoCompound"):
             if morph_data is not None:
-                with self._TransactionCM("Delete compound rule"):
-                    # Membership by HVO (issue #802). CompoundRulesOS can yield
-                    # bare interface views while callers pass cast handles.
-                    member = self.__FindMemberByHvo(morph_data.CompoundRulesOS, rule)
-                    if member is not None:
-                        morph_data.CompoundRulesOS.Remove(member)
+                collection = morph_data.CompoundRulesOS
+                label = "Delete compound rule"
         elif class_name == "MoInflAffixTemplate":
             # AffixTemplatesOS lives on IPartOfSpeech, not on the base
             # ICmObject returned from .Owner / _GetObject(Hvo). (issue #467)
             owner = self._GetTypedOwner(rule)
             if owner is not None and hasattr(owner, "AffixTemplatesOS"):
-                with self._TransactionCM("Delete affix template"):
-                    member = self.__FindMemberByHvo(owner.AffixTemplatesOS, rule)
-                    if member is not None:
-                        owner.AffixTemplatesOS.Remove(member)
+                collection = owner.AffixTemplatesOS
+                label = "Delete affix template"
         elif class_name in ("MoAdhocProhibGr", "MoAdhocProhibMorph", "MoAdhocProhibAllomorph"):
             if morph_data is not None:
-                with self._TransactionCM("Delete ad hoc prohibition"):
-                    member = self.__FindMemberByHvo(morph_data.AdhocCoProhibitionsOC, rule)
-                    if member is not None:
-                        morph_data.AdhocCoProhibitionsOC.Remove(member)
+                collection = morph_data.AdhocCoProhibitionsOC
+                label = "Delete ad hoc prohibition"
+
+        if collection is None:
+            logger.warning("MorphRule.Delete: no owning collection for %s (hvo %s)", class_name, rule.Hvo)
+            return
+
+        member = self.__FindMemberByHvo(collection, rule)
+        if member is None:
+            logger.warning("MorphRule.Delete: %s hvo %s not found in its collection", class_name, rule.Hvo)
+            return
+
+        with self._TransactionCM(label):
+            collection.Remove(member)
 
     # ========== PROPERTIES ==========
 

@@ -1168,16 +1168,20 @@ class WritingSystemOperations(BaseOperations):
         self._ValidateParam(string_obj, "string_obj")
 
         # Import types locally to avoid circular imports
-        from SIL.LCModel.Core.KernelInterfaces import IMultiUnicode, IMultiString
+        # (live reflection: both live in SIL.LCModel, not KernelInterfaces)
+        from SIL.LCModel import IMultiUnicode, IMultiString
 
         from ..Shared.string_utils import best_text
 
         # pythonnet exposes LCM multistrings as concrete accessor types whose
         # Python class does not list IMultiUnicode/IMultiString as bases, so
         # isinstance() rejects every live value (issue #640).
+        # IsInstanceOfType is a System.Type method, so go through GetClrType.
+        import clr
+
         if not (
-            IMultiUnicode.IsInstanceOfType(string_obj)
-            or IMultiString.IsInstanceOfType(string_obj)
+            clr.GetClrType(IMultiUnicode).IsInstanceOfType(string_obj)
+            or clr.GetClrType(IMultiString).IsInstanceOfType(string_obj)
         ):
             raise FP_ParameterError(
                 "GetBestString: string_obj must be IMultiUnicode or IMultiString"

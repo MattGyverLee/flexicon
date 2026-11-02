@@ -29,8 +29,8 @@ def _get_best_string_block(text: str) -> str:
 def test_issue640_get_best_string_uses_is_instance_of_type():
     block = _get_best_string_block(WS_OPS.read_text(encoding="utf-8"))
     assert "issue #640" in block
-    assert "IMultiUnicode.IsInstanceOfType" in block
-    assert "IMultiString.IsInstanceOfType" in block
+    assert "clr.GetClrType(IMultiUnicode).IsInstanceOfType" in block
+    assert "clr.GetClrType(IMultiString).IsInstanceOfType" in block
     assert "isinstance(string_obj" not in block
     assert "best_text(string_obj)" in block
 

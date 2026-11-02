@@ -26,9 +26,9 @@ def _free_up_index(project, tag):
         rev.Delete(existing)
 
 
-def test_issue716_remove_sense_after_hvo_refetch(target_sandbox):
+def test_issue716_remove_sense_after_hvo_refetch(sena3_sandbox):
     """RemoveSense unlinks sense when caller holds Object(hvo) view."""
-    project = target_sandbox
+    project = sena3_sandbox
     handle, tag = _first_analysis(project)
     _free_up_index(project, tag)
     index = project.ReversalIndexes.Create(f"{TEST_PREFIX}idx", handle)

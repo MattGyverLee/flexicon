@@ -38,21 +38,13 @@ class TestIssue738VariantComponentLexemesRsHvoLive:
     """Add/RemoveComponentLexeme must not rely on Python proxy identity in ComponentLexemesRS."""
 
     @pytest.mark.live_phase("VariantOperations", "modify")
-    def test_remove_component_via_bare_object_view(self, target_sandbox):
-        from SIL.LCModel.Core.KernelInterfaces import ITsString
-        from SIL.LCModel.Core.Text import TsStringUtils
-
-        project = target_sandbox
+    def test_remove_component_via_bare_object_view(self, sena3_sandbox):
+        project = sena3_sandbox
         owner = _entry_with_lexeme_form(project)
         component = _distinct_component_entry(project, owner) if owner else None
         vtype = _first_variant_type(project)
         if owner is None or component is None or vtype is None:
-            pytest.skip("Target lacks entries with lexeme forms or variant types")
-
-        ws = project.project.DefaultVernWs
-        original_form_text = (
-            ITsString(owner.LexemeFormOA.Form.get_String(ws)).Text or ""
-        )
+            pytest.skip("Sena 3 lacks entries with lexeme forms or variant types")
 
         variant_ref = None
         try:
@@ -68,26 +60,15 @@ class TestIssue738VariantComponentLexemesRsHvoLive:
         finally:
             if variant_ref is not None:
                 project.Variants.Delete(variant_ref)
-            restored = TsStringUtils.MakeString(original_form_text, ws)
-            with project.UndoableOperation("test cleanup: restore lexeme form #738"):
-                owner.LexemeFormOA.Form.set_String(ws, restored)
 
     @pytest.mark.live_phase("VariantOperations", "modify")
-    def test_add_component_skips_duplicate_for_bare_object_view(self, target_sandbox):
-        from SIL.LCModel.Core.KernelInterfaces import ITsString
-        from SIL.LCModel.Core.Text import TsStringUtils
-
-        project = target_sandbox
+    def test_add_component_skips_duplicate_for_bare_object_view(self, sena3_sandbox):
+        project = sena3_sandbox
         owner = _entry_with_lexeme_form(project)
         component = _distinct_component_entry(project, owner) if owner else None
         vtype = _first_variant_type(project)
         if owner is None or component is None or vtype is None:
-            pytest.skip("Target lacks entries with lexeme forms or variant types")
-
-        ws = project.project.DefaultVernWs
-        original_form_text = (
-            ITsString(owner.LexemeFormOA.Form.get_String(ws)).Text or ""
-        )
+            pytest.skip("Sena 3 lacks entries with lexeme forms or variant types")
 
         variant_ref = None
         try:
@@ -103,6 +84,3 @@ class TestIssue738VariantComponentLexemesRsHvoLive:
         finally:
             if variant_ref is not None:
                 project.Variants.Delete(variant_ref)
-            restored = TsStringUtils.MakeString(original_form_text, ws)
-            with project.UndoableOperation("test cleanup: restore lexeme form #738 dup"):
-                owner.LexemeFormOA.Form.set_String(ws, restored)

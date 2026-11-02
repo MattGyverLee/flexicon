@@ -18,24 +18,15 @@ def _make_entry(project, suffix):
     return entry
 
 
-def test_issue720_remove_usage_type_after_hvo_refetch(target_sandbox):
+def test_issue720_remove_usage_type_after_hvo_refetch(sena3_sandbox):
     """RemoveUsageType unlinks usage when caller holds Object(hvo) view."""
-    project = target_sandbox
+    project = sena3_sandbox
     ops = project.Senses
-    usage = None
-    for plist in project.PossibilityLists.GetAllLists():
-        plist_name = (
-            project.PossibilityLists.GetName(plist)
-            if hasattr(project.PossibilityLists, "GetName")
-            else str(plist.Name)
-        )
-        if plist_name in ("Usages", "Usage Types"):
-            items = list(project.PossibilityLists.GetItems(plist))
-            if items:
-                usage = items[0]
-                break
-    if usage is None:
-        pytest.skip("Target has no usage types to reference")
+    # Sena 3 carries these lists on LexDb (localized list names, so a lookup
+    # by English list name finds nothing).
+    plist = project.lexDB.UsageTypesOA
+    assert plist is not None and plist.PossibilitiesOS.Count > 0
+    usage = plist.PossibilitiesOS[0]
     entry = _make_entry(project, "usage_hvo")
     try:
         sense = ops.Create(entry, f"{TEST_PREFIX}g")

@@ -25,18 +25,18 @@ def _make_stem_allomorph(project, form_text):
         raise
 
 
-def test_issue740_remove_phoneenv_after_hvo_refetch(target_sandbox):
+def test_issue740_remove_phoneenv_after_hvo_refetch(sena3_sandbox):
     """RemovePhoneEnv detaches environment when caller holds Object(hvo) view."""
-    project = target_sandbox
+    project = sena3_sandbox
     ops = project.Allomorphs
     envs = list(project.Environments.GetAll())
     if not envs:
-        pytest.skip("Target has no phonological environments")
+        pytest.skip("Sena 3 has no phonological environments")
 
     env = envs[0]
     entries = list(project.LexiconAllEntries())
     if not entries:
-        pytest.skip("Target has no lexical entries")
+        pytest.skip("Sena 3 has no lexical entries")
 
     entry = entries[0]
     allomorphs = list(ops.GetAll(entry))
@@ -59,29 +59,29 @@ def test_issue740_remove_phoneenv_after_hvo_refetch(target_sandbox):
             pass
 
 
-def test_issue740_remove_inflection_class_after_hvo_refetch(target_sandbox):
+def test_issue740_remove_inflection_class_after_hvo_refetch(sena3_sandbox):
     """RemoveInflectionClass detaches class when caller holds Object(hvo) view."""
-    project = target_sandbox
+    project = sena3_sandbox
     ops = project.Allomorphs
-    pos_list = list(project.POS.GetAll())
-    verb = next((p for p in pos_list if project.POS.GetName(p) == "Verb"), None)
-    if verb is None:
-        pytest.skip("Target has no Verb POS")
+    # Sena 3 has no inflection classes and POps exposes no creator, so add a
+    # TEST_ one through the raw LCM factory (sandbox copy; nothing leaks).
+    from SIL.LCModel import IMoInflClassFactory
 
-    infl_classes = project.POS.GetInflectionClasses(verb)
-    if not infl_classes:
-        pytest.skip("Verb POS has no inflection classes")
-
-    infl_class = infl_classes[0]
+    verb = project.POS.GetAll()[0]
+    with project.Transaction("create TEST_740 inflection class"):
+        new_class = project.GetFactory(IMoInflClassFactory).Create()
+        verb.InflectionClassesOC.Add(new_class)
+        new_class.Name.set_String(
+            project.project.DefaultAnalWs,
+            f"{TEST_PREFIX}infl_class",
+        )
+    infl_class = project.POS.GetInflectionClasses(verb)[0]
     entry = project.LexEntry.Create(f"{TEST_PREFIX}infl")
     try:
-        project.LexEntry.SetPOS(entry, verb)
         allomorphs = list(ops.GetAll(entry))
-        if not allomorphs:
-            pytest.skip("Could not obtain stem allomorph")
+        assert allomorphs, "LexEntry.Create produced no stem allomorph"
         allomorph = allomorphs[0]
-        if getattr(allomorph, "ClassName", None) != "MoStemAllomorph":
-            pytest.skip("Allomorph is not MoStemAllomorph")
+        assert getattr(allomorph, "ClassName", None) == "MoStemAllomorph"
 
         ops.AddInflectionClass(allomorph, infl_class)
         assert len(ops.GetInflectionClasses(allomorph)) == 1

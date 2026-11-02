@@ -26,6 +26,10 @@ class TestIssue692LexSenseReorderHvoLive:
         sense_ops = target_sandbox.Senses
 
         try:
+            # LexEntry.Create adds a default blank sense. Reorder keeps
+            # unlisted senses in original order after the listed ones, so the
+            # default sense precedes s2 in the tail.
+            default_hvos = [s.Hvo for s in entry.SensesOS]
             s0 = sense_ops.Create(entry, f"{TEST_PREFIX}a")
             s1 = sense_ops.Create(entry, f"{TEST_PREFIX}b")
             s2 = sense_ops.Create(entry, f"{TEST_PREFIX}c")
@@ -35,6 +39,6 @@ class TestIssue692LexSenseReorderHvoLive:
             sense_ops.Reorder(entry, [raw_second, raw_first])
 
             order = [s.Hvo for s in sense_ops.GetAll(entry)]
-            assert order == [s1.Hvo, s0.Hvo, s2.Hvo]
+            assert order == [s1.Hvo, s0.Hvo] + default_hvos + [s2.Hvo]
         finally:
             target_sandbox.LexEntry.Delete(entry)

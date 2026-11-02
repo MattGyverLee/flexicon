@@ -18,9 +18,11 @@ class TestIssue774BaseOpsMoveHvoLive:
 
     @pytest.mark.live_phase("LexSenseOperations", "modify")
     def test_move_down_finds_raw_sense_in_senses_os(self, target_sandbox):
-        entry = target_sandbox.LexiconEntries.Create(f"{TEST_PREFIX}lemma")
-        sense_a = target_sandbox.Senses.Create(entry, gloss=f"{TEST_PREFIX}a")
-        sense_b = target_sandbox.Senses.Create(entry, gloss=f"{TEST_PREFIX}b")
+        entry = target_sandbox.LexEntry.Create(f"{TEST_PREFIX}lemma")
+        # LexEntry.Create adds a default blank sense first, so order is
+        # [default, a, b]; move the middle sense (a) so MoveDown has room.
+        sense_b = target_sandbox.Senses.Create(entry, gloss=f"{TEST_PREFIX}a")
+        sense_c = target_sandbox.Senses.Create(entry, gloss=f"{TEST_PREFIX}b")
         assert entry.SensesOS.Count >= 2
 
         sense_b_hvo = sense_b.Hvo

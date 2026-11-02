@@ -27,7 +27,7 @@ class TestIssue668PossibilityItemDuplicateHvoLive:
             raw_mid = sandbox.Object(pub_b.Hvo)
             dup = sandbox.Publications.Duplicate(raw_mid, insert_after=True, deep=False)
 
-            pub_list = sandbox.project.lexDB.PublicationTypesOA.PossibilitiesOS
+            pub_list = sandbox.lexDB.PublicationTypesOA.PossibilitiesOS
             order = [p.Hvo for p in pub_list]
             assert order.index(dup.Hvo) == order.index(pub_b.Hvo) + 1
         finally:

@@ -15,26 +15,27 @@ class TestIssue672PublicationSetIsDefaultHvoLive:
     """SetIsDefault must reorder when publication_or_hvo is raw Object(hvo)."""
 
     @pytest.mark.live_phase("PublicationOperations", "write")
-    def test_set_is_default_raw_object_view(self, target_sandbox):
-        pubs = list(target_sandbox.Publications.GetAll())
-        if len(pubs) < 2:
-            pytest.skip("Need at least two publications")
+    def test_set_is_default_raw_object_view(self, sena3_sandbox):
+        if len(list(sena3_sandbox.Publications.GetAll())) < 2:
+            # Sena 3 ships with a single publication; add a TEST_ one.
+            sena3_sandbox.Publications.Create("TEST_672_second_pub")
+        pubs = list(sena3_sandbox.Publications.GetAll())
+        assert len(pubs) >= 2
 
         default_before = next(
-            (p for p in pubs if target_sandbox.Publications.GetIsDefault(p)),
+            (p for p in pubs if sena3_sandbox.Publications.GetIsDefault(p)),
             pubs[0],
         )
         non_default = next(
             (p for p in pubs if p.Hvo != default_before.Hvo),
             None,
         )
-        if non_default is None:
-            pytest.skip("Could not find a non-default publication")
+        assert non_default is not None
 
         try:
-            raw = target_sandbox.Object(non_default.Hvo)
-            target_sandbox.Publications.SetIsDefault(raw, True)
-            order = [p.Hvo for p in target_sandbox.lexDB.PublicationTypesOA.PossibilitiesOS]
+            raw = sena3_sandbox.Object(non_default.Hvo)
+            sena3_sandbox.Publications.SetIsDefault(raw, True)
+            order = [p.Hvo for p in sena3_sandbox.lexDB.PublicationTypesOA.PossibilitiesOS]
             assert order[0] == non_default.Hvo
         finally:
-            target_sandbox.Publications.SetIsDefault(default_before, True)
+            sena3_sandbox.Publications.SetIsDefault(default_before, True)

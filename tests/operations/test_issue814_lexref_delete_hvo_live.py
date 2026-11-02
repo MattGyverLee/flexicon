@@ -13,8 +13,9 @@ pytestmark = pytest.mark.requires_live_project
 TEST_PREFIX = "TEST_814_"
 
 
-def _sense_has_ref_hvo(ref_ops, sense, hvo):
-    return any(int(r.Hvo) == int(hvo) for r in ref_ops.GetAll(sense))
+def _type_member_hvos(ref_type):
+    """Read the ILexRefType.MembersOC HVOs back from the LCM."""
+    return [int(r.Hvo) for r in ref_type.MembersOC]
 
 
 def test_issue814_delete_removes_from_membersoc_by_hvo(target_sandbox):
@@ -34,17 +35,17 @@ def test_issue814_delete_removes_from_membersoc_by_hvo(target_sandbox):
         entry3 = project.LexEntry.Create(f"{TEST_PREFIX}c")
         sense3 = project.Senses.Create(entry3, f"{TEST_PREFIX}gloss_c")
         victim = ref_ops.Create(ref_type, [sense1, sense3])
-        assert _sense_has_ref_hvo(ref_ops, sense1, victim.Hvo)
+        assert int(victim.Hvo) in _type_member_hvos(ref_type)
 
         hvo = victim.Hvo
         bare_view = project.Object(hvo)
-        starting = len(list(ref_ops.GetAll(sense1)))
+        starting = len(_type_member_hvos(ref_type))
 
         ref_ops.Delete(bare_view)
 
-        assert len(list(ref_ops.GetAll(sense1))) == starting - 1
-        assert not _sense_has_ref_hvo(ref_ops, sense1, hvo)
-        assert _sense_has_ref_hvo(ref_ops, sense1, keep.Hvo)
+        assert len(_type_member_hvos(ref_type)) == starting - 1
+        assert int(hvo) not in _type_member_hvos(ref_type)
+        assert int(keep.Hvo) in _type_member_hvos(ref_type)
     finally:
         for entry in (entry1, entry2, entry3):
             try:

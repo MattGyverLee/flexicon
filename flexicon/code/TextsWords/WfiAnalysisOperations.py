@@ -702,6 +702,15 @@ class WfiAnalysisOperations(BaseOperations):
         self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
 
         wordform = self.__GetWordformObject(wordform_or_hvo)
+
+        # A stale HVO (e.g. just deleted) does not resolve: the answer to
+        # "does it exist" is False, not an exception (issue #782). Only the
+        # resolution step is guarded; wrong-class / other errors still raise.
+        if isinstance(analysis_or_hvo, int):
+            try:
+                self.project.Object(analysis_or_hvo)
+            except FP_ParameterError:
+                return False
         analysis = self.__GetAnalysisObject(analysis_or_hvo)
 
         # Check if analysis is in wordform's analyses

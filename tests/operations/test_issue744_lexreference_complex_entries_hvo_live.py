@@ -17,11 +17,11 @@ def _unique_entry_hvos(entries):
     return {e.Hvo for e in entries}
 
 
-def test_issue744_get_complex_form_entries_unique_hvos(target_sandbox):
+def test_issue744_get_complex_form_entries_unique_hvos(sena3_sandbox):
     """GetComplexFormEntries returns at most one row per entry HVO."""
-    project = target_sandbox
+    project = sena3_sandbox
     entries = list(project.LexEntry.GetAll())
-    assert len(entries) >= 3, "Target needs at least 3 lex entries"
+    assert len(entries) >= 3, "Sena 3 needs at least 3 lex entries"
     component = entries[0]
     complex_a = entries[1]
     complex_b = entries[2]
@@ -41,11 +41,11 @@ def test_issue744_get_complex_form_entries_unique_hvos(target_sandbox):
         project.LexReferences.Delete(ref)
 
 
-def test_issue744_get_component_entries_unique_hvos(target_sandbox):
+def test_issue744_get_component_entries_unique_hvos(sena3_sandbox):
     """GetComponentEntries returns at most one row per entry HVO."""
-    project = target_sandbox
+    project = sena3_sandbox
     entries = list(project.LexEntry.GetAll())
-    assert len(entries) >= 3, "Target needs at least 3 lex entries"
+    assert len(entries) >= 3, "Sena 3 needs at least 3 lex entries"
     component_a = entries[0]
     component_b = entries[1]
     complex_entry = entries[2]

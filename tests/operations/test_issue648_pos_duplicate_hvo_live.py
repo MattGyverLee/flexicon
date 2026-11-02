@@ -7,7 +7,6 @@
 #
 
 import pytest
-from SIL.LCModel import IPartOfSpeech
 
 pytestmark = pytest.mark.requires_live_project
 
@@ -28,7 +27,7 @@ class TestIssue648PosDuplicateHvoLive:
             raw_mid = sandbox.Object(pos_b.Hvo)
             dup = sandbox.POS.Duplicate(raw_mid, insert_after=True, deep=False)
 
-            pos_list = sandbox.project.lp.PartsOfSpeechOA.PossibilitiesOS
+            pos_list = sandbox.lp.PartsOfSpeechOA.PossibilitiesOS
             order = [p.Hvo for p in pos_list]
             assert order.index(dup.Hvo) == order.index(pos_b.Hvo) + 1
         finally:
@@ -40,6 +39,8 @@ class TestIssue648PosDuplicateHvoLive:
 
     @pytest.mark.live_phase("POSOperations", "write")
     def test_duplicate_subcategory_insert_after_raw_object_view(self, target_sandbox):
+        from SIL.LCModel import IPartOfSpeech
+
         sandbox = target_sandbox
         parent = sandbox.POS.Create(f"{TEST_PREFIX}parent", "648p")
         sub_a = sandbox.POS.AddSubcategory(parent, f"{TEST_PREFIX}s0", "648s0")

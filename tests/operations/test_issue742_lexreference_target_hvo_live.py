@@ -22,11 +22,11 @@ def _ensure_ref_type(project, name):
     return ref_type
 
 
-def test_issue742_remove_target_after_hvo_refetch(target_sandbox):
+def test_issue742_remove_target_after_hvo_refetch(sena3_sandbox):
     """RemoveTarget unlinks when caller holds Object(hvo) view."""
-    project = target_sandbox
+    project = sena3_sandbox
     entries = list(project.LexEntry.GetAll())
-    assert len(entries) >= 3, "Target needs at least 3 lex entries for this test"
+    assert len(entries) >= 3, "Sena 3 needs at least 3 lex entries for this test"
     sense_a = list(entries[0].SensesOS)[0]
     sense_b = list(entries[1].SensesOS)[0]
     sense_c = list(entries[2].SensesOS)[0]

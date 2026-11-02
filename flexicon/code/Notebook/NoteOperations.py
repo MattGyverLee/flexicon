@@ -415,6 +415,10 @@ class NoteOperations(BaseOperations):
         # previous hasattr checks silently no-opped, leaving the
         # duplicate orphaned).
         source = item_or_hvo if not isinstance(item_or_hvo, int) else self.project.Object(item_or_hvo)
+        # project.Object() / raw views are bare ICmObject (no Comment); cast
+        # to the concrete note internally (issue #658).
+        from ..lcm_casting import cast_to_concrete
+        source = cast_to_concrete(source)
         discussion_parent = self.__GetDiscussionParent(source)
         owner = self._GetTypedOwner(source)
         if discussion_parent is None and owner is None:

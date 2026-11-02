@@ -22,10 +22,7 @@ def test_issue724_remove_anthro_code_after_hvo_refetch(target_sandbox):
     """RemoveAnthroCode unlinks code when caller holds Object(hvo) view."""
     project = target_sandbox
     ops = project.Senses
-    anthro_list = project.Anthropology.GetList()
-    if anthro_list is None:
-        pytest.skip("Target has no anthropology list")
-    codes = list(anthro_list.PossibilitiesOS)
+    codes = list(project.Anthropology.GetAll())
     if not codes:
         pytest.skip("Target has no anthropology codes to reference")
 

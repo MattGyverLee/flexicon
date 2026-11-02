@@ -144,7 +144,10 @@ class PossibilityItemOperations(BaseOperations):
             from ..lcm_casting import cast_to_concrete
             return cast_to_concrete(obj)
         require_lcm_object(obj_or_hvo, "ICmPossibility")
-        return obj_or_hvo
+        # A raw view (e.g. project.Object(hvo)) is a bare ICmObject with no
+        # Name/Description; cast internally so callers never have to (#668).
+        from ..lcm_casting import cast_to_concrete
+        return cast_to_concrete(obj_or_hvo)
 
     # ========== CORE CRUD OPERATIONS ==========
 

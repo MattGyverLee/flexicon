@@ -35,7 +35,8 @@ def test_issue804_delete_removes_from_sensesos_by_hvo(target_sandbox):
         sense_ops.Delete(bare_view)
 
         assert sense_ops.GetAll(entry).Count == starting - 1
-        assert not sense_ops.Exists(entry, hvo)
-        assert sense_ops.Exists(entry, keep.Hvo)
+        remaining = [s.Hvo for s in entry.SensesOS]
+        assert hvo not in remaining
+        assert keep.Hvo in remaining
     finally:
         project.LexEntry.Delete(entry)

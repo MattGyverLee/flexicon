@@ -13,7 +13,7 @@ pytestmark = pytest.mark.requires_live_project
 TEST_PREFIX = "TEST_686_"
 
 
-def test_issue686_move_media_file_after_hvo_refetch(target_sandbox):
+def test_issue686_move_media_file_after_hvo_refetch(target_sandbox, tmp_path):
     """MoveMediaFile succeeds when caller holds Object(hvo) view of ICmFile."""
     entry = target_sandbox.LexEntry.Create(f"{TEST_PREFIX}entry")
     try:

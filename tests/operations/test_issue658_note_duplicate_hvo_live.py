@@ -30,7 +30,15 @@ class TestIssue658NoteDuplicateHvoLive:
             dup = project.Notes.Duplicate(raw_mid, insert_after=True, deep=False)
 
             order = [r.Hvo for r in project.Notes.GetReplies(parent)]
-            assert order.index(dup.Hvo) == order.index(reply_b.Hvo) + 1
+            # General discussion replies live in the unordered
+            # LangProject.AnnotationsOC (BeginObjectRA -> parent), so
+            # insert_after cannot fix a position; the #658 behaviour under
+            # test is that a raw ICmObject view is accepted (cast internally)
+            # and the duplicate lands as a reply of the same parent.
+            assert dup.Hvo not in (reply_a.Hvo, reply_b.Hvo, reply_c.Hvo)
+            assert order.count(dup.Hvo) == 1
+            assert len(order) == 4
+            assert dup.BeginObjectRA.Hvo == parent.Hvo
 
             project.Notes.Delete(dup)
             project.Notes.Delete(reply_c)

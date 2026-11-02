@@ -31,8 +31,14 @@ class TestIssue670SplitSegmentHvoLive:
 
         before = para.SegmentsOS.Count
         seg1, seg2 = target_sandbox.Segments.SplitSegment(seg_raw, offset)
+        # LCM re-segments on the Contents edit: exactly one new segment, no
+        # spurious empty one.
         assert para.SegmentsOS.Count == before + 1
+        assert all(s.EndOffset > s.BeginOffset for s in para.SegmentsOS)
         hvos = [s.Hvo for s in para.SegmentsOS]
         assert seg1.Hvo == seg_hvo
         assert seg2.Hvo in hvos
         assert hvos.index(seg2.Hvo) == hvos.index(seg_hvo) + 1
+        text_ = para.Contents.Text
+        assert text_[seg1.BeginOffset:seg1.EndOffset].endswith('. ')
+        assert text_[seg2.BeginOffset:seg2.EndOffset].endswith('gamma.')

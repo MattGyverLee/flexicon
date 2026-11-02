@@ -978,9 +978,10 @@ class SegmentOperations(BaseOperations):
         Split a segment at a character offset measured from the start of the segment.
 
         Inserts a sentence terminator ('. ') into IStTxtPara.Contents at the
-        absolute position corresponding to the split, then adds the new ISegment
-        to SegmentsOS. AnalysisAdjuster (fired by the Contents setter) shifts
-        all subsequent segment offsets right by 2.
+        absolute position corresponding to the split. LCM re-segments the
+        paragraph when Contents is assigned, which creates the new ISegment;
+        it is returned (no segment is inserted manually). AnalysisAdjuster
+        shifts all subsequent segment offsets right by 2.
 
         Args:
             segment_or_hvo: The ISegment object or HVO to split.
@@ -1038,9 +1039,13 @@ class SegmentOperations(BaseOperations):
             # Assign — fires AnalysisAdjuster which shifts seg3+ offsets right by 2
             para.Contents = bldr.GetString()
 
-            # --- Step 2: insert new segment into SegmentsOS ---
-            # Index by HVO (issue #670). SegmentsOS can yield bare interface
-            # views whose Python identity differs from seg.
+            # --- Step 2: locate the new segment ---
+            # Assigning Contents makes LCM re-segment the paragraph itself,
+            # which already creates the trailing segment. Inserting another
+            # one from the factory (the pre-4.13.1 behaviour) left a spurious
+            # empty segment and a wrong seg1/seg2 order (live-verified,
+            # 4.13.1 release gate). Index by HVO (issue #670): SegmentsOS can
+            # yield bare interface views whose Python identity differs from seg.
             seg_hvo = seg.Hvo
             idx = None
             for i, member in enumerate(para.SegmentsOS):
@@ -1051,9 +1056,11 @@ class SegmentOperations(BaseOperations):
                 raise FP_ParameterError(
                     "Segment is not in the paragraph SegmentsOS"
                 )
-            factory = self.__GetSegmentFactory()
-            new_seg = factory.Create()
-            para.SegmentsOS.Insert(idx + 1, new_seg)
+            if idx + 1 >= para.SegmentsOS.Count:
+                raise FP_ParameterError(
+                    "Paragraph was not re-segmented at the split offset"
+                )
+            new_seg = para.SegmentsOS[idx + 1]
 
             return (seg, new_seg)
 
