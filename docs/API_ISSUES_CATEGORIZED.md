@@ -509,12 +509,15 @@ Evidence: `specs/_archive/closed/325-syncable-properties/evidence/live-T0-etymol
 
 Evidence: `specs/_archive/closed/325-syncable-properties/evidence/live-T0-lexref-raw.json`, `live-T3-syncable-properties.md` (section b).
 
-### Wrong element type / missing backreference (issues #828, #829)
+### Wrong element type / missing backreference (issues #828, #829, #830, #831, #832)
 
 | Trap | Fact | Correct access |
 |---|---|---|
 | `MediaFilesOS` holds `ICmFile` | It holds `ICmMedia` (a wrapper whose `MediaFileRA` points at the `ICmFile`). Creating `ICmFile` and appending it to `MediaFilesOS` is the wrong type | Create via `ICmMediaFactory`; set `MediaFileRA` to the `ICmFile`. `PronunciationOperations.AddMediaFile` returns the `ICmMedia` |
 | `ReferringLexReferences` | Does not exist on `ILexSense` or `ILexEntry`; reading it raises | Per sense: `LexSenseReferences`. Per entry: `LexEntryReferences`. Project-wide: `LexDb.ReferencesOA` -> each `ILexRefType` (recurse `SubPossibilitiesOS`) -> `MembersOC` |
+| `InflectionClassesRC` on any allomorph (#830) | Exists only on `IMoAffixForm` (`MoAffixAllomorph`, `MoAffixProcess`). `MoStemAllomorph` has no such field; a stem's inflection class is the MSA's `InflectionClassRA` | Affix: `Allomorphs.Get/Add/RemoveInflectionClass`. Stem: `project.MSA.SetInflectionClass(msa, infl_class)` (the class is atomic and per sense) |
+| `ILexExampleSentence.MediaFilesOS` (#831) | Does not exist. Example audio appears to be a file name stored in the audio writing-system alternative of `Example` (observed in surveyed projects; not yet exercised by flexicon tests) | Possibly write the file name with `Examples.SetExample` on the audio writing system (untested). The `Examples` media methods are deprecated (writers raise, readers return `[]` / `0`; removal in 5.0) |
+| `DependentClausesRS` holds markers (#832) | It holds `IConstChartRow`. FLEx also sets the row's `ClauseType` (Dependent/Speech/Song) and the `StartDependentClauseGroup` / `EndDependentClauseGroup` flags; the Operations methods write only the collection, leaving a row `Normal`/`False`/`False` (a state FLEx essentially never produces) | Pass an `IConstChartRow` or its HVO to `Add/InsertDependentClause`; set `ClauseType` and the group flags through raw LCM until the 4.14.0 helper |
 
 ### CORRECTED 2026-09-22: `IText` media path (`MediaFilesRC` vs owning atomic) (issue #325)
 

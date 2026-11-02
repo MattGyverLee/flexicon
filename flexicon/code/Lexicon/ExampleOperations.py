@@ -12,6 +12,7 @@
 #
 
 import logging
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,19 @@ from ..FLExProject import (
 # Import string utilities
 from ..Shared.string_utils import normalize_text
 from ..lcm_casting import cast_to_concrete
+
+# Shared withdrawal message for the five example media methods (issue #831).
+_EXAMPLE_MEDIA_WITHDRAWN = (
+    "ExampleOperations media methods (GetMediaFiles, GetMediaCount, "
+    "AddMediaFile, RemoveMediaFile, MoveMediaFile) are withdrawn: "
+    "ILexExampleSentence has no media collection. In surveyed projects FLEx "
+    "stores example audio as a file name in the audio writing-system "
+    "alternative of the Example field; writing that alternative with "
+    "ExampleOperations.SetExample(example, text, wsHandle) is the expected "
+    "route (not yet exercised by flexicon tests). Dedicated audio methods "
+    "are planned for 4.14.0; "
+    "these methods are removed in 5.0."
+)
 
 
 class ExampleOperations(BaseOperations):
@@ -324,7 +338,7 @@ class ExampleOperations(BaseOperations):
             - Simple properties copied: Example (MultiString), Reference
             - Owned objects (deep=True): TranslationsOC
             - LiftResidue is not copied (import-specific data)
-            - MediaFilesOS are not copied (would require file handling)
+            - No media-collection handling (ILexExampleSentence has none; issue #831)
 
         See Also:
             Create, Delete, GetGuid
@@ -1182,13 +1196,21 @@ class ExampleOperations(BaseOperations):
     @OperationsMethod
     def GetMediaFiles(self, example_or_hvo):
         """
-        Get all media files associated with an example sentence.
+        Withdrawn: always returns an empty list.
+
+        This method is deprecated and is removed in 5.0. ILexExampleSentence
+        has no media collection (no ``MediaFilesOS``), so there is nothing for
+        it to read. In surveyed projects FLEx stores example audio as a bare
+        file name in the audio writing-system alternative of the Example
+        field, which this method never looked at. It now warns and returns ``[]`` without
+        touching the project.
 
         Args:
-            example_or_hvo: The ILexExampleSentence object or HVO.
+            example_or_hvo: The ILexExampleSentence object or HVO. Only
+                checked for None.
 
         Returns:
-            list: List of media file objects (empty list if none).
+            list: Always an empty list.
 
         Raises:
             FP_NullParameterError: If example_or_hvo is None.
@@ -1199,37 +1221,37 @@ class ExampleOperations(BaseOperations):
             >>> sense = entry.SensesOS[0]
             >>> examples = list(exampleOps.GetAll(sense))
             >>> if examples:
-            ...     media = exampleOps.GetMediaFiles(examples[0])
+            ...     media = exampleOps.GetMediaFiles(examples[0])  # DeprecationWarning
             ...     print(f"Media count: {len(media)}")
-            Media count: 2
+            Media count: 0
 
         Notes:
-            - Returns media file objects from MediaFilesOS collection
-            - Media files can be audio, video, or image files
-            - File objects contain path and metadata information
-            - Empty list if no media files attached
+            - Emits DeprecationWarning on every call
+            - See the withdrawal message (_EXAMPLE_MEDIA_WITHDRAWN) for the
+              expected (not yet tested) way to work with example audio
 
         See Also:
-            GetMediaCount
+            GetMediaCount, SetExample
         """
+        warnings.warn(_EXAMPLE_MEDIA_WITHDRAWN, DeprecationWarning, stacklevel=2)
         self._ValidateParam(example_or_hvo, "example_or_hvo")
-
-        example = self.__GetExampleObject(example_or_hvo)
-
-        if hasattr(example, "MediaFilesOS"):
-            return list(example.MediaFilesOS)
         return []
 
     @OperationsMethod
     def GetMediaCount(self, example_or_hvo):
         """
-        Get the count of media files associated with an example sentence.
+        Withdrawn: always returns 0.
+
+        This method is deprecated and is removed in 5.0. ILexExampleSentence
+        has no media collection (no ``MediaFilesOS``), so there is nothing to
+        count. It now warns and returns 0 without touching the project.
 
         Args:
-            example_or_hvo: The ILexExampleSentence object or HVO.
+            example_or_hvo: The ILexExampleSentence object or HVO. Only
+                checked for None.
 
         Returns:
-            int: The number of media files.
+            int: Always 0.
 
         Raises:
             FP_NullParameterError: If example_or_hvo is None.
@@ -1240,111 +1262,80 @@ class ExampleOperations(BaseOperations):
             >>> sense = entry.SensesOS[0]
             >>> examples = list(exampleOps.GetAll(sense))
             >>> if examples:
-            ...     count = exampleOps.GetMediaCount(examples[0])
+            ...     count = exampleOps.GetMediaCount(examples[0])  # DeprecationWarning
             ...     print(f"This example has {count} media files")
-            This example has 2 media files
+            This example has 0 media files
 
         Notes:
-            - More efficient than len(GetMediaFiles()) for just counting
-            - Returns 0 if no media files attached
-            - Includes all media types (audio, video, images)
+            - Emits DeprecationWarning on every call
 
         See Also:
-            GetMediaFiles
+            GetMediaFiles, SetExample
         """
+        warnings.warn(_EXAMPLE_MEDIA_WITHDRAWN, DeprecationWarning, stacklevel=2)
         self._ValidateParam(example_or_hvo, "example_or_hvo")
-
-        example = self.__GetExampleObject(example_or_hvo)
-
-        if hasattr(example, "MediaFilesOS"):
-            return example.MediaFilesOS.Count
         return 0
 
     @OperationsMethod
     def AddMediaFile(self, example_or_hvo, file_path, label=None):
         """
-        Add a media file (typically audio) to an example sentence.
+        Withdrawn: always raises FP_ParameterError.
 
-        Copies the file to the project's LinkedFiles directory and creates
-        a media reference linked to the example.
+        This method is deprecated and is removed in 5.0. It relied on
+        ``MediaFilesOS``, which ILexExampleSentence does not have, so it could
+        never attach a file. Earlier versions copied the file into
+        LinkedFiles and created an ICmFile before failing, leaving an orphan
+        on every call. It now warns and raises immediately, before any file
+        copy, LCM read, LCM write or transaction.
 
         Args:
-            example_or_hvo: The ILexExampleSentence object or HVO.
-            file_path (str): Path to the external media file to import.
-            label (str, optional): Descriptive label for the media file.
-
-        Returns:
-            ICmFile: The created media file object with proper path.
+            example_or_hvo: Ignored.
+            file_path (str): Ignored.
+            label (str, optional): Ignored.
 
         Raises:
-            FP_ReadOnlyError: If the project is not opened with write enabled.
-            FP_NullParameterError: If example_or_hvo or file_path is None.
-            FP_ParameterError: If file_path is empty or file doesn't exist.
+            FP_ParameterError: Always.
 
         Example:
             >>> exampleOps = ExampleOperations(project)
             >>> entry = project.LexiconAllEntries().__next__()
             >>> sense = entry.SensesOS[0]
             >>> example = exampleOps.Create(sense, "The dog barked loudly.")
-            >>> # Add audio recording
-            >>> media = exampleOps.AddMediaFile(
-            ...     example,
-            ...     "/path/to/audio.wav",
-            ...     label="Native speaker pronunciation"
-            ... )
-            >>> print(f"Added media file")
-            Added media file
-
-            >>> # Verify the media was added
-            >>> count = exampleOps.GetMediaCount(example)
-            >>> print(f"Example now has {count} media file(s)")
-            Example now has 1 media file(s)
+            >>> try:
+            ...     exampleOps.AddMediaFile(example, "/path/to/audio.wav")
+            ... except FP_ParameterError:
+            ...     print("Withdrawn: write the audio writing-system alternative instead")
+            Withdrawn: write the audio writing-system alternative instead
 
         Notes:
-            - File is copied to LinkedFiles/AudioVisual directory
-            - Unique filename generated if collision occurs (audio_1.wav, etc.)
-            - Creates ICmFile object with proper LinkedFiles path
-            - Supported formats: WAV, MP3, OGG, WMA (audio), MP4, AVI (video)
-            - Multiple media files can be added to one example
-            - Label is stored in the default analysis writing system
+            - Emits DeprecationWarning, then raises FP_ParameterError
+            - Nothing is copied, created or modified
+            - To attach audio, writing the audio writing-system alternative
+              with SetExample(example, text, wsHandle) is the expected route
+              (not yet exercised by flexicon tests)
 
         See Also:
-            RemoveMediaFile, MoveMediaFile, GetMediaFiles, GetMediaCount
+            SetExample, RemoveMediaFile, MoveMediaFile
         """
-        self._EnsureWriteEnabled()
-
-        self._ValidateParam(example_or_hvo, "example_or_hvo")
-        self._ValidateParam(file_path, "file_path")
-
-        self._ValidateStringNotEmpty(file_path, "file_path")
-
-        example = self.__GetExampleObject(example_or_hvo)
-
-        with self._TransactionCM("Add media file"):
-            # Use MediaOperations to properly copy file and create ICmFile
-            # Copy file to project and get ICmFile reference
-            media_file = self.project.Media.CopyToProject(file_path, internal_subdir="AudioVisual", label=label)
-
-            # Add to example's media collection
-            if hasattr(example, "MediaFilesOS"):
-                example.MediaFilesOS.Add(media_file)
-            else:
-                raise FP_ParameterError("Example does not support media files")
-
-            return media_file
+        warnings.warn(_EXAMPLE_MEDIA_WITHDRAWN, DeprecationWarning, stacklevel=2)
+        raise FP_ParameterError(_EXAMPLE_MEDIA_WITHDRAWN)
 
     @OperationsMethod
     def RemoveMediaFile(self, example_or_hvo, media_or_hvo):
         """
-        Remove a media file from an example sentence.
+        Withdrawn: always raises FP_ParameterError.
+
+        This method is deprecated and is removed in 5.0. It relied on
+        ``MediaFilesOS``, which ILexExampleSentence does not have, and used to
+        do nothing silently. It now warns and raises immediately, before any
+        LCM read, write or transaction.
 
         Args:
-            example_or_hvo: The ILexExampleSentence object or HVO.
-            media_or_hvo: The ICmFile object or HVO to remove.
+            example_or_hvo: Ignored.
+            media_or_hvo: Ignored.
 
         Raises:
-            FP_ReadOnlyError: If the project is not opened with write enabled.
-            FP_NullParameterError: If example_or_hvo or media_or_hvo is None.
+            FP_ParameterError: Always.
 
         Example:
             >>> exampleOps = ExampleOperations(project)
@@ -1352,157 +1343,61 @@ class ExampleOperations(BaseOperations):
             >>> sense = entry.SensesOS[0]
             >>> examples = list(exampleOps.GetAll(sense))
             >>> if examples:
-            ...     media_files = exampleOps.GetMediaFiles(examples[0])
-            ...     if media_files:
-            ...         exampleOps.RemoveMediaFile(examples[0], media_files[0])
-            ...         print("Media file removed")
-            Media file removed
+            ...     try:
+            ...         exampleOps.RemoveMediaFile(examples[0], 0)
+            ...     except FP_ParameterError:
+            ...         print("Withdrawn")
+            Withdrawn
 
         Notes:
-            - Removes the media file reference from the example
-            - Does NOT delete the actual file from disk
-            - The media file object is deleted from the database
-            - Cannot be undone
-            - If you need to delete the physical file, use project.Media methods
-
-        Warning:
-            - This operation cannot be undone
-            - The media file reference is permanently removed
-            - Other examples may still reference the same physical file
+            - Emits DeprecationWarning, then raises FP_ParameterError
+            - Nothing is modified
 
         See Also:
-            AddMediaFile, MoveMediaFile, GetMediaFiles
+            SetExample, AddMediaFile, MoveMediaFile
         """
-        self._EnsureWriteEnabled()
-
-        self._ValidateParam(example_or_hvo, "example_or_hvo")
-        self._ValidateParam(media_or_hvo, "media_or_hvo")
-
-        example = self.__GetExampleObject(example_or_hvo)
-
-        # Resolve media object
-        if isinstance(media_or_hvo, int):
-            media = self.project.Object(media_or_hvo)
-        else:
-            media = require_lcm_object(media_or_hvo, "ICmFile")
-
-        # Remove from collection
-        if hasattr(example, "MediaFilesOS"):
-            with self._TransactionCM("Remove example media file"):
-                example.MediaFilesOS.Remove(media)
+        warnings.warn(_EXAMPLE_MEDIA_WITHDRAWN, DeprecationWarning, stacklevel=2)
+        raise FP_ParameterError(_EXAMPLE_MEDIA_WITHDRAWN)
 
     @OperationsMethod
     def MoveMediaFile(self, media, from_example_or_hvo, to_example_or_hvo):
         """
-        Move a media file from one example sentence to another example sentence.
+        Withdrawn: always raises FP_ParameterError.
 
-        This is useful when reorganizing examples or moving audio recordings to the
-        correct example sentence.
+        This method is deprecated and is removed in 5.0. It relied on
+        ``MediaFilesOS``, which ILexExampleSentence does not have, so there is
+        no media collection to move between. It now warns and raises
+        immediately, before any LCM read, write or transaction.
 
         Args:
-            media: ICmFile object to move.
-            from_example_or_hvo: Source ILexExampleSentence object or HVO.
-            to_example_or_hvo: Destination ILexExampleSentence object or HVO.
-
-        Returns:
-            bool: True if media was moved, False if source and destination are same.
+            media: Ignored.
+            from_example_or_hvo: Ignored.
+            to_example_or_hvo: Ignored.
 
         Raises:
-            FP_ReadOnlyError: If the project is not opened with write enabled.
-            FP_NullParameterError: If any parameter is None.
-            FP_ParameterError: If media not in source example's collection.
+            FP_ParameterError: Always.
 
         Example:
             >>> exampleOps = ExampleOperations(project)
             >>> entry = project.LexiconAllEntries().__next__()
             >>> sense = entry.SensesOS[0]
-            >>> # Get two examples from the sense
             >>> examples = list(exampleOps.GetAll(sense))
             >>> if len(examples) >= 2:
-            ...     example1 = examples[0]
-            ...     example2 = examples[1]
-            ...
-            ...     # Get media from first example
-            ...     media_files = exampleOps.GetMediaFiles(example1)
-            ...     if media_files:
-            ...         # Move the first audio file
-            ...         moved = exampleOps.MoveMediaFile(media_files[0], example1, example2)
-            ...         if moved:
-            ...             print("Media file moved successfully")
-            ...
-            ...         # Verify the move
-            ...         count1 = exampleOps.GetMediaCount(example1)
-            ...         count2 = exampleOps.GetMediaCount(example2)
-            ...         print(f"Example 1 media: {count1}")
-            ...         print(f"Example 2 media: {count2}")
-            Media file moved successfully
-            Example 1 media: 0
-            Example 2 media: 1
-
-            >>> # Can also move between different senses
-            >>> other_sense = entry.SensesOS[1] if entry.SensesOS.Count > 1 else None
-            >>> if other_sense:
-            ...     other_examples = list(exampleOps.GetAll(other_sense))
-            ...     if other_examples:
-            ...         other_example = other_examples[0]
-            ...         media_files = exampleOps.GetMediaFiles(example2)
-            ...         if media_files:
-            ...             exampleOps.MoveMediaFile(media_files[0], example2, other_example)
+            ...     try:
+            ...         exampleOps.MoveMediaFile(None, examples[0], examples[1])
+            ...     except FP_ParameterError:
+            ...         print("Withdrawn")
+            Withdrawn
 
         Notes:
-            - LCM re-parents on a single ``Add`` to the destination owning
-              sequence; do not ``Remove`` then ``Add`` (that deletes the media)
-            - File reference and description are preserved
-            - The physical media file is NOT moved/copied
-            - Cannot move to the same example (returns False)
-            - Media object's GUID remains the same
-            - No changes are made to the physical file location
-
-        Warning:
-            - Moving media between different sense's examples is allowed
-            - Ensure the media is semantically appropriate for the target example
-            - The media will be associated with the new example
-            - Consider adding/updating labels to clarify context after moving
+            - Emits DeprecationWarning, then raises FP_ParameterError
+            - Nothing is modified
 
         See Also:
-            AddMediaFile, RemoveMediaFile, GetMediaFiles, GetMediaCount
+            SetExample, AddMediaFile, RemoveMediaFile
         """
-        self._EnsureWriteEnabled()
-
-        self._ValidateParam(media, "media")
-        self._ValidateParam(from_example_or_hvo, "from_example_or_hvo")
-        self._ValidateParam(to_example_or_hvo, "to_example_or_hvo")
-
-        from_example = self.__GetExampleObject(from_example_or_hvo)
-        to_example = self.__GetExampleObject(to_example_or_hvo)
-
-        # Can't move to same example
-        if from_example == to_example:
-            logger.warning("Source and destination are the same example")
-            return False
-
-        # Verify media is in source collection
-        if not hasattr(from_example, "MediaFilesOS"):
-            raise FP_ParameterError("Source example does not support media files")
-
-        # Membership by HVO (issue #684). MediaFilesOS can yield bare interface
-        # views while callers pass cast handles from Object(hvo); Python ``in``
-        # then false-negates and MoveMediaFile raises spuriously.
-        target_hvo = media.Hvo
-        if not any(f.Hvo == target_hvo for f in from_example.MediaFilesOS):
-            raise FP_ParameterError("Media file not found in source example's media collection")
-
-        # Verify destination supports media
-        if not hasattr(to_example, "MediaFilesOS"):
-            raise FP_ParameterError("Destination example does not support media files")
-
-        with self._TransactionCM("Move media file"):
-            # LCM owning sequences re-parent on Add; Remove deletes (#471).
-            to_example.MediaFilesOS.Add(media)
-
-            logger.info(f"Moved media from example {from_example.Guid} to example {to_example.Guid}")
-
-            return True
+        warnings.warn(_EXAMPLE_MEDIA_WITHDRAWN, DeprecationWarning, stacklevel=2)
+        raise FP_ParameterError(_EXAMPLE_MEDIA_WITHDRAWN)
 
     @OperationsMethod
     def GetOwningSense(self, example_or_hvo):

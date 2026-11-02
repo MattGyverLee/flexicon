@@ -1,84 +1,82 @@
 # STATUS -- 4.13.1-release-gate
 
-**Updated:** 2026-11-02 (cycle 6 dispatched by lex-lead)
+**Updated:** 2026-11-02 (cycle 7 synthesis by lex-lead; fold-in dispatched)
 **Status:** `in_progress` -- RELEASE ON HOLD (user decision). No v4.13.1 tag
 exists; none may be created or pushed by the crew.
 
 ## Where things stand
 
-- #828 and #829 are APPROVED at cycle 6 and committed to main (commit made by
-  the main session from lex-lead's message; check `git log` for the hash).
-  Evidence: `evidence/live-cycle5-828-829.md` (offline 3966, live 13/13,
-  run_mode live). Cycle-4 QC 90/100, no P0/P1; cycle-5 folded in its P2/P3.
-- Same commit: `docs/MIGRATION_GUIDE.md` gained the #828 breaking-change entry
-  and a #829 note (Quality Gate 5), and the CHANGELOG [4.13.1] intro and
-  RELEASE_NOTES_v4.13.1.md no longer claim "no breaking changes".
-- Filed #836 (P2): `cast_to_concrete` returns bare ICmObject for CmMedia
-  (ICmMedia missing from lcm_casting). Not a release blocker.
-- PR #835 (flexicon-4c, OPEN, unmerged at cycle 6): skips the #825 live test
-  when FLEXICON_FW_DIR is unset. The authoritative sweep exports the variable
-  regardless, so the test runs either way.
+- origin/main HEAD 7668f58f: #828 and #829 committed and closed (cycle 6).
+- #830, #831, #832 (user option A each) are implemented, UNCOMMITTED in the
+  working tree. Cycle-6 gates:
+  - Authoritative live sweep: `evidence/live-full-sweep-cycle6.md` --
+    run_mode live, FLEXLIBS_REQUIRE_LIVE=1, FLEXICON_FW_DIR exported,
+    99 files, 127 passed / 0 failed / 0 skipped / 0 errors (cycle 4 was
+    118 / 4 failed). One of the 127 (MoAffixProcess round trip) is
+    presence-report only: Sena 3 has no MoAffixProcess.
+  - Offline: 4006 passed / 0 failed / 1301 deselected.
+  - QC `reviews/cycle6-lex-qc.md`: 88/100, no P0/P1, 3 P2, 6 P3.
+  - Contract snapshot: +1 entry (IMoAffixForm), attributable to #830.
+  - Docs `reviews/cycle6-lex-doc.md`: CHANGELOG, RELEASE_NOTES (now
+    "Release candidate (not yet tagged)"), API_ISSUES, MIGRATION_GUIDE x3,
+    FUNCTION_REFERENCE.
+- QC P2-2's remark that MIGRATION_GUIDE / API_ISSUES are "not in this patch"
+  is stale: QC read `cycle6-diff.patch`, cut before lex-doc ran. Both are
+  modified in the tree. What the guide still lacks is detail (below).
 
-## The five P1 gaps the release waits on
+## Cycle 7 (in flight) -- small fold-in, then commit
 
-| Issue | Kind | State |
-|-------|------|-------|
-| #828 Pronunciation media uses ICmFile instead of ICmMedia | internal fix | DONE, committed cycle 6 |
-| #829 LexReferences.GetAll always raises | internal fix | DONE, committed cycle 6 |
-| #830 Allomorph inflection-class methods target stem allomorphs | REDESIGN | user chose A; implementing cycle 6 |
-| #831 Example media methods (no MediaFilesOS) | REDESIGN | user chose A; implementing cycle 6 |
-| #832 Dependent clauses take markers, collection holds IConstChartRow | REDESIGN | user chose A; implementing cycle 6 |
+Folded in (lex-lead decision):
+- P2-1: hedge `_EXAMPLE_MEDIA_WITHDRAWN` (audio-WS route "observed in
+  surveyed data, not exercised in a sandbox"); keep the substring
+  `SetExample(example, text, wsHandle)` the offline test asserts. Same hedge
+  in the five docs that state the route as fact.
+- P2-2: MIGRATION_GUIDE detail -- #830 table row is wrong (old stem Get was
+  always [] too, the field never existed; affix Get used to return []);
+  #831 old exceptions (FP_ReadOnlyError / FP_NullParameterError) and old
+  returns (ICmFile, bool). The commit footer covers all four QC omissions.
+- P2-3: soften the MoAffixProcess wording (live test docstring + library
+  docstrings) to "offline-tested only". Live test kept (count stays 127).
+- P3-1: move `import logging` to the top of
+  ConstChartClauseMarkerOperations.py.
 
-## User decisions (final, 2026-11-02) -- binding
+Deferred (user to approve filing one P3 issue): P3-2 narrowing `except
+Exception` around IConstChartRow casts (behaviour change -- pythonnet cast
+failures do not reliably surface as TypeError), P3-3 `_FakeClauseMarker`
+alias, P3-4 private `_TransactionCM` + `except Exception: pass` in the 832
+live test, P3-5 weak `Object(hvo) is not None` in the 684 live test, P3-6
+740 live RC checks not re-fetched via `Object(hvo)`. Also deferred to
+4.14.0: an audio-WS sandbox fixture for the #831 route.
 
-Each is a Principle VII cause-2 change ("the surface was wrong") and carries a
-`BREAKING CHANGE:` footer plus a MIGRATION_GUIDE entry.
+Cycle-7 artifacts: `reviews/cycle7-lex-programmer.md`,
+`reviews/cycle7-lex-doc.md`, `reviews/cycle7-lex-verification.md`,
+`evidence/live-cycle7-foldin.md` (offline full + live 830/831/832/684/740/752).
 
-- **#830 -> A.** Retarget `Allomorphs.Get/Add/RemoveInflectionClass` to
-  `IMoAffixForm.InflectionClassesRC` (MoAffixAllomorph; MoAffixProcess via the
-  same IMoAffixForm cast). Stem allomorphs: Get returns [], Add/Remove raise
-  FP_ParameterError naming `MSA.SetInflectionClass`. B lost: MSA class is
-  atomic and per-sense, so redirecting silently edits data the caller did not
-  name. C lost: the affix field is real (113 populated allomorphs across 15
-  projects) and worth exposing.
-- **#831 -> A.** Example media writers (Add/Remove/MoveMediaFile) raise
-  FP_ParameterError BEFORE copying anything, naming the audio-writing-system
-  route; GetMediaFiles/GetMediaCount return [] / 0; all five emit
-  DeprecationWarning; removal at 5.0. B (faithful audio-WS rebuild) becomes
-  ADDITIVE new methods in 4.14.0 -- it needs a return-shape design and an
-  audio WS fixture (Target/Sena 3 have none).
-- **#832 -> A.** Add/Insert/Remove/GetDependentClauses take IConstChartRow or
-  its HVO (parameter renamed, positional calls unaffected). Docstring states
-  plainly that writing DependentClausesRS alone leaves rows Normal/False/False,
-  a state FLEx essentially never produces (1 case in hundreds); a
-  logger [WARN] fires when an added row's ClauseType is Normal (design rule 6).
-  The FLEx-faithful helper (sets ClauseType + group flags) is 4.14.0. Lead's
-  review of the reflection: does NOT warrant revisiting A -- the methods never
-  worked, the incomplete state is not corruption (FLEx has tolerated it in
-  real data), and the caveat + warning make it honest.
+Commit message draft: `reviews/cycle7-commit-message.txt` (one placeholder,
+`<CYCLE7_LINE>`, filled at cycle 8). Cycle 8: lex-lead go/no-go, fills the
+line, main session commits + pushes (explicit paths), then `needs_human`
+handoff for the tag decision.
 
-## Cycle 6 (in flight)
+## Open issues after the commit
 
-1. Three parallel lex-programmers (disjoint files): #830, #831, #832, each
-   with offline + live tests on sandbox fixtures; the failing #684/#740/#752
-   tests are rewritten to assert the new behaviour.
-2. Sequential: lex-programmer integration (contract snapshot regen, full
-   offline run, `reviews/cycle6-diff.patch`), then lex-verification
-   authoritative sweep with FLEXLIBS_REQUIRE_LIVE=1 and FLEXICON_FW_DIR
-   exported (`evidence/live-full-sweep-cycle6.md`).
-3. Parallel: lex-qc on the patch; lex-doc (CHANGELOG, RELEASE_NOTES,
-   API_ISSUES, MIGRATION_GUIDE x3, and the owed overall verification-wording
-   rewrite against the cycle-6 sweep).
+#833 (Checks._GetCheckList stub, P2), #834 (Note.Duplicate insert_after
+no-op, P2), #836 (cast_to_concrete / ICmMedia, P2) -- non-blocking.
+Also open and unlabelled: #776 (a bug with no priority label), #826.
 
-## Owed before any tag (named, not ambient)
+## Decisions owed by the USER before any tag
 
-- Rewrite the overall 4.13.1 verification wording (cycle-6 lex-doc task).
-- Final full live sweep with FLEXICON_FW_DIR exported (cycle-6 sweep).
-- The release itself (tag) is the USER's call; the crew never tags.
+1. Release date for CHANGELOG `## [4.13.1] - 2026-11-01` (stale) and
+   RELEASE_NOTES line 3.
+2. Tag v4.13.1 now or hold. Any `v*` tag triggers the PyPI publish workflow.
+3. `docs/FLEXTOOLSMCP_WRITE_CONTRACT.md:289` lists Examples.AddMediaFile ->
+   Media.CopyToProject as one of "three real" wrapper-calls-wrapper pairs;
+   after #831 that pair no longer exists (two remain). Fast-path doc fix --
+   recommend yes.
+4. File the deferred-P3 follow-up issue (QC P3-2..P3-6).
+5. Confirm #833/#834/#836 ride to a later release (4.13.2 / 4.14.0).
+6. Priority label for #776 (unlabelled bug).
 
 ## Next pickup
 
-Cycle 7: lex-lead synthesises cycle-6 reports (reviews/cycle6-*.md,
-evidence/live-full-sweep-cycle6.md), approves or loops fixes, drafts the
-#830/#831/#832 commit message (three BREAKING CHANGE causes), then hands back
-to the user for the release decision.
+Cycle 8: lex-lead reads the four cycle-7 artifacts, approves or loops,
+fills `<CYCLE7_LINE>`, main session commits + pushes, then `needs_human`.

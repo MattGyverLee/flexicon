@@ -52,6 +52,14 @@ def test_issue740_inflection_class_mutators_use_hvo_membership():
     assert "infl_class not in allomorph.InflectionClassesRC" not in add_block
     assert "issue #740" in remove_block
     assert "infl_class in allomorph.InflectionClassesRC" not in remove_block
+    # issue #830: the RC lives on IMoAffixForm, accessed via the local cast;
+    # the stem-allomorph path no longer reads/writes it.
+    for block in (add_block, remove_block):
+        assert "affix_form.InflectionClassesRC" in block
+        assert "allomorph.InflectionClassesRC" not in block
+        assert "IMoStemAllomorph" not in block
+        assert "__RequireAffixForm" in block
+    assert "linked.Hvo) == target_hvo" in remove_block
 
 
 def test_issue740_live_gate_module_exists():

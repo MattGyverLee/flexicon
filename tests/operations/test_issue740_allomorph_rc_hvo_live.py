@@ -60,34 +60,31 @@ def test_issue740_remove_phoneenv_after_hvo_refetch(sena3_sandbox):
 
 
 def test_issue740_remove_inflection_class_after_hvo_refetch(sena3_sandbox):
-    """RemoveInflectionClass detaches class when caller holds Object(hvo) view."""
+    """RemoveInflectionClass detaches class when caller holds Object(hvo) view.
+
+    Issue #830: the RC lives on affix allomorphs (IMoAffixForm), so this uses
+    a MoAffixAllomorph from the Sena 3 sandbox copy.
+    """
     project = sena3_sandbox
     ops = project.Allomorphs
-    # Sena 3 has no inflection classes and POps exposes no creator, so add a
-    # TEST_ one through the raw LCM factory (sandbox copy; nothing leaks).
-    from SIL.LCModel import IMoInflClassFactory
 
-    verb = project.POS.GetAll()[0]
-    with project.Transaction("create TEST_740 inflection class"):
-        new_class = project.GetFactory(IMoInflClassFactory).Create()
-        verb.InflectionClassesOC.Add(new_class)
-        new_class.Name.set_String(
-            project.project.DefaultAnalWs,
-            f"{TEST_PREFIX}infl_class",
-        )
-    infl_class = project.POS.GetInflectionClasses(verb)[0]
-    entry = project.LexEntry.Create(f"{TEST_PREFIX}infl")
-    try:
-        allomorphs = list(ops.GetAll(entry))
-        assert allomorphs, "LexEntry.Create produced no stem allomorph"
-        allomorph = allomorphs[0]
-        assert getattr(allomorph, "ClassName", None) == "MoStemAllomorph"
+    affix = None
+    for entry in project.LexiconAllEntries():
+        for allo in ops.GetAll(entry):
+            if getattr(allo, "ClassName", None) == "MoAffixAllomorph":
+                affix = allo
+                break
+        if affix is not None:
+            break
+    assert affix is not None, "sena3_sandbox has no MoAffixAllomorph"
 
-        ops.AddInflectionClass(allomorph, infl_class)
-        assert len(ops.GetInflectionClasses(allomorph)) == 1
+    infl_class = project.InflectionFeatures.InflectionClassCreate(
+        f"{TEST_PREFIX}infl_class", pos=project.POS.GetAll()[0]
+    )
 
-        bare_class = project.Object(infl_class.Hvo)
-        ops.RemoveInflectionClass(allomorph, bare_class)
-        assert len(ops.GetInflectionClasses(allomorph)) == 0
-    finally:
-        project.LexEntry.Delete(entry)
+    ops.AddInflectionClass(affix, infl_class)
+    assert len(ops.GetInflectionClasses(affix)) == 1
+
+    bare_class = project.Object(infl_class.Hvo)
+    ops.RemoveInflectionClass(affix, bare_class)
+    assert len(ops.GetInflectionClasses(affix)) == 0

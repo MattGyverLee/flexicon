@@ -373,10 +373,10 @@ Methods for managing morphological rules including:
 **Replaces:** `TsStringUtils.MakeString()`, `ILexExampleSentence.Reference` assignment
 
 #### `project.Examples.GetMediaFiles(example_or_hvo)`
-**Replaces:** `ILexExampleSentence.MediaFilesOS` list conversion
+**Deprecated (4.13.1, removal in 5.0):** always returns `[]`; `ILexExampleSentence` has no `MediaFilesOS`. Example audio appears to be a file name in the audio writing-system alternative (observed in surveyed projects; not yet exercised by flexicon tests).
 
 #### `project.Examples.GetMediaCount(example_or_hvo)`
-**Replaces:** `ILexExampleSentence.MediaFilesOS.Count`
+**Deprecated (4.13.1, removal in 5.0):** always returns `0`; see `GetMediaFiles`. `AddMediaFile`, `RemoveMediaFile` and `MoveMediaFile` are likewise withdrawn and raise `FP_ParameterError`.
 
 #### `project.Examples.GetOwningSense(example_or_hvo)`
 **Replaces:** `ILexExampleSentence.Owner` property access

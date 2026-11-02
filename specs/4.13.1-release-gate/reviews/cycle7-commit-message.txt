@@ -1,0 +1,114 @@
+fix(api): affix inflection classes, withdrawn example media, dependent-clause rows
+
+Three 4.13.1 release-gate P1s where the published surface rested on an LCM
+field or element type that does not exist. Each implements the user's
+option A (2026-11-02) and is a Principle VII cause-2 change: the surface
+was wrong.
+
+#830: InflectionClassesRC exists only on IMoAffixForm (MoAffixAllomorph and
+MoAffixProcess); IMoStemAllomorph has no such field. The Allomorphs methods
+GetInflectionClasses, AddInflectionClass and RemoveInflectionClass now cast
+affix forms locally to IMoAffixForm and work on that collection. Add is
+idempotent by HVO, with the existence check outside the transaction;
+Remove matches by HVO and is a no-op if absent. On a stem allomorph Get
+returns [] and Add/Remove raise FP_ParameterError naming
+project.MSA.SetInflectionClass, because a stem's class lives on its MSA.
+Any other class raises FP_ParameterError. The shared resolver is untouched.
+MoAffixProcess is covered offline only; no live fixture contains one.
+
+#831: ILexExampleSentence has no MediaFilesOS. Examples.AddMediaFile,
+RemoveMediaFile and MoveMediaFile now emit a DeprecationWarning and raise
+FP_ParameterError before any file copy, LCM access or transaction.
+GetMediaFiles returns [] and GetMediaCount returns 0, both with a
+DeprecationWarning. All five are removed in 5.0; purpose-built audio
+methods are planned for 4.14.0 as additive API. The error message names the
+audio writing-system route (SetExample on the audio writing system) as
+observed in surveyed data. That route was not exercised in a sandbox,
+because neither Target nor Sena 3 has an audio writing system.
+
+#832: IConstChartClauseMarker.DependentClausesRS holds IConstChartRow, not
+markers. AddDependentClause and InsertDependentClause take an
+IConstChartRow or its HVO as the row argument, renamed row_or_hvo with the
+positional order unchanged. Any other class, including a clause marker,
+raises FP_ParameterError. Add is idempotent by HVO. GetDependentClauses
+casts its elements to IConstChartRow. The methods write only
+DependentClausesRS; FLEx also sets the row's ClauseType and the
+Start/EndDependentClauseGroup flags, so a [WARN] is logged when the added
+row is Normal (design rule 6). A FLEx-faithful helper is planned for
+4.14.0. The FLExProject docstring example and
+demos/demo_discourse_operations.py now pass a row.
+
+Tests: new offline and live files for each issue. The #684, #740 and #752
+tests that failed in the cycle-4 sweep now assert the new behaviour.
+test_issue230 uses a row collection. test_issue581_offline moves its
+inflection-class cases to affix allomorphs and checks the stem errors.
+test_issue471 replaces its example-media ratchet case with a check that
+Examples.MoveMediaFile no longer touches MediaFilesOS.
+
+Contract snapshot: tests/contract/snapshots/expected_contract.json gains
+exactly one entry, the IMoAffixForm import in AllomorphOperations.py.
+Nothing was removed or moved.
+
+Docs: CHANGELOG and RELEASE_NOTES_v4.13.1.md list four breaking changes and
+carry a verification section rewritten against the cycle-6 sweep;
+RELEASE_NOTES now reads "Release candidate (not yet tagged)".
+MIGRATION_GUIDE gains #830, #831 and #832 entries. API_ISSUES_CATEGORIZED
+Category 8 gains three rows. FUNCTION_REFERENCE marks
+Examples.GetMediaFiles and GetMediaCount deprecated.
+
+Verification:
+- offline: python -m pytest -m "not requires_live_project" -q
+  -> 4006 passed, 0 failed, 1301 deselected (cycle 6)
+- live, authoritative sweep (cycle 6): FLEXLIBS_REQUIRE_LIVE=1 and
+  FLEXICON_FW_DIR exported, every live file changed since v4.13.0
+  (99 files) -> 127 collected, 127 passed, 0 failed, 0 skipped, 0 errors;
+  tests/live_status.json run_mode "live"; sandbox fixtures only. Cycle 4
+  was 118 passed, 4 failed; #684, #740, #752 and #825 now pass. One of the
+  127, the MoAffixProcess round trip, reports that no MoAffixProcess
+  exists and returns, so it proves nothing live.
+- read back after re-fetching by HVO: #830 affix allomorph 58052
+  InflectionClassesRC [] -> [152222] -> [152222] on re-add -> [];
+  #831 example 10446 ICmFile count 1 -> 1, no LinkedFiles/AudioVisual
+  directory created, Example multistring unchanged; #832 marker 10455
+  RS [] -> [10450, 10451] -> insert [10452, 10450, 10451] -> remove
+  [10450, 10451]; a Normal row added with one warning; a marker passed as
+  the element raised and left RS unchanged.
+- cycle 7 fold-in (QC P2-1 message hedge, P2-3 MoAffixProcess wording,
+  P3-1 import order, migration-guide detail): offline 4006 passed, 0 failed; live (6 files: 830, 831, 832, 684, 740, 752) 9 passed, 0 failed, 0 skipped, run_mode live; the migration-guide claims about 4.13.0 behaviour were re-checked against HEAD.
+Evidence: specs/4.13.1-release-gate/evidence/live-full-sweep-cycle6.md and
+evidence/live-cycle7-foldin.md.
+Reviews: reviews/cycle6-lex-qc.md (88/100, no P0/P1),
+cycle6-lex-verification.md, cycle6-integration.md, cycle6-lex-doc.md and
+the cycle-7 reports.
+
+Issues 833, 834 and 836 remain open as non-blocking P2s. No tag.
+
+closes #830
+closes #831
+closes #832
+
+BREAKING CHANGE: Principle VII cause 2, the surface was wrong.
+Allomorph inflection classes (issue #830): GetInflectionClasses now returns the
+real InflectionClassesRC list for affix allomorphs and affix processes,
+where before it returned [] for every allomorph; stem allomorphs still
+return []. AddInflectionClass and RemoveInflectionClass now work on affix
+forms, where they used to raise FP_ParameterError. On stem allomorphs they
+used to fail on the missing field and now raise FP_ParameterError naming
+project.MSA.SetInflectionClass. Any other class raises FP_ParameterError.
+Example media (issue #831): AddMediaFile, RemoveMediaFile and MoveMediaFile raise
+FP_ParameterError on every call, before any file copy, write-enabled check
+or transaction. Callers that caught FP_ReadOnlyError or
+FP_NullParameterError from them now get FP_ParameterError first. Their old
+return values are gone: AddMediaFile no longer returns an ICmFile and
+MoveMediaFile no longer returns a bool. GetMediaFiles returns [] and
+GetMediaCount returns 0. All five emit DeprecationWarning and are removed
+in 5.0.
+Dependent clauses (issue #832): the second argument of AddDependentClause and the
+third of InsertDependentClause are renamed to row_or_hvo, so keyword
+callers break, and must be an IConstChartRow or its HVO; a clause marker
+raises FP_ParameterError. GetDependentClauses elements are now cast to
+IConstChartRow. Adding a Normal row logs a warning.
+None of these methods worked against the published surface. Migration:
+docs/MIGRATION_GUIDE.md.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>

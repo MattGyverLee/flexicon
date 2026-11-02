@@ -956,3 +956,132 @@ now returns references project-wide (no argument), per sense, and per
 entry (the entry's own references plus those of its senses and subsenses),
 de-duplicated by HVO. No working caller can break; code that caught the
 old exception as a "not supported" signal should drop that handling.
+
+---
+
+## Breaking Change: Allomorph inflection classes are affix-only (issue #830)
+
+### What Changed
+
+`InflectionClassesRC` exists only on `IMoAffixForm` (`MoAffixAllomorph` and
+`MoAffixProcess`). `MoStemAllomorph` has no such field; a stem's inflection
+class lives on its MSA (`InflectionClassRA`, atomic and per sense).
+`Allomorphs.GetInflectionClasses`, `AddInflectionClass` and
+`RemoveInflectionClass` were written against stem allomorphs and never worked
+there. In 4.13.1 they operate on affix allomorphs:
+
+| Call | Affix allomorph / affix process | Stem allomorph | Other class |
+|---|---|---|---|
+| `GetInflectionClasses` | the classes (was: always `[]`) | `[]` (unchanged) | `[]` |
+| `AddInflectionClass` | adds, idempotent by HVO | raises `FP_ParameterError` | raises `FP_ParameterError` |
+| `RemoveInflectionClass` | removes, no-op if absent | raises `FP_ParameterError` | raises `FP_ParameterError` |
+
+The stem error names `project.MSA.SetInflectionClass`. In 4.13.0 the methods
+only accepted stem allomorphs: `GetInflectionClasses` returned `[]` for every
+allomorph (non-stem was filtered out, and `IMoStemAllomorph` has no
+`InflectionClassesRC`), `AddInflectionClass` / `RemoveInflectionClass` raised
+`FP_ParameterError` on affix allomorphs, and on stem allomorphs they failed on
+the missing field.
+
+### Before / After
+
+```python
+# BEFORE (4.13.0 and earlier): aimed at stem allomorphs
+project.Allomorphs.AddInflectionClass(stem_allo, infl_class)
+
+# AFTER (4.13.1): affix allomorphs
+project.Allomorphs.AddInflectionClass(affix_allo, infl_class)
+
+# For a stem, set the class on the MSA
+project.MSA.SetInflectionClass(msa, infl_class)
+```
+
+### Who Is Affected
+
+Callers that pass a stem allomorph: Get still returns `[]`, but Add and Remove
+now raise `FP_ParameterError` (they failed on the missing field before), so
+move that logic to `project.MSA.SetInflectionClass`. Callers that passed an
+affix allomorph previously got an error from Add / Remove and `[]` from Get;
+they now get working behaviour.
+
+---
+
+## Deprecation: `Examples` media methods are withdrawn (issue #831)
+
+### What Changed
+
+`ILexExampleSentence` has no `MediaFilesOS`, so the media methods never worked.
+Example audio appears to be a file name stored in the audio writing-system
+alternative of `Example` (observed in surveyed projects; not yet exercised by
+flexicon tests). In 4.13.1 all five methods emit a `DeprecationWarning` and are
+removed in 5.0:
+
+| Method | 4.13.1 behaviour |
+|---|---|
+| `AddMediaFile`, `RemoveMediaFile`, `MoveMediaFile` | raise `FP_ParameterError` unconditionally, before any file copy or transaction (no write-enabled check) |
+
+The writers previously raised `FP_ReadOnlyError` (project not write-enabled) or
+`FP_NullParameterError` (`None` argument). They now raise `FP_ParameterError`
+first, so `except` clauses that caught those types must catch
+`FP_ParameterError`. The old return values are gone: `AddMediaFile` returned an
+`ICmFile` and `MoveMediaFile` returned a `bool`.
+| `GetMediaFiles` | returns `[]` |
+| `GetMediaCount` | returns `0` |
+
+### Before / After
+
+```python
+# BEFORE (4.13.0 and earlier)
+project.Examples.AddMediaFile(example, "C:/audio/word.wav")
+
+# AFTER (4.13.1): illustrative only. Audio file names were observed in the
+# audio writing-system alternative in surveyed projects; this route is not yet
+# exercised by flexicon tests. audio_ws_handle is a placeholder.
+project.Examples.SetExample(example, "word.wav", wsHandle=audio_ws_handle)
+```
+
+Purpose-built audio methods are planned for 4.14.0 as additive API.
+
+### Who Is Affected
+
+Anyone calling an `Examples` media method. Writers now raise; readers silently
+return an empty result, so check readers for code that relied on a count.
+
+---
+
+## Breaking Change: Dependent clauses take chart rows (issue #832)
+
+### What Changed
+
+`IConstChartClauseMarker.DependentClausesRS` holds `IConstChartRow` objects, not
+markers. In 4.13.1:
+
+- `AddDependentClause(marker_or_hvo, row_or_hvo)` and
+  `InsertDependentClause(marker_or_hvo, index, row_or_hvo)` take an
+  `IConstChartRow` or its HVO. The second argument was renamed (it was a
+  marker); positional calls are unaffected, keyword callers must rename. A
+  marker or any non-row object raises `FP_ParameterError`.
+- `GetDependentClauses` returns `IConstChartRow`.
+- `RemoveDependentClause` is unchanged (index-based).
+- Add is idempotent by HVO.
+
+Caveat: these methods write only `DependentClausesRS`. FLEx also sets the row's
+`ClauseType` and the Start/End dependent-clause group flags. A row left
+`Normal` with both flags `False` is a state FLEx essentially never produces,
+so a warning is logged when the added row is `Normal`. Set those fields through
+raw LCM until the 4.14.0 helper arrives.
+
+### Before / After
+
+```python
+# BEFORE (4.13.0 and earlier)
+project.ConstChartClauseMarkers.AddDependentClause(marker, other_marker)
+
+# AFTER (4.13.1)
+project.ConstChartClauseMarkers.AddDependentClause(marker, row)  # or row.Hvo
+```
+
+### Who Is Affected
+
+Callers passing a marker as the second argument (it previously never produced a
+valid collection) and keyword callers using the old parameter name.

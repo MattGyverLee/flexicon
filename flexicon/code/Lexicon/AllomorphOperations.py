@@ -52,6 +52,7 @@ from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 from SIL.LCModel import (
     IMoStemAllomorph,
     IMoAffixAllomorph,
+    IMoAffixForm,
     IMoStemAllomorphFactory,
     IMoAffixAllomorphFactory,
     ILexEntry,
@@ -1589,23 +1590,59 @@ class AllomorphOperations(BaseOperations):
             with self._TransactionCM("Remove phonological environment"):
                 allomorph.PhoneEnvRC.Remove(member_to_remove)
 
-    # --- Inflection class membership (issue #581) ---
+    # --- Inflection class membership (issue #581, corrected by #830) ---
+    #
+    # The LCM field InflectionClassesRC lives on IMoAffixForm (implemented
+    # by MoAffixAllomorph and MoAffixProcess), NOT on IMoStemAllomorph.
+    # The shared resolver __GetAllomorphObject only casts to the stem/affix
+    # allomorph interfaces, so these three methods cast LOCALLY.
+
+    _AFFIX_FORM_CLASSNAMES = ("MoAffixAllomorph", "MoAffixProcess")
+
+    def __AsAffixForm(self, allomorph):
+        """Return ``IMoAffixForm(allomorph)`` for affix forms, else None."""
+        if getattr(allomorph, "ClassName", None) in self._AFFIX_FORM_CLASSNAMES:
+            return IMoAffixForm(allomorph)
+        return None
+
+    def __RequireAffixForm(self, allomorph, method_name):
+        """Cast to IMoAffixForm or raise FP_ParameterError (mutators)."""
+        class_name = getattr(allomorph, "ClassName", type(allomorph).__name__)
+        affix_form = self.__AsAffixForm(allomorph)
+        if affix_form is not None:
+            return affix_form
+        if class_name == "MoStemAllomorph":
+            raise FP_ParameterError(
+                f"{method_name}: stem allomorphs (MoStemAllomorph) have no "
+                "inflection-class field. A stem's inflection class is set "
+                "on its MSA: use project.MSA.SetInflectionClass(msa, "
+                "infl_class)."
+            )
+        raise FP_ParameterError(
+            f"{method_name} requires a MoAffixAllomorph or MoAffixProcess; "
+            f"got {class_name}"
+        )
 
     @OperationsMethod
     def GetInflectionClasses(self, allo_or_hvo):
         """
-        Get the inflection classes of a stem allomorph.
+        Get the inflection classes an affix allomorph is restricted to.
 
-        Reads ``IMoStemAllomorph.InflectionClassesRC``.
+        Reads ``IMoAffixForm.InflectionClassesRC`` (LCM field
+        ``MoAffixForm.InflectionClasses``): the inflection classes to which
+        an affix allomorph applies, e.g. Spanish ``-ar`` / ``-er`` / ``-ir``
+        verb classes. The field exists on ``MoAffixAllomorph`` and
+        ``MoAffixProcess`` only (MoAffixProcess handling is offline-tested
+        only; no live fixture contains one).
 
         Args:
             allo_or_hvo: The allomorph object or HVO.
 
         Returns:
-            list: List of IMoInflClass objects -- [] when the allomorph
-            is not a stem allomorph, or when no inflection classes are
-            set. Never raises on the wrong ClassName (established read
-            idiom in this file).
+            list: List of IMoInflClass objects -- [] when the allomorph is
+            not an affix form (e.g. a stem allomorph, which has no such
+            field) or when no inflection classes are set. Never raises on
+            the wrong ClassName (established read idiom in this file).
 
         Raises:
             FP_NullParameterError: If allo_or_hvo is None.
@@ -1619,8 +1656,12 @@ class AllomorphOperations(BaseOperations):
             Strong Verbs
 
         Notes:
-            - Affix allomorphs (MoAffixAllomorph) carry no inflection
-              classes; they always yield [] here, never an exception.
+            - A stem's inflection class is not stored on the stem allomorph;
+              it is ``InflectionClassRA`` on the stem MSA (see
+              ``project.MSA.SetInflectionClass``).
+            - ``MoAffixProcess`` is handled the same way, but no surveyed
+              project has populated data for it (offline-tested only; no
+              live fixture contains one).
 
         See Also:
             AddInflectionClass, RemoveInflectionClass, GetStemName
@@ -1629,27 +1670,33 @@ class AllomorphOperations(BaseOperations):
 
         allomorph = self.__GetAllomorphObject(allo_or_hvo)
 
-        if getattr(allomorph, "ClassName", None) != "MoStemAllomorph":
+        affix_form = self.__AsAffixForm(allomorph)
+        if affix_form is None:
             return []
-        rc = getattr(allomorph, "InflectionClassesRC", None)
+        rc = getattr(affix_form, "InflectionClassesRC", None)
         return list(rc) if rc is not None else []
 
     @OperationsMethod
     def AddInflectionClass(self, allo_or_hvo, infl_class_or_hvo):
         """
-        Add an inflection class to a stem allomorph.
+        Add an inflection class to an affix allomorph's restriction set.
 
-        Writes ``IMoStemAllomorph.InflectionClassesRC``.
+        Writes ``IMoAffixForm.InflectionClassesRC`` (LCM field
+        ``MoAffixForm.InflectionClasses``), implemented by
+        ``MoAffixAllomorph`` and ``MoAffixProcess`` (MoAffixProcess is
+        offline-tested only; no live fixture contains one).
 
         Args:
-            allo_or_hvo: The stem allomorph object or HVO.
+            allo_or_hvo: The affix allomorph object or HVO.
             infl_class_or_hvo: The IMoInflClass object or HVO to add.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If allo_or_hvo or infl_class_or_hvo is None.
-            FP_ParameterError: If the allomorph is not a MoStemAllomorph,
-                or if infl_class_or_hvo is not an IMoInflClass.
+            FP_ParameterError: If the allomorph is a stem allomorph (no
+                inflection-class field; use ``project.MSA.SetInflectionClass``
+                on its MSA), is any other class, or if infl_class_or_hvo is
+                not an IMoInflClass.
 
         Example:
             >>> entry = project.LexEntry.Find("run")
@@ -1659,15 +1706,14 @@ class AllomorphOperations(BaseOperations):
             >>> project.Allomorphs.AddInflectionClass(allomorphs[0], strong)
 
         Notes:
-            - Unlike ``AddPhoneEnv`` (which re-adds a duplicate), a
-              redundant add here is a no-op: the membership test stays
-              outside the transaction so no empty named undo entry is
-              created (same D5 rationale as ``RemovePhoneEnv``).
-            - Non-stem allomorphs are rejected (FP_ParameterError) rather
-              than silently ignored. The issue defines only the getter's
-              non-stem behavior ([]); for the mutating pair, attaching an
-              inflection class to an affix allomorph is a caller error,
-              mirroring ``SetStemName``'s write-side validation.
+            - Idempotent by HVO: a redundant add is a no-op. The membership
+              test stays outside the transaction so no empty named undo
+              entry is created (same D5 rationale as ``RemovePhoneEnv``).
+            - Stem allomorphs are rejected (FP_ParameterError) rather than
+              silently ignored.
+            - ``MoAffixProcess`` is handled but no surveyed project has
+              populated data for it (offline-tested only; no live fixture
+              contains one).
 
         See Also:
             GetInflectionClasses, RemoveInflectionClass
@@ -1678,11 +1724,7 @@ class AllomorphOperations(BaseOperations):
         self._ValidateParam(infl_class_or_hvo, "infl_class_or_hvo")
 
         allomorph = self.__GetAllomorphObject(allo_or_hvo)
-        if getattr(allomorph, "ClassName", None) != "MoStemAllomorph":
-            raise FP_ParameterError(
-                "AddInflectionClass requires a MoStemAllomorph; got "
-                f"{getattr(allomorph, 'ClassName', type(allomorph).__name__)}"
-            )
+        affix_form = self.__RequireAffixForm(allomorph, "AddInflectionClass")
 
         infl_class = self.__ResolveInflectionClass(infl_class_or_hvo)
         if getattr(infl_class, "ClassName", None) != "MoInflClass":
@@ -1694,26 +1736,31 @@ class AllomorphOperations(BaseOperations):
         # issue #740: InflectionClassesRC can yield bare interface views; compare
         # Hvo rather than Python ``in`` on Add (D5 no-op stays outside bracket).
         target_hvo = int(infl_class.Hvo)
-        if not any(int(linked.Hvo) == target_hvo for linked in allomorph.InflectionClassesRC):
+        if not any(int(linked.Hvo) == target_hvo for linked in affix_form.InflectionClassesRC):
             with self._TransactionCM("Add inflection class"):
-                allomorph.InflectionClassesRC.Add(infl_class)
+                affix_form.InflectionClassesRC.Add(infl_class)
 
     @OperationsMethod
     def RemoveInflectionClass(self, allo_or_hvo, infl_class_or_hvo):
         """
-        Remove an inflection class from a stem allomorph.
+        Remove an inflection class from an affix allomorph's restriction set.
 
-        Writes ``IMoStemAllomorph.InflectionClassesRC``.
+        Writes ``IMoAffixForm.InflectionClassesRC`` (LCM field
+        ``MoAffixForm.InflectionClasses``), implemented by
+        ``MoAffixAllomorph`` and ``MoAffixProcess`` (MoAffixProcess is
+        offline-tested only; no live fixture contains one).
 
         Args:
-            allo_or_hvo: The stem allomorph object or HVO.
+            allo_or_hvo: The affix allomorph object or HVO.
             infl_class_or_hvo: The IMoInflClass object or HVO to remove.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If allo_or_hvo or infl_class_or_hvo is None.
-            FP_ParameterError: If the allomorph is not a MoStemAllomorph,
-                or if infl_class_or_hvo is not an IMoInflClass.
+            FP_ParameterError: If the allomorph is a stem allomorph (no
+                inflection-class field; use ``project.MSA.SetInflectionClass``
+                on its MSA), is any other class, or if infl_class_or_hvo is
+                not an IMoInflClass.
 
         Example:
             >>> entry = project.LexEntry.Find("run")
@@ -1725,8 +1772,8 @@ class AllomorphOperations(BaseOperations):
         Notes:
             - If the class is not present, this is a no-op (no error and
               no empty undo entry), mirroring ``RemovePhoneEnv``.
-            - Non-stem allomorphs are rejected (FP_ParameterError), as in
-              ``AddInflectionClass`` -- see its Notes for the rationale.
+            - Stem allomorphs are rejected (FP_ParameterError), as in
+              ``AddInflectionClass``.
 
         See Also:
             GetInflectionClasses, AddInflectionClass
@@ -1737,11 +1784,7 @@ class AllomorphOperations(BaseOperations):
         self._ValidateParam(infl_class_or_hvo, "infl_class_or_hvo")
 
         allomorph = self.__GetAllomorphObject(allo_or_hvo)
-        if getattr(allomorph, "ClassName", None) != "MoStemAllomorph":
-            raise FP_ParameterError(
-                "RemoveInflectionClass requires a MoStemAllomorph; got "
-                f"{getattr(allomorph, 'ClassName', type(allomorph).__name__)}"
-            )
+        affix_form = self.__RequireAffixForm(allomorph, "RemoveInflectionClass")
 
         infl_class = self.__ResolveInflectionClass(infl_class_or_hvo)
         if getattr(infl_class, "ClassName", None) != "MoInflClass":
@@ -1753,14 +1796,14 @@ class AllomorphOperations(BaseOperations):
         # issue #740: locate InflectionClassesRC member by Hvo, then Remove(linked).
         target_hvo = int(infl_class.Hvo)
         member_to_remove = None
-        for linked in allomorph.InflectionClassesRC:
+        for linked in affix_form.InflectionClassesRC:
             if int(linked.Hvo) == target_hvo:
                 member_to_remove = linked
                 break
 
         if member_to_remove is not None:
             with self._TransactionCM("Remove inflection class"):
-                allomorph.InflectionClassesRC.Remove(member_to_remove)
+                affix_form.InflectionClassesRC.Remove(member_to_remove)
 
     # --- Required features (MsEnvFeaturesOA, issue #581) ---
 

@@ -3702,9 +3702,9 @@ class FLExProject(object):
             >>> # Create clause marker
             >>> marker = project.ConstChartClauseMarkers.Create(row, wg)
             >>> # Add dependent clause
-            >>> dep_wg = project.ConstChartWordGroups.Find(row, 1)
-            >>> dep_marker = project.ConstChartClauseMarkers.Create(row, dep_wg)
-            >>> project.ConstChartClauseMarkers.AddDependentClause(marker, dep_marker)
+            >>> # DependentClausesRS holds chart ROWS (issue #832), not markers
+            >>> dep_row = project.ConstChartRows.Find(chart, 1)
+            >>> project.ConstChartClauseMarkers.AddDependentClause(marker, dep_row)
             >>> # Get all markers
             >>> for marker in project.ConstChartClauseMarkers.GetAll(row):
             ...     wg = project.ConstChartClauseMarkers.GetWordGroup(marker)

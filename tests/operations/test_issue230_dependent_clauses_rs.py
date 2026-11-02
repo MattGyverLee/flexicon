@@ -46,15 +46,24 @@ class _FakeDependentClausesRS:
         del self._items[index]
 
 
+_hvo_counter = [1000]
+
+
+class _FakeRow:
+    """Stand-in for IConstChartRow (DependentClausesRS element, issue #832)."""
+
+    ClassName = "ConstChartRow"
+    ClauseType = "Dependent"
+
+    def __init__(self):
+        _hvo_counter[0] += 1
+        self.Hvo = _hvo_counter[0]
+
+
 class TestIssue230DependentClausesRSWriteMethods:
     @pytest.fixture
     def writable_ops(self, monkeypatch):
-        import flexicon.code.Discourse.ConstChartClauseMarkerOperations as mod
-
-        class _FakeClauseMarker:
-            pass
-
-        monkeypatch.setattr(mod, "IConstChartClauseMarker", _FakeClauseMarker)
+        _FakeClauseMarker = _FakeRow
 
         mock_project = MagicMock()
         mock_project.writeEnabled = True
@@ -64,12 +73,7 @@ class TestIssue230DependentClausesRSWriteMethods:
 
     @pytest.fixture
     def readonly_ops(self, monkeypatch):
-        import flexicon.code.Discourse.ConstChartClauseMarkerOperations as mod
-
-        class _FakeClauseMarker:
-            pass
-
-        monkeypatch.setattr(mod, "IConstChartClauseMarker", _FakeClauseMarker)
+        _FakeClauseMarker = _FakeRow
 
         mock_project = Mock()
         mock_project.writeEnabled = False
@@ -111,7 +115,7 @@ class TestIssue230DependentClausesRSWriteMethods:
         ops, _cls = writable_ops
         marker = self._make_marker([])
 
-        with pytest.raises(FP_ParameterError, match="IConstChartClauseMarker"):
+        with pytest.raises(FP_ParameterError, match="IConstChartRow"):
             ops.InsertDependentClause(marker, 0, object())
 
     def test_InsertDependentClause_raises_on_readonly(self, readonly_ops):

@@ -238,7 +238,7 @@ def demo_chart_tags(project, chart):
     print(f"   New description: {project.ConstChartTags.GetDescription(tag1)}")
 
 
-def demo_clause_markers(project, row1, word_group):
+def demo_clause_markers(project, row1, word_group, dependent_row=None):
     """
     Demonstrate clause marker operations.
 
@@ -268,8 +268,13 @@ def demo_clause_markers(project, row1, word_group):
 
     # Add dependency
     print("\n2. Adding dependent clause relationship...")
-    project.ConstChartClauseMarkers.AddDependentClause(marker1, marker2)
-    print(f"   Marker 2 is now dependent on marker 1")
+    # DependentClausesRS holds chart ROWS (IConstChartRow), not markers (#832).
+    # This writes only the reference; FLEx also sets the row's ClauseType.
+    if dependent_row is not None:
+        project.ConstChartClauseMarkers.AddDependentClause(marker1, dependent_row)
+        print(f"   Row {dependent_row.Hvo} is now a dependent clause of marker 1")
+    else:
+        print("   No second row available; skipping AddDependentClause.")
 
     # List dependencies
     print("\n3. Checking clause dependencies...")
@@ -339,7 +344,7 @@ def main():
         word_group = demo_word_groups(project, chart, row1)
         demo_moved_text(project, chart, word_group)
         demo_chart_tags(project, chart)
-        demo_clause_markers(project, row1, word_group)
+        demo_clause_markers(project, row1, word_group, dependent_row=row2)
 
         # Optional cleanup
         cleanup_demo_data(project, chart)

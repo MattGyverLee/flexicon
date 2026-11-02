@@ -11,6 +11,8 @@
 #   Copyright 2025
 #
 
+import logging
+
 # Import BaseOperations parent class
 from ..Shared.arg_checks import require_lcm_object
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
@@ -27,6 +29,8 @@ from SIL.LCModel import (
 from ..FLExProject import (
     FP_ParameterError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ConstChartClauseMarkerOperations(BaseOperations):
@@ -135,7 +139,8 @@ class ConstChartClauseMarkerOperations(BaseOperations):
                     new_marker.ColumnRA = word_group.ColumnRA
 
             # WordGroupRA is not on IConstChartClauseMarker (see #232 sweep);
-            # association is via chart structure / DependentClausesRS, not here.
+            # association is via ColumnRA; DependentClausesRS holds
+            # IConstChartRow (issue #832), not word groups.
 
             return new_marker
 
@@ -297,16 +302,16 @@ class ConstChartClauseMarkerOperations(BaseOperations):
     @OperationsMethod
     def GetDependentClauses(self, marker_or_hvo):
         """
-        Get the dependent clauses associated with a clause marker.
+        Get the dependent clause rows referenced by a clause marker.
 
-        Dependent clauses show the hierarchical structure of clausal relationships
-        in the discourse.
+        ``IConstChartClauseMarker.DependentClausesRS`` is a reference
+        sequence of ``IConstChartRow`` (issue #832), not of clause markers.
 
         Args:
             marker_or_hvo: Either an IConstChartClauseMarker object or its HVO
 
         Returns:
-            list: List of dependent clause markers (empty list if none)
+            list[IConstChartRow]: The referenced rows (empty list if none)
 
         Raises:
             FP_NullParameterError: If marker_or_hvo is None
@@ -314,12 +319,12 @@ class ConstChartClauseMarkerOperations(BaseOperations):
         Example:
             >>> marker = project.ConstChartClauseMarkers.Find(row, 0)
             >>> dependents = project.ConstChartClauseMarkers.GetDependentClauses(marker)
-            >>> print(f"Marker has {len(dependents)} dependent clauses")
+            >>> print(f"Marker has {len(dependents)} dependent clause rows")
 
         Notes:
             - Returns empty list if no dependent clauses
-            - Dependent clauses form a hierarchy
-            - Used to mark embedded or subordinate clauses
+            - Each element is cast to IConstChartRow when LCM returns a bare
+              interface view
 
         See Also:
             AddDependentClause, InsertDependentClause, RemoveDependentClause,
@@ -330,43 +335,54 @@ class ConstChartClauseMarkerOperations(BaseOperations):
         marker = self.__ResolveObject(marker_or_hvo)
 
         if hasattr(marker, "DependentClausesRS"):
-            return list(marker.DependentClausesRS)
+            rows = []
+            for dep in marker.DependentClausesRS:
+                try:
+                    rows.append(IConstChartRow(dep))
+                except Exception:
+                    rows.append(dep)
+            return rows
 
         return []
 
     @OperationsMethod
-    def AddDependentClause(self, marker_or_hvo, clause_marker):
+    def AddDependentClause(self, marker_or_hvo, row_or_hvo):
         """
-        Add a dependent clause to a clause marker.
+        Add a dependent clause row to a clause marker's DependentClausesRS.
 
-        Creates a hierarchical relationship showing that one clause is dependent
-        on another in the discourse structure.
+        ``DependentClausesRS`` references ``IConstChartRow`` objects (issue
+        #832); passing a clause marker raises FP_ParameterError.
 
         Args:
             marker_or_hvo: Either an IConstChartClauseMarker object or its HVO
-            clause_marker: IConstChartClauseMarker object to add as dependent
+            row_or_hvo: Either an IConstChartRow object or its HVO
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
-            FP_NullParameterError: If marker_or_hvo or clause_marker is None
-            FP_ParameterError: If clause_marker is invalid type
+            FP_NullParameterError: If marker_or_hvo or row_or_hvo is None
+            FP_ParameterError: If row_or_hvo is not a chart row (for example a
+                clause marker, or an HVO of another class)
 
         Example:
-            >>> # Create main clause marker
             >>> main_marker = project.ConstChartClauseMarkers.Create(row, main_wg)
-            >>>
-            >>> # Create dependent clause marker
-            >>> dep_marker = project.ConstChartClauseMarkers.Create(row, dep_wg)
-            >>>
-            >>> # Add as dependent
+            >>> dep_row = project.ConstChartRows.Find(chart, 1)
             >>> project.ConstChartClauseMarkers.AddDependentClause(
-            ...     main_marker, dep_marker)
+            ...     main_marker, dep_row)
+
+        Warning:
+            This method writes ONLY ``DependentClausesRS``. FLEx also sets
+            each referenced row's ``ClauseType`` (Dependent, Speech or Song)
+            and the ``StartDependentClauseGroup`` / ``EndDependentClauseGroup``
+            flags on the first and last row of a group. A row left Normal
+            with both flags False is a state FLEx essentially never
+            produces, and a warning is logged for it. Until the FLEx-faithful
+            helper arrives (planned for 4.14.0), set those row fields
+            yourself through raw LCM (``IConstChartRow.ClauseType`` etc.).
 
         Notes:
-            - Creates hierarchical clause structure
-            - Dependent clause is subordinate to main clause
-            - Multiple dependents can be added to one marker
-            - Circular dependencies should be avoided
+            - Idempotent: a row already referenced (by HVO) is not re-added
+            - Multiple rows can be added to one marker
+            - Warns, does not block, on a Normal row
 
         See Also:
             GetDependentClauses, InsertDependentClause, RemoveDependentClause,
@@ -375,59 +391,68 @@ class ConstChartClauseMarkerOperations(BaseOperations):
         self._EnsureWriteEnabled()
 
         self._ValidateParam(marker_or_hvo, "marker_or_hvo")
-        self._ValidateParam(clause_marker, "clause_marker")
+        self._ValidateParam(row_or_hvo, "row_or_hvo")
 
-        if not isinstance(clause_marker, IConstChartClauseMarker):
-            raise FP_ParameterError("clause_marker must be an IConstChartClauseMarker object")
+        row = self.__ResolveDependentRow(row_or_hvo)
 
         marker = self.__ResolveObject(marker_or_hvo)
 
         # Add to dependent clauses collection. The capability check and the
         # membership test stay OUTSIDE the transaction so an already-dependent
-        # clause is a true no-op and does not open an empty undo task.
+        # row is a true no-op and does not open an empty undo task.
         if hasattr(marker, "DependentClausesRS"):
-            target_hvo = clause_marker.Hvo
+            target_hvo = row.Hvo
             # Membership by HVO (issue #752). DependentClausesRS can yield bare
             # interface views while callers pass cast handles from Object(hvo);
             # Python ``in`` then false-negates and Add can duplicate-link.
             if not any(dep.Hvo == target_hvo for dep in marker.DependentClausesRS):
+                self.__WarnIfNormalRow(row)
                 with self._TransactionCM("Add dependent clause"):
-                    marker.DependentClausesRS.Add(clause_marker)
+                    marker.DependentClausesRS.Add(row)
 
     @OperationsMethod
-    def InsertDependentClause(self, marker_or_hvo, index, clause_marker):
+    def InsertDependentClause(self, marker_or_hvo, index, row_or_hvo):
         """
-        Insert a dependent clause marker at a given index in DependentClausesRS.
+        Insert a dependent clause row at a given index in DependentClausesRS.
 
         Mirrors ``SegmentOperations.InsertAnalysis`` for reference-sequence
-        ordering (issue #230 / #215 pattern).
+        ordering (issue #230 / #215 pattern). The element type is
+        ``IConstChartRow`` (issue #832).
 
         Args:
             marker_or_hvo: Either an IConstChartClauseMarker object or its HVO.
             index: 0-based index at which to insert (may equal ``Count`` to append).
-            clause_marker: IConstChartClauseMarker to insert.
+            row_or_hvo: Either an IConstChartRow object or its HVO.
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled.
-            FP_NullParameterError: If marker_or_hvo or clause_marker is None.
-            FP_ParameterError: If index is out of range or clause_marker is invalid.
+            FP_NullParameterError: If marker_or_hvo or row_or_hvo is None.
+            FP_ParameterError: If index is out of range or row_or_hvo is not a
+                chart row.
 
         Example:
-            >>> deps = project.ConstChartClauseMarkers.GetDependentClauses(main)
+            >>> dep_row = project.ConstChartRows.Find(chart, 1)
             >>> project.ConstChartClauseMarkers.InsertDependentClause(
-            ...     main, 0, dep_marker)
+            ...     main, 0, dep_row)
+
+        Warning:
+            This method writes ONLY ``DependentClausesRS``. FLEx also sets
+            each referenced row's ``ClauseType`` (Dependent, Speech or Song)
+            and the ``StartDependentClauseGroup`` / ``EndDependentClauseGroup``
+            flags. A row left Normal with both flags False is a state FLEx
+            essentially never produces, and a warning is logged for it. Until
+            the FLEx-faithful helper arrives (planned for 4.14.0), set those
+            row fields yourself through raw LCM (``IConstChartRow.ClauseType``
+            etc.).
 
         See Also:
             AddDependentClause, RemoveDependentClause, GetDependentClauses
         """
         self._EnsureWriteEnabled()
         self._ValidateParam(marker_or_hvo, "marker_or_hvo")
-        self._ValidateParam(clause_marker, "clause_marker")
+        self._ValidateParam(row_or_hvo, "row_or_hvo")
 
-        if not isinstance(clause_marker, IConstChartClauseMarker):
-            raise FP_ParameterError(
-                "clause_marker must be an IConstChartClauseMarker object"
-            )
+        row = self.__ResolveDependentRow(row_or_hvo)
 
         marker = self.__ResolveObject(marker_or_hvo)
 
@@ -442,13 +467,14 @@ class ConstChartClauseMarkerOperations(BaseOperations):
                 f"index must be between 0 and {count} (inclusive); got {index!r}"
             )
 
+        self.__WarnIfNormalRow(row)
         with self._TransactionCM("Insert dependent clause"):
-            marker.DependentClausesRS.Insert(index, clause_marker)
+            marker.DependentClausesRS.Insert(index, row)
 
     @OperationsMethod
     def RemoveDependentClause(self, marker_or_hvo, index):
         """
-        Remove the dependent clause marker at a given index from DependentClausesRS.
+        Remove the dependent clause row at a given index from DependentClausesRS.
 
         Args:
             marker_or_hvo: Either an IConstChartClauseMarker object or its HVO.
@@ -558,6 +584,43 @@ class ConstChartClauseMarkerOperations(BaseOperations):
                 pass
         require_lcm_object(marker_or_hvo, "IConstChartClauseMarker")
         return marker_or_hvo
+
+    def __ResolveDependentRow(self, row_or_hvo):
+        """
+        Resolve an element for DependentClausesRS to IConstChartRow (#832).
+
+        Raises:
+            FP_ParameterError: If the argument is not a ConstChartRow (for
+                example a clause marker passed the pre-#832 way).
+        """
+        obj = row_or_hvo
+        if isinstance(row_or_hvo, int):
+            obj = self.project.Object(row_or_hvo)
+        if getattr(obj, "ClassName", None) != "ConstChartRow":
+            raise FP_ParameterError(
+                "row_or_hvo must be an IConstChartRow object or the HVO of one "
+                "(DependentClausesRS holds chart rows, not clause markers); "
+                f"got {getattr(obj, 'ClassName', type(obj).__name__)!r}"
+            )
+        try:
+            return IConstChartRow(obj)
+        except Exception:
+            return obj
+
+    def __WarnIfNormalRow(self, row):
+        """Warn (never block) when a dependent-clause row is ClauseTypes.Normal."""
+        # Compared by enum member name: avoids a new SIL.LCModel type
+        # dependency (ClauseTypes) for a warn-only check.
+        clause_type = getattr(row, "ClauseType", None)
+        if clause_type is not None and str(clause_type) == "Normal":
+            logger.warning(
+                "[WARN] Row %s has ClauseType Normal. FLEx marks dependent "
+                "clause rows Dependent, Speech or Song and sets "
+                "StartDependentClauseGroup/EndDependentClauseGroup on the "
+                "first/last row of a group; this method does not. Set those "
+                "row fields through raw LCM (IConstChartRow.ClauseType).",
+                getattr(row, "Hvo", "?"),
+            )
 
     def __ResolveRow(self, row_or_hvo):
         """

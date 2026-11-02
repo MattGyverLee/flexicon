@@ -16,12 +16,37 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 ## [4.13.1] - 2026-11-01
 
 Patch release: a sweep of HVO-identity fixes (issues 640 and 642-820), plus
-repairs to surfaces that never worked (#828, #829).
+repairs to surfaces that never worked (#828, #829, #830, #831, #832).
 
-> **Contains a breaking change** (#828): `PronunciationOperations.AddMediaFile`
-> now returns an `ICmMedia` instead of an `ICmFile`, and `RemoveMediaFile`
-> raises `FP_ParameterError` instead of returning silently. Read the #828 entry
+> **Contains breaking changes** (#828, #830, #831, #832). Read the entries
 > below and `docs/MIGRATION_GUIDE.md` before upgrading.
+>
+> - #828: `PronunciationOperations.AddMediaFile` now returns an `ICmMedia`
+>   instead of an `ICmFile`, and `RemoveMediaFile` raises `FP_ParameterError`
+>   instead of returning silently.
+> - #830: `Allomorphs.GetInflectionClasses` / `AddInflectionClass` /
+>   `RemoveInflectionClass` now act on affix allomorphs only; stem allomorphs
+>   still return `[]` (Add / Remove raise `FP_ParameterError`).
+> - #831: the five `Examples` media methods are withdrawn (deprecated; the
+>   writers now raise, the readers return `[]` / `0`; removal in 5.0).
+> - #832: `ConstChartClauseMarkers.AddDependentClause` /
+>   `InsertDependentClause` take a chart row (`IConstChartRow`) instead of a
+>   marker; the second argument is renamed `row_or_hvo`.
+
+### Deprecated
+
+- **`Examples` media methods are withdrawn (#831).**
+  `ExampleOperations.GetMediaFiles`, `GetMediaCount`, `AddMediaFile`,
+  `RemoveMediaFile` and `MoveMediaFile` targeted `ILexExampleSentence.MediaFilesOS`,
+  which does not exist; example audio appears to be a file name stored in the
+  audio writing-system alternative of `Example` (observed in surveyed projects;
+  not yet exercised by flexicon tests). All five now emit a
+  `DeprecationWarning`. **Breaking:** the three writers raise
+  `FP_ParameterError` unconditionally, before copying a file or opening a
+  transaction; `GetMediaFiles` returns `[]` and `GetMediaCount` returns `0`.
+  Removal is planned for 5.0. Possible replacement (untested): write the file name
+  into the audio writing-system alternative with `Examples.SetExample`;
+  purpose-built methods are planned for 4.14.0.
 
 ### Fixed
 
@@ -65,6 +90,28 @@ repairs to surfaces that never worked (#828, #829).
   project-wide (walking `ReferencesOA` and each type's `MembersOC`), per sense
   (`LexSenseReferences`) and per entry (`LexEntryReferences` plus the
   references of the entry's senses and subsenses), deduplicated by HVO.
+- **Allomorph inflection classes target affix allomorphs (#830).**
+  `AllomorphOperations.GetInflectionClasses` / `AddInflectionClass` /
+  `RemoveInflectionClass` read and wrote `InflectionClassesRC` on stem
+  allomorphs, but that collection exists only on `IMoAffixForm`
+  (`MoAffixAllomorph`, `MoAffixProcess`). **Breaking:** the methods now operate
+  on affix allomorphs; on a stem allomorph `GetInflectionClasses` still
+  returns `[]` (as it did for every allomorph in 4.13.0), and
+  `AddInflectionClass` / `RemoveInflectionClass` raise `FP_ParameterError`
+  naming `project.MSA.SetInflectionClass` (a stem's class lives on its MSA). Add is
+  idempotent by HVO; Remove is a no-op when absent.
+- **Dependent clauses take chart rows (#832).**
+  `ConstChartClauseMarkerOperations.DependentClausesRS` holds `IConstChartRow`,
+  not markers. **Breaking:** `AddDependentClause(marker_or_hvo, row_or_hvo)` and
+  `InsertDependentClause(marker_or_hvo, index, row_or_hvo)` take an
+  `IConstChartRow` or its HVO (second argument renamed; positional calls are
+  unaffected) and raise `FP_ParameterError` for anything else, including a
+  marker. `GetDependentClauses` returns `IConstChartRow`. These methods write
+  only `DependentClausesRS`; FLEx also sets the row's `ClauseType` and the
+  Start/End dependent-clause group flags, so a row left `Normal` with both
+  flags `False` is a state FLEx essentially never produces. A warning is
+  logged when the added row is `Normal`. A helper that sets those fields is
+  planned for 4.14.0.
 
 ### Internal
 
@@ -73,11 +120,30 @@ repairs to surfaces that never worked (#828, #829).
 - `MorphRuleOperations` find-by-HVO helper no longer calls `.Remove` outside a
   transaction bracket; offline mocks updated for HVO lookup.
 
+### Verification
+
+Sweep recorded in `specs/4.13.1-release-gate/evidence/live-full-sweep-cycle6.md`
+(HEAD 7668f58f plus uncommitted work):
+
+- Offline (`-m "not requires_live_project"`): 4006 passed, 0 failed
+  (1301 deselected). Some offline tests are source-text ratchets rather than
+  behavioural tests.
+- Live (`FLEXLIBS_REQUIRE_LIVE=1`, `run_mode` `live`, sandbox fixtures):
+  127 passed, 0 failed, 0 skipped of 127 collected, across 99 live test files
+  (the live files changed since v4.13.0; one item deselected). This is not a
+  run of every live test in the repository.
+- Verified offline only: `MoAffixProcess` handling in #830 (the Sena 3 sandbox
+  holds no `MoAffixProcess`).
+- #831 is verified as inert: the live test shows no change to the `ICmFile`
+  count or to the example's text. No audio writing-system fixture exists, so
+  the audio route named in the error message was not exercised.
+
 ### Known gaps
 
-- Issue 740 (`Allomorph` RC membership) has offline evidence only; its live
-  run was not recorded. Other fixes in this release carry offline and live
-  evidence under `specs/`.
+- The FLEx user-interface label for affix-allomorph inflection classes was not
+  verified (`MetaDataCache.GetFieldLabel` returned nothing); the #830
+  docstrings do not state a label.
+- `cast_to_concrete` returns a bare `ICmObject` for `CmMedia` (#836, open).
 
 ---
 

@@ -19,7 +19,7 @@ LIVE_GATE = (
 
 
 def _add_dependent_clause_block(text: str) -> str:
-    start = text.index("def AddDependentClause(self, marker_or_hvo, clause_marker):")
+    start = text.index("def AddDependentClause(self, marker_or_hvo, row_or_hvo):")
     next_def = text.find("\n    @OperationsMethod", start + 1)
     return text[start:next_def] if next_def != -1 else text[start:]
 
@@ -28,8 +28,8 @@ def test_issue752_add_dependent_clause_uses_hvo_membership():
     block = _add_dependent_clause_block(OPS.read_text(encoding="utf-8"))
     assert "issue #752" in block
     assert "dep.Hvo == target_hvo" in block
-    assert "clause_marker not in marker.DependentClausesRS" not in block
-    assert "clause_marker in marker.DependentClausesRS" not in block
+    assert "row not in marker.DependentClausesRS" not in block
+    assert "row in marker.DependentClausesRS" not in block
 
 
 def test_issue752_live_gate_module_exists():
@@ -37,3 +37,5 @@ def test_issue752_live_gate_module_exists():
     body = LIVE_GATE.read_text(encoding="utf-8")
     assert "requires_live_project" in body
     assert "AddDependentClause" in body
+    # Issue #832: the element type is IConstChartRow, not a clause marker.
+    assert "ConstChartRows" in body

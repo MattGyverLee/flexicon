@@ -3,7 +3,7 @@
 #
 #   Offline coverage for issue #581:
 #     - AllomorphOperations.GetInflectionClasses / AddInflectionClass /
-#       RemoveInflectionClass (IMoStemAllomorph.InflectionClassesRC)
+#       RemoveInflectionClass (IMoAffixForm.InflectionClassesRC, #830)
 #     - AllomorphOperations.GetRequiredFeatures / SetRequiredFeatures
 #       (IMoAffixAllomorph.MsEnvFeaturesOA round-trip contract)
 #     - MSAOperations.GetOwningEntry (OwnerOfClass climb, None-not-raise)
@@ -165,11 +165,13 @@ def _make_stem_allomorph(hvo=101, classes=()):
     )
 
 
-def _make_affix_allomorph(hvo=201, struct=None):
+def _make_affix_allomorph(hvo=201, struct=None, classes=()):
+    # #830: InflectionClassesRC lives on IMoAffixForm (affix allomorphs).
     return SimpleNamespace(
         ClassName="MoAffixAllomorph",
         Hvo=hvo,
         MsEnvFeaturesOA=struct,
+        InflectionClassesRC=FakeRC(classes),
     )
 
 
@@ -208,7 +210,7 @@ def _install_stubs():
     lcm = types.ModuleType("SIL.LCModel")
     sys.modules["SIL.LCModel"] = lcm
     for attr in (
-        "IMoStemAllomorph", "IMoAffixAllomorph",
+        "IMoStemAllomorph", "IMoAffixAllomorph", "IMoAffixForm",
         "IMoStemAllomorphFactory", "IMoAffixAllomorphFactory",
         "ILexEntry", "ILexEntryRepository", "IPartOfSpeech",
         "IPhEnvironment", "PartOfSpeechTags",
@@ -400,11 +402,20 @@ def test_spec_c4_roundtrip():
 # Inflection-class trio
 # ----------------------------------------------------------------------
 
-def test_get_infl_classes_stem():
+def _expect_stem_rejection(call):
+    try:
+        call()
+    except FP_ParameterError as exc:
+        assert "SetInflectionClass" in str(exc)
+    else:
+        raise AssertionError("expected FP_ParameterError naming SetInflectionClass")
+
+
+def test_get_infl_classes_affix():
     with _isolated() as loaded:
         project, ops = _allomorph_ops(loaded)
         ic1, ic2 = _make_infl_class(901), _make_infl_class(902)
-        allo = _make_stem_allomorph(classes=[ic1, ic2])
+        allo = _make_affix_allomorph(classes=[ic1, ic2])
         result = ops.GetInflectionClasses(allo)
         assert result == [ic1, ic2]
 
@@ -412,14 +423,14 @@ def test_get_infl_classes_stem():
 def test_get_infl_classes_empty():
     with _isolated() as loaded:
         project, ops = _allomorph_ops(loaded)
-        assert ops.GetInflectionClasses(_make_stem_allomorph()) == []
+        assert ops.GetInflectionClasses(_make_affix_allomorph()) == []
 
 
-def test_get_infl_classes_non_stem():
+def test_get_infl_classes_stem_returns_empty():
     with _isolated() as loaded:
         project, ops = _allomorph_ops(loaded)
-        # Affix allomorphs have no InflectionClassesRC: [] never raises.
-        assert ops.GetInflectionClasses(_make_affix_allomorph()) == []
+        # #830: stems have no InflectionClassesRC; Get yields [] and never raises.
+        assert ops.GetInflectionClasses(_make_stem_allomorph()) == []
 
 
 def test_get_infl_classes_null():
@@ -437,15 +448,15 @@ def test_get_infl_classes_hvo():
     with _isolated() as loaded:
         project, ops = _allomorph_ops(loaded)
         ic = _make_infl_class(901)
-        allo = _make_stem_allomorph(hvo=101, classes=[ic])
-        project._by_hvo[101] = allo
-        assert ops.GetInflectionClasses(101) == [ic]
+        allo = _make_affix_allomorph(hvo=201, classes=[ic])
+        project._by_hvo[201] = allo
+        assert ops.GetInflectionClasses(201) == [ic]
 
 
 def test_add_infl_class_object():
     with _isolated() as loaded:
         project, ops = _allomorph_ops(loaded)
-        allo = _make_stem_allomorph()
+        allo = _make_affix_allomorph()
         ic = _make_infl_class(901)
         ops.AddInflectionClass(allo, ic)
         assert list(allo.InflectionClassesRC) == [ic]
@@ -455,11 +466,11 @@ def test_add_infl_class_object():
 def test_add_infl_class_hvo():
     with _isolated() as loaded:
         project, ops = _allomorph_ops(loaded)
-        allo = _make_stem_allomorph(hvo=101)
+        allo = _make_affix_allomorph(hvo=201)
         ic = _make_infl_class(hvo=901)
-        project._by_hvo[101] = allo
+        project._by_hvo[201] = allo
         project._by_hvo[901] = ic
-        ops.AddInflectionClass(101, 901)
+        ops.AddInflectionClass(201, 901)
         assert list(allo.InflectionClassesRC) == [ic]
 
 
@@ -467,21 +478,18 @@ def test_add_infl_class_redundant_noop():
     with _isolated() as loaded:
         project, ops = _allomorph_ops(loaded)
         ic = _make_infl_class(901)
-        allo = _make_stem_allomorph(classes=[ic])
+        allo = _make_affix_allomorph(classes=[ic])
         ops.AddInflectionClass(allo, ic)
         assert list(allo.InflectionClassesRC) == [ic]
         assert ops.transaction_labels == [], "redundant add must not open an undo entry"
 
 
-def test_add_infl_class_non_stem():
+def test_add_infl_class_stem_rejected():
     with _isolated() as loaded:
         project, ops = _allomorph_ops(loaded)
-        try:
-            ops.AddInflectionClass(_make_affix_allomorph(), _make_infl_class())
-        except FP_ParameterError:
-            pass
-        else:
-            raise AssertionError("expected FP_ParameterError for affix allomorph")
+        stem = _make_stem_allomorph()
+        _expect_stem_rejection(lambda: ops.AddInflectionClass(stem, _make_infl_class()))
+        assert ops.transaction_labels == []
 
 
 def test_add_infl_class_wrong_class():
@@ -489,7 +497,7 @@ def test_add_infl_class_wrong_class():
         project, ops = _allomorph_ops(loaded)
         not_a_class = SimpleNamespace(ClassName="MoStemAllomorph", Hvo=999)
         try:
-            ops.AddInflectionClass(_make_stem_allomorph(), not_a_class)
+            ops.AddInflectionClass(_make_affix_allomorph(), not_a_class)
         except FP_ParameterError:
             pass
         else:
@@ -500,7 +508,7 @@ def test_remove_infl_class():
     with _isolated() as loaded:
         project, ops = _allomorph_ops(loaded)
         ic1, ic2 = _make_infl_class(901), _make_infl_class(902)
-        allo = _make_stem_allomorph(classes=[ic1, ic2])
+        allo = _make_affix_allomorph(classes=[ic1, ic2])
         ops.RemoveInflectionClass(allo, ic1)
         assert list(allo.InflectionClassesRC) == [ic2]
         assert ops.transaction_labels == ["Remove inflection class"]
@@ -509,21 +517,18 @@ def test_remove_infl_class():
 def test_remove_infl_class_redundant_noop():
     with _isolated() as loaded:
         project, ops = _allomorph_ops(loaded)
-        allo = _make_stem_allomorph(classes=[_make_infl_class(901)])
+        allo = _make_affix_allomorph(classes=[_make_infl_class(901)])
         ops.RemoveInflectionClass(allo, _make_infl_class(902))
         assert len(allo.InflectionClassesRC) == 1
         assert ops.transaction_labels == [], "redundant remove must not open an undo entry"
 
 
-def test_remove_infl_class_non_stem():
+def test_remove_infl_class_stem_rejected():
     with _isolated() as loaded:
         project, ops = _allomorph_ops(loaded)
-        try:
-            ops.RemoveInflectionClass(_make_affix_allomorph(), _make_infl_class())
-        except FP_ParameterError:
-            pass
-        else:
-            raise AssertionError("expected FP_ParameterError for affix allomorph")
+        stem = _make_stem_allomorph()
+        _expect_stem_rejection(lambda: ops.RemoveInflectionClass(stem, _make_infl_class()))
+        assert ops.transaction_labels == []
 
 
 # ----------------------------------------------------------------------
