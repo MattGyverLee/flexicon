@@ -1007,6 +1007,48 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
             return new_val
 
     @OperationsMethod
+    def DeleteValue(self, value_or_hvo):
+        """
+        Delete a symbolic value (IFsSymFeatVal) under a closed inflection feature.
+
+        Removes the value from its owning feature's ValuesOC.
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(value_or_hvo, "value_or_hvo")
+
+        if isinstance(value_or_hvo, int):
+            val = cast_to_concrete(self.project.Object(value_or_hvo))
+        else:
+            require_lcm_object(value_or_hvo, "an LCM")
+            val = cast_to_concrete(self.__Unwrap(value_or_hvo))
+        val = IFsSymFeatVal(val)
+
+        owner = val.Owner
+        if owner is not None:
+            # ValuesOC is declared on IFsClosedFeature; cast so pythonnet
+            # surfaces the typed collection accessor. Only invalid-owner cast
+            # failures are swallowed (issue #848); membership errors must raise.
+            try:
+                feat = IFsClosedFeature(owner)
+            except (AttributeError, System.InvalidCastException):
+                return
+
+            # Membership by HVO (issue #848). Same proxy gap as phonology
+            # DeleteValue (#816); inflection lacked the public wrapper until now.
+            target_hvo = int(val.Hvo)
+            member_to_remove = None
+            for slot in feat.ValuesOC:
+                if int(slot.Hvo) == target_hvo:
+                    member_to_remove = slot
+                    break
+            if member_to_remove is None:
+                raise FP_ParameterError(
+                    "Value is not a member of ValuesOC"
+                )
+            with self._TransactionCM("Delete inflection feature value"):
+                feat.ValuesOC.Remove(member_to_remove)
+
+    @OperationsMethod
     def CreateClosedFeatureWithValues(
         self, name, abbreviation, values, catalogSourceId=None
     ):
