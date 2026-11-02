@@ -998,9 +998,12 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         feature = self.__ResolveFeature(feature_or_hvo)
         # Cast to IFsClosedFeature so ValuesOC is accessible. IFsComplexFeature
         # has no ValuesOC -- value creation only makes sense on closed features.
+        # Only invalid-owner cast failures are mapped to FP_ParameterError
+        # (issue #850); do not swallow unrelated exceptions with bare
+        # ``except Exception``.
         try:
             feature = IFsClosedFeature(feature)
-        except Exception:
+        except (AttributeError, System.InvalidCastException):
             raise FP_ParameterError(
                 "CreateValue requires an IFsClosedFeature; complex features "
                 "do not have a ValuesOC collection."
