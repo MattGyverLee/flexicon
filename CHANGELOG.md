@@ -13,7 +13,7 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ---
 
-## [4.13.1] - 2026-11-01
+## [4.13.1] - 2026-11-02
 
 Patch release: a sweep of HVO-identity fixes (issues 640 and 642-820), plus
 repairs to surfaces that never worked (#828, #829, #830, #831, #832).

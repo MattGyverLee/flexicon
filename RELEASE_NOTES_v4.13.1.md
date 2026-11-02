@@ -1,6 +1,6 @@
 # pyflexicon 4.13.1
 
-**Release candidate** (not yet tagged) | `pip install --upgrade pyflexicon`
+**Released 2026-11-02** | `pip install --upgrade pyflexicon`
 
 A patch release that fixes a class of silent failures: pythonnet can hand back
 bare interface views from FLEx collections, and a lookup by Python identity
