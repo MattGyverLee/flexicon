@@ -102,6 +102,28 @@ class CheckOperations(BaseOperations):
 
     # --- Core CRUD Operations ---
 
+    @OperationsMethod
+    def GetCheckList(self):
+        """
+        Return the project's consistency-check possibility list, if any.
+
+        Check types are stored as ``ICmPossibility`` items on an
+        ``ICmPossibilityList`` registered in ``LangProject.CheckListsOC``.
+
+        Returns:
+            ICmPossibilityList or None: The check list when the project has
+            at least one registered list; otherwise None.
+
+        Example:
+            >>> check_list = project.Checks.GetCheckList()
+            >>> if check_list:
+            ...     print(check_list.PossibilitiesOS.Count)
+
+        See Also:
+            GetAllCheckTypes, CreateCheckType, DeleteCheckType
+        """
+        return self._GetCheckList()
+
     @wrap_enumerable
     @OperationsMethod
     def GetAllCheckTypes(self):
@@ -1218,11 +1240,12 @@ class CheckOperations(BaseOperations):
         Returns:
             ICmPossibilityList or None: The check list if it exists, None otherwise.
         """
-        # Check if there's a dedicated check list
-        # In FLEx, this might be stored in a specific location
-        # For now, return None if not found
-        # Implementation would depend on actual FLEx data model
-        return None
+        # Issue #833: checks live on lists in LangProject.CheckListsOC.
+        lp = self.project.lp
+        check_lists = lp.CheckListsOC
+        if check_lists is None or check_lists.Count < 1:
+            return None
+        return ICmPossibilityList(check_lists[0])
 
     def _GetOrCreateCheckList(self):
         """
@@ -1235,9 +1258,6 @@ class CheckOperations(BaseOperations):
         if check_list:
             return check_list
 
-        # Create a new check list
-        # Note: This is a simplified implementation
-        # Actual implementation would depend on FLEx data model
         from SIL.LCModel import ICmPossibilityListFactory
 
         with self._TransactionCM("Create consistency check list"):
@@ -1247,6 +1267,10 @@ class CheckOperations(BaseOperations):
             wsHandle = self.project.project.DefaultAnalWs
             name_str = TsStringUtils.MakeString("Consistency Checks", wsHandle)
             new_list.Name.set_String(wsHandle, name_str)
+
+            # Register on LangProject so GetAllCheckTypes/DeleteCheckType share
+            # the same owner as CreateCheckType (issue #833).
+            self.project.lp.CheckListsOC.Add(new_list)
 
             return new_list
 
