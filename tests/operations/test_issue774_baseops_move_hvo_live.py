@@ -22,7 +22,7 @@ class TestIssue774BaseOpsMoveHvoLive:
         # LexEntry.Create adds a default blank sense first, so order is
         # [default, a, b]; move the middle sense (a) so MoveDown has room.
         sense_b = target_sandbox.Senses.Create(entry, gloss=f"{TEST_PREFIX}a")
-        sense_c = target_sandbox.Senses.Create(entry, gloss=f"{TEST_PREFIX}b")
+        target_sandbox.Senses.Create(entry, gloss=f"{TEST_PREFIX}b")
         assert entry.SensesOS.Count >= 2
 
         sense_b_hvo = sense_b.Hvo

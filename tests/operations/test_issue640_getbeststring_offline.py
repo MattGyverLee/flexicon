@@ -40,3 +40,70 @@ def test_issue640_live_gate_module_exists():
     body = LIVE_GATE.read_text(encoding="utf-8")
     assert "requires_live_project" in body
     assert "GetBestString" in body
+
+
+# --- Behavioural tests (stub objects exercise both branches) -----------------
+
+
+class _FakeClrType:
+    """Stands in for a System.Type: IsInstanceOfType keyed on a marker."""
+
+    def __init__(self, marker):
+        self._marker = marker
+
+    def IsInstanceOfType(self, obj):
+        return getattr(obj, "_clr_kind", None) == self._marker
+
+
+def _make_ops(monkeypatch):
+    import clr
+    from SIL.LCModel import IMultiString, IMultiUnicode
+
+    from flexicon.code.System.WritingSystemOperations import WritingSystemOperations
+    from flexicon.code.Shared import string_utils
+
+    def fake_get_clr_type(iface):
+        if iface is IMultiUnicode:
+            return _FakeClrType("multiunicode")
+        if iface is IMultiString:
+            return _FakeClrType("multistring")
+        return _FakeClrType(None)
+
+    monkeypatch.setattr(clr, "GetClrType", fake_get_clr_type)
+    seen = []
+    monkeypatch.setattr(
+        string_utils, "best_text", lambda obj: (seen.append(obj), "BEST")[1]
+    )
+    ops = object.__new__(WritingSystemOperations)
+    return ops, seen
+
+
+class _Stub:
+    def __init__(self, kind):
+        self._clr_kind = kind
+
+
+def test_issue640_get_best_string_accepts_multiunicode(monkeypatch):
+    ops, seen = _make_ops(monkeypatch)
+    obj = _Stub("multiunicode")
+    assert ops.GetBestString(obj) == "BEST"
+    assert seen == [obj]
+
+
+def test_issue640_get_best_string_accepts_multistring(monkeypatch):
+    ops, seen = _make_ops(monkeypatch)
+    obj = _Stub("multistring")
+    assert ops.GetBestString(obj) == "BEST"
+    assert seen == [obj]
+
+
+def test_issue640_get_best_string_rejects_other_types(monkeypatch):
+    import pytest
+    from flexicon.code.FLExProject import FP_ParameterError
+
+    ops, seen = _make_ops(monkeypatch)
+    with pytest.raises(FP_ParameterError):
+        ops.GetBestString(_Stub("something_else"))
+    with pytest.raises(FP_ParameterError):
+        ops.GetBestString("plain python str")
+    assert seen == []
