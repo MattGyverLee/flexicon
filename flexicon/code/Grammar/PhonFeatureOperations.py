@@ -510,6 +510,16 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
             raise FP_ParameterError("Abbreviation cannot be empty")
 
         feature = self.__Unwrap(self.__ResolveObject(feature_or_hvo))
+        # Cast to IFsClosedFeature so ValuesOC is accessible. Only closed
+        # phonological features own ValuesOC; wrong handles must not reach
+        # the collection mutator with opaque LCM errors (issue #852).
+        try:
+            feature = IFsClosedFeature(feature)
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "CreateValue requires an IFsClosedFeature; complex features "
+                "do not have a ValuesOC collection."
+            )
         wsHandle = self.project.project.DefaultAnalWs
 
         factory = self.project.project.ServiceLocator.GetService(
@@ -948,7 +958,18 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
             - Value string reads are guarded so a single malformed alt
               never aborts the whole extraction (issue #222).
         """
-        feat = IFsClosedFeature(self.__Unwrap(self.__ResolveObject(item)))
+        resolved = self.__Unwrap(self.__ResolveObject(item))
+        # Cast to IFsClosedFeature before scalar/value reads. Only closed
+        # phonological features own ValuesOC; wrong handles must not reach
+        # ValuesOC iteration with opaque LCM errors (issue #860; cf.
+        # ApplySyncableProperties #854 / CreateValue #852).
+        try:
+            feat = IFsClosedFeature(resolved)
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "GetSyncableProperties requires an IFsClosedFeature; complex "
+                "features do not have a ValuesOC collection."
+            )
         all_ws = {ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()}
 
         props = {}
@@ -1017,7 +1038,17 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
 
         # Resolve once so an HVO or wrapper input is handled uniformly by the
         # base loop and the value co-create below.
-        feature = IFsClosedFeature(self.__Unwrap(self.__ResolveObject(item)))
+        resolved = self.__Unwrap(self.__ResolveObject(item))
+        # Cast to IFsClosedFeature before value sync. Only closed phonological
+        # features own ValuesOC; wrong handles must not reach __ApplyValues with
+        # opaque LCM errors (issue #854; cf. CreateValue #852 / inflection #850).
+        try:
+            feature = IFsClosedFeature(resolved)
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "ApplySyncableProperties requires an IFsClosedFeature; complex "
+                "features do not have a ValuesOC collection."
+            )
 
         # Feature-level scalar/multistring fields via the base loop.
         values = props.get("Values")
@@ -1300,6 +1331,17 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         the 2-arg factory overload, or fall back to Create+Add), then
         mutate properties.
         """
+        # Cast to IFsClosedFeature before ValuesOC / factory paths. Only closed
+        # phonological features own ValuesOC; wrong handles must not reach Add
+        # with opaque LCM errors (issue #856; cf. CreateValue #852 / sync #854).
+        try:
+            parent_feature = IFsClosedFeature(self.__Unwrap(parent_feature))
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "_CreateValueFromEntry requires an IFsClosedFeature parent; "
+                "complex features do not have a ValuesOC collection."
+            )
+
         factory = self.project.project.ServiceLocator.GetService(
             IFsSymFeatValFactory
         )
