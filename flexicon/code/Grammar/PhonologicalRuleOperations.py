@@ -2064,6 +2064,8 @@ class PhonologicalRuleOperations(BaseOperations):
             - Returns Disabled boolean property (C9: a disabled rule syncs as
               disabled instead of syncing into the target as enabled)
             - Returns StratumGuid as string (GUID of referenced stratum)
+            - Returns StrucChange as plain string on PhMetathesisRule only
+              (ITsString; issue #872 / #826 slice)
             - Does not include owned objects (StrucDescOS, RightHandSidesOS)
             - Does not include GUID or HVO of the rule itself
         """
@@ -2101,6 +2103,12 @@ class PhonologicalRuleOperations(BaseOperations):
         # Reference Atomic (RA) properties - return GUID as string
         if hasattr(rule, "StratumRA") and rule.StratumRA:
             props["StratumGuid"] = str(rule.StratumRA.Guid)
+
+        # Metathesis-only scalar (IPhMetathesisRule.StrucChange is ITsString).
+        # issue #872: emit as plain str so the base ApplySyncableProperties loop
+        # round-trips via the ITsString fallback (same pattern as CVPattern).
+        if hasattr(rule, "StrucChange"):
+            props["StrucChange"] = self._ReadTsString(rule.StrucChange)
 
         return props
 
