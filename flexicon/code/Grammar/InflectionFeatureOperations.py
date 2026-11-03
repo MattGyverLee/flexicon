@@ -1548,16 +1548,17 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
 
         feature = self.__ResolveFeature(feature_or_hvo)
 
-        # IFsClosedFeature has the symbolic ValuesOC; IFsComplexFeature
-        # has no children of its own at this surface (sub-features live
-        # on its TypeRA.FeaturesRS, a separate read shape). The previous
-        # hasattr(feature, "FeaturesOS") fallback was always False at
-        # runtime -- no IFsFeatDefn variant exposes FeaturesOS. Removed
-        # in (#140); a IFsComplexFeature traversal would belong in a
-        # separate method with an explicit isinstance check.
-        if hasattr(feature, "ValuesOC"):
-            return list(feature.ValuesOC)
-        return []
+        # Cast to IFsClosedFeature so ValuesOC is accessible. Only closed
+        # inflection features own ValuesOC; wrong handles must not reach
+        # the collection reader with opaque LCM errors (issue #868).
+        try:
+            feature = IFsClosedFeature(feature)
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "FeatureGetValues requires an IFsClosedFeature; complex "
+                "features do not have a ValuesOC collection."
+            )
+        return list(feature.ValuesOC)
 
     @OperationsMethod
     def GetFeatures(self, feature_system_or_hvo):
