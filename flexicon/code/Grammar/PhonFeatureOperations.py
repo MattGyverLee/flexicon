@@ -955,6 +955,9 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
             - ``Name`` / ``Abbreviation`` / ``Description``:
               ``{ws_id: text}`` multistring dicts (non-empty alts only).
             - ``CatalogSourceId``: plain ``str`` provenance tag, when set.
+            - ``GlossAbbreviation`` / ``RightGlossSep``: ``{ws_id: text}``
+              multistring dicts (IMultiUnicode; issue #876).
+            - ``ShowInGloss``: ``bool`` scalar (issue #876).
             - ``Values``: a list of dicts, one per owned ``IFsSymFeatVal``,
               each ``{"Guid": str, "Name": {...}, "Abbreviation": {...},
               "Description": {...}}``. The per-value ``Guid`` is preserved
@@ -993,6 +996,15 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         csid = getattr(feat, "CatalogSourceId", None)
         if csid:
             props["CatalogSourceId"] = str(csid)
+
+        # Gloss interlinear metadata (IFsClosedFeature; issue #876 / #826).
+        for prop_name in ("GlossAbbreviation", "RightGlossSep"):
+            ws_values = self.__ReadMultiString(feat, prop_name, all_ws)
+            if ws_values:
+                props[prop_name] = ws_values
+
+        if hasattr(feat, "ShowInGloss"):
+            props["ShowInGloss"] = bool(feat.ShowInGloss)
 
         # Owned symbolic values. Each carries its own GUID for GUID-aligned
         # co-create on the target side.
