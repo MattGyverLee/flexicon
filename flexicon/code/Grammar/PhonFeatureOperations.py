@@ -510,6 +510,16 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
             raise FP_ParameterError("Abbreviation cannot be empty")
 
         feature = self.__Unwrap(self.__ResolveObject(feature_or_hvo))
+        # Cast to IFsClosedFeature so ValuesOC is accessible. Only closed
+        # phonological features own ValuesOC; wrong handles must not reach
+        # the collection mutator with opaque LCM errors (issue #852).
+        try:
+            feature = IFsClosedFeature(feature)
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "CreateValue requires an IFsClosedFeature; complex features "
+                "do not have a ValuesOC collection."
+            )
         wsHandle = self.project.project.DefaultAnalWs
 
         factory = self.project.project.ServiceLocator.GetService(
