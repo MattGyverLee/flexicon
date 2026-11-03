@@ -1246,6 +1246,20 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         FixGuidsAgainstCatalog (we still create missing values; we just
         don't accumulate counts).
         """
+        # Cast to IFsClosedFeature before ValuesOC idempotency scan. Only closed
+        # phonological features own ValuesOC; wrong handles must not reach the
+        # collection read with opaque LCM errors (issue #864; cf. inflection
+        # _handle_entry_children #862 / _CreateValueFromEntry #856).
+        try:
+            created_feature = IFsClosedFeature(
+                self.__Unwrap(created_feature)
+            )
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "_handle_entry_children requires an IFsClosedFeature parent; "
+                "complex features do not have a ValuesOC collection."
+            )
+
         existing_value_guids = {
             str(v.Guid).lower() for v in created_feature.ValuesOC
         }
