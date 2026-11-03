@@ -652,6 +652,56 @@ class VariantOperations(BaseOperations):
         return props
 
     @OperationsMethod
+    def GetTypeSyncableProperties(self, entry_type_or_hvo):
+        """
+        Get syncable properties for a variant/complex entry type (ILexEntryType).
+
+        For ``LexEntryInflType`` objects, emits interlinear gloss bracket fields
+        ``GlossPrepend`` and ``GlossAppend`` as ``{ws_id: text}`` multistring
+        dicts (issue #878 / #826).
+
+        Args:
+            entry_type_or_hvo: ``ILexEntryType`` object, wrapper, or HVO.
+
+        Returns:
+            dict: Syncable property names mapped to values.
+        """
+        entry_type = self.__ResolveEntryType(entry_type_or_hvo)
+        props = {}
+
+        if getattr(entry_type, "ClassName", None) != "LexEntryInflType":
+            return props
+
+        # GlossPrepend / GlossAppend on irregular inflection types only
+        # (issue #878 / #826).
+        all_ws = {
+            ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()
+        }
+        for prop_name in ("GlossPrepend", "GlossAppend"):
+            ws_values = {}
+            if hasattr(entry_type, prop_name):
+                prop_obj = getattr(entry_type, prop_name)
+                if prop_obj is not None:
+                    for ws_id, ws_handle in all_ws.items():
+                        text = ITsString(prop_obj.get_String(ws_handle)).Text
+                        if text:
+                            ws_values[ws_id] = text
+            if ws_values:
+                props[prop_name] = ws_values
+
+        return props
+
+    @OperationsMethod
+    def ApplyTypeSyncableProperties(
+        self, entry_type_or_hvo, props, ws_map=None, fill_gaps=False
+    ):
+        """Apply syncable entry-type properties from GetTypeSyncableProperties."""
+        entry_type = self.__ResolveEntryType(entry_type_or_hvo)
+        return super().ApplySyncableProperties(
+            entry_type, props, ws_map, fill_gaps=fill_gaps
+        )
+
+    @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):
         """
         Compare two variant references and return their differences.
@@ -1173,6 +1223,23 @@ class VariantOperations(BaseOperations):
                 pass
         require_lcm_object(entry_or_hvo, "ILexEntry")
         return entry_or_hvo
+
+    def __ResolveEntryType(self, entry_type_or_hvo):
+        """Resolve HVO or object to ILexEntryType (LexEntryType / LexEntryInflType)."""
+        from ..lcm_casting import cast_to_concrete
+
+        if isinstance(entry_type_or_hvo, int):
+            obj = cast_to_concrete(self.project.Object(entry_type_or_hvo))
+        else:
+            require_lcm_object(entry_type_or_hvo, "ILexEntryType")
+            obj = cast_to_concrete(entry_type_or_hvo)
+
+        class_name = getattr(obj, "ClassName", None)
+        if class_name not in ("LexEntryType", "LexEntryInflType"):
+            raise FP_ParameterError(
+                "Expected an ILexEntryType (LexEntryType or LexEntryInflType)"
+            )
+        return obj
 
     def __GetVariantObject(self, variant_or_hvo):
         """
