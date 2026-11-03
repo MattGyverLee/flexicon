@@ -1941,6 +1941,20 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         FixGuidsAgainstCatalog (we still create missing values; we just
         don't accumulate counts).
         """
+        # Cast to IFsClosedFeature before ValuesOC idempotency scan. Only closed
+        # inflection features own ValuesOC; wrong handles must not reach the
+        # collection read with opaque LCM errors (issue #862; cf.
+        # _CreateValueFromEntry #858 / phonology #856).
+        try:
+            created_feature = IFsClosedFeature(
+                self.__Unwrap(created_feature)
+            )
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "_handle_entry_children requires an IFsClosedFeature parent; "
+                "complex features do not have a ValuesOC collection."
+            )
+
         existing_value_guids = {
             str(v.Guid).lower() for v in created_feature.ValuesOC
         }
@@ -1981,6 +1995,17 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         the 2-arg factory overload, or fall back to Create+Add), then
         mutate properties.
         """
+        # Cast to IFsClosedFeature before ValuesOC / factory paths. Only closed
+        # inflection features own ValuesOC; wrong handles must not reach Add
+        # with opaque LCM errors (issue #858; cf. CreateValue #850 / phon #856).
+        try:
+            parent_feature = IFsClosedFeature(self.__Unwrap(parent_feature))
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "_CreateValueFromEntry requires an IFsClosedFeature parent; "
+                "complex features do not have a ValuesOC collection."
+            )
+
         factory = self.project.project.ServiceLocator.GetService(
             IFsSymFeatValFactory
         )
