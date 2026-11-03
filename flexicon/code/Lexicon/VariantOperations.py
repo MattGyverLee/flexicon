@@ -35,7 +35,7 @@ from ..FLExProject import (
 )
 
 # Import string utilities
-from ..Shared.string_utils import normalize_match_key
+from ..Shared.string_utils import normalize_match_key, normalize_text
 
 
 class VariantOperations(BaseOperations):
@@ -693,7 +693,22 @@ class VariantOperations(BaseOperations):
         else:
             props["primary_lexemes_rs"] = []
 
-        # Note: The variant form itself is stored on the owning entry's LexemeFormOA
+        # LexemeForm on the owning entry (issue #886 / #826). ILexEntryRef does
+        # not store surface form; sync consumers need the same WS-keyed dict as
+        # LexEntryOperations.GetSyncableProperties.
+        variant = self.__GetVariantObject(item)
+        owner = self._GetTypedOwner(variant)
+        form_dict = {}
+        if owner is not None and owner.LexemeFormOA:
+            for ws_def in self.project.WritingSystems.GetAll():
+                text = normalize_text(
+                    ITsString(
+                        owner.LexemeFormOA.Form.get_String(ws_def.Handle)
+                    ).Text
+                )
+                if text:
+                    form_dict[ws_def.Id] = text
+        props["LexemeForm"] = form_dict
 
         return props
 
@@ -702,8 +717,8 @@ class VariantOperations(BaseOperations):
         """
         Apply syncable properties onto an ILexEntryRef.
 
-        Handles reference-sequence fields emitted by GetSyncableProperties
-        (issue #884) and delegates scalar fields to BaseOperations.
+        Handles reference-sequence fields (issue #884), owning-entry **LexemeForm**
+        (issue #886), and delegates other scalar fields to BaseOperations.
         """
         import logging as _logging
         import System as _System
@@ -717,11 +732,14 @@ class VariantOperations(BaseOperations):
             )
 
         variant = self.__GetVariantObject(item)
+        lexeme_form = props.get("LexemeForm")
         rs_props = {
             k: props[k] for k in self.__ENTRY_REF_SYNC_RS_KEYS if k in props
         }
         remaining_props = {
-            k: v for k, v in props.items() if k not in self.__ENTRY_REF_SYNC_RS_KEYS
+            k: v
+            for k, v in props.items()
+            if k not in self.__ENTRY_REF_SYNC_RS_KEYS and k != "LexemeForm"
         }
 
         with self._TransactionCM("Apply variant reference properties"):
@@ -733,6 +751,15 @@ class VariantOperations(BaseOperations):
                 self.__ApplyEntryRefReferenceSequence(
                     variant, rs_attr, guid_list, _log, _System
                 )
+            if lexeme_form is not None:
+                owner = self._GetTypedOwner(variant)
+                if owner is not None:
+                    self.project.LexEntry.ApplySyncableProperties(
+                        owner,
+                        {"LexemeForm": lexeme_form},
+                        ws_map=ws_map,
+                        fill_gaps=fill_gaps,
+                    )
 
     @OperationsMethod
     def GetTypeSyncableProperties(self, entry_type_or_hvo):
