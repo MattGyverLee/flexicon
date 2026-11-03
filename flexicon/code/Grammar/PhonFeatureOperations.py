@@ -219,8 +219,17 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
             phonological features).
         """
         self._ValidateParam(feature_or_hvo, "feature_or_hvo")
-        feature = self.__ResolveObject(feature_or_hvo)
-        # ValuesOC is typed as IFsSymFeatVal directly.
+        feature = self.__Unwrap(self.__ResolveObject(feature_or_hvo))
+        # Cast to IFsClosedFeature so ValuesOC is accessible. Only closed
+        # phonological features own ValuesOC; wrong handles must not reach
+        # the collection reader with opaque LCM errors (issue #866).
+        try:
+            feature = IFsClosedFeature(feature)
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "GetValues requires an IFsClosedFeature; complex features "
+                "do not have a ValuesOC collection."
+            )
         for val in feature.ValuesOC:
             yield IFsSymFeatVal(val)
 
