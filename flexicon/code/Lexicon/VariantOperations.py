@@ -710,6 +710,20 @@ class VariantOperations(BaseOperations):
                     form_dict[ws_def.Id] = text
         props["LexemeForm"] = form_dict
 
+        # CitationForm on the owning entry (issue #888 / #826). Same IMultiString
+        # shape as LexEntryOperations.GetSyncableProperties.
+        citation_dict = {}
+        if owner is not None and hasattr(owner, "CitationForm"):
+            for ws_def in self.project.WritingSystems.GetAll():
+                text = normalize_text(
+                    ITsString(
+                        owner.CitationForm.get_String(ws_def.Handle)
+                    ).Text
+                )
+                if text:
+                    citation_dict[ws_def.Id] = text
+        props["CitationForm"] = citation_dict
+
         return props
 
     @OperationsMethod
@@ -718,7 +732,8 @@ class VariantOperations(BaseOperations):
         Apply syncable properties onto an ILexEntryRef.
 
         Handles reference-sequence fields (issue #884), owning-entry **LexemeForm**
-        (issue #886), and delegates other scalar fields to BaseOperations.
+        (issue #886) and **CitationForm** (issue #888), and delegates other
+        scalar fields to BaseOperations.
         """
         import logging as _logging
         import System as _System
@@ -733,13 +748,15 @@ class VariantOperations(BaseOperations):
 
         variant = self.__GetVariantObject(item)
         lexeme_form = props.get("LexemeForm")
+        citation_form = props.get("CitationForm")
         rs_props = {
             k: props[k] for k in self.__ENTRY_REF_SYNC_RS_KEYS if k in props
         }
         remaining_props = {
             k: v
             for k, v in props.items()
-            if k not in self.__ENTRY_REF_SYNC_RS_KEYS and k != "LexemeForm"
+            if k not in self.__ENTRY_REF_SYNC_RS_KEYS
+            and k not in ("LexemeForm", "CitationForm")
         }
 
         with self._TransactionCM("Apply variant reference properties"):
@@ -751,12 +768,17 @@ class VariantOperations(BaseOperations):
                 self.__ApplyEntryRefReferenceSequence(
                     variant, rs_attr, guid_list, _log, _System
                 )
+            owner_entry_props = {}
             if lexeme_form is not None:
+                owner_entry_props["LexemeForm"] = lexeme_form
+            if citation_form is not None:
+                owner_entry_props["CitationForm"] = citation_form
+            if owner_entry_props:
                 owner = self._GetTypedOwner(variant)
                 if owner is not None:
                     self.project.LexEntry.ApplySyncableProperties(
                         owner,
-                        {"LexemeForm": lexeme_form},
+                        owner_entry_props,
                         ws_map=ws_map,
                         fill_gaps=fill_gaps,
                     )
