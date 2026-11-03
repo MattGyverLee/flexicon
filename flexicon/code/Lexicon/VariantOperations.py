@@ -667,6 +667,10 @@ class VariantOperations(BaseOperations):
         """
         Get syncable properties for a variant/complex entry type (ILexEntryType).
 
+        For plain ``LexEntryType`` objects, emits **Name**, **Abbreviation**,
+        **Description**, and **ReverseAbbr** as ``{ws_id: text}`` multistring
+        dicts (issue #882 / #826).
+
         For ``LexEntryInflType`` objects, emits interlinear gloss bracket fields
         ``GlossPrepend`` and ``GlossAppend`` as ``{ws_id: text}`` multistring
         dicts (issue #878 / #826), ``InflFeats`` / ``InflFeatsGuid`` from
@@ -681,15 +685,31 @@ class VariantOperations(BaseOperations):
         """
         entry_type = self.__ResolveEntryType(entry_type_or_hvo)
         props = {}
+        class_name = getattr(entry_type, "ClassName", None)
+        all_ws = {
+            ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()
+        }
 
-        if getattr(entry_type, "ClassName", None) != "LexEntryInflType":
+        if class_name == "LexEntryType":
+            # Plain variant/complex entry types (issue #882 / #826).
+            for prop_name in ("Name", "Abbreviation", "Description", "ReverseAbbr"):
+                ws_values = {}
+                if hasattr(entry_type, prop_name):
+                    prop_obj = getattr(entry_type, prop_name)
+                    if prop_obj is not None:
+                        for ws_id, ws_handle in all_ws.items():
+                            text = ITsString(prop_obj.get_String(ws_handle)).Text
+                            if text:
+                                ws_values[ws_id] = text
+                if ws_values:
+                    props[prop_name] = ws_values
+            return props
+
+        if class_name != "LexEntryInflType":
             return props
 
         # GlossPrepend / GlossAppend on irregular inflection types only
         # (issue #878 / #826).
-        all_ws = {
-            ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()
-        }
         for prop_name in ("GlossPrepend", "GlossAppend"):
             ws_values = {}
             if hasattr(entry_type, prop_name):
