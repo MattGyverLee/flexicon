@@ -1074,7 +1074,18 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         Co-create / update the IFsSymFeatVal children of a feature from a
         list of value dicts emitted by GetSyncableProperties.
         """
-        feature = IFsClosedFeature(self.__Unwrap(self.__ResolveObject(item)))
+        resolved = self.__Unwrap(self.__ResolveObject(item))
+        # Cast to IFsClosedFeature before ValuesOC enumeration. Only closed
+        # phonological features own ValuesOC; wrong handles must not reach
+        # the GUID index with opaque LCM errors (issue #870; cf.
+        # ApplySyncableProperties #854 / GetSyncableProperties #860).
+        try:
+            feature = IFsClosedFeature(resolved)
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "__ApplyValues requires an IFsClosedFeature; complex "
+                "features do not have a ValuesOC collection."
+            )
         existing_by_guid = {
             str(v.Guid).lower(): IFsSymFeatVal(v) for v in feature.ValuesOC
         }
