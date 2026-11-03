@@ -1980,6 +1980,17 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
         the 2-arg factory overload, or fall back to Create+Add), then
         mutate properties.
         """
+        # Cast to IFsClosedFeature before ValuesOC / factory paths. Only closed
+        # inflection features own ValuesOC; wrong handles must not reach Add
+        # with opaque LCM errors (issue #858; cf. CreateValue #850 / phon #856).
+        try:
+            parent_feature = IFsClosedFeature(self.__Unwrap(parent_feature))
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "_CreateValueFromEntry requires an IFsClosedFeature parent; "
+                "complex features do not have a ValuesOC collection."
+            )
+
         factory = self.project.project.ServiceLocator.GetService(
             IFsSymFeatValFactory
         )
