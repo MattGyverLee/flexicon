@@ -1244,6 +1244,8 @@ class MorphRuleOperations(BaseOperations):
             - Returns all MultiString properties (all writing systems)
             - Returns boolean properties (Disabled, HeadLast, Final)
             - Returns StratumGuid as string (GUID of referenced stratum)
+            - Returns Adjacency as int on ad hoc co-prohibitions only
+              (MoAdhocProhib*; issue #874 / #826 slice)
         """
         rule = self.__ResolveObject(item)
 
@@ -1275,6 +1277,11 @@ class MorphRuleOperations(BaseOperations):
         # Reference Atomic (RA) properties - return GUID as string
         if hasattr(rule, "StratumRA") and rule.StratumRA:
             props["StratumGuid"] = str(rule.StratumRA.Guid)
+
+        # Ad hoc co-prohibition scalar (IMoAdhocProhib*.Adjacency is int).
+        # issue #874: emit so sync copy round-trips via base int apply path.
+        if hasattr(rule, "Adjacency"):
+            props["Adjacency"] = int(rule.Adjacency)
 
         return props
 
