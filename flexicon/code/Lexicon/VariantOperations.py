@@ -99,6 +99,24 @@ class VariantOperations(BaseOperations):
         "slots_rc",
     )
 
+    # ILexEntryRef reference-sequence keys handled outside the base multistring
+    # loop (issue #884 / #826).
+    __ENTRY_REF_SYNC_RS_KEYS = (
+        "show_complex_forms_in_rs",
+        "variant_entry_types_rs",
+        "component_lexemes_rs",
+        "complex_entry_types_rs",
+        "primary_lexemes_rs",
+    )
+
+    __ENTRY_REF_RS_ATTR_BY_KEY = {
+        "show_complex_forms_in_rs": "ShowComplexFormsInRS",
+        "variant_entry_types_rs": "VariantEntryTypesRS",
+        "component_lexemes_rs": "ComponentLexemesRS",
+        "complex_entry_types_rs": "ComplexEntryTypesRS",
+        "primary_lexemes_rs": "PrimaryLexemesRS",
+    }
+
     def __init__(self, project):
         """
         Initialize VariantOperations with a FLExProject instance.
@@ -650,17 +668,71 @@ class VariantOperations(BaseOperations):
         if hasattr(item, "HideMinorEntry"):
             props["HideMinorEntry"] = item.HideMinorEntry
 
-        # show_complex_forms_in_rs -- ordered GUID list from ShowComplexFormsInRS
-        # (ILexEntryRef has ShowComplexFormsInRS, not the phantom ShowComplexFormsIn)
+        # Reference sequences on ILexEntryRef (issue #884 / #826). Ordered GUID
+        # lists mirror LexReferenceOperations.targets_rs and existing
+        # show_complex_forms_in_rs emission.
         props["show_complex_forms_in_rs"] = [
             str(t.Guid) for t in item.ShowComplexFormsInRS
         ]
+        props["variant_entry_types_rs"] = [
+            str(t.Guid) for t in item.VariantEntryTypesRS
+        ]
+        props["component_lexemes_rs"] = [
+            str(c.Guid) for c in item.ComponentLexemesRS
+        ]
+        if hasattr(item, "ComplexEntryTypesRS"):
+            props["complex_entry_types_rs"] = [
+                str(t.Guid) for t in item.ComplexEntryTypesRS
+            ]
+        else:
+            props["complex_entry_types_rs"] = []
+        if hasattr(item, "PrimaryLexemesRS"):
+            props["primary_lexemes_rs"] = [
+                str(p.Guid) for p in item.PrimaryLexemesRS
+            ]
+        else:
+            props["primary_lexemes_rs"] = []
 
         # Note: The variant form itself is stored on the owning entry's LexemeFormOA
-        # Note: VariantEntryTypesRS is a Reference Sequence (complex relationships) - not included as simple property
-        # Note: ComponentLexemesRS is a Reference Sequence (complex relationships) - not included as simple property
 
         return props
+
+    @OperationsMethod
+    def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
+        """
+        Apply syncable properties onto an ILexEntryRef.
+
+        Handles reference-sequence fields emitted by GetSyncableProperties
+        (issue #884) and delegates scalar fields to BaseOperations.
+        """
+        import logging as _logging
+        import System as _System
+
+        _log = _logging.getLogger(__name__)
+
+        if not isinstance(props, dict):
+            raise FP_ParameterError(
+                f"ApplySyncableProperties: props must be a dict, got "
+                f"{type(props).__name__}"
+            )
+
+        variant = self.__GetVariantObject(item)
+        rs_props = {
+            k: props[k] for k in self.__ENTRY_REF_SYNC_RS_KEYS if k in props
+        }
+        remaining_props = {
+            k: v for k, v in props.items() if k not in self.__ENTRY_REF_SYNC_RS_KEYS
+        }
+
+        with self._TransactionCM("Apply variant reference properties"):
+            super().ApplySyncableProperties(
+                variant, remaining_props, ws_map=ws_map, fill_gaps=fill_gaps
+            )
+            for key, guid_list in rs_props.items():
+                rs_attr = self.__ENTRY_REF_RS_ATTR_BY_KEY[key]
+                self.__ApplyEntryRefReferenceSequence(
+                    variant, rs_attr, guid_list, _log, _System
+                )
 
     @OperationsMethod
     def GetTypeSyncableProperties(self, entry_type_or_hvo):
@@ -1327,6 +1399,41 @@ class VariantOperations(BaseOperations):
                 struct_guid=struct_guid,
                 on_unresolved="raise",
             )
+
+    def __ApplyEntryRefReferenceSequence(
+        self, variant, rs_attr, guid_list, log, system_guid
+    ):
+        """Replace an ILexEntryRef reference sequence from ordered GUID strings."""
+        if not hasattr(variant, rs_attr):
+            return
+
+        rs = getattr(variant, rs_attr)
+        incoming = [str(g) for g in (guid_list or [])]
+        try:
+            current = [str(member.Guid) for member in rs]
+        except Exception:
+            current = []
+
+        if current == incoming:
+            return
+
+        resolved = []
+        for guid_str in incoming:
+            try:
+                resolved.append(self.project.Object(system_guid.Guid(guid_str)))
+            except Exception as exc:
+                log.warning(
+                    "[WARN] ApplySyncableProperties: %s GUID %s not found in "
+                    "target project -- skipped (%s)",
+                    rs_attr,
+                    guid_str,
+                    exc,
+                )
+
+        self._EnsureWriteEnabled()
+        rs.Clear()
+        for obj in resolved:
+            rs.Add(obj)
 
     def __ApplyInflTypeSlotsRC(self, infl_type, slot_guids):
         """Replace SlotsRC on LexEntryInflType from ordered slot GUIDs."""
