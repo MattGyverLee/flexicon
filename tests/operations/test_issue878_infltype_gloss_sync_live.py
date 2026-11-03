@@ -17,9 +17,9 @@ SRC_WS = "zz-src"
 
 
 def _infl_types(project):
-        from flexicon.code.lcm_casting import cast_to_concrete
+    from flexicon.code.lcm_casting import cast_to_concrete
 
-        found = []
+    found = []
     for raw in project.Variants.GetAllTypes():
         t = cast_to_concrete(raw)
         if getattr(t, "ClassName", None) == "LexEntryInflType":

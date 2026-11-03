@@ -18,10 +18,12 @@ from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 # Import FLEx LCM types
 from SIL.LCModel import (
     ILexEntry,
+    ILexEntryInflType,
     ILexEntryRef,
     ILexEntryRefFactory,
     ILexEntryType,
     ILexEntryTypeRepository,
+    IMoInflAffixSlot,
     IVariantComponentLexeme,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
@@ -50,6 +52,9 @@ class VariantOperations(BaseOperations):
     as variants of each other or as components of complex forms.
 
     This class should be accessed via FLExProject.Variants property.
+
+    Keys popped before ``ApplySyncableProperties`` on entry types (issue #880):
+    ``InflFeats`` / ``InflFeatsGuid`` (C4 feature struct) and ``slots_rc``.
 
     Usage::
 
@@ -87,6 +92,12 @@ class VariantOperations(BaseOperations):
 
         project.CloseProject()
     """
+
+    __TYPE_SYNC_INFLTYPE_KEYS = (
+        "InflFeats",
+        "InflFeatsGuid",
+        "slots_rc",
+    )
 
     def __init__(self, project):
         """
@@ -658,7 +669,9 @@ class VariantOperations(BaseOperations):
 
         For ``LexEntryInflType`` objects, emits interlinear gloss bracket fields
         ``GlossPrepend`` and ``GlossAppend`` as ``{ws_id: text}`` multistring
-        dicts (issue #878 / #826).
+        dicts (issue #878 / #826), ``InflFeats`` / ``InflFeatsGuid`` from
+        ``InflFeatsOA`` (issue #880), and ordered ``slots_rc`` GUIDs from
+        ``SlotsRC`` (issue #880).
 
         Args:
             entry_type_or_hvo: ``ILexEntryType`` object, wrapper, or HVO.
@@ -689,6 +702,19 @@ class VariantOperations(BaseOperations):
             if ws_values:
                 props[prop_name] = ws_values
 
+        # InflFeatsOA + SlotsRC (issue #880 / #826). LexEntryInflType is
+        # deliberately excluded from FEATURE_STRUC_OWNER_TABLE; read the
+        # concrete interface directly.
+        infl_type = ILexEntryInflType(entry_type)
+        struct = infl_type.InflFeatsOA
+        if struct is not None:
+            props["InflFeats"] = self._GetFeatureStruc(struct)
+            props["InflFeatsGuid"] = str(struct.Guid)
+
+        slots_rc = infl_type.SlotsRC
+        if slots_rc is not None and slots_rc.Count > 0:
+            props["slots_rc"] = [str(slot.Guid) for slot in slots_rc]
+
         return props
 
     @OperationsMethod
@@ -696,9 +722,37 @@ class VariantOperations(BaseOperations):
         self, entry_type_or_hvo, props, ws_map=None, fill_gaps=False
     ):
         """Apply syncable entry-type properties from GetTypeSyncableProperties."""
+        if not isinstance(props, dict):
+            raise FP_ParameterError(
+                f"ApplyTypeSyncableProperties: props must be a dict, got "
+                f"{type(props).__name__}"
+            )
+
         entry_type = self.__ResolveEntryType(entry_type_or_hvo)
+        class_name = getattr(entry_type, "ClassName", None)
+
+        if class_name != "LexEntryInflType":
+            return super().ApplySyncableProperties(
+                entry_type, props, ws_map, fill_gaps=fill_gaps
+            )
+
+        infl_type = ILexEntryInflType(entry_type)
+        base_props = {
+            k: v
+            for k, v in props.items()
+            if k not in self.__TYPE_SYNC_INFLTYPE_KEYS
+        }
+
+        if "InflFeats" in props or "InflFeatsGuid" in props:
+            self._EnsureWriteEnabled()
+            self.__ApplyInflTypeInflFeats(infl_type, props)
+
+        if "slots_rc" in props:
+            self._EnsureWriteEnabled()
+            self.__ApplyInflTypeSlotsRC(infl_type, props["slots_rc"])
+
         return super().ApplySyncableProperties(
-            entry_type, props, ws_map, fill_gaps=fill_gaps
+            entry_type, base_props, ws_map, fill_gaps=fill_gaps
         )
 
     @OperationsMethod
@@ -1240,6 +1294,43 @@ class VariantOperations(BaseOperations):
                 "Expected an ILexEntryType (LexEntryType or LexEntryInflType)"
             )
         return obj
+
+    def __ApplyInflTypeInflFeats(self, infl_type, props):
+        """Apply InflFeats/InflFeatsGuid onto LexEntryInflType.InflFeatsOA."""
+        if "InflFeats" in props or "InflFeatsGuid" in props:
+            spec = props.get("InflFeats") or {}
+            struct_guid = props.get("InflFeatsGuid")
+            self._ApplyFeatureStruc(
+                infl_type,
+                "InflFeatsOA",
+                spec,
+                struct_guid=struct_guid,
+                on_unresolved="raise",
+            )
+
+    def __ApplyInflTypeSlotsRC(self, infl_type, slot_guids):
+        """Replace SlotsRC on LexEntryInflType from ordered slot GUIDs."""
+        resolved = []
+        for guid in slot_guids or []:
+            obj = self._ResolveFsByGuid(guid, kind="inflection affix slot")
+            if obj is None:
+                raise FP_ParameterError(
+                    "ApplyTypeSyncableProperties: slots_rc references "
+                    f"inflection affix slot GUID {guid!r} that does not "
+                    "exist in this project -- sync affix slots first."
+                )
+            try:
+                resolved.append(IMoInflAffixSlot(obj))
+            except Exception as exc:
+                raise FP_ParameterError(
+                    "ApplyTypeSyncableProperties: slots_rc GUID "
+                    f"{guid!r} is not an inflection affix slot: {exc}"
+                ) from exc
+
+        with self._TransactionCM("Apply LexEntryInflType slots_rc"):
+            infl_type.SlotsRC.Clear()
+            for slot in resolved:
+                infl_type.SlotsRC.Add(slot)
 
     def __GetVariantObject(self, variant_or_hvo):
         """
