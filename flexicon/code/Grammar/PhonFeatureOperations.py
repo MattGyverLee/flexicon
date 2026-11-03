@@ -958,7 +958,18 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
             - Value string reads are guarded so a single malformed alt
               never aborts the whole extraction (issue #222).
         """
-        feat = IFsClosedFeature(self.__Unwrap(self.__ResolveObject(item)))
+        resolved = self.__Unwrap(self.__ResolveObject(item))
+        # Cast to IFsClosedFeature before scalar/value reads. Only closed
+        # phonological features own ValuesOC; wrong handles must not reach
+        # ValuesOC iteration with opaque LCM errors (issue #860; cf.
+        # ApplySyncableProperties #854 / CreateValue #852).
+        try:
+            feat = IFsClosedFeature(resolved)
+        except (AttributeError, System.InvalidCastException):
+            raise FP_ParameterError(
+                "GetSyncableProperties requires an IFsClosedFeature; complex "
+                "features do not have a ValuesOC collection."
+            )
         all_ws = {ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()}
 
         props = {}
